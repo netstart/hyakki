@@ -37,7 +37,7 @@
     "source_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/ninja_adventure_LICENSE.txt",
-    "files_count": 743
+    "files_count": 728
   },
   {
     "id": "fusion_pixel_font",
@@ -198,5 +198,19 @@
     "source_url": "https://merakintsugi.itch.io/platformer-character-pack",
     "license_file": "res://licenses/texts/LicenseRef-Merakintsugi.txt",
     "files_count": 2
+  },
+  {
+    "id": "amacha_music",
+    "name": "甘茶の音楽工房 (Amacha) - Japanese-style background music",
+    "author": "甘茶 (Amacha)",
+    "license_id": "LicenseRef-Amacha",
+    "category": "audio",
+    "version": "15 tracks of the 和風・アジア category, downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "modifications": "files renamed; played in loop",
+    "source_url": "https://amachamusic.chagasi.com/genre_asia.html",
+    "license_file": "res://licenses/texts/LicenseRef-Amacha.txt",
+    "files_count": 15
   }
 ]

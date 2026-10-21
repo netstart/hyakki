@@ -111,6 +111,17 @@ publicação, otimizado, e execute a aplicação dentro do emulador".
   vida), Golpe da Lanterna "Despertar Oni", conquista "Sangue de Oni" (vencer o Oni Vermelho) que a libera,
   textos nos 11 idiomas e licença no registro.
 
+### Músicas japonesas (pedido de 21/10)
+- 15 faixas do 甘茶の音楽工房 (categoria 和風・アジア), escolhidas pelo clima indicado no site (não foi possível
+  ouvir): オープニング (título), 平安ノ宵 (Vila), 夜半ノ月 ～夜道/～荒城/～唐傘 (Bambu, Templo, Dunas), 幕末舞曲
+  ～花ノ乱 (Yomi), 神々の宿る場所 (fase secreta), 幕末舞曲～戦 e 龍ノ舞 (chefes), 打ち上げ花火 (Noite Sem Fim),
+  花祭り (amanhecer), 桜雲 (Santuário), Japanese Autumn (história), 故郷 (créditos), 悠久の時へ (Diário).
+- Termos lidos no original: uso comercial como BGM de jogos e apps, edição livre, crédito opcional; proibido
+  vender/redistribuir a música avulsa, Content ID e registro em JASRAC.
+- `AudioManager` toca .ogg ou .mp3 em loop; a tela Créditos passou a tocar a própria música (antes usava a do
+  título). Teste de integração confere que toda música usada existe.
+- **Ouça e troque o que não combinar:** cada faixa é uma linha em `tools/amacha_assets.json`.
+
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.
 - 21/10 — 629 textos em 11 idiomas; registro e verificação de licenças; testes de integração.

@@ -41,7 +41,8 @@ def store(target: pathlib.Path, content: bytes, entry: dict) -> None:
     """Grava sem perder histórico: conteúdo novo e diferente vira cópia datada + revisão."""
     content = content.replace(b"\r\n", b"\n")
     target.parent.mkdir(parents=True, exist_ok=True)
-    if target.exists() and target.read_bytes() != content:
+    # Compara sem o fim de linha: o git no Windows pode ter convertido LF em CRLF no checkout.
+    if target.exists() and target.read_bytes().replace(b"\r\n", b"\n") != content:
         dated = target.with_name(f"{target.stem}_{TODAY}{target.suffix}")
         dated.write_bytes(content)
         entry["needs_review"] = True

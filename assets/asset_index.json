@@ -4068,34 +4068,34 @@
   "sha256": "e66e2fa95ab26c5ababf9ce5f62607535d10b9afba9cf4de52baf2b266ea36cd"
  },
  {
-  "file": "assets/audio/music/boss_a.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/17 - Fight.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "137f9a19a043c23c02179d722b14e9014bc3d73546db722a91640bd6181f1089"
+  "file": "assets/audio/music/boss_a.mp3",
+  "source": "C:/src/assets/amacha/mp3/bakumatsubukyoku_ikusa.mp3",
+  "license_id": "amacha_music",
+  "sha256": "e793318d81297328a6b02201e5f066567fca0978628a9a218df3b450b43904b9"
  },
  {
-  "file": "assets/audio/music/boss_b.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/34  - Fight.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "b4216d8d9a066c98f758c57287164745637c24294ebf4c0b03c77a86e173678c"
+  "file": "assets/audio/music/boss_b.mp3",
+  "source": "C:/src/assets/amacha/mp3/ryunomai.mp3",
+  "license_id": "amacha_music",
+  "sha256": "9aa467b6e45b75b5bd60198cd13dde63e32bab3d1f0b703c3bffbc5b6097827f"
  },
  {
-  "file": "assets/audio/music/codex.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/29 - Lament.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "54198353dbadfa16ee6853afd0b8775a405c80cc9452032c9131af00f96c0a49"
+  "file": "assets/audio/music/codex.mp3",
+  "source": "C:/src/assets/amacha/mp3/yukyunotokie.mp3",
+  "license_id": "amacha_music",
+  "sha256": "2dd8b8ccc3cba0cf8fa61f531276b8d862508e1479266039f979d56b8eb57059"
  },
  {
-  "file": "assets/audio/music/credits.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/15 - Credit Theme.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "bc26046f7e3b5b6ccb2370e6ee0b4c8287755a251fa48134db99e9767de4099a"
+  "file": "assets/audio/music/credits.mp3",
+  "source": "C:/src/assets/amacha/mp3/furusato.mp3",
+  "license_id": "amacha_music",
+  "sha256": "cf5db2b566873445cd080ccf9e3ff8242b90384103c3f090f289d4dccfc260b5"
  },
  {
-  "file": "assets/audio/music/dawn.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/19 - Ascension.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "775400a7d3f47b24e62d8139ed012fd595902a814fdcc2357d5f06946aafa88f"
+  "file": "assets/audio/music/dawn.mp3",
+  "source": "C:/src/assets/amacha/mp3/hanamatsuri.mp3",
+  "license_id": "amacha_music",
+  "sha256": "b993fe8b910daba8fd04eea281411f01d1b50eccf6d6bff07a597f24f4d992f6"
  },
  {
   "file": "assets/audio/music/defeat.ogg",
@@ -4104,64 +4104,64 @@
   "sha256": "6c981f8d0cac7c40dd695762465c298780d1cb2752527a9ce1b19703d4876cb3"
  },
  {
-  "file": "assets/audio/music/endless.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/28 - Tension.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "37f6260be41d2f10315acabafed4157343fa6f2eecadfba852e8a8def52448f4"
+  "file": "assets/audio/music/endless.mp3",
+  "source": "C:/src/assets/amacha/mp3/uchiagehanabi.mp3",
+  "license_id": "amacha_music",
+  "sha256": "20cd1e505f60915b8317e0fe75caedd861d6385d097aac2f57d28f4a05083d25"
  },
  {
-  "file": "assets/audio/music/sanctuary.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/13 - Mystical.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "eb741e9ec62636770f5b97a9d56df8cd0718be040ebf60f0233b440ee4656c96"
+  "file": "assets/audio/music/sanctuary.mp3",
+  "source": "C:/src/assets/amacha/mp3/ouun.mp3",
+  "license_id": "amacha_music",
+  "sha256": "d735a9c7dafd4d22332d69bd1f6bb1d83512e47399077696cd944688c91fa215"
  },
  {
-  "file": "assets/audio/music/stage_bamboo.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/37 - Dark Forest.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "3a53eaa9a68f0b9dec59d842f585bba99c3f0011808deff6860ad475245b2bb1"
+  "file": "assets/audio/music/stage_bamboo.mp3",
+  "source": "C:/src/assets/amacha/mp3/yowanotsuki_yomichi.mp3",
+  "license_id": "amacha_music",
+  "sha256": "da4007fa332af2450eb990813d6dab4ce4ccb3fe0db15a2e68343c2f56a04239"
  },
  {
-  "file": "assets/audio/music/stage_dunes.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/30 - Ruins.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "10e067f1b91e0c07c2a254ad13457cff1004a9e9b9e4c99945afe8d3d97e165a"
+  "file": "assets/audio/music/stage_dunes.mp3",
+  "source": "C:/src/assets/amacha/mp3/yowanotsuki_karakasa.mp3",
+  "license_id": "amacha_music",
+  "sha256": "f95e555d40739ba08ccf104d4b602106ffdaa4b622d6c95cdcb0520a665738b1"
  },
  {
-  "file": "assets/audio/music/stage_secret.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/24 - Final Area.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "7af5cbbca397fcf3ad7426d0734085095a7eb67eea9a78bfb16205eee5453c1a"
+  "file": "assets/audio/music/stage_secret.mp3",
+  "source": "C:/src/assets/amacha/mp3/kamigaminoyadorubasho.mp3",
+  "license_id": "amacha_music",
+  "sha256": "b61e0e0599059f584fbf5de1e61e84326c2db571b633ac19fe9223195b5dc674"
  },
  {
-  "file": "assets/audio/music/stage_temple.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/12 - Temple.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "192890815e29be68e89242c705924482c10d0e29353d174f2fdd3a514ed83eb1"
+  "file": "assets/audio/music/stage_temple.mp3",
+  "source": "C:/src/assets/amacha/mp3/yowanotsukli_koujou.mp3",
+  "license_id": "amacha_music",
+  "sha256": "caac1276dae7432afe949856aa2197de01f25644204625129c58902b0264a1cd"
  },
  {
-  "file": "assets/audio/music/stage_village.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/36 - Village.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "686b6963fb15ed8e45da4cb7a72b696e65d3b9b86c7bcd6fc615dd444d5bddfe"
+  "file": "assets/audio/music/stage_village.mp3",
+  "source": "C:/src/assets/amacha/mp3/heiannoyoi.mp3",
+  "license_id": "amacha_music",
+  "sha256": "f480beb7b2967df38017e1db756afc50bf6c88d49031e0ad3aff5744da97f1d0"
  },
  {
-  "file": "assets/audio/music/stage_yomi.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/40 - Crypt.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "0abbe14e7210bb08ac88d8f72d7d15efe7c28e341728bf33c80c5d459f69d817"
+  "file": "assets/audio/music/stage_yomi.mp3",
+  "source": "C:/src/assets/amacha/mp3/bakumatsubukyoku_hananoran.mp3",
+  "license_id": "amacha_music",
+  "sha256": "c15853ac4456267cb96e5667db734fafe2b331606997c63f2c8dcb8322a8216c"
  },
  {
-  "file": "assets/audio/music/story.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/6 - Story.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "5d226045574a6a281b1579d825dae13da412d83333ec1b7fd04a61e3b03fd4be"
+  "file": "assets/audio/music/story.mp3",
+  "source": "C:/src/assets/amacha/mp3/japaneseautumn.mp3",
+  "license_id": "amacha_music",
+  "sha256": "bf21f3c571846538197dd97812d5d4323d6f97b879cc03eeddc783b39aec8cc3"
  },
  {
-  "file": "assets/audio/music/title.ogg",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/38 - Intro.ogg",
-  "license_id": "ninja_adventure",
-  "sha256": "e5a6be34a7c13d77897ad0109dd32b519222a928c0d5497dde0b8084d5667817"
+  "file": "assets/audio/music/title.mp3",
+  "source": "C:/src/assets/amacha/mp3/opening.mp3",
+  "license_id": "amacha_music",
+  "sha256": "d0dff44bb1d4e4ad56a68d3942a1d2ce25fbcbbecd167ad7b03ee7d8c866f6b4"
  },
  {
   "file": "assets/audio/sfx/alert.wav",

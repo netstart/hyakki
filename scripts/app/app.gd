@@ -157,7 +157,8 @@ func go(name: StringName) -> void:
 	var shown := _screens[name] as Screen
 	shown.on_show()
 	if name in [&"title", &"heroes", &"stages", &"sanctuary", &"shop", &"codex", &"options", &"credits", &"licenses"]:
-		AudioManager.play_music("sanctuary" if name == &"sanctuary" else ("codex" if name == &"codex" else "title"))
+		var screen_music := {&"sanctuary": "sanctuary", &"codex": "codex", &"credits": "credits"}
+		AudioManager.play_music(String(screen_music.get(name, "title")))
 
 
 func play_story(id: StringName, then: Callable) -> void:

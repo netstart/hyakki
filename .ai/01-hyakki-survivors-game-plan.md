@@ -1409,6 +1409,8 @@ Falha o build se:
 
 #### 12.7.2 Música
 
+> **Implementado (21/10/2026):** 15 faixas da categoria 和風・アジア do **甘茶の音楽工房** substituíram as músicas do Ninja Adventure em todas as fases, chefes, menus, história, amanhecer, Noite Sem Fim e créditos (só a derrota continua com o Ninja Adventure). O 魔王魂 ficou como reserva, porque exige crédito em toda faixa. Mapa de faixas em `tools/amacha_assets.json`; licença em `licenses/sources/LicenseRef-Amacha.txt`.
+
 | Status | Asset | Autor | Conteúdo | Licença | Uso no Hyakki | Link |
 |---|---|---|---|---|---|---|
 | ✅ | **High Quality 16-bit RPG Music** | HydroGene | 28 faixas estilo SNES, com loop perfeito (ogg/wav) | **CC0** | reserva de faixas de batalha e de chefe; combina com o som 16-bit do pack | https://hydrogene.itch.io/high-quality-16-bit-music |

@@ -1,0 +1,2 @@
+# Textos de licença ficam com LF: tools/fetch_licenses.py compara o conteúdo byte a byte.
+licenses/** text eol=lf

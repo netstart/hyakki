@@ -1,0 +1,20 @@
+甘茶の音楽工房 (Amacha Music Studio) — https://amachamusic.chagasi.com/
+利用規約 (Terms of use): https://amachamusic.chagasi.com/terms.html  (checked 2026-10-21; PDF snapshot in docs/licenses)
+
+Terms (quoted from the page, 2026-10-21):
+- 公開中の音楽素材は、商用利用、個人利用問わず利用できます。
+  The published music can be used for both commercial and personal purposes.
+- 音楽素材は、ウェブ、映像、ゲーム、ラジオなど、何かのBGMとしてお使い下さい。
+  Use the music as background music for something: web, video, games, radio, etc.
+- 音楽だけを販売したり、2次配布することは禁止です。
+  Selling the music by itself or redistributing it is prohibited.
+- テンポやキーの変更、音の付加、フェードイン・フェードアウトなど自由に加工できます。
+  Tempo/key changes, added sounds, fades, etc. are freely allowed (copyright stays with Amacha).
+- Credit is optional. Also prohibited: YouTube Content ID registration, registration with JASRAC or
+  other rights bodies, distribution on music streaming platforms, misrepresenting the composer,
+  and hotlinking the files.
+
+Used in Hyakki as in-game background music (category 和風・アジア), files renamed:
+opening, 平安ノ宵, 「夜半ノ月」～夜道 / ～荒城 / ～唐傘, 幕末舞曲〜花ノ乱〜 / 〜戦〜, 神々の宿る場所, 龍ノ舞,
+打ち上げ花火, 花祭り, 桜雲, Japanese Autumn, 故郷, 悠久の時へ → assets/audio/music/*.mp3.
+Credited in the game's Credits screen.

@@ -101,11 +101,17 @@ func play_music(id: String, fade: float = CROSSFADE) -> void:
 	if id == _music_id:
 		return
 	_music_id = id
-	var stream := _load(MUSIC_DIR + id + ".ogg")
+	# .ogg (Ninja Adventure) ou .mp3 (甘茶の音楽工房); toda música de fundo repete.
+	var path := MUSIC_DIR + id + ".ogg"
+	if not ResourceLoader.exists(path):
+		path = MUSIC_DIR + id + ".mp3"
+	var stream := _load(path)
 	if stream == null:
 		return
 	if stream is AudioStreamOggVorbis:
 		(stream as AudioStreamOggVorbis).loop = true
+	elif stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
 	var next := _music_b if _active_music == _music_a else _music_a
 	next.stream = stream
 	next.volume_db = -40.0

@@ -21,6 +21,7 @@ Licenças do jogo, lidos do motor exportado (`Engine.get_copyright_info()`).
 | 効果音ラボ (Sound Effect Lab) - Japanese sound effects | 効果音ラボ | LicenseRef-SoundEffectLab | 7 files downloaded 2026-10-21 (SHA-256 in C:/src/assets/soundeffect-lab/SHA256SUMS.txt) | sim | não | `licenses/texts/LicenseRef-SoundEffectLab.txt` | https://soundeffect-lab.info/ |
 | Helton Yan's Pixel Combat | Helton Yan and Beto Bezerra | CC-BY-4.0 | Single Files.zip (itch.io upload 13796512); 4 of 350 files used | sim | sim | `licenses/texts/CC-BY-4.0.txt` | https://heltonyan.itch.io/pixelcombat |
 | Platformer character pack (free sample) | Merakintsugi | LicenseRef-Merakintsugi | sample(idle&walk).zip (itch.io upload 16345894, SHA-256 177f9874985b0a03729aaef95612b63327da556858a3198b0e44439cb316a415) | sim | não | `licenses/texts/LicenseRef-Merakintsugi.txt` | https://merakintsugi.itch.io/platformer-character-pack |
+| 甘茶の音楽工房 (Amacha) - Japanese-style background music | 甘茶 (Amacha) | LicenseRef-Amacha | 15 tracks of the 和風・アジア category, downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt) | sim | não | `licenses/texts/LicenseRef-Amacha.txt` | https://amachamusic.chagasi.com/genre_asia.html |
 
 Verificação: `python -I tools/check_licenses.py` (cobertura de todos os arquivos de `assets/`,
 hash das cópias, licenças permitidas, data de verificação). Snapshots das páginas de origem em

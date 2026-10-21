@@ -15,6 +15,7 @@ Design, programação e direção: Clayton
 - **効果音ラボ (Sound Effect Lab) - Japanese sound effects** — 効果音ラボ (LicenseRef-SoundEffectLab) — https://soundeffect-lab.info/
 - **Helton Yan's Pixel Combat** — Helton Yan and Beto Bezerra (CC-BY-4.0) — https://heltonyan.itch.io/pixelcombat
 - **Platformer character pack (free sample)** — Merakintsugi (LicenseRef-Merakintsugi) — https://merakintsugi.itch.io/platformer-character-pack
+- **甘茶の音楽工房 (Amacha) - Japanese-style background music** — 甘茶 (Amacha) (LicenseRef-Amacha) — https://amachamusic.chagasi.com/genre_asia.html
 
 ## Software
 

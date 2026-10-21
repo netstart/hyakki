@@ -111,8 +111,16 @@ func _test_assets_exist() -> void:
 			missing.append(path)
 	_check(missing.is_empty(), "todos os sprites/ícones existem (%d): faltam %s" % [paths.size(), missing])
 	for id: StringName in DB.ids("stages"):
-		var music := "res://assets/audio/music/%s.ogg" % DB.stages[id].get("music", "")
-		_check(ResourceLoader.exists(music), "música da fase %s existe" % id)
+		var music := "res://assets/audio/music/%s" % DB.stages[id].get("music", "")
+		_check(ResourceLoader.exists(music + ".ogg") or ResourceLoader.exists(music + ".mp3"),
+				"música da fase %s existe" % id)
+	# Toda música tocada pelo código ou pelos chefes também precisa existir.
+	var ids: Array[String] = ["title", "dawn", "defeat", "endless", "sanctuary", "story", "credits", "codex"]
+	for boss: StringName in DB.ids("bosses"):
+		ids.append(String(DB.bosses[boss].get("music", "boss_a")))
+	for mid: String in ids:
+		var base := "res://assets/audio/music/" + mid
+		_check(ResourceLoader.exists(base + ".ogg") or ResourceLoader.exists(base + ".mp3"), "música %s existe" % mid)
 
 
 # --- Idiomas ----------------------------------------------------------------------
