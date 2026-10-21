@@ -20,6 +20,8 @@ config/version="1.0.0"
 run/main_scene="res://scenes/app/App.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.05098039, 0.043137256, 0.08627451, 1)
+boot_splash/show_image=false
 config/icon="res://assets/art/actors/heroes/aki/Faceset.png"
 
 [autoload]

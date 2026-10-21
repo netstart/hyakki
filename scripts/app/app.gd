@@ -59,7 +59,18 @@ func _ready() -> void:
 	selection = (SaveManager.data["selected"] as Dictionary).duplicate()
 	if OS.is_debug_build() and _scenario_from_args(args):
 		return
-	_boot()
+	_show_splash()
+
+
+## Abertura curta por cima de tudo; o resto do fluxo começa no fade de saída dela.
+func _show_splash() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 40
+	add_child(layer)
+	var splash := SplashScreen.new()
+	layer.add_child(splash)
+	splash.finished.connect(_boot)
+	splash.tree_exited.connect(layer.queue_free)
 
 
 func _start_direct() -> void:

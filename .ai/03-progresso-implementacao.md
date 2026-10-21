@@ -133,6 +133,21 @@ depois de escolher habilidade; itens do chão que chamem atenção; barra de vid
   "vai sumir" ou dano); com "reduzir flashes" o halo pulsa devagar e sem o brilho.
 - ✅ **Barra de vida sobre a cabeça** por padrão (opção continua em Opções; ajustes antigos migrados).
 
+### Splash (21/10/2026)
+- Análise do que as boas aberturas têm em comum: curtas (2–3 s) e puláveis; continuam a splash do sistema
+  sem piscar (mesma cor de fundo); uma única imagem que já passa o tom do jogo; um só som marcante; nada de
+  texto longo; saída em fade direto na tela seguinte; o carregamento acontece por trás.
+- ✅ `scripts/app/splash_screen.gd`: a chama da lanterna acende na noite, o halo cresce, brasas sobem, entram
+  "百鬼 / HYAKKI / Até o Amanhecer" e toca o sino do templo. 2,6 s, toque pula, sem tremulação com "reduzir
+  flashes". O título nasce por baixo no fade de saída. `boot_splash` do Godot com a mesma cor e sem imagem.
+
+### Música de chefe (21/10/2026, aguardando download)
+- Hoje: `boss_a` = 幕末舞曲～戦～ e `boss_b` = 龍ノ舞 (escolhidas sem ouvir, plano 12.7.2).
+- Candidatas no catálogo, do mesmo 甘茶の音楽工房 (licença já registrada, crédito opcional), categoria 激しい:
+  ボス戦 `boss.mp3` (1:11), 最終戦 `saishuusen.mp3` (3:07), 戦火 `senka.mp3` (2:26), 侵攻 `shinkou.mp3` (2:49),
+  魔王の城 `maounoshiro.mp3` (2:32). Alternativa CC0: Hydrogene "28 High Quality 16-bit RPG Music"
+  ("Battle Theme III", "The Evil One"; zip de 574 MB).
+
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.
 - 21/10 — 629 textos em 11 idiomas; registro e verificação de licenças; testes de integração.
