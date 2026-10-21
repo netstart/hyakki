@@ -97,10 +97,12 @@ func _run_event(event: Dictionary) -> void:
 		"procession":
 			procession(StringName(event["enemy"]), int(event.get("count", 60)))
 			game.hud.toast(tr("event.procession"))
+			AudioManager.play("j_taiko_rim")
 		"drums":
 			drums = true
 			game.hud.toast(tr("event.drums"))
 			AudioManager.play("alert3", 0.7)
+			AudioManager.play("taiko")
 		"boss":
 			game.bosses.spawn(StringName(event["boss"]))
 		"kami":
@@ -185,3 +187,11 @@ func _pick_type(time: float) -> StringName:
 		if roll <= 0.0:
 			return StringName(id)
 	return &"slime_rice"
+
+
+## Partida retomada (plano 10.11): eventos anteriores ao tempo salvo contam como feitos.
+func skip_until(time: float) -> void:
+	for event: Dictionary in _events:
+		if float(event["t"]) < time:
+			event["done"] = true
+	_budget = float(Progression.target_count(time / 60.0, cap))

@@ -1,0 +1,15 @@
+効果音ラボ (Sound Effect Lab) — https://soundeffect-lab.info/
+利用規約 (Terms of use): https://soundeffect-lab.info/agreement/  (checked 2026-10-21; PDF snapshot in docs/licenses)
+
+Summary of the terms (verified 2026-10-21):
+- 商用利用無料 — free for commercial use by individuals, companies and public bodies.
+- クレジット表記は任意 — credit is optional (not required).
+- アプリに操作音として効果音を組み込む（音源ファイルむき出しでも可） — embedding the sounds in an app as
+  functional audio is allowed and is NOT redistribution, even if the files are not hidden.
+- Prohibited: selling or distributing the sounds themselves (including apps whose main purpose is to let
+  people listen to the sounds), hotlinking the files, using the sounds as AI training data, registering
+  music that uses them in YouTube Content ID, sound-trademark registration or any exclusive use, and
+  adult, illegal or public-order-violating use.
+
+Files used in Hyakki (renamed): drum-japanese1/2, drum-japanese-kaka1, temple-bell1, furin-house1,
+koto-glissando1, gong-played1 → assets/audio/sfx/j_*.mp3. Used as in-game effects only.

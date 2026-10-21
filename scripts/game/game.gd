@@ -150,6 +150,91 @@ func _cli_config() -> Dictionary:
 	return cfg
 
 
+## Cenários de teste no aparelho (só em build de debug): leva direto a uma tela difícil de
+## alcançar jogando, para conferir no emulador. Ex.: adb ... --esa command_line_params --,--scenario=chest
+func apply_scenario(name: String) -> void:
+	if not OS.is_debug_build():
+		return
+	match name:
+		"chest":
+			_pending_chests.append(true)
+		"kami":
+			open_kami(kami.offer())
+		"revive":
+			player.revives_used = 99
+			player.invuln = 0.0
+			player.take_damage(99999.0)
+		"dawn", "ending", "secret":
+			GameClock.game_time = RUN_LENGTH - 3.0
+			spawner.skip_until(GameClock.game_time)
+			player.god_mode = true
+
+
+## Partida suspensa (plano 10.11): estado leve para "Continuar partida". Inimigos não entram.
+func snapshot() -> Dictionary:
+	var weapon_rows: Array = []
+	for weapon: Weapon in weapons:
+		weapon_rows.append([String(weapon.id), weapon.level])
+	var passives: Dictionary = {}
+	for id: StringName in level_up.passive_levels:
+		passives[String(id)] = int(level_up.passive_levels[id])
+	return {
+		"version": 1, "saved_unix": int(Time.get_unix_time_from_system()), "config": config.duplicate(),
+		"time": GameClock.game_time, "level": level, "xp": xp, "hp": player.hp,
+		"revives_used": player.revives_used, "weapons": weapon_rows, "passives": passives,
+		"banished": Array(level_up.banished).map(func(b: StringName) -> String: return String(b)),
+		"rerolls": level_up.rerolls, "skips": level_up.skips, "banishes": level_up.banishes,
+		"kami": Array(kami.accepted).map(func(k: StringName) -> String: return String(k)),
+		"ult_charge": ultimate.charge, "kills": tracker.kills, "ryo_run": tracker.ryo,
+		"evolutions": Array(tracker.evolutions).map(func(e: StringName) -> String: return String(e)),
+		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
+		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used, "speed": GameClock.speed,
+	}
+
+
+## Chamado logo depois de start_run(config) com o mesmo config do snapshot.
+func restore_snapshot(s: Dictionary) -> void:
+	for weapon: Weapon in weapons:
+		weapon.on_removed()
+	weapons.clear()
+	for row: Variant in s.get("weapons", []):
+		var pair: Array = row
+		add_weapon(StringName(pair[0]))
+		var weapon := get_weapon(StringName(pair[0]))
+		if weapon:
+			while weapon.level < int(pair[1]) and weapon.level < weapon.max_level:
+				weapon.level_up()
+			tracker.weapon_level[weapon.id] = weapon.level
+	for id: String in (s.get("passives", {}) as Dictionary):
+		level_up.passive_levels[StringName(id)] = int(s["passives"][id])
+	for id: Variant in s.get("banished", []):
+		level_up.banished.append(StringName(id))
+	for id: Variant in s.get("kami", []):
+		kami.accept(StringName(id), true)
+	level_up.apply_stats()
+	level_up.rerolls = int(s.get("rerolls", level_up.rerolls))
+	level_up.skips = int(s.get("skips", level_up.skips))
+	level_up.banishes = int(s.get("banishes", level_up.banishes))
+	level = int(s.get("level", 1))
+	xp = int(s.get("xp", 0))
+	xp_needed = Progression.xp_to_next(level)
+	GameClock.game_time = float(s.get("time", 0.0))
+	spawner.skip_until(GameClock.game_time)
+	player.hp = clampf(float(s.get("hp", player.max_hp())), 1.0, player.max_hp())
+	player.revives_used = int(s.get("revives_used", 0))
+	ultimate.charge = float(s.get("ult_charge", 0.0))
+	tracker.kills = int(s.get("kills", 0))
+	tracker.ryo = int(s.get("ryo_run", 0))
+	for id: Variant in s.get("evolutions", []):
+		tracker.evolutions.append(StringName(id))
+	for id: Variant in s.get("unions", []):
+		tracker.unions.append(StringName(id))
+	endless_phase = bool(s.get("endless_phase", false))
+	_ad_revive_used = bool(s.get("ad_revive_used", false))
+	hud.refresh_speed()
+	open_pause()
+
+
 func is_bot() -> bool:
 	return _bot
 
@@ -536,7 +621,7 @@ func apply_union(union_id: StringName) -> void:
 	var union := _make_weapon(union_id)
 	weapons.insert(mini(first_index, weapons.size()), union)
 	tracker.unions.append(union_id)
-	AudioManager.play("jingle_unlock")
+	AudioManager.play("fanfare")
 
 
 func _make_weapon(id: StringName) -> Weapon:
@@ -599,7 +684,7 @@ func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2,
 		return
 	tracker.on_damage(weapon_id, amount)
 	fx.add_number(at, amount, crit)
-	AudioManager.play("hit%d" % (1 + rng.randi_range(0, 2)), 1.0, 0.08, -14.0)
+	AudioManager.play("crit" if crit else "hit", 1.0, 0.08, -10.0 if crit else -14.0)
 
 
 # --- XP, itens e baús --------------------------------------------------------
@@ -665,13 +750,13 @@ func _purify_screen() -> void:
 			enemies.damage(i, 999999.0, Vector2.ZERO, 0.0)
 	fx.add_ring(me, half.x, Color(1.0, 1.0, 0.85))
 	hud.flash_screen(Color(1.0, 1.0, 0.9))
-	AudioManager.play("magic4", 1.2)
+	AudioManager.play("bell", 1.0, 0.0, -2.0)
 
 
 func on_prop_destroyed(index: int, at: Vector2) -> void:
 	world.on_prop_destroyed(index)
 	fx.burst(at, Color(0.8, 0.75, 0.6), 7)
-	AudioManager.play("impact", 1.4, 0.1, -8.0)
+	AudioManager.play("prop_break", 1.3, 0.1, -8.0)
 	pickups.spawn_item(pickups.random_item_id(), at)
 
 
@@ -704,6 +789,7 @@ func on_boss_defeated(id: StringName, at: Vector2) -> void:
 	hud.hide_boss()
 	hud.toast(tr("boss.defeated") % tr("boss.%s.name" % id))
 	AudioManager.play("jingle_success")
+	AudioManager.play("j_gong", 1.0, 0.0, -4.0)
 	if bosses.active_count() == 0:
 		AudioManager.play_music("endless" if endless_phase else String(stage.get("music", "stage_village")))
 
@@ -879,6 +965,7 @@ func _on_dawn() -> void:
 	bosses.reset()
 	hud.hide_boss()
 	AudioManager.play("jingle_success")
+	AudioManager.play("j_temple_bell")
 	if endless_enabled:
 		endless_phase = true
 		_record_dawn_victory()

@@ -72,6 +72,10 @@ func on_show() -> void:
 	for id: Variant in r.get("new_achievements", []):
 		news.append(tr("results.achievement") % tr("achievement.%s.name" % id))
 	_news.text = "\n".join(news)
+	# Jingle de conquista uma vez por resultado (o on_show roda de novo ao dobrar o ryō).
+	if not news.is_empty() and not bool(r.get("achievement_sound_played", false)):
+		r["achievement_sound_played"] = true
+		AudioManager.play("achievement")
 	_next.text = _next_unlock_text()
 	_double.visible = int(r.get("ryo_earned", 0)) > 0 and not bool(r.get("doubled", false)) \
 			and AdsManager.rewarded_available()

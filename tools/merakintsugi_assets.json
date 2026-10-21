@@ -1,0 +1,10 @@
+{
+  "_doc": "Personagem do Merakintsugi (amostra gratuita idle+walk), montado e reduzido a 50% por tools/make_side_sheet.gd; licença própria (uso comercial, sem redistribuir como asset, sem IA/NFT).",
+  "pack_root": "C:/src/assets/merakintsugi/out",
+  "license_id": "merakintsugi_platformer",
+  "folders": {},
+  "files": {
+    "SpriteSheet.png": "art/actors/heroes/yuki/SpriteSheet.png",
+    "Faceset.png": "art/actors/heroes/yuki/Faceset.png"
+  }
+}

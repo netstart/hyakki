@@ -12,6 +12,26 @@ const SOUND_COOLDOWN_MS := 30
 const POOL_SIZE := 24
 const CROSSFADE := 1.5
 const PRIORITY := ["alert", "alert3", "jingle_gameover"]
+## Grupos de variações (plano 15.7: 6+ variações por som evitam a fadiga em 15 min).
+## `play("hit")` sorteia um dos arquivos. Sorteio fora da simulação: não afeta o determinismo.
+const VARIANTS := {
+	"hit": ["hit1", "hit2", "hit3", "k_hit_punch_0", "k_hit_punch_1", "k_hit_punch_2",
+			"k_hit_punch_3", "k_hit_punch_4", "k_hit_soft_0", "k_hit_soft_1", "k_hit_soft_2",
+			"hy_smack_0", "hy_smack_1", "hy_smack_2", "hy_smack_3", "hy_smack_4", "hy_smack_5"],
+	"player_hurt": ["hit5", "k_hurt_0", "k_hurt_1", "k_hurt_2"],
+	"bell": ["k_bell_0", "k_bell_1", "k_bell_2"],
+	"prop_break": ["impact", "k_wood_0", "k_wood_1"],
+	"ui_accept": ["ui_accept", "k_ui_select_0", "k_ui_select_1", "k_ui_select_2", "k_ui_select_3"],
+	"ui_confirm": ["k_ui_confirm_0", "k_ui_confirm_1"],
+	"ui_cancel": ["ui_cancel", "k_ui_back_0", "k_ui_back_1"],
+	"ui_move": ["ui_move", "k_ui_tick_0", "k_ui_tick_1"],
+	"achievement": ["k_jingle_pizzi_0", "k_jingle_pizzi_1", "k_jingle_pizzi_2", "k_jingle_pizzi_3"],
+	"fanfare": ["k_jingle_steel_0", "k_jingle_steel_1"],
+	"taiko": ["j_taiko_0", "j_taiko_1"],
+	"slash": ["slash", "hy_slash_0", "hy_slash_1", "hy_slash_2", "hy_slash_3", "hy_slash_4", "hy_slash_5"],
+	"whoosh": ["whoosh", "hy_swish_0", "hy_swish_1", "hy_swish_2", "hy_swish_3", "hy_swish_4", "hy_swish_5"],
+	"crit": ["hy_crit_0", "hy_crit_1", "hy_crit_2", "hy_crit_3", "hy_crit_4", "hy_crit_5"],
+}
 
 var _music_a: AudioStreamPlayer
 var _music_b: AudioStreamPlayer
@@ -115,7 +135,8 @@ func play(id: String, pitch: float = 1.0, pitch_jitter: float = 0.0, volume_db: 
 			return
 		if int(_playing_ids.get(id, 0)) >= MAX_PER_SOUND:
 			return
-	var stream := _load(SFX_DIR + id + ".wav")
+	var file := String((VARIANTS[id] as Array).pick_random()) if VARIANTS.has(id) else id
+	var stream := _sfx(file)
 	if stream == null:
 		return
 	var player := _free_player(priority)
@@ -189,6 +210,14 @@ func _free_player(priority: bool) -> AudioStreamPlayer:
 func _on_sfx_finished(player: AudioStreamPlayer) -> void:
 	var id := String(player.get_meta("sound_id", ""))
 	_playing_ids[id] = maxi(0, int(_playing_ids.get(id, 0)) - 1)
+
+
+## Efeito por nome: .wav (Ninja Adventure), .ogg (Kenney) ou .mp3 (効果音ラボ).
+func _sfx(file: String) -> AudioStream:
+	for ext: String in [".wav", ".ogg", ".mp3"]:
+		if ResourceLoader.exists(SFX_DIR + file + ext):
+			return _load(SFX_DIR + file + ext)
+	return _load(SFX_DIR + file + ".wav")
 
 
 func _load(path: String) -> AudioStream:

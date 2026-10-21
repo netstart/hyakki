@@ -6,7 +6,7 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 
 ## O que tem
 
-- 6 guardiões, 6 fases (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos,
+- 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos,
   37 yōkai, 12 chefes, 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
 - Santuário (18 power-ups, reembolso total), 40 conquistas que desbloqueiam conteúdo, Diário do Guardião,
   história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V.
@@ -56,6 +56,40 @@ O APK inclui arm64-v8a (celulares) e x86_64 (emulador). Validado no emulador `Re
 
 > O pacote `dev.hyakki.prototype` (em `export_presets.cfg`) é provisório: escolha o definitivo antes de
 > publicar, porque **ele não pode mudar depois que o app sai na Play Store**.
+
+## Publicação (build de release)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
+```
+
+O script roda todas as verificações, gera `build\release\hyakki-release.aab` (para a Play Console) e
+`build\release\hyakki-release.apk` (release, para conferir), confere as assinaturas, instala o APK no
+emulador, abre o jogo e falha se houver erro do Godot no logcat. Opções: `-VersionCode N`
+(obrigatório subir a cada envio à Play Store), `-VersionName 1.0.1`, `-SkipChecks`, `-NoEmulator`.
+
+- **Otimização:** template de release do Godot, R8/minify do Gradle (`admob/general/android/enable_r8_optimization`),
+  texturas ETC2/ASTC, só os recursos do jogo (testes, ferramentas, docs, mocks e binários iOS dos plugins
+  ficam de fora) e AAB com uma ABI por aparelho.
+- **Chave de envio:** `C:\src\keys\hyakki-upload.keystore`, com usuário e senha em
+  `C:\src\keys\hyakki-release.env`. **Fora do repositório; faça backup dos dois arquivos.** Na Play Console,
+  ative a "Assinatura de apps do Google Play": o Google guarda a chave final e esta vira só a chave de envio
+  (se perder, dá para pedir a troca).
+- **Anúncios:** o build usa o AdMob real (plugin Poing, com UMP), mas com os IDs de **teste** do Google até
+  `AdMobProvider.RELEASE_UNITS` e `admob/general/android/app_id` receberem os IDs da sua conta AdMob.
+- **Compras:** Google Play Billing real; só funciona com o app publicado na Play Console (teste interno) e
+  um aparelho com Play Store. No emulador sem Play Store a compra responde "não concluída".
+
+## Testes no aparelho (build de debug)
+
+Cenários que levam direto a telas difíceis de alcançar jogando (só funcionam em build de debug):
+
+```bash
+adb shell "run-as dev.hyakki.prototype sh -c 'echo chest > files/scenario.txt'"
+```
+
+Depois abra o jogo: ele lê e apaga o arquivo. Cenários: `chest`, `kami`, `revive` (anúncio premiado de teste do AdMob), `dawn` (vitória),
+`ending` (final), `secret` (final verdadeiro), `hero:yuki` (jogar com um herói bloqueado).
 
 ## Conteúdo, textos e licenças
 

@@ -4,6 +4,7 @@ STRINGS = {
     "menu.back": ["Voltar", "Back", "Volver", "Zurück", "Retour", "Назад", "Kembali", "戻る", "뒤로", "返回", "返回"],
     "title.subtitle": ["Até o Amanhecer", "Until Dawn", "Hasta el amanecer", "Bis zum Morgengrauen", "Jusqu'à l'aube", "До рассвета", "Hingga Fajar", "夜明けまで", "새벽까지", "直到黎明", "直到黎明"],
     "title.play": ["Jogar", "Play", "Jugar", "Spielen", "Jouer", "Играть", "Main", "プレイ", "플레이", "開始", "开始"],
+    "title.continue": ["Continuar partida", "Continue run", "Continuar partida", "Lauf fortsetzen", "Reprendre la partie", "Продолжить забег", "Lanjutkan permainan", "続きから", "이어서 하기", "繼續遊戲", "继续游戏"],
     "title.daily": ["Desafio Diário", "Daily Challenge", "Desafío diario", "Tägliche Herausforderung", "Défi du jour", "Ежедневное испытание", "Tantangan Harian", "デイリーチャレンジ", "일일 도전", "每日挑戰", "每日挑战"],
     "title.sanctuary": ["Santuário", "Sanctuary", "Santuario", "Heiligtum", "Sanctuaire", "Святилище", "Kuil", "神社", "신사", "神社", "神社"],
     "title.shop": ["Loja", "Shop", "Tienda", "Laden", "Boutique", "Лавка", "Toko", "ショップ", "상점", "商店", "商店"],

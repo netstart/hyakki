@@ -55,7 +55,7 @@ func _ready() -> void:
 		grid.add_child(check)
 
 	grid.add_child(label(tr("options.privacy")))
-	grid.add_child(button(tr("options.privacy_open"), func() -> void: app.go(&"consent"), Vector2(220, 28)))
+	grid.add_child(button(tr("options.privacy_open"), _open_privacy, Vector2(220, 28)))
 	grid.add_child(label(tr("options.purchases")))
 	grid.add_child(button(tr("shop.restore"), func() -> void: PurchaseManager.restore(), Vector2(220, 28)))
 	grid.add_child(label(tr("options.about")))
@@ -89,3 +89,9 @@ func _choice(grid: GridContainer, key: String, options: Array) -> void:
 			option.selected = option.item_count - 1
 	option.item_selected.connect(func(index: int) -> void: Settings.set_value(key, option.get_item_metadata(index)))
 	grid.add_child(option)
+
+
+## AdMob: formulário de privacidade do Google (UMP); simulado: a tela própria.
+func _open_privacy() -> void:
+	if not AdsManager.open_privacy_options(func() -> void: pass):
+		app.go(&"consent")

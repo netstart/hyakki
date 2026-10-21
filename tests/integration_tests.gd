@@ -23,6 +23,7 @@ func _ready() -> void:
 	_test_sanctuary()
 	_test_shop_clock()
 	_test_ads_rules()
+	await _test_suspended_run()
 	_restore_save()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -236,3 +237,40 @@ func _test_ads_rules() -> void:
 	SaveManager.data["last_open_ad_unix"] = 0
 	SaveManager.data["purchases"]["remove_open_ad"] = true
 	_check(not AdsManager.should_show_app_open(), "compra remove o anúncio de abertura")
+
+
+## Partida suspensa (plano 10.11): snapshot → nova partida → restaurar dá o mesmo estado.
+func _test_suspended_run() -> void:
+	var scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var cfg := {"hero": "goro", "stage": "bamboo", "moon": 1, "mode": "normal", "seed": 77, "speed": 2}
+	var first := scene.instantiate() as HyakkiGame
+	first.config = cfg.duplicate()
+	add_child(first)
+	await get_tree().process_frame
+	first.add_weapon(&"kunai")
+	first.get_weapon(&"kunai").level_up()
+	first.get_weapon(&"kunai").level_up()
+	first.level_up.passive_levels[&"sake"] = 2
+	first.kami.accept(&"susanoo", true)
+	first.level = 9
+	first.xp = 5
+	GameClock.game_time = 333.0
+	first.player.hp = 42.0
+	var snap := first.snapshot()
+	first.queue_free()
+	await get_tree().process_frame
+	var json_round: Dictionary = JSON.parse_string(JSON.stringify(snap))
+	var second := scene.instantiate() as HyakkiGame
+	second.config = json_round["config"]
+	add_child(second)
+	await get_tree().process_frame
+	second.restore_snapshot(json_round)
+	var again := second.snapshot()
+	for key: String in ["level", "xp", "weapons", "passives", "kami", "hp"]:
+		_check(JSON.stringify(again[key]) == JSON.stringify(snap[key]), "partida retomada mantém %s" % key)
+	_check(is_equal_approx(GameClock.game_time, 333.0), "partida retomada mantém o tempo")
+	_check(is_equal_approx(second.player.stats.get_stat("might"), 1.0 + 0.2 + 0.25),
+			"retomada reaplica passivas e Kami no StatBlock")
+	second.queue_free()
+	GameClock.paused = false
+	await get_tree().process_frame

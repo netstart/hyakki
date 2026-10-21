@@ -1,0 +1,14 @@
+Platformer character pack — Merakintsugi
+https://merakintsugi.itch.io/platformer-character-pack  (checked 2026-10-21; PDF snapshot in docs/licenses)
+
+License (from the asset page, 2026-10-21):
+- Available for both commercial and non-commercial projects.
+- Do not resell or redistribute as game assets. They must be used only as part of a project.
+- Credit/Attribution is optional.
+- Feel free to modify the assets as needed.
+- Use of these assets for AI training or NFT conversion is strictly prohibited.
+- The page states: "No generative AI was used".
+
+Used in Hyakki: only the free sample "sample(idle&walk).zip" (idle and walk animations), combined into one
+sheet and reduced to 50% for the hero Yuki (assets/art/actors/heroes/yuki/). The paid full pack (attacks,
+dodge, hurt, etc.) is not included. Credited in the game's Credits screen anyway.

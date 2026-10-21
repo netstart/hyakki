@@ -1,0 +1,32 @@
+{
+  "_doc": "Helton Yan's Pixel Combat (CC BY 4.0): 4 arquivos baixados por HTTP Range do zip do itch.io e cortados em 6 varia\u00e7\u00f5es cada por tools/split_variations.py (48 kHz, 16 bit, mono).",
+  "pack_root": "C:/src/assets/heltonyan/cut",
+  "license_id": "helton_yan_pixel_combat",
+  "folders": {},
+  "files": {
+    "hy_slash_0.wav": "audio/sfx/hy_slash_0.wav",
+    "hy_slash_1.wav": "audio/sfx/hy_slash_1.wav",
+    "hy_slash_2.wav": "audio/sfx/hy_slash_2.wav",
+    "hy_slash_3.wav": "audio/sfx/hy_slash_3.wav",
+    "hy_slash_4.wav": "audio/sfx/hy_slash_4.wav",
+    "hy_slash_5.wav": "audio/sfx/hy_slash_5.wav",
+    "hy_swish_0.wav": "audio/sfx/hy_swish_0.wav",
+    "hy_swish_1.wav": "audio/sfx/hy_swish_1.wav",
+    "hy_swish_2.wav": "audio/sfx/hy_swish_2.wav",
+    "hy_swish_3.wav": "audio/sfx/hy_swish_3.wav",
+    "hy_swish_4.wav": "audio/sfx/hy_swish_4.wav",
+    "hy_swish_5.wav": "audio/sfx/hy_swish_5.wav",
+    "hy_smack_0.wav": "audio/sfx/hy_smack_0.wav",
+    "hy_smack_1.wav": "audio/sfx/hy_smack_1.wav",
+    "hy_smack_2.wav": "audio/sfx/hy_smack_2.wav",
+    "hy_smack_3.wav": "audio/sfx/hy_smack_3.wav",
+    "hy_smack_4.wav": "audio/sfx/hy_smack_4.wav",
+    "hy_smack_5.wav": "audio/sfx/hy_smack_5.wav",
+    "hy_crit_0.wav": "audio/sfx/hy_crit_0.wav",
+    "hy_crit_1.wav": "audio/sfx/hy_crit_1.wav",
+    "hy_crit_2.wav": "audio/sfx/hy_crit_2.wav",
+    "hy_crit_3.wav": "audio/sfx/hy_crit_3.wav",
+    "hy_crit_4.wav": "audio/sfx/hy_crit_4.wav",
+    "hy_crit_5.wav": "audio/sfx/hy_crit_5.wav"
+  }
+}

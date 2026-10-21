@@ -43,6 +43,9 @@ var _sheet: SpriteSheet
 var _shadow: Texture2D
 var _walk_time: float = 0.0
 var _hit_flash: float = 0.0
+## Só para heróis "side": tamanho do quadro e nº de quadros (parado, andando).
+var _side_size := Vector2.ZERO
+var _side_counts := Vector2i(1, 1)
 
 
 func _ready() -> void:
@@ -51,7 +54,15 @@ func _ready() -> void:
 
 func setup(hero_data: Dictionary) -> void:
 	hero = hero_data
-	_sheet = SpriteSheet.load_sheet(String(hero_data["sprite"]), "dir4", Vector2(16, 16), 4)
+	if String(hero_data.get("layout", "dir4")) == "side":
+		# Herói desenhado de lado (2 linhas: parado e andando), espelhado para a esquerda.
+		var frame: Array = hero_data.get("frame", [16, 16])
+		_side_size = Vector2(float(frame[0]), float(frame[1]))
+		_side_counts = Vector2i(int(hero_data.get("idle_frames", 1)), int(hero_data.get("walk_frames", 1)))
+		_sheet = SpriteSheet.load_sheet(String(hero_data["sprite"]), "side", _side_size, 1)
+	else:
+		_side_size = Vector2.ZERO
+		_sheet = SpriteSheet.load_sheet(String(hero_data["sprite"]), "dir4", Vector2(16, 16), 4)
 	stats.clear()
 	stats.set_source("hero", hero_data.get("modifiers", {}))
 
@@ -132,7 +143,7 @@ func take_damage(amount: float) -> void:
 	_hit_flash = 0.12
 	damage_taken_time = 0.0
 	Events.player_hit.emit(final)
-	AudioManager.play("hit5", 1.0, 0.05, -2.0)
+	AudioManager.play("player_hurt", 1.0, 0.05, -2.0)
 	Settings.vibrate(40)
 	game().shake(2.0)
 	if god_mode:
@@ -188,7 +199,7 @@ func _draw() -> void:
 	if bool(Settings.get_value("hp_bar_below")):
 		_draw_hp(Vector2(-8.0, 7.0))
 	else:
-		_draw_hp(Vector2(-8.0, -22.0))
+		_draw_hp(Vector2(-8.0, sprite_top() - 9.0))
 	if show_hitbox:
 		draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 16, Color.CYAN, 1.0)
 
@@ -197,17 +208,39 @@ func _draw_body(offset: Vector2, tint: Color, main: bool) -> void:
 	draw_texture(_shadow, offset + Vector2(-_shadow.get_width() * 0.5, 1.0))
 	var moving := velocity.length() > 5.0
 	var frame := int(_walk_time * 8.0) if moving else 0
-	var src := _sheet.region(frame, dir)
 	var blink := main and invuln > 0.0 and int(invuln * 20.0) % 2 == 0
 	var tex := _sheet.flash_texture if (blink or (main and _hit_flash > 0.0)) else _sheet.texture
 	if not is_alive and main:
 		tint = Color(0.6, 0.6, 0.7)
-	draw_texture_rect_region(tex, Rect2(offset + Vector2(-8.0, -13.0), Vector2(16, 16)), src, tint)
+	if _side_size != Vector2.ZERO:
+		_draw_side(tex, offset, moving, tint)
+	else:
+		draw_texture_rect_region(tex, Rect2(offset + Vector2(-8.0, -13.0), Vector2(16, 16)), _sheet.region(frame, dir), tint)
 	if main:
 		# Brilho da lanterna carregada pela guardiã.
 		var glow := offset + Vector2(5.0 * facing_x, -5.0)
 		draw_circle(glow, 3.0, Color(lantern_tint.r, lantern_tint.g, lantern_tint.b, 0.35))
 		draw_circle(glow, 1.5, Color(1.0, 0.95, 0.7, 0.9))
+
+
+## Linha 0 = parado (anima sempre), linha 1 = andando (conforme a distância). Pés na base.
+func _draw_side(tex: Texture2D, offset: Vector2, moving: bool, tint: Color) -> void:
+	var row := 1 if moving else 0
+	var count := _side_counts.y if moving else _side_counts.x
+	var t := _walk_time * 14.0 if moving else Time.get_ticks_msec() / 110.0
+	var src := Rect2(Vector2(posmod(int(t), maxi(1, count)) * _side_size.x, row * _side_size.y), _side_size)
+	var dest := Rect2(offset + Vector2(-_side_size.x * 0.5, 3.0 - _side_size.y), _side_size)
+	if facing_x < 0.0:
+		draw_set_transform(Vector2(offset.x * 2.0, 0.0), 0.0, Vector2(-1.0, 1.0))
+		draw_texture_rect_region(tex, dest, src, tint)
+		draw_set_transform(Vector2.ZERO)
+	else:
+		draw_texture_rect_region(tex, dest, src, tint)
+
+
+## Topo do desenho da guardiã (para a barra de vida acima da cabeça).
+func sprite_top() -> float:
+	return 3.0 - _side_size.y if _side_size != Vector2.ZERO else -13.0
 
 
 func _draw_hp(at: Vector2) -> void:
