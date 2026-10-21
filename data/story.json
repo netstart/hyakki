@@ -1,0 +1,21 @@
+[
+  {"id": "intro", "panels": [
+    {"text": "story.intro.1", "scene": "village_night", "face": ""},
+    {"text": "story.intro.2", "scene": "procession", "face": ""},
+    {"text": "story.intro.3", "scene": "forge", "face": "res://assets/art/actors/heroes/tora/Faceset.png"},
+    {"text": "story.intro.4", "scene": "lantern", "face": "res://assets/art/actors/heroes/aki/Faceset.png"},
+    {"text": "story.intro.5", "scene": "lantern", "face": "res://assets/art/actors/heroes/tora/Faceset.png"}
+  ]},
+  {"id": "ending", "panels": [
+    {"text": "story.ending.1", "scene": "yomi_gate", "face": "res://assets/art/bosses/kuroe/Faceset.png"},
+    {"text": "story.ending.2", "scene": "yomi_gate", "face": "res://assets/art/actors/heroes/aki/Faceset.png"},
+    {"text": "story.ending.3", "scene": "dawn", "face": "res://assets/art/bosses/kuroe/Faceset.png"},
+    {"text": "story.ending.4", "scene": "dawn", "face": ""},
+    {"text": "story.ending.5", "scene": "temple_lanterns", "face": "res://assets/art/actors/heroes/tora/Faceset.png"}
+  ]},
+  {"id": "secret_ending", "panels": [
+    {"text": "story.secret.1", "scene": "yomi_gate", "face": ""},
+    {"text": "story.secret.2", "scene": "dawn", "face": "res://assets/art/actors/heroes/aki/Faceset.png"},
+    {"text": "story.secret.3", "scene": "temple_lanterns", "face": ""}
+  ]}
+]

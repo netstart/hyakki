@@ -1,0 +1,17 @@
+{
+  "_doc": "Assets de outros pacotes (licenças próprias, registradas em licenses/registry.json).",
+  "pack_root": "C:/src/assets/fonts/fusion-pixel/12px",
+  "license_id": "fusion_pixel_font",
+  "folders": {},
+  "files": {
+    "fusion-pixel-12px-proportional-latin.ttf.woff2": "fonts/fusion_pixel_12_latin.woff2",
+    "fusion-pixel-12px-proportional-ja.ttf.woff2": "fonts/fusion_pixel_12_ja.woff2",
+    "fusion-pixel-12px-proportional-ko.ttf.woff2": "fonts/fusion_pixel_12_ko.woff2",
+    "fusion-pixel-12px-proportional-zh_hans.ttf.woff2": "fonts/fusion_pixel_12_zh_hans.woff2",
+    "fusion-pixel-12px-proportional-zh_tw.ttf.woff2": "fonts/fusion_pixel_12_zh_tw.woff2",
+    "OFL.txt": "licenses_src/fusion_pixel_OFL.txt",
+    "LICENSES/ark-pixel/OFL.txt": "licenses_src/fusion_pixel_upstream_ark_pixel_OFL.txt",
+    "LICENSES/cubic-11/OFL.txt": "licenses_src/fusion_pixel_upstream_cubic_11_OFL.txt",
+    "LICENSES/galmuri/LICENSE.txt": "licenses_src/fusion_pixel_upstream_galmuri_LICENSE.txt"
+  }
+}

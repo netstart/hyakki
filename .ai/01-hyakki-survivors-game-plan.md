@@ -59,6 +59,15 @@ Modelo de negócio: **gratuito com anúncios**. Há um anúncio de abertura para
 
 Estimativa para 1 desenvolvedor em tempo parcial: **~22–26 semanas** até a 1.0 na Play Store; **protótipo jogável no Redmi na semana 3**.
 
+### Estado da implementação (21/10/2026)
+
+O conteúdo da 1.0 está implementado e validado no PC e no emulador Android (`Redmi_Note_14_Pro_Plus_5G`, AVD sem Play Store). Detalhes, números e checklist em [03-progresso-implementacao.md](03-progresso-implementacao.md).
+
+- **Feito:** 6 heróis, 6 fases (5 + secreta), 26 armas (12 + 12 evoluções + 2 uniões), 12 passivos, ~37 yōkai + props, 12 chefes (Kuroe com 3 fases, Shinigami, Izanami), 15 Kami, 6 Golpes da Lanterna, Santuário (18 power-ups com reembolso), 40 conquistas, Diário, história completa (intro, falas, amanhecer, finais), Noite Sem Fim, Desafio Diário, Brisa/Normal/Lua Vermelha I–V, velocidade 1x/2x/3x determinística, 11 idiomas (629 textos), Loja de 6 h, anúncio de abertura, reviver e dobrar ryō, compra para remover o anúncio, telas de Licenças e Créditos, registro de licenças verificado (12.6).
+- **Simulado:** anúncios e compra usam provedores de teste (`AdsManager`/`PurchaseManager`), porque o plugin AdMob e o Play Billing exigem contas e o emulador não tem Play Store.
+- **Depende de contas externas (fora do alcance aqui):** Play Console, AdMob real + UMP, teste fechado, ID do pacote definitivo (hoje `dev.hyakki.prototype`), keystore de release, hospedar a política de privacidade e o `app-ads.txt`.
+- **Precisa de pessoas:** revisão das traduções por nativos (7.7.3), playtests humanos de balanceamento e de diversão (15.3–15.5) e teste no Redmi físico.
+
 ---
 
 ## 1. Pesquisa: Vampire Survivors e concorrentes
@@ -448,6 +457,48 @@ Regras: 3 opções aleatórias sem repetição na partida; cada Kami tem cor e p
 - **Noite Sem Fim** (após vencer, continuar até o Shinigami às 20:00; ouro ×1,5).
 - **Desafio Diário** (pós-1.0): semente fixa por data, herói/fase sorteados, ranking local.
 
+### 4.14 Velocidade do jogo (1x, 2x, 3x)
+
+O jogador pode acelerar a partida em **1x (normal), 2x ou 3x**. Assim, uma fase de 15 min pode ser jogada em ~7,5 min (2x) ou ~5 min (3x): bom para sessões curtas no celular, para repetir fases já dominadas e para farmar ryō.
+
+**Regras de jogo**
+
+- A velocidade muda **só o ritmo do tempo real**. As regras são as mesmas: o relógio da fase conta o **tempo de jogo** (o amanhecer continua aos 15:00 do relógio do jogo), e HP, dano, XP, ryō, drops e ondas não mudam. Por isso a velocidade **não dá vantagem nem desvantagem nas recompensas**: só exige reflexo mais rápido.
+- **Botão no HUD**, ao lado da pausa (≥ 48 dp), mostrando "1x", "2x" ou "3x". Cada toque passa para a próxima velocidade (1x → 2x → 3x → 1x). Também fica em Opções e no menu de Pausa.
+- A escolha é **lembrada** entre partidas (em `Settings`). Padrão: 1x.
+- **Liberação:** 2x e 3x ficam disponíveis a partir da **2ª partida** (depois do tutorial da 1ª). Na 1ª partida o botão não aparece, para não confundir quem está aprendendo.
+- **Sempre em 1x, independentemente da escolha:** telas de level-up, baú, Kami, pausa, morte e reviver (17.6), resultados, falas dos chefes (balão de 2 s) e entrada do chefe com o nome. Esses momentos são decisões e recompensas e precisam ser lidos com calma.
+- **Ultimate (Golpe da Lanterna) e hit-stop** usam o tempo de jogo, então também ficam mais rápidos. O *hit-stop* (8.5) continua com ~40 ms **reais**, para manter a sensação de impacto.
+- **Desafio Diário:** velocidade permitida, porque o resultado é o mesmo em qualquer velocidade. O ranking mostra o tempo de jogo, não o tempo real.
+- **Conquistas novas:** "Vento de Fūjin" (vencer uma fase em 3x) e "Sem Pressa" (vencer a fase 5 em 1x na Lua Vermelha III ou mais).
+- **Não afeta:** esperas de 6 h da Loja (17.3), notificações e qualquer contagem em tempo real fora da partida.
+
+**Sensação e legibilidade**
+
+- **Música:** continua na velocidade e no tom normais (acelerar música soa mal). Em 2x/3x, ela ganha uma camada de percussão ou um filtro leve, que dá a sensação de pressa sem distorcer.
+- **Efeitos sonoros:** tocam no tom normal. Como há 2–3× mais eventos por segundo, o limite de polifonia e o *cooldown* por som (9.3) passam a contar em **tempo real**, para o áudio não embolar. A coleta de brasas mantém a escala musical (15.7).
+- **Animações e partículas** seguem o tempo de jogo, então ficam mais rápidas e coerentes com o movimento.
+- **Números de dano** duram o mesmo tempo **real** (0,6 s), para continuarem legíveis.
+- **Avisos de ataque de chefe** (≥ 0,7 s, 15.2) continuam definidos em tempo de jogo: em 3x isso dá ~0,23 s reais. Isso faz parte do desafio da velocidade e fica explicado na primeira vez que o jogador liga o 3x ("Os inimigos também ficam mais rápidos!").
+- **Hápticos:** no máximo 1 vibração a cada 80 ms reais, para não virar zumbido contínuo.
+
+**Implementação técnica**
+
+- **Não usar `Engine.time_scale` sozinho.** Ele aumenta o *delta* de cada passo. Com projéteis rápidos e a colisão própria por *spatial hash* (10.6), passos maiores fazem projéteis **atravessarem** inimigos sem acertar (*tunneling*) e mudam o resultado da partida conforme a velocidade.
+- Em vez disso, um **`GameClock`** com **passo fixo** de 1/60 s de tempo de jogo: em 2x, roda **2 passos de simulação por frame**; em 3x, **3 passos**. Movimento, colisão, spawner, armas, brasas e IA rodam nesses passos. Renderização, UI e áudio rodam uma vez por frame.
+- Resultado: a mesma semente produz **exatamente a mesma partida** em 1x, 2x ou 3x, o que mantém o determinismo de 15.1 e permite que o bot (14.4) e a simulação de balanceamento (15.4) usem a velocidade máxima sem distorcer os dados.
+- Todo sistema de jogo lê o tempo do `GameClock` (`game_time`, `step_delta`), nunca de `Time.get_ticks_msec()`. Shaders que usam `TIME` recebem um uniform `game_time`. Tweens de gameplay usam o processo do `GameClock`. Tweens de UI usam tempo real.
+- O teste de determinismo de 15.1 passa a comparar o hash do estado no minuto 5 **entre as três velocidades**.
+
+**Performance**
+
+- Em 3x, a simulação custa ~3× mais CPU. Orçamentos de 11.4:
+  - **1x:** 500 inimigos a 60 fps (meta atual).
+  - **2x:** ≥ 55 fps no pior cenário.
+  - **3x:** ≥ 50 fps no pior cenário.
+- **Proteção automática:** se a simulação passar do orçamento por 5 s seguidos, o jogo aplica primeiro o "Modo Desempenho" (11.4). Se ainda não bastar, ele **reduz a velocidade** (3x → 2x) e mostra um aviso discreto ("Velocidade reduzida para manter a fluidez"). O jogo nunca deixa a partida travar para manter a velocidade.
+- **Telemetria local (14.3):** registrar a velocidade usada em cada partida e quantas vezes a proteção automática foi acionada.
+
 ---
 
 ## 5. Level design
@@ -481,8 +532,8 @@ Regras: 3 opções aleatórias sem repetição na partida; cada Kami tem cor e p
 | **15:00** | — | — | **Amanhecer**: inimigos viram cinza, vitória |
 
 Regras do *spawner*:
-- Nasce fora da tela, num anel entre 1,1× e 1,3× a diagonal visível, priorizando a direção do movimento do jogador (60%).
-- Se `vivos < alvo`, gera até `min(alvo − vivos, 20)` por frame de spawn (intervalo de 0,25 s).
+- Nasce **logo além da borda visível da tela** (retângulo da tela + 16–40 px), priorizando a direção do movimento do jogador (60%). *(Ajustado no protótipo: um anel pela diagonal deixava quem nasce acima ou abaixo a 250+ px da tela numa tela 20:9, e a horda demorava ~12 s para chegar.)*
+- Se `vivos < alvo`, gera até `min(alvo − vivos, 20, orçamento)` por frame de spawn (intervalo de 0,25 s). O **orçamento** cresce `2,5 + 1,5·minuto` inimigos por segundo e acumula no máximo 2 s. *(Ajustado no protótipo: sem orçamento, quem mata rápido abria uma "torneira infinita" de XP, com nível 17 aos 75 s.)*
 - Inimigos a mais de 2× a diagonal de distância são **teleportados** para a frente do jogador (padrão do gênero: nunca "perde" a horda).
 - Teto absoluto: 500 inimigos vivos (ajustável pelo perfil de performance).
 
@@ -517,9 +568,9 @@ Regras do *spawner*:
 
 | Inimigo | Arquétipo | HP | Vel. (px/s) | Dano | XP | Fase |
 |---|---|---|---|---|---|---|
-| Slime-de-Arroz | Perseguidor | 6 | 35 | 5 | 1 | 1 |
-| Morcego-Lanterna | Enxame | 4 | 70 | 4 | 1 | 1–2 |
-| Esqueleto-Camponês | Perseguidor | 15 | 40 | 8 | 2 | 1 |
+| Slime-de-Arroz | Perseguidor | 6 | 35 | 2 | 1 | 1 |
+| Morcego-Lanterna | Enxame | 4 | 70 | 2 | 1 | 1–2 |
+| Esqueleto-Camponês | Perseguidor | 15 | 40 | 4 | 2 | 1 |
 | Kappa jovem | Investida | 20 | 45/180 | 10 | 3 | 1 |
 | Fantasma Sombra | Sombra | 12 | 50 | 8 | 2 | 1–5 |
 | Espírito de Bambu | Perseguidor | 25 | 38 | 10 | 3 | 2 |
@@ -572,8 +623,8 @@ Regras gerais: barra de vida no topo, entrada com nome em letreiro (1,5 s), aren
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │[XP ██████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░  Nv 23 ]      │
-│ ⚔⚔⚔⚔⚔⚔  ◆◆◆◆◆◆            12:47            ☠ 3.412   ¥ 186   [❚❚]   │
-│ (armas)  (passivos)       (relógio)        (abates) (ryō) (pausa)     │
+│ ⚔⚔⚔⚔⚔⚔  ◆◆◆◆◆◆         12:47        ☠ 3.412   ¥ 186   [2x] [❚❚]   │
+│ (armas)  (passivos)    (relógio)    (abates) (ryō) (veloc.)(pausa)    │
 │                                                                        │
 │                                                                        │
 │                               @  ← herói (centro)                      │
@@ -663,9 +714,16 @@ As fontes pixel do Ninja Adventure e a Pixelify Sans **não** cobrem CJK, e o ci
 
 | Escrita | Fonte pixel (jogo) | Fonte legível (textos longos, Licenças) | Licença esperada |
 |---|---|---|---|
-| Latina + cirílica | fonte do pack ou Pixelify Sans, se cobrir cirílico; senão uma pixel font OFL com cirílico | Noto Sans | OFL 1.1 |
-| Japonês / chinês | **Fusion Pixel Font** ou **Ark Pixel Font** (12 px) | Noto Sans CJK | OFL 1.1 |
+| Latina + cirílica | fonte do pack ou **monogram** (CC0); alternativas: **Press Start 2P** (OFL, cirílico confirmado) e **Pixeloid** (OFL) | Noto Sans | CC0 / OFL 1.1 |
+| Japonês | **Fusion Pixel Font** ou **Ark Pixel Font** (12 px) | Noto Sans CJK | OFL 1.1 |
+| Chinês tradicional (zh-TW) | Fusion Pixel Font; alternativas taiwanesas: **Cubic 11 / 俐方體11號** (11×11) e **BoutiqueBitmap9x9 / 精品點陣體** (12.858 caracteres, inclui símbolos de botões de controle) | Noto Sans CJK TC | OFL 1.1 (ambas com **nome reservado**: o subconjunto precisa de outro nome) |
+| Chinês simplificado (zh-CN) | Fusion Pixel Font ou BoutiqueBitmap9x9 | Noto Sans CJK SC; títulos: **Smiley Sans / 得意黑** (OFL) | OFL 1.1 |
 | Coreano | Fusion Pixel Font ou **Galmuri** | Noto Sans CJK KR | OFL 1.1 |
+| **Uma fonte para quase tudo (candidata)** | **Silver** (Poppy Works): latim, cirílico, grego, japonês, coreano e chinês numa só fonte pixel | — | **CC BY 4.0** (crédito obrigatório; projetos acima de US$ 100 mil precisam de licença) |
+
+**Rejeitadas:** **Zpix / 最像素** (uso comercial pago: US$ 1.000 por produto, e proíbe fazer subconjunto). **VonwaonBitmap / 凤凰点阵体** é CC0, mas a origem dos glifos é contestada pelos próprios usuários (derivaria de uma fonte comercial antiga), então fica só como reserva. **Misaki** e **JFドットフォント** têm licenças diferentes por fonte, e várias não liberam o uso em jogo. **Cyrillic Pixel-7** é só para uso pessoal; **F77 Minecraft** é CC BY-ND (proíbe modificar).
+
+**Decisão na Fase 0:** testar a **Silver** contra a combinação Fusion Pixel + monogram. Se a Silver cobrir todos os caracteres de `strings.csv` nos 11 idiomas (teste de 7.7.4), ela simplifica o tema e o *fallback*. O custo é um crédito obrigatório a mais.
 
 - Usar o *fallback* de fontes do Godot (`FontFile.fallbacks`) para que um único tema sirva para todos os idiomas.
 - **Tamanho do download:** fontes CJK completas têm vários MB. `tools/subset_fonts.py` (fonttools `pyftsubset`) gera subconjuntos só com os caracteres de `strings.csv`. A licença OFL permite isso, mas conferir se há **Reserved Font Name**: se houver, o subconjunto precisa de outro nome.
@@ -770,6 +828,55 @@ void fragment() {
 | Chefes faltantes | variante de cor + escala ×2 + padrões de ataque diferentes |
 | Ícone do app / arte da loja | Composição com sprites do pack ampliados ×8 sobre fundo pintado com gradiente; Feature Graphic 1024×500 |
 
+### 8.7 Animação e física (atenção especial)
+
+Num survivors-like, o jogador passa 15 minutos olhando para centenas de coisas se mexendo. **Animação ruim ou física "esquisita"** (inimigos tremendo, empilhados, deslizando, atravessando paredes) é o que mais faz o jogo parecer amador, mesmo com arte boa. Por isso estas duas áreas têm regras e critérios próprios. As metas medíveis estão em 15.2.
+
+#### 8.7.1 Animação de personagens e inimigos
+
+| Regra | Detalhe |
+|---|---|
+| **Conjunto mínimo por personagem** | herói: `idle`, `walk` em 4 direções, `hit`, `die`, `victory`; inimigo comum: `walk`, `hit`, `die`; chefe: `idle`, `walk`, 1 animação por padrão de ataque com **antecipação** visível (≥ 0,7 s, 15.2), `hurt`, `die` em várias etapas. O que o Ninja Adventure não tiver é feito à mão no Pixelorama/LibreSprite (8.3) |
+| **Animação ligada ao movimento** | a velocidade da animação de andar acompanha a velocidade real (`speed_scale = velocidade_atual / velocidade_base`, entre 0,6 e 1,6). Assim o personagem **não "patina"**: os pés acompanham o chão. Parado = `idle`, nunca `walk` congelado |
+| **Direção** | o herói vira para a direção do joystick; os inimigos, para a direção do movimento. Para não ficarem trocando de lado sem parar, só viram quando a direção muda por mais de 0,1 s (*histerese*) |
+| **Variedade na horda** | cada inimigo começa a animação num **quadro aleatório** e com velocidade ±10%. Isso evita 300 inimigos andando perfeitamente sincronizados, o que parece artificial |
+| **Animação procedural barata** | *squash & stretch* leve (escala 0,9–1,1) ao levar dano, ao pousar e ao nascer; balanço sutil (*bob*) de 1 px ao andar nos inimigos sem animação de andar; inclinação de 5–8° na direção do movimento nos que voam |
+| **Feedback de dano** | flash branco de 0,08 s (8.4) + recuo (*knockback*) + número de dano, sempre os três juntos. O herói pisca durante a invencibilidade (15.2) |
+| **Morte** | inimigo comum: dissolve em 0,25 s + 4–6 partículas da cor dele (8.5) + a brasa "salta" e cai. Chefe: câmera desacelera 0,3 s, explosão em etapas, `dissolve` (8.4) e chuva de brasas |
+| **Nascimento** | inimigos surgem fora da tela (5.2). Os que nascem dentro dela (cercos, invocações) aparecem com um círculo no chão por 0,4 s antes, nunca do nada em cima do jogador |
+| **Pixel perfeito** | todas as posições de sprite são arredondadas para o pixel lógico no **desenho** (não na simulação): `snap_2d_transforms_to_pixel` (8.2). Escalas de squash usam valores que não deformam o pixel art (ou só no eixo vertical) |
+| **Interpolação** | a simulação roda em passo fixo (`GameClock`, 4.14). O desenho **interpola** entre os dois últimos passos (*physics interpolation* do Godot 4 ou interpolação própria), para o movimento ficar suave em telas de 90/120 Hz como a do Redmi, sem tremer |
+| **Ordem de desenho** | ordenação por Y (`y_sort`) para quem está mais abaixo aparecer na frente. Sombras de 1 elipse escura sob cada personagem, que ajudam a ler a posição no chão |
+| **Animações de arma** | toda arma tem: disparo/antecipação, trajeto e impacto. Projéteis giram ou deixam rastro quando faz sentido (shuriken gira; kunai deixa rastro de 2–3 px) |
+| **UI animada** | cartas de level-up entram com mola (*ease out back*), o baú treme antes de abrir, números de ryō contam para cima. Duração máxima de 0,4 s para não atrasar o jogador (exceto o baú, 4.8) |
+| **Pipeline** | `tools/build_spriteframes.gd` (8.3) valida que toda animação obrigatória existe, que os quadros têm o mesmo tamanho e que o ponto de apoio (*pivot*, os pés) está no mesmo lugar em todos os quadros. Pivot errado faz o personagem "pular" entre quadros |
+
+#### 8.7.2 Física e movimento
+
+A física é **própria** (10.6): sem corpos físicos do Godot por inimigo, para caber 500 inimigos no Redmi. Por isso as regras precisam ser escritas e testadas.
+
+| Regra | Detalhe |
+|---|---|
+| **Passo fixo** | toda a física roda no passo fixo de 1/60 s do `GameClock` (4.14). Nenhuma física usa o *delta* variável do frame |
+| **Movimento do herói** | aceleração até a velocidade máxima em ≤ 0,1 s e parada em ≤ 0,05 s (15.2). Sem inércia que faça o jogador "escorregar". Na diagonal, a velocidade é normalizada (não anda mais rápido na diagonal) |
+| **Colisão do herói com o cenário** | círculo do herói contra a **base** dos obstáculos (5.1). Ao bater na diagonal, o herói **desliza** pela borda em vez de parar seco. Nunca prende em quinas: obstáculos usam formas simples (círculo ou retângulo com cantos chanfrados) |
+| **Separação da horda** | inimigos se empurram de leve (10.6) para **não se empilharem num ponto só** nem tremerem. Força limitada, amortecida e calculada a cada 2 passos para metade da horda (10.6). Teste: 300 inimigos parados em volta do herói não podem tremer mais de 1 px por frame |
+| **Inimigos e cenário** | inimigos comuns **deslizam** pelos obstáculos (mesma regra do herói) e usam um **campo de direção** simples (*flow field*) por chunk para contornar casas e rochas, em vez de ficarem presos atrás delas. Inimigo preso por mais de 3 s é teletransportado (5.2) |
+| **Knockback** | impulso aplicado uma vez e amortecido (×0,85 por passo, 10.6), reduzido pela `knockback_resist`. Chefes e Tanques têm resistência alta. Knockback nunca empurra inimigo para dentro de obstáculo |
+| **Projéteis** | colisão círculo × círculo com teste **contínuo** (*swept*) para projéteis rápidos: verificar o segmento percorrido no passo, não só o ponto final. Isso evita atravessar inimigos (*tunneling*) mesmo em 3x (4.14) |
+| **Perfuração e alvos** | cada projétil guarda os inimigos já atingidos, para não acertar o mesmo duas vezes por perfuração. Áreas de dano contínuo (Incenso, Bomba de Fumaça) usam *ticks* com tempo próprio por inimigo |
+| **Brasas e ímã** | brasas atraídas aceleram até o herói (10.8) com curva suave e **nunca orbitam** sem ser coletadas: se passarem perto, são coletadas |
+| **Hitbox ≠ sprite** | hitbox do herói ~60% do sprite; hitbox de dano dos inimigos um pouco **menor** que o desenho; hitbox de coleta (ímã) generosa. A regra é: em dúvida, a favor do jogador (15.2) |
+| **Contato com inimigos** | dano por contato com intervalo por inimigo (não a cada passo) e invencibilidade de 0,5 s do herói (15.2). Ser cercado não pode matar instantaneamente |
+| **Determinismo** | a física usa só o `Rng` com semente (10.1) e ordem fixa de atualização. Mesma semente = mesma partida, em qualquer velocidade (15.1) |
+| **Depuração** | overlay de debug (13, Fase 1) desenha hitboxes, vetores de velocidade, células do *spatial hash* e o campo de direção. Indispensável para ajustar a física no aparelho |
+
+#### 8.7.3 Testes de animação e física
+
+- **Automáticos:** o bot (14.4) mede se algum inimigo ficou preso mais de 3 s, se houve projétil que atravessou um alvo dentro do raio de colisão (log de *tunneling*), se as brasas foram todas coletadas e se o herói ficou preso em quina. Cada caso conta como falha no CI.
+- **Testes unitários da física:** deslizar na diagonal contra parede, knockback amortecido, teste contínuo de projétil rápido, separação sem tremor e normalização diagonal.
+- **Revisão visual no Redmi**, em toda fase do roadmap: gravar 30 s de tela em 120 Hz e assistir em câmera lenta procurando tremor, patinação, pivot pulando, inimigos empilhados e sprites atravessando o cenário.
+
 ---
 
 ## 9. Áudio (música e SFX)
@@ -803,19 +910,21 @@ void fragment() {
 
 ---
 
-## 10. Arquitetura técnica (Godot 4.6)
+## 10. Arquitetura técnica (Godot 4.7.2)
 
 ### 10.1 Decisões
 
 | Tema | Decisão | Motivo |
 |---|---|---|
-| Versão | Godot **4.6.x estável** (última: 4.6.3 na época do plano) — travar a versão no início | consistência com o projeto Merge Defense |
+| Versão | Godot **4.7.2 estável** (instalado em `C:\src\tools\godot`, com templates de exportação) — versão travada | é a versão instalada mais recente; o protótipo M1 já roda e exporta APK nela. Atenção: o 4.7 tem uma classe nativa `VirtualJoystick`, por isso o joystick do jogo se chama `TouchJoystick` |
 | Linguagem | GDScript com tipagem estática (`var x: int`) | velocidade de iteração; tipagem dá ganho de performance |
 | Renderer | **Compatibility** (OpenGL ES 3) primeiro; testar Mobile (Vulkan) na fase 5 | 2D puro, menor overhead e maior compatibilidade |
 | Física | **Não** usar `CharacterBody2D`/`Area2D` por inimigo; colisão própria por *spatial hash* | centenas de corpos físicos derrubam o FPS em mobile |
-| Dados | `Resource` (.tres) para armas, passivos, inimigos, ondas, heróis, Kami | balanceamento sem tocar em código |
+| Dados | **JSON** em `data/*.json` (armas, passivos, inimigos, chefes, fases/ondas, heróis, Kami, power-ups, conquistas, itens, Loja, história), carregados pelo autoload `DB` e validados pelos testes de integração (*implementado em 21/10/2026; substitui a ideia original de `.tres`*) | balanceamento sem tocar em código; diffs legíveis no git; validação automática de referências; edição sem abrir o editor |
 | Salvamento | JSON em `user://save.json` com `version` + backup `save.bak` | simples e migrável |
-| Testes | **GUT** ou **gdUnit4** para lógica pura (stats, XP, pool de level-up) | regressões de balanceamento |
+| Testes | `tests/run_tests.gd` (regras puras, sem autoloads) + `tests/integration_tests.tscn` (dados, idiomas, fontes, Loja, Santuário, save), bot determinístico 1x/2x/3x, estresse e `gdlint` — tudo em `tools/run_checks.ps1` (*implementado; GUT/gdUnit4 dispensados*) | regressões de balanceamento e de conteúdo |
+| Textos | `i18n/strings.csv` gerado por `tools/build_i18n.py` a partir de `tools/i18n/*.py`, lido em tempo de execução pelo autoload `Locale` (importador do Godot desligado: `importer="keep"`) | um lugar para traduzir; o gerador confere chaves, 11 colunas e marcadores `%s/%d` |
+| Anúncios e compras | `AdsManager`/`PurchaseManager` com **provedor simulado** (overlay de teste, compra simulada) enquanto o plugin AdMob e o Play Billing não são integrados | permite testar todos os fluxos (abertura, Loja 6 h, reviver, dobrar ryō, remover anúncio) no PC e no emulador sem conta nem SDK |
 
 ### 10.2 Estrutura de pastas
 
@@ -862,6 +971,7 @@ hyakki/
 
 | Autoload | Responsabilidade |
 |---|---|
+| `GameClock` | tempo de jogo com passo fixo de 1/60 s; 1, 2 ou 3 passos de simulação por frame conforme a velocidade (4.14) |
 | `Events` | barramento de sinais globais (`enemy_killed`, `player_leveled`, `chest_opened`, `boss_spawned`...) |
 | `GameState` | partida atual: herói, fase, tempo, stats, inventário, seed |
 | `SaveManager` | load/save, migração por versão, autosave ao sair do app |
@@ -1100,6 +1210,7 @@ Ao ir para segundo plano no meio da partida: pausar e serializar um *snapshot* l
 | Bateria | ≤ 12%/hora em 60 fps | configurações → bateria |
 | Tamanho | AAB ≤ 150 MB | OGG para música, PNG otimizado (oxipng) |
 | Tempo de boot | ≤ 4 s até o título | cronômetro |
+| FPS em velocidade acelerada (4.14) | 2x: ≥ 55 fps; 3x: ≥ 50 fps no pior cenário | mesmo teste de estresse, com o botão de velocidade |
 
 Perfis automáticos: se o FPS médio cair abaixo de 50 por 10 s, reduzir teto de inimigos (500 → 400), desligar números de dano e partículas de morte — avisar nas opções ("Modo Desempenho").
 
@@ -1291,6 +1402,7 @@ Falha o build se:
 | ✅ | **FREE Pixel Combat SFX** | Helton Yan | **2.100 sons** de combate retrô (golpe, magia, explosão, buff, movimento), 12 categorias, 6 variações cada | **CC BY 4.0** (crédito obrigatório) | é a maior fonte de variação de acertos: 6 variações por som evitam a fadiga em 15 min (15.7) | https://heltonyan.itch.io/pixelcombat |
 | ✅ | **RPG Essentials SFX – Free** | Leohpaz | 48 sons: UI, magia por elemento, cura, buff, reviver, abate | comercial ok; crédito opcional; **não redistribuir** | sons de UI, de cura e de **reviver** (17.6) no mesmo estilo | https://leohpaz.itch.io/rpg-essentials-sfx-free |
 | ✅ | **Music Jingles** | Kenney | **85 jingles** curtos | **CC0** | base para o level-up, a fanfarra do baú, conquista e "Desbloqueado!" (15.7) | https://kenney.nl/assets/music-jingles |
+| ✅ | **効果音ラボ** (Sound Effect Lab) | site japonês | grande biblioteca de efeitos, **inclusive sons japoneses** | comercial grátis, **sem crédito**; proíbe redistribuir os sons, treinar IA e Content ID | sons japoneses de interface, de templo e de festival (12.7.11) | https://soundeffect-lab.info/agreement/ |
 | ✅ | **Sonniss GameAudioGDC** (bundles anuais) | vários estúdios | dezenas de GB de sons profissionais (o de 2024 tem 23,5 GB) | uso comercial e ilimitado, **sem crédito**; não revender os sons; **proibido usar para treinar IA** | taiko, sinos de templo, gongo, vento, fogo, ambientes: qualidade profissional para os momentos-chave (chefe chegando, amanhecer) | https://sonniss.com/gameaudiogdc |
 | 🟡 | Pixabay (sons e músicas) | vários | biblioteca grande | Pixabay Content License: comercial e sem crédito; proíbe distribuir o arquivo sozinho e usar com marcas registradas | bom para preencher buracos (ex.: um instrumento específico). Baixar a página do item como snapshot, porque os autores variam | https://pixabay.com/service/license-summary/ |
 
@@ -1301,9 +1413,12 @@ Falha o build se:
 | ✅ | **High Quality 16-bit RPG Music** | HydroGene | 28 faixas estilo SNES, com loop perfeito (ogg/wav) | **CC0** | reserva de faixas de batalha e de chefe; combina com o som 16-bit do pack | https://hydrogene.itch.io/high-quality-16-bit-music |
 | ✅ | **FREE Music Loop Bundle** | Tallbeard Studios / Abstraction | **200+ músicas** com loops (chiptune, ambiente, animadas) | **CC0** (o autor pede que não seja usado em NFT ou IA, sem ser condição) | menus, Santuário, Loja, variações de faixa para a Noite Sem Fim | https://tallbeard.itch.io/music-loop-bundle |
 | ✅ | HoliznaCC0 (ChipTunes, Retro Gamer Soundtrack) | Holizna | álbuns de chiptune | **CC0** (conferir faixa a faixa) | reserva | https://freemusicarchive.org/music/holiznacc0/chiptunes |
-| 🟡 | **WAFU Free Sampler** | wafusoundworks | 3 faixas japonesas (shakuhachi, koto, shamisen, taiko), com versão em loop | comercial ok, sem crédito; proíbe redistribuir e treinar IA | identidade japonesa forte para o Templo e o Diário. **Mas foi composto com IA (Suno) e editado por humano.** Pela regra 7 de 12.1, só entra se não houver alternativa | https://wafusoundworks.itch.io/wafu-free-sampler-japanese-game-music |
+| ✅ | **甘茶の音楽工房** (Amacha) – categoria 和風・アジア | Amacha (JP) | várias páginas de faixas japonesas (ex.: 平安ノ宵, 桜雲, お地蔵様のいる小道) | comercial grátis, **crédito opcional**; não redistribuir; não registrar no Content ID | **música principal das fases** (Vila, Bambu, Templo), Diário e Santuário | https://amachamusic.chagasi.com/terms.html |
+| ✅ | **魔王魂** (Maou Damashii) | Morita Kōichi (JP) | 5.000+ músicas e efeitos, com faixas japonesas | comercial sem limite; **crédito obrigatório** ("音楽：魔王魂"); proíbe IA e NFT | batalha de chefe, fases 4 e 5 | https://maou.audio/rule/ |
+| ✅ | **OpenTracks** (antigo DOVA-SYNDROME) | vários compositores (JP) | grande catálogo, com categoria japonesa | jogos permitidos, sem crédito; **regras extras por compositor** | reserva; snapshot de cada faixa | https://opentracks.com/help/articles/license/ |
+| ❌ | **WAFU Free Sampler** | wafusoundworks | 3 faixas japonesas (shakuhachi, koto, shamisen, taiko), com versão em loop | comercial ok, sem crédito; proíbe redistribuir e treinar IA | **composto com IA (Suno)**. Pela regra 7 de 12.1, só entraria sem alternativa, e agora há alternativas sem IA (甘茶, 魔王魂, OpenTracks; 12.7.11) | https://wafusoundworks.itch.io/wafu-free-sampler-japanese-game-music |
 
-> **Lacuna encontrada:** não há música japonesa tradicional **gratuita, sem IA e com licença comercial clara** que seja boa o suficiente. Opções: (a) usar as faixas do Ninja Adventure, que já têm clima oriental, e (b) adicionar sons de instrumentos japoneses (taiko, sino, shakuhachi) da Sonniss por cima. Se houver orçamento, encomendar a um compositor o **tema principal**, que também é o motivo-assinatura de 15.7. É o item de áudio que mais influencia a vontade de voltar a jogar.
+> **Lacuna resolvida pela pesquisa japonesa (12.7.11):** a primeira rodada não achou música japonesa gratuita, sem IA e com licença clara. A pesquisa em sites japoneses achou: **甘茶の音楽工房** (categoria 和風・アジア, comercial grátis, **sem crédito obrigatório**), **魔王魂** (5.000+ músicas, comercial, **crédito obrigatório**) e **OpenTracks** (antigo DOVA-SYNDROME, sem crédito, mas cada compositor pode ter regras extras). Elas passam a ser a **fonte principal de música japonesa**, e o WAFU (feito com IA) sai das opções. O tema principal (motivo-assinatura de 15.7) continua sendo o melhor candidato a encomenda, se houver orçamento.
 
 #### 12.7.3 Efeitos visuais (VFX)
 
@@ -1366,7 +1481,14 @@ Falha o build se:
 
 #### 12.7.9 Créditos obrigatórios gerados por esta pesquisa
 
-Os itens com **CC BY 4.0** exigem crédito em `CREDITS.md`, na tela de Créditos e na tela de Licenças (12.6). Hoje são: **Helton Yan** (Pixel Combat SFX), **heyheythere** (Pixel UI Free) e, se usado, **Matt Firth/shikashipx + game-icons.net**. O `check_licenses.py` falha o build se algum deles faltar.
+Os itens com **CC BY 4.0** ou crédito obrigatório exigem crédito em `CREDITS.md`, na tela de Créditos e na tela de Licenças (12.6). Hoje são:
+- **Helton Yan** (Pixel Combat SFX)
+- **heyheythere** (Pixel UI Free)
+- **魔王魂 / Maou Damashii** (música), no formato exigido pelo site: "音楽：魔王魂". Nos outros idiomas: "Music: Maou Damashii (魔王魂)"
+- **Poppy Works** (fonte Silver), se escolhida em 7.7.2
+- se usados: **Matt Firth/shikashipx + game-icons.net**, **PixyMoon**
+
+As fontes OFL (Fusion Pixel, Cubic 11, BoutiqueBitmap9x9, Smiley Sans, Press Start 2P, Pixeloid) não exigem crédito na tela, mas o arquivo `OFL.txt` de cada uma precisa ir junto (tela de Licenças, 12.6.5). O `check_licenses.py` falha o build se algum crédito ou arquivo de licença faltar.
 
 #### 12.7.10 Pesquisa ampliada: fontes da lista do usuário (20/10/2026)
 
@@ -1423,7 +1545,61 @@ A lista completa de fontes fica em [01-prompt.md](01-prompt.md). Avaliação de 
 
 **Conclusão da pesquisa ampliada:** a lista não trouxe nenhum substituto melhor para o Ninja Adventure. Os ganhos reais são: **sons** (Kenney áudio, BigSoundBank, 99Sounds, Mixkit SFX), **paletas** (Lospec) e, se aprovado na prancha de estilo, os **yōkai top-down da GuidoSprite** por US$ 3,99.
 
-#### 12.7.11 Tarefa da Fase 0
+#### 12.7.11 Pesquisa em sites japoneses, chineses e russos (20/10/2026)
+
+O detalhamento site a site está em [02-pesquisa-assets-japao-china-russia.md](02-pesquisa-assets-japao-china-russia.md). Avaliados: **34 fontes japonesas, 21 chinesas/taiwanesas e 18 russas (ou em russo)**. A meta era 50 por país. Ela não foi atingida porque, depois das fontes sérias, o que sobra nesses mercados é quase todo **agregador sem dono identificável, republicação de bibliotecas pagas ou material exclusivo do RPG Maker**. Contar esses sites só inflaria o número sem trazer nenhum asset utilizável.
+
+**Aprovados e o que mudam no plano:**
+
+| Status | Asset | País | Licença (lida na fonte) | Mudança no plano | Link do termo |
+|---|---|---|---|---|---|
+| ✅ | **甘茶の音楽工房** (Amacha) – música 和風・アジア | JP | comercial grátis, inclusive jogos; **crédito opcional**; proíbe vender ou redistribuir a música sozinha e registrar no Content ID | **nova fonte principal de música japonesa** (12.7.2) | https://amachamusic.chagasi.com/terms.html |
+| ✅ | **魔王魂** (Maou Damashii) – 5.000+ músicas e efeitos | JP | comercial sem limite; **crédito obrigatório**; proíbe IA, NFT e registro em entidades de direitos autorais | música japonesa e de batalha; crédito em 12.7.9 | https://maou.audio/rule/ |
+| ✅ | **OpenTracks** (antigo DOVA-SYNDROME) | JP | jogos e apps permitidos; **sem crédito**; proíbe IA, Content ID e redistribuição. **Cada compositor pode ter regras extras**, que precisam ser lidas faixa a faixa | reserva de música, com snapshot da página de cada faixa | https://opentracks.com/help/articles/license/ |
+| ✅ | **効果音ラボ** (Sound Effect Lab) | JP | comercial grátis; **sem crédito**; colocar dentro do app é permitido; proíbe redistribuir os sons, treinar IA e Content ID | efeitos sonoros gerais e **sons japoneses**; junta-se a Kenney e Helton Yan em 12.7.1 | https://soundeffect-lab.info/agreement/ |
+| ✅ | **ぴぽや (Pipoya)** – tileset 16×16 grátis, efeitos (VFX) grátis | JP | comercial ok, pessoa física ou empresa; **sem crédito**; pode modificar; não vender o material | candidatos de **efeitos visuais** (portal, pilar de luz, sino, escudo) e de tileset 16×16 para a prancha de estilo | https://pipoya.net/sozai/terms-of-use/ · https://pipoya.itch.io/free-rpg-tileset-16x16 |
+| ✅ | **Cubic 11 / 俐方體11號** | TW | OFL 1.1, com nome reservado | alternativa de fonte para zh-TW (7.7.2) | https://github.com/ACh-K/Cubic-11 |
+| ✅ | **BoutiqueBitmap9x9 / 精品點陣體** | TW | OFL 1.1, com nome reservado | alternativa de fonte para zh-TW e zh-CN (7.7.2) | https://github.com/scott0107000/BoutiqueBitmap9x9 |
+| ✅ | **Smiley Sans / 得意黑** | CN | OFL 1.1 | títulos em chinês simplificado (7.7.2) | https://github.com/atelier-anchor/smiley-sans |
+| ✅ | **LXGW WenKai / 霞鹜文楷** | CN | OFL 1.1, nomes reservados | reserva para textos longos em chinês (não é pixel) | https://github.com/lxgw/LxgwWenKai |
+| ✅ | **Silver** (Poppy Works) | — | CC BY 4.0 | candidata a fonte única dos 11 idiomas (7.7.2) | https://poppyworks.itch.io/silver |
+| ✅ | **Press Start 2P**, **Pixeloid** | — | OFL 1.1 | alternativas de fonte com cirílico para `ru` (7.7.2) | https://fontlibrary.org/en/font/press-start-2p · https://ggbot.itch.io/pixeloid-font |
+| ✅ | **SoundsFree** (gerador procedural de sons) | RU | sons gerados são royalty-free, comercial ok, sem crédito | ferramenta de reserva junto com o jsfxr; o som gerado é do projeto | https://www.soundsfree.art/ru/ |
+| 🟡 | **DOT ILLUST** | JP | comercial ok **até 30 itens por jogo**; sem crédito | só para ilustrações avulsas (Diário, tela de carregamento); controlar a contagem no registro | https://dot-illust.net/terms/ |
+| 🟡 | **和風 BGM 36 faixas (maruya328, BOOTH)** | JP | comercial ok, sem crédito; **pago (¥2.980)**; OGG sem ponto de loop | alternativa barata à encomenda do tema, se as faixas grátis não bastarem | https://booth.pm/ja/items/5711297 |
+| 🟡 | **Liborio Conti** (no-copyright-music.com) | RU (site) | comercial ok, sem crédito; não redistribuir | reserva de música genérica; não tem estilo japonês | https://www.no-copyright-music.com/ru/ |
+| 🟡 | **VonwaonBitmap / 凤凰点阵体** | CN | CC0, mas origem dos glifos contestada | só reserva (7.7.2) | https://timothyqiu.itch.io/vonwaon-bitmap |
+| 🟡 | **Wuxia Masks Icons** | CN | CC0 segundo a listagem do itch.io | conferir a página; máscaras como ícones do passivo "Máscara Noh" (4.6) | itch.io (tag wuxia) |
+
+**Rejeitados (principais motivos):**
+
+| Asset ou site | País | Motivo |
+|---|---|---|
+| H/MIX GALLERY | JP | grátis só para obras pessoais/dōjin; **jogo comercial exige licença paga** (¥2.200) |
+| PeriTune | JP | termos do site e CC BY 4.0 se contradizem; o próprio autor está revisando. Licença **não verificável** hoje |
+| OtoLogic | JP | página de licença bloqueada (403); crédito obrigatório citado só por terceiros |
+| REFMAP / First Seed Material | JP | site fora do ar; licença só conhecida por comentários |
+| Material para RPG Maker (ex.: série "ラルフくんとRTPの仲間たち") e material derivado do RTP | JP | **exclusivo do RPG Maker** |
+| GTM (BOOTH) – música 和風 | JP | pago (¥6.000–9.000 por faixa); a amostra grátis é só para teste |
+| ねこびっドー (Gumroad) – sons de taiko, koto, shamisen | JP | pago por item; licença não lida |
+| Zpix / 最像素 | CN | uso comercial pago e proíbe subconjunto |
+| 爱给网 (aigei), 淘声网, 素材中国, 千图网, 包图网 | CN | **agregadores**: os arquivos são enviados por terceiros e a autoria não é verificável, mesmo quando marcados "CC" |
+| Cute SCKR – tilesets wuxia | CN | pagos e **feitos com ajuda de IA** |
+| 耳聆网 (ear0) | CN | licença por arquivo, sem termo oficial encontrado; só usar item a item, se aparecer |
+| NoiseFX | RU | **só uso pessoal** |
+| ZvukBox, zvukogram, zvukitop, zvukipro | RU | agregadores ou republicação, sem dono identificável; zvukitop republica até Kevin MacLeod (CC BY) como se fosse CC0 |
+| FiftySounds | RU | termo de licença não encontrado na página |
+| Cyrillic Pixel-7, F77 Minecraft, Grand9K | RU | só uso pessoal, CC BY-ND (proíbe modificar) e CC BY-SA, respectivamente |
+| Magnific/Freepik, canais do Telegram, listas da Pikabu e da Habr | RU | estoque genérico ou listas de terceiros, sem licença própria verificável |
+
+**Conclusão:** a pesquisa **não trouxe substituto melhor para o Ninja Adventure** na arte. Os ganhos reais são três:
+1. **Música japonesa grátis, sem IA e com licença clara** (甘茶, 魔王魂, OpenTracks). Isso preenche a maior lacuna de áudio do plano.
+2. **Efeitos sonoros com sons japoneses e sem crédito** (効果音ラボ).
+3. **Mais opções de fonte** para chinês (Cubic 11, BoutiqueBitmap9x9) e uma candidata a fonte única (Silver).
+
+Os efeitos e o tileset 16×16 da Pipoya entram na prancha de estilo como candidatos.
+
+#### 12.7.12 Tarefa da Fase 0
 
 1. Baixar os itens ✅ e 🟡 para `C:\src\assets\candidatos\` (fora do projeto).
 2. Montar a **prancha de estilo**: uma cena de Godot com o Ninja Adventure e cada candidato visual, na escala ×4, testada no Redmi ao sol.
@@ -1455,14 +1631,16 @@ Estimativas para **1 dev em tempo parcial (~20 h/semana)**. Cada fase termina co
 
 ### Fase 1 — Protótipo do núcleo (semanas 2–3)
 
-- [ ] Player com joystick flutuante, i-frames, HP.
-- [ ] Câmera que segue o player; chão infinito simples (1 template de chunk).
-- [ ] `EnemyManager` + `SpatialHash` + pool; 1 inimigo perseguidor.
-- [ ] Spawner por tabela simples (alvo por minuto).
-- [ ] 3 armas: Katana, Shuriken, Incenso.
-- [ ] Brasas, ímã, barra de XP, level-up com 3 cartas (UI provisória).
-- [ ] Morte → tela de resultado → reiniciar.
-- [ ] Overlay de debug: FPS, inimigos vivos, projéteis, draw calls.
+- [x] Player com joystick flutuante, i-frames, HP.
+- [x] Câmera que segue o player; chão infinito simples (textura repetida; os templates de chunk ficam para a Fase 2).
+- [x] `GameClock` com passo fixo desde o início (4.14): todos os sistemas leem o tempo dele. Fazer isso depois custa muito mais. Velocidade 1x/2x/3x já funciona, com determinismo verificado.
+- [x] `EnemyManager` + `SpatialHash` + pool; 4 inimigos (slime, morcego, esqueleto, slime vermelho).
+- [x] Spawner por tabela simples (alvo por minuto), com nascimento na borda da tela e orçamento por segundo (5.2).
+- [x] 3 armas: Katana, Shuriken, Incenso (8 níveis cada) + 6 passivos.
+- [x] Brasas, ímã, barra de XP, level-up com 3 cartas (UI provisória).
+- [x] Morte → tela de resultado (com dano e DPS por arma) → reiniciar.
+- [~] Overlay de debug: FPS, inimigos vivos, projéteis, brasas, custo da simulação (F3) e **hitboxes** (F4) prontos. Faltam draw calls, vetores de velocidade e células do spatial hash (8.7.2).
+- [~] Física base de 8.7.2: separação (com teto de vizinhos), knockback, teste contínuo de projéteis, interpolação de desenho e início aleatório da animação nos inimigos prontos. Faltam deslizar em obstáculos (ainda não há obstáculos) e animação ligada à velocidade (8.7.1).
 - **Pronto quando:** partida de 10 min divertida no Redmi; **teste de estresse com 500 inimigos ≥ 55 fps**. *Se não atingir, resolver a performance agora (10.6) antes de criar conteúdo.*
 
 ### Fase 2 — Sistemas completos (semanas 4–7)
@@ -1474,6 +1652,7 @@ Estimativas para **1 dev em tempo parcial (~20 h/semana)**. Cada fase termina co
 - [ ] Santuário de Kami (5 pactos para começar).
 - [ ] Golpe da Lanterna (ultimate) para Aki.
 - [ ] Destrutíveis e itens de chão.
+- [ ] Botão de velocidade 1x/2x/3x (4.14): telas que ficam sempre em 1x, áudio e números de dano em tempo real, proteção automática de desempenho.
 - [ ] `ChunkManager` com templates.
 - [ ] SaveManager, ryō, Santuário (meta-progressão) com 8 power-ups.
 - [ ] `AdsManager` e `ShopManager` (17.1–17.3) com anúncios de teste: anúncio de abertura com tempo máximo de espera, loja com 6 vagas e esperas de 6 h, painel de Reviver na morte e botão Dobrar ryō nos resultados (17.6).
@@ -1568,6 +1747,7 @@ Desafio diário, fase secreta, mais heróis, co-op local (2 jogadores em um apar
 | Áudio | fones Bluetooth (latência), modo silencioso, volume 0 |
 | Localização | em cada um dos 11 idiomas: textos cabem (alemão e russo), quebra de linha CJK correta, números formatados, troca de idioma sem reiniciar, idioma detectado na primeira abertura |
 | Anúncios | 1ª abertura sem anúncio; 2ª abertura com anúncio; modo avião (jogo libera em ≤ 4 s); sem anúncio disponível; voltar do segundo plano no meio da partida (sem anúncio); fechar o recompensado antes do fim (sem recompensa); minimizar durante o anúncio; ligação recebida durante o anúncio; consentimento aceito e recusado; adiantar e atrasar o relógio do aparelho; reabrir o consentimento em Opções |
+| Velocidade | trocar 1x/2x/3x no meio da partida; level-up, baú, Kami, morte e resultados abrem em 1x e voltam à velocidade escolhida; escolha lembrada entre partidas; botão escondido na 1ª partida; pior cenário em 3x aciona a proteção automática sem travar; áudio sem embolar em 3x |
 | Reviver e Dobrar | reviver aceito, recusado e com a contagem acabando; reviver sem internet (painel não aparece); app minimizado durante o anúncio de reviver; dobrar ryō em vitória e em derrota; app fechado logo após a recompensa (ryō não se perde) |
 | Compra | comprar, cancelar no meio, pagamento pendente, reinstalar e restaurar, trocar de aparelho, reembolso pelo Play Console, comprar sem internet, botão "Restaurar compras" |
 | Licenças | abrir todas as entradas no APK instalado, **offline** (modo avião); textos longos rolam sem travar; seção do motor aparece; "Abrir site" pede confirmação; navegação por gamepad |
@@ -1612,7 +1792,7 @@ Cada critério tem **meta**, **como medir** e **marco** em que passa a ser obrig
 | Laço quente sem alocação | 0 alocações por frame em `_physics_process` de EnemyManager, ProjectileManager e PickupManager (sem `Array.new()`, `Dictionary` temporário, `str()` ou `%` de string) | profiler do Godot (*Monitors → Object/Memory*) estável por 10 min no pior cenário | M1 |
 | Orçamento de frame | ver 11.4; cada sistema tem orçamento (ex.: inimigos ≤ 4 ms, projéteis ≤ 2 ms, UI ≤ 1 ms no Redmi) | `Performance.get_monitor` + medição própria por sistema no overlay de debug | M1 |
 | Save robusto | load de **todas** as versões anteriores do save funciona; save corrompido cai no backup sem crash | testes de migração com fixtures `tests/fixtures/save_v*.json` | M2 |
-| Determinismo | mesma semente + mesmas entradas = mesma partida (necessário para Desafio Diário e para reproduzir bugs) | teste: o bot roda 2× com a mesma semente e compara o hash do estado no minuto 5 | M3 |
+| Determinismo | mesma semente + mesmas entradas = mesma partida (necessário para Desafio Diário e para reproduzir bugs), **em qualquer velocidade** (4.14) | teste: o bot roda com a mesma semente em 1x, 2x e 3x e compara o hash do estado no minuto 5 | M3 |
 | Decisões registradas | toda decisão de arquitetura relevante tem ADR curto em `docs/adr/NNN-titulo.md` | revisão | M0 |
 | Commits e revisão | Conventional Commits; cada mudança passa por um checklist de PR (testes, lint, licenças 12.6, perf) mesmo trabalhando sozinho; revisão com `/code-review` nas mudanças grandes | template `.github/pull_request_template.md` | M0 |
 | Crashes | 0 crash em 20 partidas seguidas (13, fase 5); taxa de crash < 0,5% das sessões e ANR < 0,2% no Android vitals | Play Console | M5/M6 |
@@ -1635,6 +1815,10 @@ Cada critério tem **meta**, **como medir** e **marco** em que passa a ser obrig
 | Reiniciar rápido | do resultado à nova partida em ≤ 2 toques e ≤ 3 s de carregamento | cronômetro no Redmi |
 | Pausa e retomada | pausa a qualquer momento; ao voltar, contagem 3-2-1 de 1,5 s para o jogador reposicionar o polegar | teste manual (14.2) |
 | Controles confortáveis | 0 toques acidentais em botões durante o combate em 10 partidas de playtest | observação no playtest |
+| Animação sem patinação nem tremor | 0 casos de "patinar", pivot pulando ou horda sincronizada na revisão em câmera lenta (8.7.3) | gravação em 120 Hz no Redmi |
+| Horda sem empilhar nem tremer | 300 inimigos em volta do herói: tremor ≤ 1 px por frame; nenhum ponto com mais de 4 inimigos sobrepostos | overlay de debug + bot |
+| Sem prender e sem atravessar | 0 inimigos presos > 3 s sem teletransporte; 0 projéteis atravessando alvos; herói nunca preso em quina | log do bot (8.7.3) em 1x, 2x e 3x |
+| Movimento suave em 120 Hz | sem tremor visível do herói e da câmera com interpolação ligada | gravação em câmera lenta |
 
 ### 15.3 Níveis de dificuldade
 
@@ -1781,6 +1965,8 @@ Um marco (13.1) só é considerado atingido quando todos os critérios marcados 
 | Violação de política do AdMob ou do Google Play (conta suspensa) | média | **muito alto** | formato App Open na abertura (não interstitial), só IDs de teste no desenvolvimento, nunca tocar nos próprios anúncios, UMP, Segurança dos dados correta, revisar as políticas antes de cada release |
 | Anúncio de abertura derrubar a retenção e a nota | média | alto | sem anúncio na 1ª abertura, só no início a frio, intervalo mínimo de 4 h, tempo máximo de espera de 4 s; acompanhar D1/D7 e as avaliações e reduzir a frequência se cair (17.4) |
 | Plugin AdMob incompatível com a versão do Godot | média | alto | prova técnica na Fase 0; `AdsManager` isola o plugin para trocar sem mexer no jogo |
+| Animação "patinando" ou horda tremendo/empilhando (aparência amadora) | alta | alto | regras de 8.7, critérios de 15.2, revisão em câmera lenta no Redmi a cada fase do roadmap, validação de pivot no pipeline |
+| Velocidade 3x derrubar o FPS ou causar bugs de colisão | média | médio | `GameClock` com passos fixos (sem *tunneling*), orçamentos por velocidade (11.4), redução automática 3x → 2x, teste de determinismo entre velocidades (15.1) |
 | Bug no fluxo de reviver ou de compra (principal motivo de notas baixas do VS, 1.1) | média | alto | testes unitários e manuais dedicados (14.1, 14.2), recompensa gravada na hora, restauração automática de compras, testadores de licença no teste fechado |
 | Reviver por anúncio deixar o jogo fácil demais | média | médio | 1× por partida, só depois do Revive do Santuário, fora do Desafio Diário; acompanhar a taxa de vitória com e sem reviver na simulação (15.4) |
 | Receita baixa por pouco preenchimento em alguns países | média | médio | avaliar mediação depois do lançamento; considerar a compra "Remover anúncio de abertura" (17.6) |

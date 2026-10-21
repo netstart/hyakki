@@ -326,3 +326,42 @@ Estes vieram junto com a lista colada no chat (parecem ser de um projeto de zumb
 - [CraftPix – 2D Game Zombie Character Free Sprite Pack 1](https://craftpix.net/freebies/2d-game-zombie-character-free-sprite-pack-1/)
 - [CraftPix – Free Forbidden Graveyard Tileset](https://craftpix.net/freebies/free-forbidden-graveyard-2d-platformer-tileset/)
 - [CraftPix – Free Market Cartoon 2D Game Tileset](https://craftpix.net/freebies/free-market-cartoon-2d-game-tileset/)
+## Fontes acrescentadas: Japão, China e Rússia (pesquisa de 20/10/2026)
+
+Só fontes com termo de uso lido na fonte original ou relevantes para conferir. Avaliação completa em [02-pesquisa-assets-japao-china-russia.md](02-pesquisa-assets-japao-china-russia.md) e no plano, seção 12.7.11.
+
+### Japão
+- [ぴぽや倉庫 (Pipoya) – termos](https://pipoya.net/sozai/terms-of-use/) · [Pipoya no itch.io](https://pipoya.itch.io/) (tileset 16×16 e efeitos grátis)
+- [効果音ラボ – termos](https://soundeffect-lab.info/agreement/) (efeitos sonoros, inclusive japoneses)
+- [魔王魂 – termos](https://maou.audio/rule/) (música; crédito obrigatório)
+- [甘茶の音楽工房 – termos](https://amachamusic.chagasi.com/terms.html) · [categoria 和風・アジア](https://amachamusic.chagasi.com/genre_asia.html)
+- [OpenTracks (antigo DOVA-SYNDROME) – licença](https://opentracks.com/help/articles/license/)
+- [DOT ILLUST – termos](https://dot-illust.net/terms/) (limite de 30 itens por jogo)
+- [H/MIX GALLERY – termos](https://hmix.net/terms.html) (jogo comercial exige licença paga)
+- [和風 BGM 36 faixas – maruya328 (BOOTH, pago)](https://booth.pm/ja/items/5711297)
+- [小森平 – efeitos grátis](https://taira-komori.net/freesound.html)
+- [ポケットサウンド](https://pocket-se.info/)
+- [かたすみドット – fonte pixel (BOOTH)](https://booth.pm/ja/items/7963135)
+- Listas japonesas de sites: [frog blend game](https://frog-blend.hatenablog.com/entry/2023/09/15/142040), [紅桔梗の森](https://benikikyonomori.com/recommend-free-material/), [キノコが何か作るブログ](https://www.mizukinoko.com/entry/2019/07/30/124152), [ゲームメーカーズ](https://gamemakers.jp/article/2024_01_26_59516/), [Unity Forest](https://feynman.co.jp/unityforest/game-work/tool/free-game-character-materials/)
+
+### China e Taiwan
+- [Cubic 11 / 俐方體11號 (fonte pixel, OFL)](https://github.com/ACh-K/Cubic-11)
+- [BoutiqueBitmap9x9 / 精品點陣體 (fonte pixel, OFL)](https://github.com/scott0107000/BoutiqueBitmap9x9)
+- [Smiley Sans / 得意黑 (OFL)](https://github.com/atelier-anchor/smiley-sans)
+- [LXGW WenKai / 霞鹜文楷 (OFL)](https://github.com/lxgw/LxgwWenKai)
+- [VonwaonBitmap / 凤凰点阵体 (CC0, origem contestada)](https://timothyqiu.itch.io/vonwaon-bitmap)
+- [Zpix / 最像素 (comercial pago)](https://github.com/SolidZORO/zpix-pixel-font)
+- [itch.io – tag wuxia](https://itch.io/game-assets/tag-wuxia) · [Cute SCKR – tileset wuxia (pago, IA)](https://comshadow.itch.io/chinese-wuxia-tileset)
+- Coleções no itch.io: [2D CC-0 (夜林)](https://itch.io/c/5218308/2dcc-0), [像素素材 (meiyingdie)](https://itch.io/c/3002520), [像素素材 (minghao1127)](https://itch.io/c/5971646)
+- [GResource – índice de assets](https://github.com/wanzaixiaoxin/gresource)
+- Agregadores avaliados e rejeitados: [爱给网](https://www.aigei.com/), 淘声网, 素材中国, 千图网, 包图网, 耳聆网
+
+### Rússia e sites em russo
+- [SoundsFree – gerador de sons](https://www.soundsfree.art/ru/)
+- [Press Start 2P (OFL, cirílico)](https://fontlibrary.org/en/font/press-start-2p)
+- [Pixeloid (OFL)](https://ggbot.itch.io/pixeloid-font)
+- [Silver (Poppy Works, CC BY 4.0, latim + cirílico + CJK)](https://poppyworks.itch.io/silver)
+- [no-copyright-music.com (Liborio Conti)](https://www.no-copyright-music.com/ru/)
+- [gamin.me – fontes pixel](https://gamin.me/posts/21860) · [Uprock – fontes com cirílico](https://www.fonts.uprock.ru/)
+- [FiftySounds](https://www.fiftysounds.com/ru/sound-effects-library.html)
+- Agregadores avaliados e rejeitados: [ZvukBox](https://zvukbox.ru/), [zvukogram](https://zvukogram.com/), [zvukitop](https://zvukitop.com/), zvukipro, NoiseFX

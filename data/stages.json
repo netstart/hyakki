@@ -1,0 +1,210 @@
+[
+  {"id": "village", "difficulty": 1.0, "order": 1, "music": "stage_village", "tint": "#d9dcff", "light_mult": 1.0, "bounds": [],
+   "ground": {"tileset": "floor", "tiles": [[0, 12, 30], [1, 12, 1], [2, 12, 1], [3, 12, 1], [4, 12, 1]]},
+   "details": {"tileset": "floor_detail", "tiles": [[0, 2], [1, 2], [2, 2], [3, 2], [5, 2], [6, 2], [7, 2]], "density": 0.035},
+   "decor": [
+     {"tileset": "nature", "rect": [0, 0, 2, 2], "solid": 7, "weight": 4},
+     {"tileset": "nature", "rect": [16, 0, 2, 2], "solid": 7, "weight": 3},
+     {"tileset": "nature", "rect": [4, 2, 4, 3], "solid": 16, "weight": 1},
+     {"tileset": "house", "rect": [0, 0, 4, 3], "solid": 22, "weight": 1},
+     {"tileset": "house", "rect": [8, 0, 4, 3], "solid": 22, "weight": 1},
+     {"tileset": "house", "rect": [12, 0, 4, 3], "solid": 22, "weight": 1},
+     {"tileset": "nature", "rect": [13, 8, 2, 2], "solid": 6, "weight": 2},
+     {"tileset": "nature", "rect": [0, 10, 1, 1], "solid": 0, "weight": 6},
+     {"tileset": "nature", "rect": [2, 10, 1, 1], "solid": 0, "weight": 6},
+     {"tileset": "nature", "rect": [0, 11, 1, 1], "solid": 0, "weight": 3}
+   ],
+   "decor_per_chunk": 10, "lanterns_per_chunk": 2,
+   "bosses": [{"t": 300, "id": "tanuki"}, {"t": 600, "id": "kappa_elder"}],
+   "kami": [300, 600],
+   "waves": [
+     {"from": 0, "to": 60, "mix": {"slime_rice": 1}},
+     {"from": 60, "to": 120, "mix": {"slime_rice": 4, "bat_lantern": 1}},
+     {"from": 120, "to": 180, "mix": {"slime_rice": 3, "bat_lantern": 1, "skeleton_peasant": 2}},
+     {"from": 180, "to": 240, "mix": {"slime_red": 3, "skeleton_peasant": 2, "bat_lantern": 1}},
+     {"from": 240, "to": 300, "mix": {"slime_red": 2, "skeleton_peasant": 2, "kappa_young": 1}},
+     {"from": 300, "to": 420, "mix": {"skeleton_peasant": 3, "kappa_young": 1, "shade_ghost": 2, "slime_red": 2}},
+     {"from": 420, "to": 540, "mix": {"shade_ghost": 2, "tsuchigumo": 1, "skeleton_peasant": 3, "kappa_young": 1}},
+     {"from": 540, "to": 600, "mix": {"tsuchigumo": 2, "shade_ghost": 2, "kappa_young": 2, "slime_red": 2}},
+     {"from": 600, "to": 780, "mix": {"oni_small": 1, "bakeneko": 2, "tsuchigumo": 2, "shade_ghost": 2, "skeleton_peasant": 2}},
+     {"from": 780, "to": 2000, "mix": {"oni_small": 2, "bakeneko": 2, "tsuchigumo": 2, "shade_ghost": 3, "kappa_young": 2, "skeleton_peasant": 2}}
+   ],
+   "events": [
+     {"t": 60, "type": "swarm", "enemy": "bat_lantern", "count": 16},
+     {"t": 150, "type": "elite", "enemy": "skeleton_peasant"},
+     {"t": 200, "type": "ring", "enemy": "slime_red", "count": 36},
+     {"t": 450, "type": "swarm", "enemy": "bat_lantern", "count": 22},
+     {"t": 470, "type": "swarm", "enemy": "bat_lantern", "count": 22},
+     {"t": 540, "type": "elite", "enemy": "kappa_young"},
+     {"t": 545, "type": "elite", "enemy": "tsuchigumo"},
+     {"t": 690, "type": "ring", "enemy": "slime_red", "count": 48},
+     {"t": 750, "type": "ring", "enemy": "skeleton_peasant", "count": 40},
+     {"t": 780, "type": "elite", "enemy": "oni_small"},
+     {"t": 810, "type": "procession", "enemy": "skeleton_peasant", "count": 60},
+     {"t": 870, "type": "drums"}
+   ]},
+
+  {"id": "bamboo", "difficulty": 1.1, "order": 2, "music": "stage_bamboo", "tint": "#c2d8e8", "light_mult": 0.8, "bounds": [],
+   "ground": {"tileset": "floor", "tiles": [[11, 12, 30], [12, 12, 1], [13, 12, 1], [14, 12, 1], [15, 12, 1]]},
+   "details": {"tileset": "floor_detail", "tiles": [[0, 2], [1, 2], [2, 2], [3, 2], [4, 2]], "density": 0.05},
+   "decor": [
+     {"tileset": "nature", "rect": [11, 8, 1, 3], "solid": 4, "weight": 8},
+     {"tileset": "nature", "rect": [2, 0, 2, 2], "solid": 7, "weight": 3},
+     {"tileset": "nature", "rect": [0, 2, 4, 3], "solid": 16, "weight": 1},
+     {"tileset": "nature", "rect": [0, 8, 2, 2], "solid": 6, "weight": 1},
+     {"tileset": "nature", "rect": [4, 10, 1, 1], "solid": 0, "weight": 6},
+     {"tileset": "nature", "rect": [8, 10, 1, 1], "solid": 0, "weight": 6}
+   ],
+   "decor_per_chunk": 16, "lanterns_per_chunk": 2, "hazard": {"type": "fog"},
+   "bosses": [{"t": 300, "id": "bamboo_ancestral"}, {"t": 600, "id": "kitsune_nine"}],
+   "kami": [300, 600],
+   "waves": [
+     {"from": 0, "to": 60, "mix": {"bamboo_spirit": 1}},
+     {"from": 60, "to": 180, "mix": {"bamboo_spirit": 3, "butterfly_swarm": 1, "mushroom": 1}},
+     {"from": 180, "to": 300, "mix": {"bamboo_spirit": 3, "kitsune_minor": 1, "mushroom": 2, "shade_ghost": 1}},
+     {"from": 300, "to": 450, "mix": {"kitsune_minor": 2, "tsuchigumo_yellow": 1, "bamboo_spirit": 3, "shade_ghost": 2}},
+     {"from": 450, "to": 600, "mix": {"kitsune_minor": 2, "tsuchigumo_yellow": 2, "owl": 1, "bamboo_elder": 1, "mushroom": 2}},
+     {"from": 600, "to": 780, "mix": {"bamboo_elder": 1, "kitsune_minor": 3, "tsuchigumo_yellow": 2, "shade_ghost": 2, "owl": 1}},
+     {"from": 780, "to": 2000, "mix": {"bamboo_elder": 2, "kitsune_minor": 3, "tsuchigumo_yellow": 3, "shade_ghost": 3, "owl": 2}}
+   ],
+   "events": [
+     {"t": 70, "type": "swarm", "enemy": "butterfly_swarm", "count": 20},
+     {"t": 160, "type": "elite", "enemy": "bamboo_spirit"},
+     {"t": 230, "type": "ring", "enemy": "bamboo_spirit", "count": 40},
+     {"t": 420, "type": "swarm", "enemy": "owl", "count": 18},
+     {"t": 520, "type": "elite", "enemy": "kitsune_minor"},
+     {"t": 700, "type": "ring", "enemy": "mushroom", "count": 40},
+     {"t": 760, "type": "elite", "enemy": "bamboo_elder"},
+     {"t": 810, "type": "procession", "enemy": "bamboo_spirit", "count": 60},
+     {"t": 870, "type": "drums"}
+   ]},
+
+  {"id": "temple", "difficulty": 1.2, "order": 3, "music": "stage_temple", "tint": "#cfd2e6", "light_mult": 0.95, "bounds": [0, 1000],
+   "ground": {"tileset": "interior_floor", "block": [15, 6, 5, 5]},
+   "details": {"tileset": "floor_detail", "tiles": [[10, 0], [11, 0], [12, 0], [0, 1]], "density": 0.02},
+   "decor": [
+     {"tileset": "house", "rect": [1, 15, 2, 3], "solid": 12, "weight": 2},
+     {"tileset": "house", "rect": [3, 15, 2, 2], "solid": 9, "weight": 2},
+     {"tileset": "house", "rect": [0, 15, 1, 3], "solid": 6, "weight": 4},
+     {"tileset": "village_abandoned", "rect": [0, 0, 4, 3], "solid": 20, "weight": 1},
+     {"tileset": "village_abandoned", "rect": [0, 3, 2, 2], "solid": 8, "weight": 2},
+     {"tileset": "nature", "rect": [16, 8, 2, 2], "solid": 6, "weight": 2}
+   ],
+   "decor_per_chunk": 9, "lanterns_per_chunk": 3, "hazard": {"type": "statues", "interval": 4.5, "per_chunk": 1},
+   "bosses": [{"t": 300, "id": "tengu_crow_king"}, {"t": 600, "id": "faceless_monk"}],
+   "kami": [300, 600],
+   "waves": [
+     {"from": 0, "to": 60, "mix": {"lantern_obake": 1}},
+     {"from": 60, "to": 180, "mix": {"lantern_obake": 3, "skull": 1, "owl": 1}},
+     {"from": 180, "to": 300, "mix": {"lantern_obake": 2, "skull": 2, "ghost_monk": 1, "lantern_wisp": 1}},
+     {"from": 300, "to": 450, "mix": {"ghost_monk": 2, "hyakume": 1, "skull": 2, "lantern_wisp": 2, "bakeneko": 1}},
+     {"from": 450, "to": 600, "mix": {"tengu_crow": 2, "hyakume": 1, "ghost_monk": 2, "tsuchigumo": 1, "lantern_wisp": 2}},
+     {"from": 600, "to": 780, "mix": {"tengu_crow": 2, "hyakume": 2, "bakeneko": 2, "lantern_wisp": 2, "skull": 2}},
+     {"from": 780, "to": 2000, "mix": {"tengu_crow": 3, "hyakume": 2, "bakeneko": 2, "lantern_wisp": 3, "ghost_monk": 2, "tsuchigumo_yellow": 1}}
+   ],
+   "events": [
+     {"t": 80, "type": "swarm", "enemy": "owl", "count": 18},
+     {"t": 170, "type": "elite", "enemy": "lantern_obake"},
+     {"t": 240, "type": "ring", "enemy": "skull", "count": 40},
+     {"t": 420, "type": "swarm", "enemy": "owl", "count": 24},
+     {"t": 520, "type": "elite", "enemy": "hyakume"},
+     {"t": 700, "type": "ring", "enemy": "lantern_obake", "count": 50},
+     {"t": 760, "type": "elite", "enemy": "tengu_crow"},
+     {"t": 810, "type": "procession", "enemy": "ghost_monk", "count": 50},
+     {"t": 870, "type": "drums"}
+   ]},
+
+  {"id": "dunes", "difficulty": 1.3, "order": 4, "music": "stage_dunes", "tint": "#d8c8c0", "light_mult": 1.0, "bounds": [],
+   "ground": {"tileset": "floor", "tiles": [[0, 5, 30], [1, 5, 1], [2, 5, 1], [3, 5, 1], [4, 5, 1]]},
+   "details": {"tileset": "floor_detail", "tiles": [[0, 0], [1, 0], [3, 0], [14, 0], [13, 0]], "density": 0.03},
+   "decor": [
+     {"tileset": "nature", "rect": [12, 5, 4, 3], "solid": 18, "weight": 1},
+     {"tileset": "nature", "rect": [13, 8, 2, 2], "solid": 6, "weight": 3},
+     {"tileset": "nature", "rect": [4, 0, 2, 2], "solid": 6, "weight": 3},
+     {"tileset": "nature", "rect": [0, 5, 4, 3], "solid": 16, "weight": 1},
+     {"tileset": "desert", "rect": [16, 10, 1, 1], "solid": 0, "weight": 4},
+     {"tileset": "desert", "rect": [17, 11, 1, 1], "solid": 0, "weight": 4}
+   ],
+   "decor_per_chunk": 8, "lanterns_per_chunk": 2, "hazard": {"type": "ash_storm", "interval": 90, "duration": 15, "slow": 0.2},
+   "bosses": [{"t": 300, "id": "stone_cyclops"}, {"t": 600, "id": "ash_dragon"}],
+   "kami": [300, 600],
+   "waves": [
+     {"from": 0, "to": 60, "mix": {"dune_snake": 1}},
+     {"from": 60, "to": 180, "mix": {"dune_snake": 3, "ash_larva": 1, "sand_lizard": 1}},
+     {"from": 180, "to": 300, "mix": {"dune_snake": 2, "ash_larva": 2, "sand_lizard": 2, "mole_digger": 1}},
+     {"from": 300, "to": 450, "mix": {"ash_larva": 2, "sand_lizard": 2, "mole_digger": 2, "flame_spirit": 1, "cyclops_ash": 1}},
+     {"from": 450, "to": 600, "mix": {"flame_spirit": 2, "cyclops_ash": 1, "mole_digger": 2, "sand_lizard": 2, "shade_ghost": 1}},
+     {"from": 600, "to": 780, "mix": {"cyclops_stone": 1, "flame_spirit": 2, "ash_larva": 3, "sand_lizard": 2, "shade_ghost": 2}},
+     {"from": 780, "to": 2000, "mix": {"cyclops_stone": 1, "cyclops_ash": 1, "flame_spirit": 3, "ash_larva": 3, "sand_lizard": 3, "shade_ghost": 2}}
+   ],
+   "events": [
+     {"t": 90, "type": "ring", "enemy": "dune_snake", "count": 30},
+     {"t": 170, "type": "elite", "enemy": "sand_lizard"},
+     {"t": 260, "type": "ring", "enemy": "ash_larva", "count": 36},
+     {"t": 420, "type": "elite", "enemy": "cyclops_ash"},
+     {"t": 520, "type": "ring", "enemy": "sand_lizard", "count": 40},
+     {"t": 700, "type": "ring", "enemy": "ash_larva", "count": 50},
+     {"t": 760, "type": "elite", "enemy": "cyclops_stone"},
+     {"t": 810, "type": "procession", "enemy": "dune_snake", "count": 60},
+     {"t": 870, "type": "drums"}
+   ]},
+
+  {"id": "yomi", "difficulty": 1.45, "order": 5, "music": "stage_yomi", "tint": "#c9b8d8", "light_mult": 0.9, "bounds": [1500, 1500],
+   "ground": {"tileset": "interior_floor", "block": [15, 12, 5, 3]},
+   "details": {"tileset": "floor_detail", "tiles": [[13, 0], [14, 0], [15, 0], [10, 0]], "density": 0.02},
+   "decor": [
+     {"tileset": "house", "rect": [0, 19, 1, 3], "solid": 6, "weight": 4},
+     {"tileset": "house", "rect": [1, 19, 2, 3], "solid": 12, "weight": 2},
+     {"tileset": "nature", "rect": [16, 5, 4, 3], "solid": 18, "weight": 1},
+     {"tileset": "nature", "rect": [16, 8, 2, 2], "solid": 6, "weight": 3},
+     {"tileset": "nature", "rect": [4, 0, 2, 2], "solid": 6, "weight": 2}
+   ],
+   "decor_per_chunk": 9, "lanterns_per_chunk": 2, "hazard": {"type": "lava", "per_chunk": 2, "damage": 6},
+   "bosses": [{"t": 300, "id": "red_oni"}, {"t": 600, "id": "kuroe"}],
+   "kami": [300, 600],
+   "waves": [
+     {"from": 0, "to": 60, "mix": {"skull_blue": 1}},
+     {"from": 60, "to": 180, "mix": {"skull_blue": 3, "yurei": 1, "oni_small": 1}},
+     {"from": 180, "to": 300, "mix": {"skull_blue": 2, "yurei": 2, "oni_small": 2, "skeleton_demon": 1}},
+     {"from": 300, "to": 450, "mix": {"yurei": 2, "skeleton_demon": 2, "oni_green": 1, "yomi_eye": 1, "oni_small": 2}},
+     {"from": 450, "to": 600, "mix": {"yomi_beast": 1, "yomi_eye": 2, "oni_green": 2, "yurei": 3, "skeleton_demon": 2}},
+     {"from": 600, "to": 780, "mix": {"yomi_drake": 1, "yomi_beast": 2, "yomi_eye": 2, "oni_green": 2, "yurei": 3}},
+     {"from": 780, "to": 2000, "mix": {"yomi_drake": 1, "yomi_beast": 2, "yomi_eye": 3, "oni_green": 3, "yurei": 4, "skeleton_demon": 2}}
+   ],
+   "events": [
+     {"t": 90, "type": "ring", "enemy": "skull_blue", "count": 34},
+     {"t": 170, "type": "elite", "enemy": "oni_small"},
+     {"t": 260, "type": "ring", "enemy": "yurei", "count": 36},
+     {"t": 420, "type": "elite", "enemy": "yomi_eye"},
+     {"t": 520, "type": "ring", "enemy": "oni_small", "count": 30},
+     {"t": 700, "type": "ring", "enemy": "yurei", "count": 50},
+     {"t": 760, "type": "elite", "enemy": "yomi_beast"},
+     {"t": 810, "type": "procession", "enemy": "yurei", "count": 70},
+     {"t": 870, "type": "drums"}
+   ]},
+
+  {"id": "secret", "difficulty": 1.6, "order": 6, "music": "stage_secret", "tint": "#b9a6d8", "light_mult": 0.85, "bounds": [],
+   "ground": {"tileset": "interior_floor", "block": [15, 12, 5, 3]},
+   "details": {"tileset": "floor_detail", "tiles": [[13, 0], [14, 0], [10, 0]], "density": 0.02},
+   "decor": [
+     {"tileset": "nature", "rect": [16, 5, 4, 3], "solid": 18, "weight": 1},
+     {"tileset": "nature", "rect": [4, 0, 2, 2], "solid": 6, "weight": 3},
+     {"tileset": "house", "rect": [1, 19, 2, 3], "solid": 12, "weight": 1}
+   ],
+   "decor_per_chunk": 7, "lanterns_per_chunk": 2,
+   "bosses": [{"t": 300, "id": "ash_dragon"}, {"t": 600, "id": "izanami"}],
+   "kami": [300, 600],
+   "waves": [
+     {"from": 0, "to": 120, "mix": {"skull_blue": 3, "yurei": 1}},
+     {"from": 120, "to": 300, "mix": {"yurei": 3, "yomi_eye": 1, "yomi_beast_dark": 1}},
+     {"from": 300, "to": 600, "mix": {"yurei": 3, "yomi_eye": 2, "yomi_beast_dark": 2, "yomi_drake": 1}},
+     {"from": 600, "to": 2000, "mix": {"yurei": 4, "yomi_eye": 3, "yomi_beast_dark": 3, "yomi_drake": 1}}
+   ],
+   "events": [
+     {"t": 120, "type": "ring", "enemy": "yurei", "count": 40},
+     {"t": 400, "type": "elite", "enemy": "yomi_beast_dark"},
+     {"t": 700, "type": "ring", "enemy": "yomi_eye", "count": 30},
+     {"t": 810, "type": "procession", "enemy": "yurei", "count": 80},
+     {"t": 870, "type": "drums"}
+   ]}
+]
