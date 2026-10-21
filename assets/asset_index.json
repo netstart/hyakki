@@ -4069,15 +4069,27 @@
  },
  {
   "file": "assets/audio/music/boss_a.mp3",
-  "source": "C:/src/assets/amacha/mp3/bakumatsubukyoku_ikusa.mp3",
+  "source": "C:/src/assets/amacha/mp3/boss.mp3",
   "license_id": "amacha_music",
-  "sha256": "e793318d81297328a6b02201e5f066567fca0978628a9a218df3b450b43904b9"
+  "sha256": "76f5f537621a6edd396c266a614944a0881b5dc199bacb52a813a66dabef3a31"
  },
  {
   "file": "assets/audio/music/boss_b.mp3",
-  "source": "C:/src/assets/amacha/mp3/ryunomai.mp3",
+  "source": "C:/src/assets/amacha/mp3/shinkou.mp3",
   "license_id": "amacha_music",
-  "sha256": "9aa467b6e45b75b5bd60198cd13dde63e32bab3d1f0b703c3bffbc5b6097827f"
+  "sha256": "d136fa2f43ffddedca158ae6a9c0be3bf156cd3e088051ddabdfdbd580136828"
+ },
+ {
+  "file": "assets/audio/music/boss_c.mp3",
+  "source": "C:/src/assets/amacha/mp3/senka.mp3",
+  "license_id": "amacha_music",
+  "sha256": "f657601eace8bf3154dc58398c1f8c95254b7df52fcbf9161c0ed71c3596664b"
+ },
+ {
+  "file": "assets/audio/music/boss_final.mp3",
+  "source": "C:/src/assets/amacha/mp3/saishuusen.mp3",
+  "license_id": "amacha_music",
+  "sha256": "9500bbd6ff3b1de32a934c879cd80af47a261c6b8da3f59587bff4e850fef4ef"
  },
  {
   "file": "assets/audio/music/codex.mp3",

@@ -141,12 +141,16 @@ depois de escolher habilidade; itens do chão que chamem atenção; barra de vid
   "百鬼 / HYAKKI / Até o Amanhecer" e toca o sino do templo. 2,6 s, toque pula, sem tremulação com "reduzir
   flashes". O título nasce por baixo no fade de saída. `boot_splash` do Godot com a mesma cor e sem imagem.
 
-### Música de chefe (21/10/2026, aguardando download)
+### Música de chefe (21/10/2026)
 - Hoje: `boss_a` = 幕末舞曲～戦～ e `boss_b` = 龍ノ舞 (escolhidas sem ouvir, plano 12.7.2).
 - Candidatas no catálogo, do mesmo 甘茶の音楽工房 (licença já registrada, crédito opcional), categoria 激しい:
   ボス戦 `boss.mp3` (1:11), 最終戦 `saishuusen.mp3` (3:07), 戦火 `senka.mp3` (2:26), 侵攻 `shinkou.mp3` (2:49),
   魔王の城 `maounoshiro.mp3` (2:32). Alternativa CC0: Hydrogene "28 High Quality 16-bit RPG Music"
   ("Battle Theme III", "The Evil One"; zip de 574 MB).
+- ✅ Baixadas com autorização (SHA-256 em `C:/src/assets/amacha/SHA256SUMS.txt`) e ligadas: `boss_a` = ボス戦
+  (Tanuki, Bambu Ancestral, Tengu), `boss_b` = 侵攻 (Kappa Ancião, Kitsune, Monge Sem Rosto), `boss_c` = 戦火
+  (Ciclope, Dragão de Cinza, Oni Vermelho), `boss_final` = 最終戦 (Kuroe, Izanami). As duas faixas 和風 antigas
+  saíram do jogo. Escolha pelo título e pela categoria do site: ouça e troque em `tools/amacha_assets.json`.
 
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.

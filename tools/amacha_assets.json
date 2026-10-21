@@ -1,5 +1,5 @@
 {
-  "_doc": "Músicas 和風・アジア do 甘茶の音楽工房 (amachamusic.chagasi.com): uso comercial em jogos como BGM, edição livre, crédito opcional; proibido vender ou redistribuir a música avulsa, Content ID e registro em JASRAC (plano 12.7.2).",
+  "_doc": "Músicas 和風・アジア e de chefe (激しい: ボス戦, 侵攻, 戦火, 最終戦) do 甘茶の音楽工房 (amachamusic.chagasi.com): uso comercial em jogos como BGM, edição livre, crédito opcional; proibido vender ou redistribuir a música avulsa, Content ID e registro em JASRAC (plano 12.7.2).",
   "pack_root": "C:/src/assets/amacha/mp3",
   "license_id": "amacha_music",
   "folders": {},
@@ -11,13 +11,15 @@
     "yowanotsuki_karakasa.mp3": "audio/music/stage_dunes.mp3",
     "bakumatsubukyoku_hananoran.mp3": "audio/music/stage_yomi.mp3",
     "kamigaminoyadorubasho.mp3": "audio/music/stage_secret.mp3",
-    "bakumatsubukyoku_ikusa.mp3": "audio/music/boss_a.mp3",
-    "ryunomai.mp3": "audio/music/boss_b.mp3",
     "uchiagehanabi.mp3": "audio/music/endless.mp3",
     "hanamatsuri.mp3": "audio/music/dawn.mp3",
     "ouun.mp3": "audio/music/sanctuary.mp3",
     "japaneseautumn.mp3": "audio/music/story.mp3",
     "furusato.mp3": "audio/music/credits.mp3",
-    "yukyunotokie.mp3": "audio/music/codex.mp3"
+    "yukyunotokie.mp3": "audio/music/codex.mp3",
+    "boss.mp3": "audio/music/boss_a.mp3",
+    "shinkou.mp3": "audio/music/boss_b.mp3",
+    "senka.mp3": "audio/music/boss_c.mp3",
+    "saishuusen.mp3": "audio/music/boss_final.mp3"
   }
 }
