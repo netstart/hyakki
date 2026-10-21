@@ -1,0 +1,69 @@
+extends SceneTree
+## Testes das regras puras (plano 14.1). Sem cena e sem autoloads.
+## Rodar: godot --headless --path . --script res://tests/run_tests.gd
+
+var _count: int = 0
+var _failures: int = 0
+
+
+func _initialize() -> void:
+	_test_xp_curve()
+	_test_target_count()
+	_test_spatial_hash()
+	_test_segment_hit()
+	print("%d verificações, %d falhas" % [_count, _failures])
+	quit(1 if _failures > 0 else 0)
+
+
+func _check(condition: bool, label: String) -> void:
+	_count += 1
+	if not condition:
+		_failures += 1
+		printerr("FALHOU: " + label)
+
+
+func _test_xp_curve() -> void:
+	_check(Progression.xp_to_next(1) == 5, "xp nível 1 = 5")
+	_check(Progression.xp_to_next(2) == 15, "xp nível 2 = 15")
+	_check(Progression.xp_to_next(19) == 185, "xp nível 19 = 185")
+	_check(Progression.xp_to_next(20) == 185 + 13 + 600, "nível 20 tem o muro de +600")
+	_check(Progression.xp_to_next(21) == 185 + 26, "nível 21 volta a +13 por nível")
+	_check(Progression.xp_to_next(40) == 185 + 260 + 16 + 2400, "nível 40 tem o muro de +2400")
+	for level: int in range(1, 19):
+		_check(Progression.xp_to_next(level + 1) > Progression.xp_to_next(level),
+				"curva cresce do nível %d para o %d" % [level, level + 1])
+
+
+func _test_target_count() -> void:
+	_check(Progression.target_count(0.0, 500) == 15, "alvo no minuto 0 = 15")
+	_check(Progression.target_count(1.0, 500) == 38, "alvo no minuto 1 = 38")
+	_check(Progression.target_count(15.0, 500) == 500, "alvo respeita o teto")
+	_check(is_equal_approx(Progression.enemy_hp_mult(10.0), 1.8), "HP ×1,8 no minuto 10")
+	_check(Progression.spawn_rate(10.0) > Progression.spawn_rate(0.0), "ritmo de nascimento cresce com o tempo")
+
+
+func _test_spatial_hash() -> void:
+	var grid := SpatialHash.new(24.0)
+	grid.insert(1, Vector2(10.0, 10.0))
+	grid.insert(2, Vector2(100.0, 100.0))
+	grid.insert(3, Vector2(-30.0, 5.0))
+	var found: Array[int] = []
+	grid.query(Vector2(0.0, 0.0), 20.0, found)
+	_check(found.has(1), "acha o vizinho próximo")
+	_check(not found.has(2), "não acha o distante")
+	grid.query(Vector2(-25.0, 0.0), 10.0, found)
+	_check(found.has(3), "funciona com coordenadas negativas")
+	grid.clear()
+	grid.query(Vector2(0.0, 0.0), 20.0, found)
+	_check(found.is_empty(), "clear esvazia a grade")
+
+
+func _test_segment_hit() -> void:
+	var a := Vector2(0.0, 0.0)
+	var b := Vector2(30.0, 0.0)
+	_check(Geometry.segment_hits_circle(a, b, Vector2(15.0, 3.0), 5.0),
+			"projétil rápido acerta alvo no meio do caminho (sem tunneling)")
+	_check(not Geometry.segment_hits_circle(a, b, Vector2(15.0, 9.0), 5.0),
+			"não acerta alvo fora do raio")
+	_check(not Geometry.segment_hits_circle(a, b, Vector2(40.0, 0.0), 5.0),
+			"não acerta alvo depois do fim do segmento")

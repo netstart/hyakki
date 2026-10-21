@@ -1,0 +1,57 @@
+[
+  {
+    "id": "aki",
+    "sprite": "res://assets/art/actors/heroes/aki/SpriteSheet.png",
+    "face": "res://assets/art/actors/heroes/aki/Faceset.png",
+    "weapon": "katana",
+    "modifiers": {"area": 0.10},
+    "ultimate": {"type": "dawn_flash", "stun": 2.0, "damage_mult": 3.0, "base_damage": 30},
+    "unlock": ""
+  },
+  {
+    "id": "kenta",
+    "sprite": "res://assets/art/actors/heroes/kenta/SpriteSheet.png",
+    "face": "res://assets/art/actors/heroes/kenta/Faceset.png",
+    "weapon": "kunai",
+    "modifiers": {"speed": 0.10},
+    "ultimate": {"type": "shadow_clone", "duration": 8.0},
+    "unlock": "ach_survive_10"
+  },
+  {
+    "id": "hana",
+    "sprite": "res://assets/art/actors/heroes/hana/SpriteSheet.png",
+    "face": "res://assets/art/actors/heroes/hana/Faceset.png",
+    "weapon": "ofuda",
+    "modifiers": {"regen": 1.0},
+    "ultimate": {"type": "kagura", "heal_pct": 0.5, "radius": 160, "force": 420},
+    "unlock": "ach_win_village"
+  },
+  {
+    "id": "goro",
+    "sprite": "res://assets/art/actors/heroes/goro/SpriteSheet.png",
+    "face": "res://assets/art/actors/heroes/goro/Faceset.png",
+    "weapon": "incense",
+    "modifiers": {"max_hp": 0.20, "speed": -0.10},
+    "ultimate": {"type": "temple_bell", "radius": 220, "force": 600, "base_damage": 40},
+    "unlock": "ach_kills_5000"
+  },
+  {
+    "id": "rin",
+    "sprite": "res://assets/art/actors/heroes/rin/SpriteSheet.png",
+    "face": "res://assets/art/actors/heroes/rin/Faceset.png",
+    "weapon": "yumi",
+    "modifiers": {},
+    "amount_per_10_levels": 1,
+    "ultimate": {"type": "arrow_rain", "duration": 6.0, "rate": 0.06, "base_damage": 25, "radius": 18},
+    "unlock": "ach_evolve_3"
+  },
+  {
+    "id": "tora",
+    "sprite": "res://assets/art/actors/heroes/tora/SpriteSheet.png",
+    "face": "res://assets/art/actors/heroes/tora/Faceset.png",
+    "weapon": "kusarigama",
+    "modifiers": {"might": 0.15, "amount": -1},
+    "ultimate": {"type": "living_forge", "duration": 10.0, "might": 0.5},
+    "unlock": "ach_win_temple"
+  }
+]

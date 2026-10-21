@@ -1,0 +1,8 @@
+[
+  {"id": "slot_ryo", "icon": "res://assets/art/items/object/MoneyBag.png", "reward": "ryo", "value": 150, "value_max": 400},
+  {"id": "slot_lantern", "icon": "res://assets/art/ui/icons/meteo/Sun.png", "reward": "next_run", "modifiers": {"light": 0.30}, "ult_start": 50},
+  {"id": "slot_chest", "icon": "res://assets/art/items/treasure/LittleTreasureChest.png", "reward": "next_run", "start_chest": 1},
+  {"id": "slot_luck", "icon": "res://assets/art/ui/icons/spell/Permutation.png", "reward": "next_run", "modifiers": {"reroll": 2, "skip": 1}},
+  {"id": "slot_embers", "icon": "res://assets/art/ui/icons/spell/Upgrade.png", "reward": "next_run", "modifiers": {"growth": 0.25}},
+  {"id": "slot_cosmetic", "icon": "res://assets/art/ui/icons/spell/OrbLight.png", "reward": "cosmetic"}
+]

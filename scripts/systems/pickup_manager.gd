@@ -1,0 +1,235 @@
+class_name PickupManager
+extends Node2D
+## Brasas de alma (XP), moedas, comida, itens especiais e baús (plano 4.3, 4.8 e 10.8).
+## - Brasas em arrays; acima de 300 no chão, as novas se fundem na mais próxima.
+## - Brasas atraídas nunca orbitam: se a passada alcança a guardiã, são coletadas.
+## - A coleta de brasas em sequência sobe o tom numa escala pentatônica (plano 15.7).
+
+const CAPACITY := 400
+const MERGE_AT := 300
+const COLLECT_RADIUS := 8.0
+const ITEM_RADIUS := 10.0
+const ATTRACT_ACCEL := 600.0
+const ATTRACT_MAX_SPEED := 420.0
+## Escala pentatônica japonesa "in" (miyako-bushi), em semitons a partir da tônica.
+const SCALE := [0, 1, 5, 7, 8, 12, 13, 17, 19, 20, 24]
+const SCALE_RESET_MS := 1500
+
+var game: HyakkiGame
+var count_alive: int = 0
+## Itens no chão (poucos): comida, ryō, sino, ampulheta, baús...
+var items: Array[Dictionary] = []
+
+var pos := PackedVector2Array()
+var prev := PackedVector2Array()
+var value := PackedInt32Array()
+var spd := PackedFloat32Array()
+var attracted := PackedByteArray()
+var alive := PackedByteArray()
+
+var _free: Array[int] = []
+var _gem_tex: Array[Texture2D] = []
+var _item_tex: Dictionary = {}
+var _note: int = 0
+var _last_note_ms: int = 0
+
+
+func _ready() -> void:
+	for gem: String in ["GemPurple", "GemGreen", "GemRed", "GemYellow"]:
+		_gem_tex.append(load("res://assets/art/items/resource/%s.png" % gem) as Texture2D)
+	for id: StringName in DB.ids("items"):
+		var path := String(DB.items[id]["icon"])
+		if ResourceLoader.exists(path):
+			_item_tex[id] = load(path)
+	pos.resize(CAPACITY)
+	prev.resize(CAPACITY)
+	value.resize(CAPACITY)
+	spd.resize(CAPACITY)
+	attracted.resize(CAPACITY)
+	alive.resize(CAPACITY)
+	reset()
+
+
+func reset() -> void:
+	_free.clear()
+	for i: int in range(CAPACITY - 1, -1, -1):
+		_free.append(i)
+	alive.fill(0)
+	count_alive = 0
+	items.clear()
+
+
+func spawn(at: Vector2, amount: int) -> void:
+	if amount <= 0:
+		return
+	if count_alive >= MERGE_AT or _free.is_empty():
+		var target := _nearest(at)
+		if target >= 0:
+			value[target] += amount
+		return
+	var i: int = _free.pop_back()
+	pos[i] = at
+	prev[i] = at
+	value[i] = amount
+	spd[i] = 0.0
+	attracted[i] = 0
+	alive[i] = 1
+	count_alive += 1
+
+
+func spawn_item(id: StringName, at: Vector2, extra: Dictionary = {}) -> void:
+	var data: Dictionary = DB.items.get(id, {})
+	if data.is_empty():
+		return
+	var item := {"id": id, "pos": at, "effect": String(data["effect"]), "value": data["value"],
+			"phase": game.rng.randf() * TAU}
+	item.merge(extra, true)
+	items.append(item)
+
+
+## Sorteia um item de lanterna destrutível pelos pesos de items.json.
+func random_item_id() -> StringName:
+	var total := 0.0
+	for id: StringName in DB.ids("items"):
+		total += float(DB.items[id].get("weight", 0))
+	var roll := game.rng.randf() * total
+	for id: StringName in DB.ids("items"):
+		roll -= float(DB.items[id].get("weight", 0))
+		if roll <= 0.0:
+			return id
+	return &"onigiri"
+
+
+func step(dt: float) -> void:
+	prev = pos.duplicate()
+	var player := game.player
+	var target := player.sim_pos
+	var magnet := player.stats.get_stat("magnet")
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var d: Vector2 = target - pos[i]
+		var dist := d.length()
+		if dist <= COLLECT_RADIUS:
+			_collect(i)
+			continue
+		if attracted[i] == 0 and dist > magnet:
+			continue
+		attracted[i] = 1
+		spd[i] = minf(spd[i] + ATTRACT_ACCEL * dt, ATTRACT_MAX_SPEED)
+		var travel: float = spd[i] * dt
+		if travel >= dist - COLLECT_RADIUS:
+			_collect(i)
+			continue
+		pos[i] = pos[i] + d / dist * travel
+	for k: int in range(items.size() - 1, -1, -1):
+		var item := items[k]
+		if target.distance_to(item["pos"]) <= ITEM_RADIUS + Player.RADIUS:
+			items.remove_at(k)
+			game.collect_item(item)
+
+
+## Ímã total: todas as brasas do chão voam para a guardiã.
+func magnet_all() -> void:
+	for i: int in range(CAPACITY):
+		if alive[i] == 1:
+			attracted[i] = 1
+
+
+## Puxa brasas para um ponto (Furacão de Fūjin).
+func pull_gems(center: Vector2, r: float, strength: float, dt: float) -> void:
+	for i: int in range(CAPACITY):
+		if alive[i] == 1 and attracted[i] == 0:
+			var d := center - pos[i]
+			if d.length() < r and d.length() > 2.0:
+				pos[i] = pos[i] + d.normalized() * strength * dt
+
+
+func total_value() -> int:
+	var total := 0
+	for i: int in range(CAPACITY):
+		if alive[i] == 1:
+			total += value[i]
+	return total
+
+
+func _collect(i: int) -> void:
+	alive[i] = 0
+	_free.append(i)
+	count_alive -= 1
+	game.add_xp(value[i])
+	var now := Time.get_ticks_msec()
+	if now - _last_note_ms > SCALE_RESET_MS:
+		_note = 0
+	_last_note_ms = now
+	var semitone: int = SCALE[mini(_note, SCALE.size() - 1)]
+	_note += 1
+	AudioManager.play("coin", pow(2.0, semitone / 12.0), 0.0, -10.0)
+
+
+func _nearest(at: Vector2) -> int:
+	var best := -1
+	var best_d2 := INF
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var d2 := at.distance_squared_to(pos[i])
+		if d2 < best_d2:
+			best_d2 = d2
+			best = i
+	return best
+
+
+func _process(_delta: float) -> void:
+	queue_redraw()
+
+
+func _draw() -> void:
+	var a := GameClock.alpha
+	var time := GameClock.game_time
+	var colorblind := bool(Settings.get_value("colorblind"))
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var p: Vector2 = prev[i].lerp(pos[i], a)
+		if attracted[i] == 0:
+			p.y += roundf(sin(time * 3.0 + float(i)))
+		var v := value[i]
+		var tier := 0 if v < 5 else (1 if v < 25 else (2 if v < 100 else 3))
+		var tex := _gem_tex[tier]
+		var s := 0.6 if tier == 0 else (0.8 if tier == 1 else 1.0)
+		# No modo daltônico, as brasas maiores ganham um contorno branco para diferenciar pela forma.
+		draw_set_transform(p.round(), 0.0, Vector2(s, s))
+		if colorblind and tier >= 2:
+			draw_arc(Vector2.ZERO, 7.0, 0.0, TAU, 12, Color.WHITE, 1.0)
+		draw_texture(tex, -tex.get_size() * 0.5)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	for item: Dictionary in items:
+		var tex: Texture2D = _item_tex.get(item["id"])
+		if tex == null:
+			continue
+		var p: Vector2 = item["pos"]
+		p.y += roundf(sin(time * 2.5 + float(item["phase"])) * 1.5)
+		draw_circle(p + Vector2(0, 6), 5.0, Color(0, 0, 0, 0.25))
+		var glow := 0.5 + 0.5 * sin(time * 4.0 + float(item["phase"]))
+		draw_arc(p, 9.0, 0.0, TAU, 16, Color(1.0, 1.0, 0.8, 0.25 + 0.25 * glow), 1.0)
+		draw_texture(tex, (p - tex.get_size() * 0.5).round())
+
+
+## Cores das brasas por valor; no modo daltônico usa azul/laranja/branco (plano 7.5).
+static func gem_color(v: int, colorblind: bool = false) -> Color:
+	if colorblind:
+		if v >= 100:
+			return Color("ffffff")
+		if v >= 25:
+			return Color("ff9f1c")
+		if v >= 5:
+			return Color("2ec4b6")
+		return Color("8ecae6")
+	if v >= 100:
+		return Color("ffd166")
+	if v >= 25:
+		return Color("ef476f")
+	if v >= 5:
+		return Color("06d6a0")
+	return Color("6ab7ff")

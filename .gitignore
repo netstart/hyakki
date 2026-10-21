@@ -1,0 +1,13 @@
+# Godot 4
+.godot/
+/android/
+*.tmp
+
+# Builds
+/build/
+*.apk
+*.aab
+
+# Keystores ficam fora do repositório (plano 11.2)
+*.keystore
+*.jks

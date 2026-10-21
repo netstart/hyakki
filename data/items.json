@@ -1,0 +1,11 @@
+[
+  {"id": "onigiri", "icon": "res://assets/art/items/food/Onigiri.png", "effect": "heal", "value": 30, "weight": 40},
+  {"id": "sushi", "icon": "res://assets/art/items/food/Sushi.png", "effect": "heal", "value": 60, "weight": 8},
+  {"id": "ryo_bag", "icon": "res://assets/art/items/object/MoneyBag.png", "effect": "ryo", "value": 25, "weight": 30},
+  {"id": "magnet_scroll", "icon": "res://assets/art/items/scroll/ScrollThunder.png", "effect": "magnet", "value": 0, "weight": 10},
+  {"id": "purifying_bell", "icon": "res://assets/art/ui/icons/job/Sing.png", "effect": "bell", "value": 0, "weight": 5},
+  {"id": "hourglass", "icon": "res://assets/art/items/object/Hourglass.png", "effect": "freeze", "value": 10, "weight": 5},
+  {"id": "solar_ember", "icon": "res://assets/art/ui/icons/meteo/Sun.png", "effect": "solar", "value": 10, "weight": 4},
+  {"id": "coin", "icon": "res://assets/art/items/treasure/GoldCoin.png", "effect": "ryo", "value": 5, "weight": 0},
+  {"id": "chest", "icon": "res://assets/art/items/treasure/LittleTreasureChest.png", "effect": "chest", "value": 0, "weight": 0}
+]

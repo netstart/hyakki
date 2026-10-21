@@ -1,0 +1,205 @@
+[
+  {
+    "id": "godot_engine",
+    "name": "Godot Engine",
+    "category": "engine",
+    "author": "Juan Linietsky, Ariel Manzur and Godot Engine contributors",
+    "version": "4.7.2-stable",
+    "source_url": "https://godotengine.org/license",
+    "license_id": "MIT",
+    "license_url": "https://raw.githubusercontent.com/godotengine/godot/4.7.2-stable/LICENSE.txt",
+    "license_file": "licenses/texts/MIT-Godot.txt",
+    "notice_url": "https://raw.githubusercontent.com/godotengine/godot/4.7.2-stable/COPYRIGHT.txt",
+    "notice_file": "licenses/notices/godot_engine_COPYRIGHT.txt",
+    "snapshot_url": "https://godotengine.org/license",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [],
+    "sha256": {
+      "license_file": "b0435e3b3e4e55238f05f4b306f30524a1b2e20147810d436eaa554fa6855c80",
+      "notice_file": "cb1980c88089573bcacd7221d777c689bb8bbd778799f24c27fca0fe5f774d6d",
+      "snapshot_file": "17b56b65fc91bc6b7f427ec7617cc8fca1a95c97ff6c06e966cbe489a4c6ea7c"
+    },
+    "snapshot_file": "docs/licenses/godot_engine_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "androidx",
+    "name": "Android Jetpack (AndroidX) and Kotlin stdlib",
+    "category": "android",
+    "author": "The Android Open Source Project; JetBrains s.r.o.",
+    "version": "as bundled by the Godot 4.7.2 Android export template",
+    "source_url": "https://developer.android.com/jetpack/androidx",
+    "license_id": "Apache-2.0",
+    "license_url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+    "license_file": "licenses/texts/Apache-2.0.txt",
+    "snapshot_url": "https://developer.android.com/jetpack/androidx",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [],
+    "sha256": {
+      "license_file": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "snapshot_file": "f18d2f4bcc7c74482ada761c5af2a256c4a36ba426fdfb1322b7e763df8b3136"
+    },
+    "snapshot_file": "docs/licenses/androidx_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "ninja_adventure",
+    "name": "Ninja Adventure - Asset Pack",
+    "category": "art",
+    "author": "pixel-boy & AAA",
+    "version": "NinjaAdventure-AssetPack.zip (SHA-256 95a06f4fdcfd1882f061a45ff313b7c905dbe2de1e8512b281d7937df62a7b15)",
+    "source_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_source": "assets/licenses_src/ninja_adventure_LICENSE.txt",
+    "notice_file": "licenses/notices/ninja_adventure_LICENSE.txt",
+    "snapshot_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
+    "attribution_required": false,
+    "commercial_use": true,
+    "redistribution_of_raw_pack": true,
+    "ai_generated": false,
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime",
+    "files": [
+      "assets/art/**",
+      "assets/audio/**",
+      "assets/licenses_src/ninja_adventure_*"
+    ],
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "1ab4dba5d237a49ad295604fae2098e039d3ae5fd57a62bbcbeff127210fba6e",
+      "snapshot_file": "6c9e436593e0ce02845cd080d9bd57f55b8b2b906077ff81ebf52afbceddfdbd"
+    },
+    "snapshot_file": "docs/licenses/ninja_adventure_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "fusion_pixel_font",
+    "name": "Fusion Pixel Font (12px proportional)",
+    "category": "font",
+    "author": "TakWolf",
+    "version": "2026.10.16",
+    "source_url": "https://github.com/TakWolf/fusion-pixel-font",
+    "license_id": "OFL-1.1",
+    "license_url": "https://openfontlicense.org/documents/OFL.txt",
+    "license_file": "licenses/texts/OFL-1.1.txt",
+    "notice_source": "assets/licenses_src/fusion_pixel_OFL.txt",
+    "notice_file": "licenses/notices/fusion_pixel_font_OFL.txt",
+    "snapshot_url": "https://github.com/TakWolf/fusion-pixel-font",
+    "attribution_required": true,
+    "commercial_use": true,
+    "reserved_font_name": false,
+    "ai_generated": false,
+    "modifications": "none (release .woff2 files, renamed only)",
+    "files": [
+      "assets/fonts/fusion_pixel_*",
+      "assets/licenses_src/fusion_pixel_OFL.txt"
+    ],
+    "sha256": {
+      "license_file": "1d361a8f8e8ce6e68457dcd93fb56e162e6baa3bbb7e7573a290d44399f6b57e",
+      "notice_file": "bc518cf64b8032c07690f33cc270c35c179255a6ac8efa7c165ebae7e8f76a63",
+      "snapshot_file": "82553f9e6a6c983784b5b6cf384f787298991eaf5525c6c2ad30b3872a5b1a90"
+    },
+    "snapshot_file": "docs/licenses/fusion_pixel_font_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "ark_pixel_font",
+    "name": "Ark Pixel Font (Fusion Pixel upstream)",
+    "category": "font",
+    "author": "TakWolf",
+    "version": "included in Fusion Pixel 2026.10.16",
+    "source_url": "https://github.com/TakWolf/ark-pixel-font",
+    "license_id": "OFL-1.1",
+    "license_url": "https://openfontlicense.org/documents/OFL.txt",
+    "license_file": "licenses/texts/OFL-1.1.txt",
+    "notice_source": "assets/licenses_src/fusion_pixel_upstream_ark_pixel_OFL.txt",
+    "notice_file": "licenses/notices/ark_pixel_font_OFL.txt",
+    "snapshot_url": "https://github.com/TakWolf/ark-pixel-font",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [
+      "assets/licenses_src/fusion_pixel_upstream_ark_pixel_OFL.txt"
+    ],
+    "sha256": {
+      "license_file": "1d361a8f8e8ce6e68457dcd93fb56e162e6baa3bbb7e7573a290d44399f6b57e",
+      "notice_file": "3ab41567e68e3988ba1ef16dd2644eca95ca5648ea12e7d46e6287fc0bbe5aee",
+      "snapshot_file": "b180a8690e4ca2ec84c93988245470beb892a1c288a80a29af9b184e02d4eff6"
+    },
+    "snapshot_file": "docs/licenses/ark_pixel_font_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "cubic_11",
+    "name": "Cubic 11 (Fusion Pixel upstream)",
+    "category": "font",
+    "author": "ACh-K",
+    "version": "included in Fusion Pixel 2026.10.16",
+    "source_url": "https://github.com/ACh-K/Cubic-11",
+    "license_id": "OFL-1.1",
+    "license_url": "https://openfontlicense.org/documents/OFL.txt",
+    "license_file": "licenses/texts/OFL-1.1.txt",
+    "notice_source": "assets/licenses_src/fusion_pixel_upstream_cubic_11_OFL.txt",
+    "notice_file": "licenses/notices/cubic_11_OFL.txt",
+    "snapshot_url": "https://github.com/ACh-K/Cubic-11",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [
+      "assets/licenses_src/fusion_pixel_upstream_cubic_11_OFL.txt"
+    ],
+    "sha256": {
+      "license_file": "1d361a8f8e8ce6e68457dcd93fb56e162e6baa3bbb7e7573a290d44399f6b57e",
+      "notice_file": "2b6e5938e5cffa0b9e183bd05f8c363e174e7ebed1a0556e2855fd1707fa2188",
+      "snapshot_file": "dd5f8020997d793add8cdfe0088cf1698ad49a3db460779a1046f7160b8330b5"
+    },
+    "snapshot_file": "docs/licenses/cubic_11_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "galmuri",
+    "name": "Galmuri (Fusion Pixel upstream)",
+    "category": "font",
+    "author": "Lee Minseo (quiple)",
+    "version": "included in Fusion Pixel 2026.10.16",
+    "source_url": "https://github.com/quiple/galmuri",
+    "license_id": "OFL-1.1",
+    "license_url": "https://openfontlicense.org/documents/OFL.txt",
+    "license_file": "licenses/texts/OFL-1.1.txt",
+    "notice_source": "assets/licenses_src/fusion_pixel_upstream_galmuri_LICENSE.txt",
+    "notice_file": "licenses/notices/galmuri_LICENSE.txt",
+    "snapshot_url": "https://github.com/quiple/galmuri",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [
+      "assets/licenses_src/fusion_pixel_upstream_galmuri_LICENSE.txt"
+    ],
+    "sha256": {
+      "license_file": "1d361a8f8e8ce6e68457dcd93fb56e162e6baa3bbb7e7573a290d44399f6b57e",
+      "notice_file": "86a3ee9495f942f0243f18c103da9faca27adb88142613edb8bb852e56c892c1",
+      "snapshot_file": "9685b908ee41b81eee7c8b9ff0f01247f722a066c8d11a54ea5764aa1fbc489d"
+    },
+    "snapshot_file": "docs/licenses/galmuri_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21",
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  }
+]
