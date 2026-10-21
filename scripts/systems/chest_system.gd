@@ -36,7 +36,7 @@ func open(from_boss: bool) -> Array[Dictionary]:
 		rewards.append(reward)
 	var ryo := RYO_PER_ITEM * count * (2 if from_boss else 1)
 	game.add_run_ryo(ryo)
-	rewards.append({"kind": "ryo", "title": tr("chest.ryo") % ryo, "icon": "res://assets/art/items/treasure/GoldCoin.png"})
+	rewards.append({"kind": "ryo", "title": tr("chest.ryo") % ryo, "icon": "res://assets/art/items/object/MoneyBag.png"})
 	Events.chest_opened.emit(count)
 	game.tracker.chests += 1
 	return rewards

@@ -1,6 +1,6 @@
 """Verifica as licenças antes de cada build (plano 12.6.4). Sai com código 1 se:
 
-- algum arquivo em assets/ (que vai no export) não é coberto por uma entrada do registro;
+- algum arquivo em assets/ ou addons/ não é coberto por uma entrada do registro;
 - uma entrada não tem a cópia local da licença, ou o SHA-256 não confere;
 - a licença não está na lista permitida (sem NC, ND, SA, GPL, personal_only...);
 - o componente exige crédito e não aparece em CREDITS.md;
@@ -21,7 +21,7 @@ ALLOWED = {"CC0-1.0", "MIT", "Apache-2.0", "OFL-1.1", "CC-BY-4.0", "BSD-2-Clause
            "Zlib", "FTL"}
 BLOCKED_FLAGS = ("personal_only", "no_monetized_games")
 MAX_AGE_DAYS = 180
-IGNORED = ("*.import", "assets/asset_index.json")
+IGNORED = ("*.import", "*.uid", "assets/asset_index.json", "addons/admob/ios/bin/*")
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -72,7 +72,8 @@ def main() -> int:
             errors.append(f"{tag}: marcada needs_review (a licença ou a página mudou)")
     # Cobertura: todo arquivo de assets/ pertence a alguma entrada.
     uncovered = []
-    for path in sorted((ROOT / "assets").rglob("*")):
+    files = sorted((ROOT / "assets").rglob("*")) + sorted((ROOT / "addons").rglob("*"))
+    for path in files:
         if not path.is_file():
             continue
         rel = path.relative_to(ROOT).as_posix()

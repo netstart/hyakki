@@ -416,7 +416,11 @@ func _build_chest_panel() -> void:
 	_chest_panel = box.get_parent().get_parent() as Control
 	box.add_child(_label(tr("chest.title"), HORIZONTAL_ALIGNMENT_CENTER))
 	_chest_spinner = TextureRect.new()
-	_chest_spinner.texture = _icon("res://assets/art/items/treasure/BigTreasureChest.png")
+	# A imagem tem dois quadros (fechado | aberto): na roleta mostra só o baú fechado.
+	var chest_frame := AtlasTexture.new()
+	chest_frame.atlas = _icon("res://assets/art/items/treasure/BigTreasureChest.png")
+	chest_frame.region = Rect2(0, 0, 16, 14)
+	_chest_spinner.texture = chest_frame
 	_chest_spinner.custom_minimum_size = Vector2(48, 48)
 	_chest_spinner.pivot_offset = Vector2(24, 24)
 	_chest_spinner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -434,6 +438,14 @@ func _build_chest_panel() -> void:
 
 
 # --- Kami ----------------------------------------------------------------------------
+
+## Marca cada linha com + ou -, sem duplicar quando o valor já vem com sinal ("+25% ...").
+static func _signed_lines(text: String, sign: String) -> String:
+	var lines: PackedStringArray = []
+	for line: String in text.split("\n", false):
+		lines.append(line if line.begins_with("+") or line.begins_with("-") else "%s %s" % [sign, line])
+	return "\n".join(lines)
+
 
 func show_kami(offer: Array[StringName]) -> void:
 	_kami_ids = offer
@@ -455,7 +467,8 @@ func show_kami(offer: Array[StringName]) -> void:
 		var cost := LevelUpSystem.describe_stats(data.get("cost", {}))
 		if cost.is_empty() and data.has("special"):
 			cost = tr("kami.%s.cost" % id)
-		button.text = "%s\n\n+ %s\n\n- %s" % [tr("kami.%s.name" % id), blessing, cost]
+		button.text = "%s\n\n%s\n\n%s" % [tr("kami.%s.name" % id), _signed_lines(blessing, "+"),
+				_signed_lines(cost, "-")]
 		button.add_theme_color_override("font_color", Color(String(data["color"])).lightened(0.4))
 		button.pressed.connect(func() -> void:
 			_kami_panel.visible = false

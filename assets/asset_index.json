@@ -1272,6 +1272,18 @@
   "sha256": "3d6b256d939e79943d3fd217429d06f36e8a77f243b5d63efb41f024acc143ae"
  },
  {
+  "file": "assets/art/actors/heroes/yuki/Faceset.png",
+  "source": "C:/src/assets/merakintsugi/out/Faceset.png",
+  "license_id": "merakintsugi_platformer",
+  "sha256": "7ae5ff75e375c96f5464a5e7fcf78ec6676f902443497b1a60c43c2899d8d83a"
+ },
+ {
+  "file": "assets/art/actors/heroes/yuki/SpriteSheet.png",
+  "source": "C:/src/assets/merakintsugi/out/SpriteSheet.png",
+  "license_id": "merakintsugi_platformer",
+  "sha256": "a7e96a3d30433c48041157fcd90dbc36b5ffa452df3f20e56318d53fd7f4fcb2"
+ },
+ {
   "file": "assets/art/actors/npc/villager/Faceset.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Villager4/Faceset.png",
   "license_id": "ninja_adventure",
@@ -4266,6 +4278,150 @@
   "sha256": "d5dc7a7e6f711fefc73544ab9e50567bc0c140ef31f7767e43e731de8a0964e3"
  },
  {
+  "file": "assets/audio/sfx/hy_crit_0.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_crit_0.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "85bc3189f50140dd1c7eded53a10d4438d4079a0f76a386746a175eaac61b61a"
+ },
+ {
+  "file": "assets/audio/sfx/hy_crit_1.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_crit_1.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "c54b3e3aeb4261706374be25a94b44b5b84574e5debc01b5ca2df5b674060171"
+ },
+ {
+  "file": "assets/audio/sfx/hy_crit_2.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_crit_2.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "6941ad051afb42cf6681578da1530d0b60a495224e7a98c65d0e09d7721cf02b"
+ },
+ {
+  "file": "assets/audio/sfx/hy_crit_3.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_crit_3.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "de17110a9f34975fb9269e2166ea53e5dbc3e70abe01d9d4e5bcff4ecd954f57"
+ },
+ {
+  "file": "assets/audio/sfx/hy_crit_4.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_crit_4.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "78bea2fb5127ce8de7b92fadfa56e88a18e7a706a65951fbae61b306ba927176"
+ },
+ {
+  "file": "assets/audio/sfx/hy_crit_5.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_crit_5.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "72f1ba18d8928eacb0bd4fb0e20002b8ea7439c74041d80bc4912484dcbc662e"
+ },
+ {
+  "file": "assets/audio/sfx/hy_slash_0.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_slash_0.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "76f5b85cb91298a3c1da5159fc58e4b1a7703b5f8428f2cf338efc73b42c111c"
+ },
+ {
+  "file": "assets/audio/sfx/hy_slash_1.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_slash_1.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "74985dd80ed05f62bd4cd12464f1f8af01a19bf72396b873994c73b35802085f"
+ },
+ {
+  "file": "assets/audio/sfx/hy_slash_2.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_slash_2.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "b493edd41abaeabe7e2195573f592d46e551e57b05f3339c88470f36d4d2075a"
+ },
+ {
+  "file": "assets/audio/sfx/hy_slash_3.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_slash_3.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "4d6a8a45eecd0f78cd5342a2bfe8500fadf85b7d12b356065e8601fdf1aa0b43"
+ },
+ {
+  "file": "assets/audio/sfx/hy_slash_4.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_slash_4.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "113063e4b6dc7ad47368999ffa5b280a27716faee96623986946f32feca67bd2"
+ },
+ {
+  "file": "assets/audio/sfx/hy_slash_5.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_slash_5.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "09b07a1383f0c755461b33cb271b0040bdfd0738e63b91dcab90f53993ab8ce3"
+ },
+ {
+  "file": "assets/audio/sfx/hy_smack_0.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_smack_0.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "e3b1cc82a313556fe1a4d909605183a8e2de145dcb5df0bbc4244b066b9ed228"
+ },
+ {
+  "file": "assets/audio/sfx/hy_smack_1.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_smack_1.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "15d095c0ebc2200c4d7da3fdeb4cf407c3c11ca189ed0de0e1fd257066773353"
+ },
+ {
+  "file": "assets/audio/sfx/hy_smack_2.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_smack_2.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "e1a1a0f9f28bed228d9794cd73d5da67fe6969f719fe947f5298cce823e9dccf"
+ },
+ {
+  "file": "assets/audio/sfx/hy_smack_3.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_smack_3.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "d2b2c38bded900c0a14f5f7955a0213567cc8379d878d64ac2d7e31ede940aa0"
+ },
+ {
+  "file": "assets/audio/sfx/hy_smack_4.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_smack_4.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "97260f8fe21ea28f13f75caaa335d95984ee9d429e6f1c1255447e3e77cc01c1"
+ },
+ {
+  "file": "assets/audio/sfx/hy_smack_5.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_smack_5.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "9570cc7adfe293f1e3bc6437b9db300d8a0e365fd456e7ace5f4c92c680c1d10"
+ },
+ {
+  "file": "assets/audio/sfx/hy_swish_0.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_swish_0.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "58479e9b79f80e79208b76bdac20bf7b494a2958d81ed71f7cf57cbda8d0f780"
+ },
+ {
+  "file": "assets/audio/sfx/hy_swish_1.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_swish_1.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "b38c950d8e2fd4310f13b4fd08959be4a9f58cc4f9dd96268df7e862d2e6a28f"
+ },
+ {
+  "file": "assets/audio/sfx/hy_swish_2.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_swish_2.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "bb7d861299f2833d9731a992578100ca1c9b660f38d699b479bf72b37fbf75e3"
+ },
+ {
+  "file": "assets/audio/sfx/hy_swish_3.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_swish_3.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "81f16253a55cc9b927add90ba3ef4b8899c9fbc72c1d8efe7bc7572b1b8c324f"
+ },
+ {
+  "file": "assets/audio/sfx/hy_swish_4.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_swish_4.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "c0de4b59d945b96bcfc06ae5b55b24f7c1f69a2d51e57b555b5cc349ea8e776c"
+ },
+ {
+  "file": "assets/audio/sfx/hy_swish_5.wav",
+  "source": "C:/src/assets/heltonyan/cut/hy_swish_5.wav",
+  "license_id": "helton_yan_pixel_combat",
+  "sha256": "7e925774a281c90bc8fa576f87bc6c70084bd70c6afef92787a831958a0189c0"
+ },
+ {
   "file": "assets/audio/sfx/impact.wav",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Hit & Impact/Impact.wav",
   "license_id": "ninja_adventure",
@@ -4276,6 +4432,48 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Hit & Impact/Impact3.wav",
   "license_id": "ninja_adventure",
   "sha256": "8c6a965d5216ba5ec57cff44a7fb4d183c258a7632a6d74ab4396525124d2707"
+ },
+ {
+  "file": "assets/audio/sfx/j_furin.mp3",
+  "source": "C:/src/assets/soundeffect-lab/furin-house1.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "1b1ffb3b6fa257767bde5d5cefb0342d1b27ca706a9db301f6564fbb3f38368c"
+ },
+ {
+  "file": "assets/audio/sfx/j_gong.mp3",
+  "source": "C:/src/assets/soundeffect-lab/gong-played1.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "c4672be70738f773cd0a2f85096bf5e662cca84824981be167e95c4b81042c80"
+ },
+ {
+  "file": "assets/audio/sfx/j_koto.mp3",
+  "source": "C:/src/assets/soundeffect-lab/koto-glissando1.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "c137efa8aae33517cc6a4d6790486a4cac0198155b4882d3cae8f584349cd78a"
+ },
+ {
+  "file": "assets/audio/sfx/j_taiko_0.mp3",
+  "source": "C:/src/assets/soundeffect-lab/drum-japanese1.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "6601cdb0ba3c933ae0fa359d4a8884f86c3a2652a3d1d037651cb15336dfd9a9"
+ },
+ {
+  "file": "assets/audio/sfx/j_taiko_1.mp3",
+  "source": "C:/src/assets/soundeffect-lab/drum-japanese2.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "2a7215ff0ce59d2a36e7c6b2980b42dc184b915950ddfbfc5bce5e947487fb73"
+ },
+ {
+  "file": "assets/audio/sfx/j_taiko_rim.mp3",
+  "source": "C:/src/assets/soundeffect-lab/drum-japanese-kaka1.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "fbd3603d41ed9c06e235a29e65bf0087ae6b5ccd7122620d7521f96f4d1d268e"
+ },
+ {
+  "file": "assets/audio/sfx/j_temple_bell.mp3",
+  "source": "C:/src/assets/soundeffect-lab/temple-bell1.mp3",
+  "license_id": "soundeffect_lab",
+  "sha256": "e848099d32b1743339fc858e3986fe71e5af51909b6de26431eddb7f03ecce93"
  },
  {
   "file": "assets/audio/sfx/jingle_chest_big.wav",
@@ -4318,6 +4516,210 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Jump & Bounce/Jump.wav",
   "license_id": "ninja_adventure",
   "sha256": "743425a6aa563169ece8ab5ac98e9223fac43a49ce1d06de3e79e5089ebb8cb2"
+ },
+ {
+  "file": "assets/audio/sfx/k_bell_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactBell_heavy_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "94b8bb5f2d43ab65e4bcc32b28562416e9bc2c51d9fd4be1e333660ee52f977f"
+ },
+ {
+  "file": "assets/audio/sfx/k_bell_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactBell_heavy_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "9df61e3ae9a83dc65e5a1fd3ed19d480876f3b22b963a1b9ef6fa293592dcec4"
+ },
+ {
+  "file": "assets/audio/sfx/k_bell_2.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactBell_heavy_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "a4171ed1a4a17fb858a38de1c59b5b42e50d8f046c525706c0e3ac8671f189f5"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_punch_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "486988aa2d6440ffc4c62a0e8ccf3c23673ba84424bd4723378d451b7255eb5c"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_punch_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "e71d23abcc3f10d9d6bc9615b2a431fff70b12333a5fcdd9964457564ace4349"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_punch_2.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "6492f9ccbc8d24dcef607bb1b48790b7870961474561f7fe5601e1c73a3018ef"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_punch_3.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_003.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "2d7c719c05999e0532f4384e1018e04cd916db715140bf16dee2dff3f820e908"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_punch_4.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_004.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "4a256878a3afb994ec9a4399336687748e68c7c136872c08c9c797d8c4e2464a"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_soft_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactSoft_medium_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "7d3ba0bb5e60a11b5d3e558c141303dcf494256675fbf753c0d252d2cf0481e3"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_soft_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactSoft_medium_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "7642a4fd43e547afe4f7adfadb3dabb681c0ff512f52c1674bae30a726841faf"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_soft_2.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactSoft_medium_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "5069e3571a77d7f7aae9ef71d0364aa245fb7d64a7c8cc9956f221d03088c089"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_soft_3.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactSoft_medium_003.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "5c4a1f35fde7e14046931da7bc3d1b23736541b7190ba107e08a379c4ca43cd6"
+ },
+ {
+  "file": "assets/audio/sfx/k_hit_soft_4.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactSoft_medium_004.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "b0a4dea90eed47accf50b768beff1166f2f1486fb139e4d025b2427637624bca"
+ },
+ {
+  "file": "assets/audio/sfx/k_hurt_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_heavy_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "b33a8f14068aec24ec69ba85e5e87fdc41228975f6a1a3e44a6e7d6fc3d9f8d8"
+ },
+ {
+  "file": "assets/audio/sfx/k_hurt_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_heavy_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "f92f5cb6ba4ff2766497292ffd90865654317eeca976f5652e0708dbdcdc0dd9"
+ },
+ {
+  "file": "assets/audio/sfx/k_hurt_2.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_heavy_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "7993dd4c156b9979ad69f17be5ebe31850b16039a3857f8477141be54dfee1b3"
+ },
+ {
+  "file": "assets/audio/sfx/k_jingle_pizzi_0.ogg",
+  "source": "C:/src/assets/kenney/music-jingles/Audio/Pizzicato jingles/jingles_PIZZI00.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "b442ade3308a2bbda4b8c572c86f9f1071c7bdbcfb1e6f915d35c605b61bd475"
+ },
+ {
+  "file": "assets/audio/sfx/k_jingle_pizzi_1.ogg",
+  "source": "C:/src/assets/kenney/music-jingles/Audio/Pizzicato jingles/jingles_PIZZI01.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "3f8f2534a297d19386c233a7ee4fa8737cc40870dd206010263760e1983dde46"
+ },
+ {
+  "file": "assets/audio/sfx/k_jingle_pizzi_2.ogg",
+  "source": "C:/src/assets/kenney/music-jingles/Audio/Pizzicato jingles/jingles_PIZZI02.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "4967dc3cd31257716f455ef50f8980378726ce086954c7a5563c0c57ee129e3e"
+ },
+ {
+  "file": "assets/audio/sfx/k_jingle_pizzi_3.ogg",
+  "source": "C:/src/assets/kenney/music-jingles/Audio/Pizzicato jingles/jingles_PIZZI03.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "88da900ec74a79fb845f2dcf2068383998833a9ee1b87a23f074924781af5700"
+ },
+ {
+  "file": "assets/audio/sfx/k_jingle_steel_0.ogg",
+  "source": "C:/src/assets/kenney/music-jingles/Audio/Steel jingles/jingles_STEEL00.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "8799eb726d784ae0aa1a9df80648a873ac60015bc00aea12c8e2dd1431a2bd7d"
+ },
+ {
+  "file": "assets/audio/sfx/k_jingle_steel_1.ogg",
+  "source": "C:/src/assets/kenney/music-jingles/Audio/Steel jingles/jingles_STEEL01.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "099b192f120f7eb7c24613be277428628b9ec9c81e1f8420254abce336fbe7e5"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_back_0.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/back_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "07db973f79f6ae0f2edc34561e7592e24d0577455919fb602cb8ecc0da991dcf"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_back_1.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/back_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "61581c58194e3f19f531072edabbc344204c7e0a2887b8ededce4357bcf09195"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_confirm_0.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/confirmation_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_confirm_1.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/confirmation_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_select_0.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/select_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "aec0c31ea934a35936ae0d2ab8fac8123c93aa5647f935853a58dbaf90278b7a"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_select_1.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/select_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "4cc6ac5341b9b2c86fef80c347de028e9ab9f2e037586ac7d9fa59a403a1c012"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_select_2.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/select_003.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "9a612fd2f513d52a296906b41071c990f75defe56be3bee60d2d4e2423b51b8b"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_select_3.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/select_004.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "eb6cb435f3f2ab14f85f46a2bdd9073ec511d0f1f8d8c890c6636045703a5fd4"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_tick_0.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/tick_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "9d057b918024c787bbe6c00beed13a7ef72a3fa0c259add3cef36582792f4230"
+ },
+ {
+  "file": "assets/audio/sfx/k_ui_tick_1.ogg",
+  "source": "C:/src/assets/kenney/interface-sounds/Audio/tick_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "869442f54214be902ec7437f79e400dc91c1bfd90d18a6dd2d5b7e41ffbf457b"
+ },
+ {
+  "file": "assets/audio/sfx/k_wood_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactWood_heavy_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "15ff82332f342c30e469215539e1cc57e11b221aa2cf7e11e811d313a9927f3d"
+ },
+ {
+  "file": "assets/audio/sfx/k_wood_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactWood_heavy_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "f1b07a53ac10c615fff9ba470511fdeb722b5902e1a8520759fc20ad6f546015"
  },
  {
   "file": "assets/audio/sfx/launch.wav",
@@ -4498,6 +4900,24 @@
   "source": "C:/src/assets/fonts/fusion-pixel/12px/LICENSES/galmuri/LICENSE.txt",
   "license_id": "fusion_pixel_font",
   "sha256": "86a3ee9495f942f0243f18c103da9faca27adb88142613edb8bb852e56c892c1"
+ },
+ {
+  "file": "assets/licenses_src/kenney_impact-sounds_License.txt",
+  "source": "C:/src/assets/kenney/impact-sounds/License.txt",
+  "license_id": "kenney_audio",
+  "sha256": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db"
+ },
+ {
+  "file": "assets/licenses_src/kenney_interface-sounds_License.txt",
+  "source": "C:/src/assets/kenney/interface-sounds/License.txt",
+  "license_id": "kenney_audio",
+  "sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+ },
+ {
+  "file": "assets/licenses_src/kenney_music-jingles_License.txt",
+  "source": "C:/src/assets/kenney/music-jingles/License.txt",
+  "license_id": "kenney_audio",
+  "sha256": "373b1c880ee6c7a83c1ccf209f251cf45fc9ea9b1f0330844fa7be64a401adc4"
  },
  {
   "file": "assets/licenses_src/ninja_adventure_LICENSE.txt",

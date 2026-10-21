@@ -11,3 +11,6 @@
 # Keystores ficam fora do repositório (plano 11.2)
 *.keystore
 *.jks
+
+# Binários iOS que o plugin AdMob baixa sozinho (não usados; o export Android os exclui)
+/addons/admob/ios/bin/

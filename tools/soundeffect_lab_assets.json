@@ -1,0 +1,15 @@
+{
+  "_doc": "Sons japoneses do 効果音ラボ (soundeffect-lab.info): uso comercial livre, sem crédito; proibido redistribuir os sons soltos e usar para treinar IA (plano 12.7.11).",
+  "pack_root": "C:/src/assets/soundeffect-lab",
+  "license_id": "soundeffect_lab",
+  "folders": {},
+  "files": {
+    "drum-japanese1.mp3": "audio/sfx/j_taiko_0.mp3",
+    "drum-japanese2.mp3": "audio/sfx/j_taiko_1.mp3",
+    "drum-japanese-kaka1.mp3": "audio/sfx/j_taiko_rim.mp3",
+    "temple-bell1.mp3": "audio/sfx/j_temple_bell.mp3",
+    "furin-house1.mp3": "audio/sfx/j_furin.mp3",
+    "koto-glissando1.mp3": "audio/sfx/j_koto.mp3",
+    "gong-played1.mp3": "audio/sfx/j_gong.mp3"
+  }
+}

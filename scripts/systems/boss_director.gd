@@ -37,6 +37,7 @@ func spawn(id: StringName) -> void:
 	game.hud.show_boss(tr("boss.%s.name" % id), tr("boss.%s.line" % id))
 	AudioManager.play_music(String(data.get("music", "boss_a")))
 	AudioManager.play("alert3")
+	AudioManager.play("taiko")
 	Events.boss_spawned.emit(id)
 
 

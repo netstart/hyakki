@@ -21,6 +21,9 @@ const SCREENS := {
 	&"story": "res://scripts/app/screens/story_screen.gd",
 	&"consent": "res://scripts/app/screens/consent_screen.gd",
 }
+## Partida suspensa vale por 3 dias (plano 10.11).
+const SUSPENDED_MAX_AGE := 3 * 24 * 3600
+const SCENARIO_FILE := "user://scenario.txt"
 
 var selection: Dictionary = {}
 var last_result: Dictionary = {}
@@ -54,6 +57,8 @@ func _ready() -> void:
 	SaveManager.data["launches"] = int(SaveManager.data["launches"]) + 1
 	SaveManager.save_profile()
 	selection = (SaveManager.data["selected"] as Dictionary).duplicate()
+	if OS.is_debug_build() and _scenario_from_args(args):
+		return
 	_boot()
 
 
@@ -62,12 +67,50 @@ func _start_direct() -> void:
 	add_child(game)
 
 
+## Cenários de teste (debug): --scenario=chest|kami|revive|dawn|ending|secret abre uma partida
+## já no ponto da tela a validar no emulador (plano 14.2).
+## No Android o cenário vem de user://scenario.txt (adb shell run-as ...; lido e apagado).
+func _scenario_from_args(args: PackedStringArray) -> bool:
+	var found: PackedStringArray = args.duplicate()
+	if FileAccess.file_exists(SCENARIO_FILE):
+		found.append("--scenario=" + FileAccess.get_file_as_string(SCENARIO_FILE).strip_edges())
+		DirAccess.remove_absolute(SCENARIO_FILE)
+	for arg: String in found:
+		if not arg.begins_with("--scenario="):
+			continue
+		var name := arg.trim_prefix("--scenario=")
+		if name.begins_with("hero:"):
+			# Joga com um herói ainda bloqueado (ex.: hero:yuki), só para conferir no aparelho.
+			selection["hero"] = name.trim_prefix("hero:")
+		elif name == "ending":
+			selection["stage"] = "yomi"
+		elif name == "secret":
+			selection["stage"] = "secret"
+		AdsManager.start(func() -> void:
+			start_run()
+			await get_tree().create_timer(1.5).timeout
+			# Reviver precisa do anúncio premiado já carregado (AdMob de teste demora alguns segundos).
+			var waited := 0.0
+			while name == "revive" and not AdsManager.rewarded_available() and waited < 15.0:
+				await get_tree().create_timer(0.5).timeout
+				waited += 0.5
+			if game:
+				game.apply_scenario(name))
+		return true
+	return false
+
+
 ## Sequência da abertura a frio.
 func _boot() -> void:
+	if AdsManager.uses_google_consent():
+		# AdMob: o formulário de consentimento é o UMP do Google (aparece só onde é exigido).
+		_show_blank()
+		AdsManager.start(after_consent)
+		return
 	if not bool(SaveManager.data["consent"]["asked"]):
 		go(&"consent")
 		return
-	after_consent()
+	AdsManager.start(after_consent)
 
 
 func after_consent() -> void:
@@ -158,6 +201,36 @@ func start_run(daily: bool = false) -> void:
 	add_child(game)
 
 
+func has_suspended_run() -> bool:
+	var s: Dictionary = SaveManager.data.get("suspended", {})
+	if s.is_empty() or int(s.get("version", 0)) != 1:
+		return false
+	var age := int(Time.get_unix_time_from_system()) - int(s.get("saved_unix", 0))
+	return age >= 0 and age <= SUSPENDED_MAX_AGE and DB.stages.has(StringName(s["config"].get("stage", "")))
+
+
+func clear_suspended_run() -> void:
+	if not (SaveManager.data.get("suspended", {}) as Dictionary).is_empty():
+		SaveManager.data["suspended"] = {}
+		SaveManager.save_profile()
+
+
+## Retoma a partida salva quando o app foi para segundo plano (plano 10.11).
+func continue_run() -> void:
+	if not has_suspended_run():
+		return
+	var s: Dictionary = (SaveManager.data["suspended"] as Dictionary).duplicate(true)
+	clear_suspended_run()
+	var cfg: Dictionary = s["config"]
+	cfg["speed"] = int(s.get("speed", cfg.get("speed", 1)))
+	_layer.visible = false
+	game = load(GAME_SCENE).instantiate() as HyakkiGame
+	game.config = cfg
+	game.finished.connect(_on_run_finished)
+	add_child(game)
+	game.restore_snapshot(s)
+
+
 ## Desafio Diário: semente fixa pela data; herói e fase sorteados entre os liberados (4.13).
 func _apply_daily(cfg: Dictionary) -> void:
 	var date := Time.get_date_string_from_system()
@@ -183,6 +256,7 @@ func _apply_daily(cfg: Dictionary) -> void:
 
 func _on_run_finished(result: Dictionary) -> void:
 	last_result = result
+	clear_suspended_run()
 	if game:
 		game.queue_free()
 		game = null
@@ -219,6 +293,9 @@ func _notification(what: int) -> void:
 		if _screens.has(current):
 			(_screens[current] as Screen).on_back()
 	elif what == NOTIFICATION_APPLICATION_PAUSED:
+		# O Android pode encerrar o app em segundo plano: guarda a partida para continuar depois.
+		if game and game.running and not game.is_bot():
+			SaveManager.data["suspended"] = game.snapshot()
 		SaveManager.save_profile()
 
 

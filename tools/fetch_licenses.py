@@ -79,7 +79,10 @@ def main() -> int:
         print(entry["id"])
         hashes = entry.setdefault("sha256", {})
         license_file = ROOT / entry["license_file"]
-        if entry["license_file"] not in texts_done:
+        if entry.get("license_source"):
+            # Termos proprietários (Google): resumo local com os links; snapshot em docs/licenses.
+            store(license_file, (ROOT / entry["license_source"]).read_bytes(), entry)
+        elif entry["license_file"] not in texts_done:
             try:
                 store(license_file, download(entry["license_url"]), entry)
                 texts_done[entry["license_file"]] = True

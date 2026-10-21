@@ -4,6 +4,7 @@ extends Screen
 var _shop_button: Button
 var _ryo: Label
 var _daily: Button
+var _continue: Button
 
 
 func _ready() -> void:
@@ -43,6 +44,9 @@ func _ready() -> void:
 	right.offset_bottom = -12
 	right.alignment = BoxContainer.ALIGNMENT_END
 	add_child(right)
+	# Partida suspensa (plano 10.11): só aparece se o app foi fechado no meio de uma partida.
+	_continue = button(tr("title.continue"), func() -> void: app.continue_run(), Vector2(176, 30))
+	right.add_child(_continue)
 	_daily = button(tr("title.daily"), func() -> void: app.start_run(true), Vector2(176, 30))
 	right.add_child(_daily)
 	var play := button(tr("title.play"), func() -> void: app.go(&"heroes"), Vector2(176, 44))
@@ -61,6 +65,7 @@ func _ready() -> void:
 
 
 func on_show() -> void:
+	_continue.visible = app.has_suspended_run()
 	_ryo.text = "%s %s" % [tr("hud.ryo"), Locale.format_number(SaveManager.ryo())]
 	_shop_button.text = tr("title.shop") + (" (!)" if ShopManager.any_ready() else "")
 	var daily: Dictionary = SaveManager.data["daily"]

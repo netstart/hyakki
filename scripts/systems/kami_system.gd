@@ -40,6 +40,7 @@ func spawn_shrine() -> void:
 			shrine_pos = at.round()
 			game.hud.toast(tr("kami.appeared"))
 			AudioManager.play("magic1", 0.8)
+			AudioManager.play("j_furin", 1.0, 0.0, -6.0)
 			return
 		angle += 0.6
 	shrine_pos = (game.player.sim_pos + Vector2(0, -320)).round()
@@ -65,7 +66,7 @@ func offer() -> Array[StringName]:
 	return picks
 
 
-func accept(id: StringName) -> void:
+func accept(id: StringName, silent: bool = false) -> void:
 	var data: Dictionary = DB.kami[id]
 	accepted.append(id)
 	var mods: Dictionary = (data.get("blessing", {}) as Dictionary).duplicate()
@@ -77,8 +78,11 @@ func accept(id: StringName) -> void:
 		specials[key] = special[key]
 	game.apply_kami_specials(specials)
 	game.level_up.apply_stats()
+	if silent:
+		return
 	Events.kami_accepted.emit(id)
 	AudioManager.play("powerup")
+	AudioManager.play("j_koto")
 	game.fx.add_ring(game.player.sim_pos, 90.0, Color(String(data["color"])))
 
 

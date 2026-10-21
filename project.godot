@@ -8,6 +8,10 @@
 
 config_version=5
 
+[admob]
+
+general/android/enable_r8_optimization=true
+
 [application]
 
 config/name="Hyakki"
@@ -44,6 +48,10 @@ window/size/window_width_override=1356
 window/size/window_height_override=610
 window/stretch/mode="viewport"
 window/handheld/orientation=4
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/admob/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg")
 
 [input_devices]
 

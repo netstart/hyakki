@@ -1,0 +1,17 @@
+Google Mobile Ads SDK (Next-Gen) and User Messaging Platform (UMP) SDK
+Copyright Google LLC. All rights reserved.
+
+These SDKs are not open source. They are distributed by Google through Google Maven and are
+included in this app (as Android dependencies of the Poing AdMob plugin) under Google's terms:
+
+- AdMob & AdSense Terms of Service: https://developers.google.com/admob/terms
+- Google APIs Terms of Service:    https://developers.google.com/terms
+- Google Privacy Policy:           https://policies.google.com/privacy
+- How Google uses data from apps:  https://policies.google.com/technologies/partner-sites
+
+Use of the SDK requires an AdMob account that accepts the AdMob Terms of Service. This app uses
+Google's official test ad units until real ad units are configured (AdMobProvider.RELEASE_UNITS).
+
+Third-party notices for the open-source components bundled inside the SDK are available from
+Google at https://developers.google.com/admob/android/third-party-licenses (where published) and
+through the "OSS licenses" entries of the Google Play services libraries.

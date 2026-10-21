@@ -72,6 +72,45 @@ só pare quando terminar e validar tudo." Em 21/10: "termine tudo, quando termin
   fases do meio ~2–2,5 min, Yomi ~1 min. Falta playtest humano (plano 15.3–15.5)
 - ⚠️ Desempenho medido no PC e no emulador x86_64; falta medir no Redmi físico (ARM)
 
+## Etapa 1 (21/10/2026): integrações, conteúdo extra e publicação
+Pedido: "complete a etapa 1 inteira, faça commit e push; crie um script que me permita compilar pronto pra
+publicação, otimizado, e execute a aplicação dentro do emulador".
+
+- ✅ **AdMob real em modo de teste:** plugin Poing AdMob 5.1.0 (MIT) + UMP, `scripts/ads/admob_provider.gd`.
+  Consentimento pelo formulário oficial do Google (só onde é exigido); anúncio de abertura e recompensado com os
+  IDs de teste do Google. Formulário de privacidade em Opções. No PC e nos testes continua o provedor simulado.
+- ✅ **Play Billing:** plugin oficial GodotGooglePlayBilling 3.3.0 (MIT), `scripts/ads/play_billing_provider.gd`:
+  preço da loja, compra, confirmação (acknowledge), pendente, restauração e reembolso. No emulador sem Play
+  Store responde "não concluída" (verificado: "Billing service unavailable on device").
+- ✅ **Build Gradle:** template Android instalado em `android/` (fora do git), três presets (debug, AAB e APK de
+  release), daemon do Gradle desligado (o Godot travava na saída com ele ligado).
+- ✅ **Sons novos com licença verificada:** Kenney Impact/Interface/Jingles (CC0), 効果音ラボ (taiko, sino do
+  templo, fūrin, koto, gongo; termos lidos: uso comercial e em app permitidos), Helton Yan Pixel Combat (CC BY
+  4.0; 4 arquivos baixados por HTTP Range do zip de 2,1 GB e cortados em 6 variações cada por
+  `tools/split_variations.py`). Variações por som no `AudioManager` (acerto com 17 variações).
+- ✅ **Registro de licenças:** 14 componentes, cobrindo `assets/` e `addons/` (820 arquivos).
+- ✅ **Partida suspensa (plano 10.11):** snapshot ao ir para segundo plano, "Continuar partida" no título (vale 3
+  dias), teste de ida e volta nos testes de integração.
+- ✅ **Cenários de teste no aparelho** (debug): `chest`, `kami`, `revive`, `dawn`, `ending`, `secret`.
+- ✅ **CI:** `.github/workflows/checks.yml` + `tools/run_checks.sh`.
+- ✅ **Chave de envio** em `C:\src\keys\` (fora do repositório) e `tools/build_release.ps1`.
+- Achado: as ferramentas desta sessão rodam dentro de um "job" do Windows que encerra os processos filhos;
+  emulador e servidor adb precisam ser abertos como processos independentes (WMI). Para você, rodando o script
+  no seu terminal, isso não acontece.
+
+### Herói Yuki (pedido de 21/10: personagem do Merakintsugi)
+- Avaliação: a licença do "Platformer character pack" permite uso comercial e modificação, crédito opcional;
+  proíbe revender/redistribuir os sprites como asset e usar para IA/NFT. Só a amostra (parado + andando) é
+  gratuita; o pacote completo custa US$ 15+. Para um survivors-like basta parado + andando (as armas atacam
+  sozinhas), espelhando para a esquerda.
+- Diferença de escala: o original tem ~55 px de altura; os personagens do Ninja Adventure têm 16 px. Reduzi a
+  50% (~29 px) com `tools/make_side_sheet.gd`. Ela fica maior e mais detalhada que os outros: lê bem como
+  protagonista, mas destoa um pouco do estilo (regra 8.1). Se incomodar, a alternativa é desenhar uma versão
+  16×16 dela ou comprar o pacote e escolher outro tamanho.
+- Implementado: layout "side" no `Player`, herói `yuki` (Tambor de Raijin, +10% poder, +5% velocidade, −10%
+  vida), Golpe da Lanterna "Despertar Oni", conquista "Sangue de Oni" (vencer o Oni Vermelho) que a libera,
+  textos nos 11 idiomas e licença no registro.
+
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.
 - 21/10 — 629 textos em 11 idiomas; registro e verificação de licenças; testes de integração.

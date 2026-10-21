@@ -201,5 +201,219 @@
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
     "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release"
+  },
+  {
+    "id": "kenney_audio",
+    "name": "Kenney - Impact Sounds, Interface Sounds and Music Jingles",
+    "category": "audio",
+    "author": "Kenney Vleugels (Kenney.nl)",
+    "version": "kenney_impact-sounds.zip, kenney_interface-sounds.zip, kenney_music-jingles.zip (2023)",
+    "source_url": "https://kenney.nl/assets/music-jingles",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_source": "assets/licenses_src/kenney_music-jingles_License.txt",
+    "notice_file": "licenses/notices/kenney_audio_License.txt",
+    "snapshot_url": "https://kenney.nl/assets/music-jingles",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "a subset of files copied and renamed (k_*.ogg)",
+    "files": [
+      "assets/audio/sfx/k_*",
+      "assets/licenses_src/kenney_*"
+    ],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "c2d2cc87aa90fa7c5ad7b8280f8c771ccc75dc1c7da825a44423b4d77aac9b18",
+      "snapshot_file": "cdb804231b0503d303086e6683d250d77cd09773ee8d4805a5bcc28e5e5bae61"
+    },
+    "snapshot_file": "docs/licenses/kenney_audio_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "poing_admob_plugin",
+    "name": "Poing Studios AdMob Plugin for Godot",
+    "category": "plugin",
+    "author": "Poing Studios",
+    "version": "5.1.0 (android-template-v4.7.2)",
+    "source_url": "https://github.com/poingstudios/godot-admob-plugin",
+    "license_id": "MIT",
+    "license_url": "https://raw.githubusercontent.com/poingstudios/godot-admob-plugin/v5.1.0/LICENSE",
+    "license_file": "licenses/texts/MIT-PoingAdMob.txt",
+    "snapshot_url": "https://github.com/poingstudios/godot-admob-plugin",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "C# bindings, editor skills and mediation adapters not included",
+    "files": [
+      "addons/admob/**"
+    ],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "9154d410d6795817a45e1a5f2caa9236111e313152c0b51ea39f48aaf7034834",
+      "snapshot_file": "23754f13bd01798dd0fc4b4885eef1decdea64115aec9f94716b2b46a9e410c4"
+    },
+    "snapshot_file": "docs/licenses/poing_admob_plugin_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "google_mobile_ads_sdk",
+    "name": "Google Mobile Ads SDK and UMP SDK",
+    "category": "android",
+    "author": "Google LLC",
+    "version": "ads-mobile-sdk 1.4.0 (via Poing AdMob 5.1.0)",
+    "source_url": "https://developers.google.com/admob/android/quick-start",
+    "license_id": "LicenseRef-Google-Mobile-Ads-SDK",
+    "license_source": "licenses/sources/LicenseRef-Google-Mobile-Ads-SDK.txt",
+    "license_file": "licenses/texts/LicenseRef-Google-Mobile-Ads-SDK.txt",
+    "snapshot_url": "https://developers.google.com/admob/terms",
+    "attribution_required": false,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "350cc8257b4aace95de0e10eaa24f17f37271f3da25885a102313dc671c58911",
+      "snapshot_file": "9dde486a0daccbb65f4c67a8c7d8f883a12ddfc4b4318ed10f1df6008891dd48"
+    },
+    "snapshot_file": "docs/licenses/google_mobile_ads_sdk_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "godot_play_billing",
+    "name": "GodotGooglePlayBilling",
+    "category": "plugin",
+    "author": "Godot Engine contributors",
+    "version": "3.3.0",
+    "source_url": "https://github.com/godot-sdk-integrations/godot-google-play-billing",
+    "license_id": "MIT",
+    "license_url": "https://raw.githubusercontent.com/godot-sdk-integrations/godot-google-play-billing/3.3.0/LICENSE",
+    "license_file": "licenses/texts/MIT-GodotGooglePlayBilling.txt",
+    "snapshot_url": "https://github.com/godot-sdk-integrations/godot-google-play-billing",
+    "attribution_required": true,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [
+      "addons/GodotGooglePlayBilling/**"
+    ],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "2a4af9d86d0855f90c3d41d4df3599d1920b52d6f95ed1d87bd9e247e0d5dbd5",
+      "snapshot_file": "9e97e2a72ac6cb5ea47c551815f23f7bbe63d42a66b0ae3345346cec69f07b7e"
+    },
+    "snapshot_file": "docs/licenses/godot_play_billing_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "play_billing_library",
+    "name": "Google Play Billing Library",
+    "category": "android",
+    "author": "Google LLC",
+    "version": "billing-ktx 9.1.0 (via GodotGooglePlayBilling 3.3.0)",
+    "source_url": "https://developer.android.com/google/play/billing",
+    "license_id": "LicenseRef-Google-Play-Billing-Library",
+    "license_source": "licenses/sources/LicenseRef-Google-Play-Billing-Library.txt",
+    "license_file": "licenses/texts/LicenseRef-Google-Play-Billing-Library.txt",
+    "snapshot_url": "https://developer.android.com/studio/terms",
+    "attribution_required": false,
+    "commercial_use": true,
+    "modifications": "",
+    "files": [],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "30c94aad878799b4acfe2bfe03b76bb192e11d2e317510bf6ab029f4f25cf0d1",
+      "snapshot_file": "1a70f6d1a2949dbf994c6d391e803d0d143bc717885091503084ec5b52fc157c"
+    },
+    "snapshot_file": "docs/licenses/play_billing_library_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "soundeffect_lab",
+    "name": "効果音ラボ (Sound Effect Lab) - Japanese sound effects",
+    "category": "audio",
+    "author": "効果音ラボ",
+    "version": "7 files downloaded 2026-10-21 (SHA-256 in C:/src/assets/soundeffect-lab/SHA256SUMS.txt)",
+    "source_url": "https://soundeffect-lab.info/",
+    "license_id": "LicenseRef-SoundEffectLab",
+    "license_source": "licenses/sources/LicenseRef-SoundEffectLab.txt",
+    "license_file": "licenses/texts/LicenseRef-SoundEffectLab.txt",
+    "snapshot_url": "https://soundeffect-lab.info/agreement/",
+    "attribution_required": false,
+    "commercial_use": true,
+    "redistribution_of_raw_pack": false,
+    "ai_generated": false,
+    "modifications": "renamed (j_*.mp3)",
+    "files": [
+      "assets/audio/sfx/j_*"
+    ],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "5787694881303d24a66c121080f94cdb70824b801517d2d65d4abb26fa3c81c9",
+      "snapshot_file": "413936956096237b346a05fabd596dd000eb8705debf89ae80da0487d447c213"
+    },
+    "snapshot_file": "docs/licenses/soundeffect_lab_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "helton_yan_pixel_combat",
+    "name": "Helton Yan's Pixel Combat",
+    "category": "audio",
+    "author": "Helton Yan and Beto Bezerra",
+    "version": "Single Files.zip (itch.io upload 13796512); 4 of 350 files used",
+    "source_url": "https://heltonyan.itch.io/pixelcombat",
+    "license_id": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+    "license_file": "licenses/texts/CC-BY-4.0.txt",
+    "snapshot_url": "https://heltonyan.itch.io/pixelcombat",
+    "attribution_required": true,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "Sword Slash, Swish Hit, Strong Smack and Kick Critical cut into 6 variations each, downmixed to mono and resampled to 48 kHz/16-bit (tools/split_variations.py)",
+    "files": [
+      "assets/audio/sfx/hy_*"
+    ],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+      "snapshot_file": "164224b1802604bd4f27095f408c8bf00280ba34644f3883b685172704da9e69"
+    },
+    "snapshot_file": "docs/licenses/helton_yan_pixel_combat_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
+  },
+  {
+    "id": "merakintsugi_platformer",
+    "name": "Platformer character pack (free sample)",
+    "category": "art",
+    "author": "Merakintsugi",
+    "version": "sample(idle&walk).zip (itch.io upload 16345894, SHA-256 177f9874985b0a03729aaef95612b63327da556858a3198b0e44439cb316a415)",
+    "source_url": "https://merakintsugi.itch.io/platformer-character-pack",
+    "license_id": "LicenseRef-Merakintsugi",
+    "license_source": "licenses/sources/LicenseRef-Merakintsugi.txt",
+    "license_file": "licenses/texts/LicenseRef-Merakintsugi.txt",
+    "snapshot_url": "https://merakintsugi.itch.io/platformer-character-pack",
+    "attribution_required": false,
+    "commercial_use": true,
+    "redistribution_of_raw_pack": false,
+    "ai_generated": false,
+    "modifications": "idle and walk combined into one sheet, reduced to 50% (tools/make_side_sheet.gd); portrait cropped from the first idle frame",
+    "files": [
+      "assets/art/actors/heroes/yuki/*"
+    ],
+    "verified_at": "2026-10-21",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "1a76cdc377846ed10040e26d01380f59e566c74345ef2a8e303b3b95f418d62b",
+      "snapshot_file": "08503701f0e35041ce7156e68f105143339842051864a6573a92a4a6dee93e42"
+    },
+    "snapshot_file": "docs/licenses/merakintsugi_platformer_2026-10-21.pdf",
+    "downloaded_at": "2026-10-21"
   }
 ]

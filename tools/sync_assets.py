@@ -1,7 +1,7 @@
 """Copia para res://assets só os arquivos que o jogo usa (plano 8.3 e 12.5).
 
 Uso:  python -I tools/sync_assets.py
-Lê tools/asset_manifest.json e tools/extra_assets.json (fontes de outros pacotes).
+Lê tools/asset_manifest.json (Ninja Adventure) e todo tools/*_assets.json (outros pacotes).
 Também escreve assets/asset_index.json: lista de tudo que foi copiado, com origem e hash,
 usado pelo tools/check_licenses.py para conferir que todo arquivo tem licença registrada.
 """
@@ -64,8 +64,8 @@ def sync_manifest(manifest_path: pathlib.Path, index: list) -> int:
 def main() -> int:
     index: list = []
     missing = 0
-    for name in ("asset_manifest.json", "extra_assets.json"):
-        path = ROOT / "tools" / name
+    manifests = [ROOT / "tools" / "asset_manifest.json"] + sorted((ROOT / "tools").glob("*_assets.json"))
+    for path in manifests:
         if path.exists():
             missing += sync_manifest(path, index)
     index.sort(key=lambda item: item["file"])

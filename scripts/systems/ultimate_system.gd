@@ -87,8 +87,19 @@ func activate() -> bool:
 					float(ult.get("base_damage", 40)) * might, 0.0)
 			game.fx.add_ring(at, float(ult.get("radius", 220)), Color(1.0, 0.85, 0.4))
 			game.shake(4.0)
+			AudioManager.play("j_temple_bell")
 		"arrow_rain":
 			rain_time = float(ult.get("duration", 6.0))
+		"oni_awakening":
+			# Despertar Oni: onda vermelha que empurra e fere, e poder extra por alguns segundos.
+			game.enemies.push_from(at, float(ult.get("radius", 150)), float(ult.get("force", 260)))
+			game.areas.blast(&"ultimate", at, float(ult.get("radius", 150)),
+					float(ult.get("base_damage", 35)) * might, 0.0)
+			game.fx.add_ring(at, float(ult.get("radius", 150)), Color(1.0, 0.3, 0.25))
+			game.fx.play_anim("boost", at, 1.2, 0.0, Color(1.0, 0.35, 0.3))
+			forge_time = float(ult.get("duration", 6.0))
+			game.shake(3.0)
+			AudioManager.play("taiko")
 		"living_forge":
 			forge_time = float(ult.get("duration", 10.0))
 			game.fx.play_anim("boost", at, 1.2, 0.0, Color(1.0, 0.6, 0.3))
