@@ -29,6 +29,8 @@ var dmg := PackedFloat32Array()
 var life := PackedFloat32Array()
 var turn := PackedFloat32Array()
 var kind := PackedInt32Array()
+## Quem disparou (inimigo, chefe ou perigo), para o controle de dano (plano 4.15).
+var source: Array[StringName] = []
 var alive := PackedByteArray()
 
 var _free: Array[int] = []
@@ -55,6 +57,7 @@ func _ready() -> void:
 	turn.resize(CAPACITY)
 	kind.resize(CAPACITY)
 	alive.resize(CAPACITY)
+	source.resize(CAPACITY)
 	reset()
 
 
@@ -67,7 +70,7 @@ func reset() -> void:
 
 
 func spawn(at: Vector2, velocity: Vector2, damage: float, kind_name: String,
-		lifetime: float = 5.0, homing: float = 0.0) -> void:
+		lifetime: float = 5.0, homing: float = 0.0, from: StringName = DamageControl.UNKNOWN) -> void:
 	if _free.is_empty():
 		return
 	var i: int = _free.pop_back()
@@ -77,6 +80,7 @@ func spawn(at: Vector2, velocity: Vector2, damage: float, kind_name: String,
 	dmg[i] = damage
 	life[i] = lifetime
 	turn[i] = homing
+	source[i] = from
 	kind[i] = maxi(0, _kind_names.find(kind_name))
 	alive[i] = 1
 	count_alive += 1
@@ -106,7 +110,7 @@ func step(dt: float) -> void:
 		var to := from + v * dt
 		pos[i] = to
 		if player.is_alive and Geometry.segment_hits_circle(from, to, target, reach):
-			player.take_damage(dmg[i])
+			player.take_damage(dmg[i], source[i])
 			_kill(i)
 
 

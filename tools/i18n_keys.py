@@ -64,6 +64,7 @@ def data_keys() -> set:
     for story in data("story"):
         keys |= {p["text"] for p in story["panels"]}
     keys |= {f"moon.rule{n}" for n in range(1, 6)}
+    keys |= {f"damage.source.{s}" for s in ("lava", "statue", "unknown")}
     keys |= {f"cosmetic.{c}" for c in ("golden_lantern", "crimson_lantern", "jade_lantern",
                                         "azure_lantern", "violet_lantern")}
     keys |= {f"licenses.cat_{c}" for c in ("all", "engine", "art", "audio", "font", "android")}

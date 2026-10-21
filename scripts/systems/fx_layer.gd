@@ -85,13 +85,13 @@ func burst(at: Vector2, color: Color, count: int = 5) -> void:
 		_p_next = (_p_next + 1) % MAX_PARTICLES
 
 
-func add_number(at: Vector2, amount: float, crit: bool = false) -> void:
+func add_number(at: Vector2, amount: float, crit: bool = false, color: Color = Color.WHITE) -> void:
 	if not bool(Settings.get_value("damage_numbers")):
 		return
 	_n_pos[_n_next] = at + Vector2(randf_range(-3.0, 3.0), -8.0)
 	_n_life[_n_next] = NUMBER_LIFETIME
 	_n_text[_n_next] = str(roundi(amount))
-	_n_color[_n_next] = Color("ffd166") if crit else Color.WHITE
+	_n_color[_n_next] = Color("ffd166") if crit else color
 	_n_next = (_n_next + 1) % MAX_NUMBERS
 
 

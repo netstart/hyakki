@@ -188,6 +188,7 @@ func _draw() -> void:
 	var a := GameClock.alpha
 	var time := GameClock.game_time
 	var colorblind := bool(Settings.get_value("colorblind"))
+	var calm := bool(Settings.get_value("reduce_flashes"))
 	for i: int in range(CAPACITY):
 		if alive[i] == 0:
 			continue
@@ -208,12 +209,27 @@ func _draw() -> void:
 		var tex: Texture2D = _item_tex.get(item["id"])
 		if tex == null:
 			continue
-		var p: Vector2 = item["pos"]
-		p.y += roundf(sin(time * 2.5 + float(item["phase"])) * 1.5)
-		draw_circle(p + Vector2(0, 6), 5.0, Color(0, 0, 0, 0.25))
-		var glow := 0.5 + 0.5 * sin(time * 4.0 + float(item["phase"]))
-		draw_arc(p, 9.0, 0.0, TAU, 16, Color(1.0, 1.0, 0.8, 0.25 + 0.25 * glow), 1.0)
-		draw_texture(tex, (p - tex.get_size() * 0.5).round())
+		_draw_item(tex, item["pos"], time + float(item["phase"]), calm)
+
+
+## Item no chão chamando atenção (pedido de 21/10): halo que pulsa, pulinho com sombra
+## e um brilho em cruz que gira. Sem piscar: piscar lê como "vai sumir" ou como dano, e
+## incomoda quem pede menos flashes (nesse modo o halo pulsa mais devagar e sem brilho).
+func _draw_item(tex: Texture2D, at: Vector2, t: float, calm: bool) -> void:
+	var pulse := 0.5 + 0.5 * sin(t * (2.0 if calm else 5.0))
+	# Pulinho a cada 1,2 s: sobe 4 px e cai, a sombra encolhe enquanto ele está no ar.
+	var hop := absf(sin(t * PI / 1.2)) * (2.0 if calm else 4.0)
+	var p := at - Vector2(0.0, roundf(hop))
+	draw_circle(at + Vector2(0, 6), 5.0 - hop * 0.4, Color(0, 0, 0, 0.3))
+	draw_circle(p, 11.0 + 3.0 * pulse, Color(1.0, 0.9, 0.45, 0.10 + 0.12 * pulse))
+	draw_arc(p, 10.0 + 2.0 * pulse, 0.0, TAU, 20, Color(1.0, 0.95, 0.6, 0.45 + 0.35 * pulse), 1.0)
+	if not calm:
+		var spin := t * 2.5
+		var reach := 13.0 + 2.0 * pulse
+		for k: int in range(4):
+			var dir := Vector2.from_angle(spin + k * PI * 0.5)
+			draw_line(p + dir * (reach - 4.0), p + dir * reach, Color(1.0, 1.0, 0.85, 0.5 + 0.5 * pulse), 1.0)
+	draw_texture(tex, (p - tex.get_size() * 0.5).round())
 
 
 ## Cores das brasas por valor; no modo daltônico usa azul/laranja/branco (plano 7.5).

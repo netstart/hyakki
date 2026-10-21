@@ -501,6 +501,43 @@ O jogador pode acelerar a partida em **1x (normal), 2x ou 3x**. Assim, uma fase 
 
 ---
 
+### 4.15 Controle de dano recebido
+
+> Adicionado em 21/10/2026. Antes as regras estavam espalhadas (4.2 armadura, 8.7.2 contato, 15.2 invencibilidade, 15.3 Brisa) e o jogo não registrava **de onde** vinha o dano. Medição com o bot na Vila (fase 1), sem upgrades: morte entre **2:21 e 3:39**, com 18–47 de dano já no 1º minuto, longe da meta de 14.3 (jogador novo morre entre 5 e 9 min).
+
+**Uma só porta de entrada.** Todo dano à guardiã passa por `Player.take_damage(valor, fonte)` → `DamageControl` (`scripts/core/damage_control.gd`, classe pura e testada). A ordem das regras é fixa:
+
+| # | Regra | Valor |
+|---|---|---|
+| 1 | Invencibilidade depois de um golpe (o golpe que chega nela só é contado como "bloqueado") | 0,5 s (15.2) |
+| 2 | Armadura | `max(1, dano − armadura)` (4.2) |
+| 3 | Modo Brisa | ×0,6 (15.3) |
+| 4 | **Teto por golpe** | nenhum golpe tira mais de **34%** do HP máximo |
+| 5 | **Teto por janela** | no máximo **45%** do HP máximo em qualquer janela de **2 s**: ser cercado ou pegar explosões sobrepostas nunca mata de uma vez (8.7.2) |
+| — | Golpe letal (≥ 9999: Shinigami, cenários de teste) | passa por cima dos tetos 4 e 5 |
+
+Os tetos são **regras fixas e públicas**, não ajuste escondido (15.3): valem igual para todo jogador, em toda partida.
+
+**Fonte de cada golpe.** Contato usa o id do inimigo (chefes inclusive); projéteis guardam quem disparou; avisos no chão, poças e feixes guardam o id do chefe; perigos da fase usam `lava` e `statue`. Nomes na tela vêm de `enemy.<id>.name`, `boss.<id>.name` ou `damage.source.<id>`.
+
+**Registro por partida** (`DamageControl.summary()`): total, golpes, maior golpe, bloqueados pela invencibilidade, absorvido pela armadura, cortado pelos tetos, dano por minuto, dano/golpes/maior golpe por fonte e **causa da morte** (último golpe que tirou vida). Vai para:
+- **Resultados:** "Dano recebido N · Último golpe: X" na derrota; "Quem mais feriu: X" na vitória.
+- **Telemetria** `user://runs.csv`: colunas `damage_taken` e `cause` (14.3). Arquivo com cabeçalho antigo vira `runs_old.csv`.
+- **Bot:** linha `DANO total=… por_minuto=[…] fontes=[…]` ao morrer e ao fim de `--quit-at`. É a ferramenta para ajustar cada fase.
+- **Partida suspensa** (10.11): o registro é salvo e restaurado junto.
+- **Na tela:** número vermelho sobre a guardiã a cada golpe (respeita "números de dano" nas opções).
+
+**Orçamento de dano por fase.** `data/stages.json` ganha `damage_mult` (padrão 1), multiplicado em `enemy_damage_mult()` junto com minuto, Lua e degrau da fase. A Vila é a fase de aprendizado: **`damage_mult = 0,5`**.
+
+| Medição (bot, Vila, Normal, sem upgrades, sementes 1–6) | Antes | Com 0,5 |
+|---|---|---|
+| Tempo até a morte | 2:21–3:39 | 3:07–5:24; 4 de 6 sementes passam dos 5:00 e uma ainda vive aos 10:00 |
+| Dano no 1º minuto | 18–47 | 6–23 |
+
+O bot fica colado nos inimigos de propósito (14.4), então é um piso. A meta de 5–9 min continua sendo conferida no playtest humano (14.5). Para as fases 2–6, rodar o bot com o relatório de dano antes de mexer no `damage_mult` delas.
+
+**Testes** (`tests/run_tests.gd`): armadura, golpe mínimo, Brisa, teto por golpe, teto por janela e liberação depois de 2 s, golpe letal, registro, causa da morte, dano por minuto e ida e volta do resumo.
+
 ## 5. Level design
 
 ### 5.1 Estrutura do mapa

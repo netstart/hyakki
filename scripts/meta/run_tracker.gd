@@ -53,9 +53,10 @@ func csv_line(result: Dictionary) -> String:
 	var weapons: PackedStringArray = []
 	for id: StringName in damage_by_weapon:
 		weapons.append("%s:%d:%d" % [id, int(weapon_level.get(id, 0)), roundi(float(damage_by_weapon[id]))])
-	return "%s,%s,%s,%s,%d,%.1f,%d,%d,%d,%s,%s" % [
+	var damage: Dictionary = result.get("damage_taken", {})
+	return "%s,%s,%s,%s,%d,%.1f,%d,%d,%d,%s,%s,%d,%s" % [
 		Time.get_datetime_string_from_system(), result.get("hero", ""), result.get("stage", ""),
 		result.get("mode", ""), int(result.get("moon", 0)), float(result.get("time", 0.0)),
 		int(result.get("level", 1)), kills, ryo, "win" if bool(result.get("victory", false)) else "death",
-		"|".join(weapons),
+		"|".join(weapons), roundi(float(damage.get("total", 0.0))), damage.get("cause", ""),
 	]

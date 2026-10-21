@@ -189,6 +189,7 @@ func snapshot() -> Dictionary:
 		"evolutions": Array(tracker.evolutions).map(func(e: StringName) -> String: return String(e)),
 		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used, "speed": GameClock.speed,
+		"damage": player.damage.summary(),
 	}
 
 
@@ -222,6 +223,7 @@ func restore_snapshot(s: Dictionary) -> void:
 	spawner.skip_until(GameClock.game_time)
 	player.hp = clampf(float(s.get("hp", player.max_hp())), 1.0, player.max_hp())
 	player.revives_used = int(s.get("revives_used", 0))
+	player.damage.restore(s.get("damage", {}))
 	ultimate.charge = float(s.get("ult_charge", 0.0))
 	tracker.kills = int(s.get("kills", 0))
 	tracker.ryo = int(s.get("ryo_run", 0))
@@ -514,9 +516,11 @@ func enemy_hp_mult() -> float:
 	return mult
 
 
+## stage.damage_mult: orçamento de dano recebido da fase (plano 4.15); a Vila é a fase
+## de aprendizado e fica abaixo de 1.
 func enemy_damage_mult() -> float:
 	return Progression.enemy_damage_mult(minute()) * (1.0 + MOON_HP * 0.5 * moon) \
-			* sqrt(stage_difficulty())
+			* sqrt(stage_difficulty()) * float(stage.get("damage_mult", 1.0))
 
 
 ## Degrau da fase (data/stages.json "difficulty"), aplicado aos poucos nos primeiros
@@ -823,7 +827,7 @@ func _after_level_choice() -> void:
 		hud.show_level_up(_choices, level_up.rerolls, level_up.skips, level_up.banishes)
 		return
 	hud.hide_level_up()
-	_resume_if_clear()
+	_resume_if_clear(false)
 
 
 func _on_reroll() -> void:
@@ -858,7 +862,7 @@ func _open_chest(from_boss: bool) -> void:
 
 
 func _on_chest_closed() -> void:
-	_resume_if_clear()
+	_resume_if_clear(false)
 
 
 func open_kami(offer: Array[StringName]) -> void:
@@ -872,7 +876,7 @@ func _on_kami_chosen(id: StringName) -> void:
 	if id != &"":
 		kami.accept(id)
 		tracker.kami.append(id)
-	_resume_if_clear()
+	_resume_if_clear(false)
 
 
 func apply_kami_specials(specials: Dictionary) -> void:
@@ -898,10 +902,13 @@ func close_pause() -> void:
 	_resume_if_clear()
 
 
-func _resume_if_clear() -> void:
+## Contagem de 1,5 s só ao sair da pausa ou do reviver (15.2); depois de escolher uma
+## habilidade, baú ou Kami o jogo volta na hora, para manter o ritmo.
+func _resume_if_clear(with_countdown: bool = true) -> void:
 	if running and not hud.overlay_open():
 		GameClock.paused = false
-		hud.countdown()
+		if with_countdown:
+			hud.countdown()
 
 
 func cycle_speed() -> void:
@@ -995,6 +1002,7 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 	if _bot:
 		if _quit_at <= 0.0:
 			print(state_summary("FIM"))
+			print(player.damage.report_line())
 			# Reinicia no próximo quadro, fora do passo que matou a guardiã.
 			start_run.call_deferred(config)
 		return
@@ -1017,7 +1025,7 @@ func build_result(victory: bool, gave_up: bool) -> Dictionary:
 			"level": level, "kills": tracker.kills, "ryo_run": tracker.ryo, "weapons": weapon_rows,
 			"endless": endless_phase, "daily": bool(config.get("daily", false)),
 			"daily_date": String(config.get("daily_date", "")), "speed_min": _speed_min,
-			"speed_max": _speed_max}
+			"speed_max": _speed_max, "damage_taken": player.damage.summary()}
 
 
 func _finish_headless() -> void:
@@ -1025,6 +1033,7 @@ func _finish_headless() -> void:
 		return
 	_finished = true
 	print(state_summary("FIM"))
+	print(player.damage.report_line())
 	running = false
 	GameClock.paused = true
 	get_tree().quit()

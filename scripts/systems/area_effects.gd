@@ -59,29 +59,29 @@ func hurricane(weapon: StringName, at: Vector2, r: float, damage: float, tick: f
 
 ## Aviso no chão; ao terminar, causa dano à guardiã se ela estiver dentro.
 func telegraph(at: Vector2, r: float, windup: float, damage: float, on_hit: Callable = Callable(),
-		tint: Color = Color(1.0, 0.25, 0.25)) -> void:
+		tint: Color = Color(1.0, 0.25, 0.25), source: StringName = DamageControl.UNKNOWN) -> void:
 	effects.append({"kind": Kind.TELEGRAPH, "pos": at, "radius": r, "life": windup,
-			"max_life": windup, "damage": damage, "on_hit": on_hit, "tint": tint})
+			"max_life": windup, "damage": damage, "on_hit": on_hit, "tint": tint, "source": source})
 
 
 func hazard_pool(at: Vector2, r: float, damage: float, life: float, slow_factor: float,
-		windup: float = 0.8) -> void:
+		windup: float = 0.8, source: StringName = DamageControl.UNKNOWN) -> void:
 	effects.append({"kind": Kind.HAZARD_POOL, "pos": at, "radius": r, "damage": damage,
 			"life": life + windup, "max_life": life, "windup": windup, "slow": slow_factor,
-			"tick_left": 0.0})
+			"tick_left": 0.0, "source": source})
 
 
 ## Feixe que gira a partir de `at`, começando em `angle` e varrendo `sweep` radianos.
 func beam(at: Vector2, angle: float, sweep: float, length: float, width: float, windup: float,
-		duration: float, damage: float) -> void:
+		duration: float, damage: float, source: StringName = DamageControl.UNKNOWN) -> void:
 	effects.append({"kind": Kind.BEAM, "pos": at, "angle": angle, "sweep": sweep, "length": length,
 			"width": width, "windup": windup, "life": windup + duration, "max_life": duration,
-			"damage": damage, "tick_left": 0.0})
+			"damage": damage, "tick_left": 0.0, "source": source})
 
 
 func lava(at: Vector2, r: float, damage: float) -> void:
 	effects.append({"kind": Kind.LAVA, "pos": at, "radius": r, "damage": damage, "life": INF,
-			"tick_left": 0.0, "phase": game.rng.randf() * TAU})
+			"tick_left": 0.0, "phase": game.rng.randf() * TAU, "source": &"lava"})
 
 
 ## Dano instantâneo em círculo (explosões, sino, golpe da lanterna).
@@ -131,7 +131,7 @@ func step(dt: float) -> void:
 			Kind.TELEGRAPH:
 				if float(e["life"]) <= 0.0:
 					if player.sim_pos.distance_to(e["pos"]) <= float(e["radius"]) + Player.RADIUS:
-						player.take_damage(float(e["damage"]))
+						player.take_damage(float(e["damage"]), e["source"])
 					var cb: Callable = e["on_hit"]
 					if cb.is_valid():
 						cb.call(e["pos"])
@@ -146,14 +146,14 @@ func step(dt: float) -> void:
 						player.slow_factor = float(e["slow"])
 						if float(e["tick_left"]) <= 0.0:
 							e["tick_left"] = 0.5
-							player.take_damage(float(e["damage"]))
+							player.take_damage(float(e["damage"]), e["source"])
 			Kind.BEAM:
 				_step_beam(e, dt)
 			Kind.LAVA:
 				e["tick_left"] = float(e["tick_left"]) - dt
 				if float(e["tick_left"]) <= 0.0 and player.sim_pos.distance_to(e["pos"]) <= float(e["radius"]):
 					e["tick_left"] = 0.6
-					player.take_damage(float(e["damage"]))
+					player.take_damage(float(e["damage"]), e["source"])
 		if float(e["life"]) <= 0.0:
 			effects.remove_at(i)
 
@@ -243,7 +243,7 @@ func _step_beam(e: Dictionary, dt: float) -> void:
 	if float(e["tick_left"]) <= 0.0 and Geometry.segment_hits_circle(start, finish, player.sim_pos,
 			float(e["width"]) * 0.5 + Player.RADIUS):
 		e["tick_left"] = 0.4
-		player.take_damage(float(e["damage"]))
+		player.take_damage(float(e["damage"]), e["source"])
 
 
 # --- Desenho ------------------------------------------------------------------

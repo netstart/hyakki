@@ -5,6 +5,7 @@ extends RefCounted
 
 const CODEX_KILLS := 100
 const ENDLESS_GOLD := 1.5
+const TELEMETRY_HEADER := "date,hero,stage,mode,moon,time,level,kills,ryo,result,weapons,damage_taken,cause"
 
 
 static func powerup_price(id: StringName) -> int:
@@ -250,10 +251,14 @@ static func is_enemy_entry_unlocked(id: StringName) -> bool:
 static func _append_telemetry(line: String) -> void:
 	var path := "user://runs.csv"
 	var exists := FileAccess.file_exists(path)
+	if exists and FileAccess.get_file_as_string(path).get_slice("\n", 0).strip_edges() != TELEMETRY_HEADER:
+		# Colunas mudaram (dano recebido e causa, plano 4.15): guarda o arquivo antigo e começa outro.
+		DirAccess.rename_absolute(path, "user://runs_old.csv")
+		exists = false
 	var file := FileAccess.open(path, FileAccess.READ_WRITE if exists else FileAccess.WRITE)
 	if file == null:
 		return
 	if not exists:
-		file.store_line("date,hero,stage,mode,moon,time,level,kills,ryo,result,weapons")
+		file.store_line(TELEMETRY_HEADER)
 	file.seek_end()
 	file.store_line(line)

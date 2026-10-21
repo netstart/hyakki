@@ -143,7 +143,8 @@ func _step_boss(boss: Dictionary, dt: float) -> void:
 				for a: int in range(arms):
 					var angle := float(boss["spiral_angle"]) + TAU * a / float(arms)
 					game.enemy_shots.spawn(me, Vector2.from_angle(angle) * float(p.get("speed", 80)),
-							float(p.get("damage", 7)) * game.enemy_damage_mult(), String(p.get("projectile", "spirit_orb")))
+							float(p.get("damage", 7)) * game.enemy_damage_mult(), String(p.get("projectile", "spirit_orb")),
+							5.0, 0.0, StringName(boss["id"]))
 			if float(boss["timer"]) <= 0.0:
 				_back_to_move(boss)
 		"hidden":
@@ -163,6 +164,7 @@ func _start_pattern(boss: Dictionary) -> void:
 	var me: Vector2 = enemies.pos[i]
 	var target := game.player.sim_pos
 	var dmg_mult := game.enemy_damage_mult()
+	var src := StringName(boss["id"])
 	match String(p["type"]):
 		"charge":
 			boss["state"] = "windup"
@@ -175,7 +177,7 @@ func _start_pattern(boss: Dictionary) -> void:
 			boss["timer"] = float(p.get("windup", 0.9))
 			boss["slam_at"] = target
 			game.areas.telegraph(target, float(p.get("radius", 70)), float(p.get("windup", 0.9)),
-					float(p.get("damage", 12)) * dmg_mult)
+					float(p.get("damage", 12)) * dmg_mult, Callable(), Color(1.0, 0.25, 0.25), src)
 		"dive":
 			boss["state"] = "hidden"
 			enemies.submerged[i] = 1
@@ -183,7 +185,7 @@ func _start_pattern(boss: Dictionary) -> void:
 			boss["timer"] = windup + 0.1
 			game.fx.play_anim("water_pillar" if StringName(boss["id"]) == &"kappa_elder" else "smoke", me, 1.5)
 			game.areas.telegraph(target, float(p.get("radius", 34)), windup,
-					float(p.get("damage", 12)) * dmg_mult, _land.bind(i))
+					float(p.get("damage", 12)) * dmg_mult, _land.bind(i), Color(1.0, 0.25, 0.25), src)
 		"summon":
 			for k: int in range(int(p.get("count", 4))):
 				var at := me + Vector2.from_angle(TAU * k / float(p.get("count", 4))) * 30.0
@@ -197,7 +199,7 @@ func _start_pattern(boss: Dictionary) -> void:
 			for k: int in range(count):
 				var t := 0.0 if count == 1 else (float(k) / (count - 1) - 0.5)
 				game.enemy_shots.spawn(me, aim.rotated(t * spread) * float(p.get("speed", 100)),
-						float(p.get("damage", 7)) * dmg_mult, String(p.get("projectile", "energy_ball")))
+						float(p.get("damage", 7)) * dmg_mult, String(p.get("projectile", "energy_ball")), 5.0, 0.0, src)
 			AudioManager.play("fireball", 1.0, 0.1, -6.0)
 			_back_to_move(boss)
 		"radial":
@@ -205,7 +207,7 @@ func _start_pattern(boss: Dictionary) -> void:
 			var offset := game.rng.randf() * TAU
 			for k: int in range(count):
 				game.enemy_shots.spawn(me, Vector2.from_angle(offset + TAU * k / count) * float(p.get("speed", 85)),
-						float(p.get("damage", 7)) * dmg_mult, String(p.get("projectile", "energy_ball")))
+						float(p.get("damage", 7)) * dmg_mult, String(p.get("projectile", "energy_ball")), 5.0, 0.0, src)
 			AudioManager.play("magic1", 0.9, 0.1, -6.0)
 			_back_to_move(boss)
 		"homing":
@@ -213,7 +215,7 @@ func _start_pattern(boss: Dictionary) -> void:
 			for k: int in range(count):
 				game.enemy_shots.spawn(me, Vector2.from_angle(TAU * k / count) * float(p.get("speed", 70)),
 						float(p.get("damage", 7)) * dmg_mult, String(p.get("projectile", "fox_fire")),
-						float(p.get("duration", 4.5)), float(p.get("turn", 2.0)))
+						float(p.get("duration", 4.5)), float(p.get("turn", 2.0)), src)
 			_back_to_move(boss)
 		"spiral":
 			boss["state"] = "spiral"
@@ -223,27 +225,27 @@ func _start_pattern(boss: Dictionary) -> void:
 			for _k: int in range(int(p.get("count", 4))):
 				var at := target + Vector2.from_angle(game.rng.randf() * TAU) * game.rng.randf_range(0.0, 80.0)
 				game.areas.hazard_pool(at, float(p.get("radius", 28)), float(p.get("damage", 3)) * dmg_mult,
-						float(p.get("duration", 4.0)), float(p.get("slow", 0.5)), float(p.get("windup", 0.8)))
+						float(p.get("duration", 4.0)), float(p.get("slow", 0.5)), float(p.get("windup", 0.8)), src)
 			_back_to_move(boss)
 		"rain":
 			var area := float(p.get("area", 120))
 			for k: int in range(int(p.get("count", 10))):
 				var at := target + Vector2.from_angle(game.rng.randf() * TAU) * game.rng.randf_range(0.0, area)
 				game.areas.telegraph(at, float(p.get("radius", 18)), float(p.get("windup", 0.9)) + k * 0.08,
-						float(p.get("damage", 10)) * dmg_mult)
+						float(p.get("damage", 10)) * dmg_mult, Callable(), Color(1.0, 0.25, 0.25), src)
 			_back_to_move(boss)
 		"spikes_line":
 			var dir := (target - me).normalized()
 			for k: int in range(int(p.get("count", 8))):
 				var at := me + dir * (24.0 + k * float(p.get("spacing", 22)))
 				game.areas.telegraph(at, float(p.get("radius", 13)), float(p.get("windup", 0.8)) + k * 0.07,
-						float(p.get("damage", 10)) * dmg_mult)
+						float(p.get("damage", 10)) * dmg_mult, Callable(), Color(1.0, 0.25, 0.25), src)
 			_back_to_move(boss)
 		"beam":
 			var start_angle := (target - me).angle() - float(p.get("sweep", 1.5)) * 0.5
 			game.areas.beam(me, start_angle, float(p.get("sweep", 1.5)), float(p.get("length", 220)),
 					float(p.get("width", 10)), float(p.get("windup", 1.0)), float(p.get("duration", 2.0)),
-					float(p.get("damage", 14)) * dmg_mult)
+					float(p.get("damage", 14)) * dmg_mult, src)
 			boss["state"] = "windup"
 			boss["timer"] = float(p.get("windup", 1.0)) + float(p.get("duration", 2.0))
 			boss["line"] = []

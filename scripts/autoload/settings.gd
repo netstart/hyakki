@@ -5,6 +5,8 @@ extends Node
 signal changed(key: String)
 
 const PATH := "user://settings.cfg"
+## 2: barra de vida passa a ficar sobre a cabeça por padrão.
+const VERSION := 2
 const DEFAULTS := {
 	"language": "",
 	"music_volume": 0.7,
@@ -18,7 +20,7 @@ const DEFAULTS := {
 	"colorblind": false,
 	"reduce_flashes": false,
 	"damage_numbers": true,
-	"hp_bar_below": true,
+	"hp_bar_below": false,
 	"speed": 1,
 	"notifications": false,
 	"show_fps": false,
@@ -39,6 +41,8 @@ func load_settings() -> void:
 		for key: String in DEFAULTS:
 			if config.has_section_key("settings", key):
 				_values[key] = config.get_value("settings", key)
+		if int(config.get_value("meta", "version", 1)) < 2:
+			_values["hp_bar_below"] = false
 	apply_engine_settings()
 
 
@@ -46,6 +50,7 @@ func save_settings() -> void:
 	var config := ConfigFile.new()
 	for key: String in _values:
 		config.set_value("settings", key, _values[key])
+	config.set_value("meta", "version", VERSION)
 	config.save(PATH)
 
 

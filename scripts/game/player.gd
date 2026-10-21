@@ -8,11 +8,13 @@ signal died
 ## Hitbox ~60% da largura do sprite: na dúvida, a favor do jogador (plano 8.7.2).
 const RADIUS := 4.0
 const ACCEL_TIME := 0.08
-const INVULN_TIME := 0.5
+const INVULN_TIME := DamageControl.INVULN_TIME
 const REVIVE_INVULN := 2.0
+const HURT_NUMBER_COLOR := Color("ff5a4f")
 
 var hero: Dictionary = {}
 var stats := StatBlock.new()
+var damage := DamageControl.new()
 var sim_pos := Vector2.ZERO
 var prev_pos := Vector2.ZERO
 var velocity := Vector2.ZERO
@@ -86,6 +88,7 @@ func reset() -> void:
 	aura_radius = 0.0
 	clone_time = 0.0
 	damage_taken_time = 0.0
+	damage.reset()
 	position = Vector2.ZERO
 
 
@@ -132,16 +135,24 @@ func game() -> HyakkiGame:
 	return get_parent() as HyakkiGame
 
 
-func take_damage(amount: float) -> void:
-	if invuln > 0.0 or not is_alive:
+## Única porta de entrada do dano recebido (plano 4.15). `source` é o id do inimigo, do
+## chefe ou do perigo, para o registro e a causa da morte.
+func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> void:
+	if not is_alive:
 		return
-	var final := maxf(1.0, amount - stats.get_stat("armor"))
-	if game().mode == "brisa":
-		final *= 0.6
-	hp -= final
+	if invuln > 0.0:
+		damage.blocked += 1
+		return
+	var now := GameClock.game_time
+	var final := damage.resolve(amount, stats.get_stat("armor"), max_hp(), game().mode == "brisa", now)
 	invuln = INVULN_TIME
+	if final <= 0.0:
+		return
+	damage.record(source, final, now)
+	hp -= final
 	_hit_flash = 0.12
 	damage_taken_time = 0.0
+	game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), final, false, HURT_NUMBER_COLOR)
 	Events.player_hit.emit(final)
 	AudioManager.play("player_hurt", 1.0, 0.05, -2.0)
 	Settings.vibrate(40)

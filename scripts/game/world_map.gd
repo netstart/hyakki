@@ -196,14 +196,14 @@ func _step_hazards(dt: float) -> void:
 						var d := player.sim_pos - at
 						if d.length() < 220.0 and d.length() > 30.0:
 							game.enemy_shots.spawn(at, d.normalized() * 55.0,
-									6.0 * game.enemy_damage_mult(), "statue_shot")
+									6.0 * game.enemy_damage_mult(), "statue_shot", 5.0, 0.0, &"statue")
 		"lava":
 			for c: Vector2i in _sim_active:
 				for spot: Array in chunk_data(c)["lava"]:
 					if player.sim_pos.distance_to(spot[0]) < float(spot[1]):
 						if player.lava_cd <= 0.0:
 							player.lava_cd = 0.6
-							player.take_damage(float(hazard.get("damage", 6)) * game.enemy_damage_mult())
+							player.take_damage(float(hazard.get("damage", 6)) * game.enemy_damage_mult(), &"lava")
 		"ash_storm":
 			_storm_timer += dt
 			var interval := float(hazard.get("interval", 90))

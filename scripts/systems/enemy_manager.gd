@@ -301,7 +301,7 @@ func _contact(i: int, dist: float, player: Player) -> void:
 		return
 	if dist < radius[i] * HURT_RADIUS_FACTOR + Player.RADIUS and contact_cd[i] <= 0.0 and player.is_alive:
 		contact_cd[i] = CONTACT_INTERVAL
-		player.take_damage(dmg[i])
+		player.take_damage(dmg[i], type_ids[kind[i]])
 
 
 func _charger(i: int, dir: Vector2, dist: float, spd: float, dt: float) -> Vector2:
@@ -336,7 +336,7 @@ func _shooter(i: int, dir: Vector2, dist: float, spd: float, dt: float) -> Vecto
 		ai_timer[i] = float(params.get("cooldown", 2.4))
 		game.enemy_shots.spawn(pos[i], dir * float(params.get("proj_speed", 70)),
 				float(params.get("proj_damage", 5)) * game.enemy_damage_mult(),
-				String(params.get("projectile", "energy_ball")))
+				String(params.get("projectile", "energy_ball")), 5.0, 0.0, type_ids[kind[i]])
 	if dist < keep * 0.75:
 		return -dir * spd * 0.7
 	if dist > keep:

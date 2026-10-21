@@ -4,6 +4,7 @@ extends Screen
 
 var _title: Label
 var _summary: Label
+var _damage: Label
 var _table: GridContainer
 var _news: Label
 var _next: Label
@@ -23,6 +24,9 @@ func _ready() -> void:
 	left.add_child(_title)
 	_summary = label("", 12, HORIZONTAL_ALIGNMENT_CENTER)
 	left.add_child(_summary)
+	_damage = label("", 11, HORIZONTAL_ALIGNMENT_CENTER)
+	_damage.add_theme_color_override("font_color", Color("ff8a80"))
+	left.add_child(_damage)
 	var box := panel()
 	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_table = GridContainer.new()
@@ -56,6 +60,7 @@ func on_show() -> void:
 	_title.text = tr("results.victory") if victory else tr("results.defeat")
 	_summary.text = tr("results.summary") % [format_time(float(r["time"])), int(r["level"]),
 			Locale.format_number(int(r["kills"])), Locale.format_number(int(r.get("ryo_earned", 0)))]
+	_damage.text = _damage_text(r.get("damage_taken", {}), victory)
 	for child: Node in _table.get_children():
 		child.queue_free()
 	for header: String in ["results.weapon", "results.level", "results.damage", "results.dps"]:
@@ -80,6 +85,26 @@ func on_show() -> void:
 	_double.visible = int(r.get("ryo_earned", 0)) > 0 and not bool(r.get("doubled", false)) \
 			and AdsManager.rewarded_available()
 	_double.disabled = false
+
+
+## Dano recebido (plano 4.15): na derrota, o golpe final; na vitória, quem mais feriu.
+func _damage_text(d: Dictionary, victory: bool) -> String:
+	if d.is_empty():
+		return ""
+	var total := Locale.format_number(roundi(float(d.get("total", 0.0))))
+	var top: Array = d.get("top", [])
+	if victory:
+		return tr("results.damage_top") % [total, source_name(String(top[0]) if not top.is_empty() else "")]
+	return tr("results.damage_taken") % [total, source_name(String(d.get("cause", "")))]
+
+
+## Nome de quem causou o dano: inimigo, chefe ou perigo da fase.
+static func source_name(id: String) -> String:
+	for key: String in ["enemy.%s.name" % id, "boss.%s.name" % id, "damage.source.%s" % id]:
+		var text := TranslationServer.translate(key)
+		if text != key:
+			return text
+	return TranslationServer.translate("damage.source.unknown")
 
 
 ## Dobra só o ryō desta partida, uma vez (plano 17.6).

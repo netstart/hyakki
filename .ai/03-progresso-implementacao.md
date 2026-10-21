@@ -122,6 +122,17 @@ publicação, otimizado, e execute a aplicação dentro do emulador".
   título). Teste de integração confere que toda música usada existe.
 - **Ouça e troque o que não combinar:** cada faixa é uma linha em `tools/amacha_assets.json`.
 
+## Controle de dano e ritmo (21/10/2026)
+Pedidos: "controle de dano que o personagem está recebendo desde a primeira fase"; tirar a contagem de 3 s
+depois de escolher habilidade; itens do chão que chamem atenção; barra de vida sobre a cabeça.
+- ✅ **Controle de dano** (plano 4.15): `DamageControl` com tetos por golpe e por janela, fonte de cada golpe,
+  causa da morte, dano por minuto, linha `DANO` do bot, resultados e telemetria. Vila com `damage_mult` 0,5:
+  bot passou de 2:21–3:39 para 3:07–5:24 (4 de 6 sementes passam dos 5:00).
+- ✅ **Sem contagem** ao voltar de level-up, baú e Kami; a contagem de 1,5 s fica só na pausa e no reviver.
+- ✅ **Itens do chão**: halo que pulsa, pulinho com sombra e brilho em cruz girando. Sem piscar (lê como
+  "vai sumir" ou dano); com "reduzir flashes" o halo pulsa devagar e sem o brilho.
+- ✅ **Barra de vida sobre a cabeça** por padrão (opção continua em Opções; ajustes antigos migrados).
+
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.
 - 21/10 — 629 textos em 11 idiomas; registro e verificação de licenças; testes de integração.

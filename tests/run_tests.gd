@@ -11,6 +11,7 @@ func _initialize() -> void:
 	_test_target_count()
 	_test_spatial_hash()
 	_test_segment_hit()
+	_test_damage_control()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -40,6 +41,32 @@ func _test_target_count() -> void:
 	_check(Progression.target_count(15.0, 500) == 500, "alvo respeita o teto")
 	_check(is_equal_approx(Progression.enemy_hp_mult(10.0), 1.8), "HP ×1,8 no minuto 10")
 	_check(Progression.spawn_rate(10.0) > Progression.spawn_rate(0.0), "ritmo de nascimento cresce com o tempo")
+
+
+## Controle de dano recebido (plano 4.15).
+func _test_damage_control() -> void:
+	var d := DamageControl.new()
+	_check(is_equal_approx(d.resolve(5.0, 2.0, 100.0, false, 0.0), 3.0), "armadura tira do golpe")
+	_check(is_equal_approx(d.resolve(2.0, 5.0, 100.0, false, 0.0), 1.0), "golpe mínimo 1 com armadura alta")
+	_check(is_equal_approx(d.resolve(10.0, 0.0, 100.0, true, 0.0), 6.0), "Brisa tira 40%")
+	_check(is_equal_approx(d.resolve(80.0, 0.0, 100.0, false, 0.0), 34.0), "teto por golpe: 34% do HP máx.")
+	_check(d.resolve(99999.0, 0.0, 100.0, false, 0.0) >= DamageControl.LETHAL, "golpe letal passa pelos tetos")
+	d.reset()
+	d.record(&"slime_rice", 30.0, 0.0)
+	_check(is_equal_approx(d.resolve(30.0, 0.0, 100.0, false, 0.5), 15.0), "teto da janela: 45% em 2 s")
+	d.record(&"slime_rice", 15.0, 0.5)
+	_check(d.resolve(30.0, 0.0, 100.0, false, 1.0) == 0.0, "janela cheia absorve o golpe")
+	_check(is_equal_approx(d.resolve(30.0, 0.0, 100.0, false, 2.6), 30.0), "janela libera depois de 2 s")
+	d.record(&"skeleton_peasant", 20.0, 61.0)
+	d.record(&"", 0.0, 62.0)
+	_check(is_equal_approx(d.total, 65.0) and d.hits == 3, "registra total e golpes")
+	_check(d.last_source == &"skeleton_peasant", "golpe zerado não vira causa da morte")
+	_check(d.top_sources(1) == [&"slime_rice"], "fonte que mais feriu primeiro")
+	_check(d.per_minute.size() == 2 and is_equal_approx(d.per_minute[1], 20.0), "dano por minuto")
+	var copy := DamageControl.new()
+	copy.restore(d.summary())
+	_check(is_equal_approx(copy.total, d.total) and copy.last_source == d.last_source
+			and copy.by_source.size() == 2, "summary/restore ida e volta")
 
 
 func _test_spatial_hash() -> void:
