@@ -50,7 +50,7 @@ def render(entries: list) -> dict:
            "hash das cópias, licenças permitidas, data de verificação). Snapshots das páginas de origem em",
            "`docs/licenses/` (fora do APK)."]
     credits = ["# Créditos", "", "**Hyakki — Até o Amanhecer**", "",
-               "Design, programação e direção: Clayton", "", "## Arte, áudio e fontes", ""]
+               "Design, programação e direção: Clayton K. N. Passos", "", "## Arte, áudio e fontes", ""]
     for e in entries:
         if e["category"] in ("art", "audio", "font"):
             credits.append(f"- **{e['name']}** — {e['author']} ({e['license_id']}) — {e['source_url']}")

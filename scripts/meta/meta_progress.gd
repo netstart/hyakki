@@ -126,6 +126,9 @@ static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 	if bool(result.get("daily", false)):
 		var daily: Dictionary = data["daily"]
 		daily["date"] = String(result.get("daily_date", ""))
+		if float(result["time"]) > float(daily["best_time"]):
+			# Marca se o melhor tempo do dia veio de uma partida com reviver por anúncio (17.6).
+			daily["best_revived"] = bool(result.get("revived_by_ad", false))
 		daily["best_time"] = maxf(float(daily["best_time"]), float(result["time"]))
 		daily["best_kills"] = maxi(int(daily["best_kills"]), tracker.kills)
 	var new_achievements := check_achievements(result, tracker)

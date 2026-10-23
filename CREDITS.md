@@ -2,7 +2,7 @@
 
 **Hyakki — Até o Amanhecer**
 
-Design, programação e direção: Clayton
+Design, programação e direção: Clayton K. N. Passos
 
 ## Arte, áudio e fontes
 

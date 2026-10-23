@@ -2156,7 +2156,8 @@ Herói morre → jogo pausa → painel "A chama ainda tremula..."
 - **Uma vez por partida**, independente do Revive comprado no Santuário (4.10). Primeiro se gasta o Revive do Santuário; o anúncio só é oferecido quando não há mais nenhum.
 - Se não houver anúncio disponível ou não houver internet, o painel **não aparece**: o jogo vai direto para os resultados (sem frustração de "botão que não funciona").
 - Contagem de 8 s com botão "Ver resultados" grande. Nunca forçar o anúncio.
-- **Disponível em:** Campanha e Noite Sem Fim, em todos os níveis de dificuldade. **Não disponível** no Desafio Diário (ranking justo).
+- **Disponível em:** Campanha, Noite Sem Fim e Desafio Diário, em todos os níveis de dificuldade. No Desafio Diário o ranking mostra a marca de reviver: o registro do dia guarda `best_revived` (se o melhor tempo do dia veio de uma partida com reviver) e o resultado traz `revived_by_ad`.
+- **Retomada no mesmo ponto, em todos os modos:** depois do anúncio a partida segue com o mesmo tempo de jogo, abates, nível, armas, XP e ryō, sem reiniciar a cena nem trocar de tela. O jogo não abre o menu de pausa quando o Android manda o app para o segundo plano durante o anúncio (`_ad_in_progress`). Se o app for fechado durante o anúncio, a partida salva volta à morte e a oferta aparece de novo (o snapshot grava `dead`).
 - **Conquistas:** uma vitória com reviver por anúncio vale normalmente, **exceto** as conquistas de "sem morrer" (ex.: "Ilesa"). A tela de resultados mostra um pequeno ícone de chama quando houve reviver.
 - Contra o Shinigami (Noite Sem Fim, 20:00): o reviver não é oferecido, porque ele é o fim natural da partida.
 
@@ -2227,7 +2228,7 @@ Nunca: energia/stamina, *pay-to-win*, anúncio no meio da partida ou anúncio qu
 
 ```
 HYAKKI — Até o Amanhecer
-Design, programação e direção: Clayton
+Design, programação e direção: Clayton K. N. Passos
 
 Arte e áudio principal: Ninja Adventure Asset Pack — pixel-boy & AAA (CC0)
 Partículas e sons de interface: Kenney (CC0)

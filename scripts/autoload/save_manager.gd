@@ -43,7 +43,7 @@ static func default_profile() -> Dictionary:
 		"shop": {"slots": {}, "max_seen_unix": 0, "next_run": {}},
 		"purchases": {"remove_open_ad": false, "pending": false},
 		"consent": {"asked": false, "personalized": false},
-		"daily": {"date": "", "best_time": 0.0, "best_kills": 0},
+		"daily": {"date": "", "best_time": 0.0, "best_kills": 0, "best_revived": false},
 		"defeat_streak": {},
 		"selected": {"hero": "aki", "stage": "village", "moon": 0, "mode": "normal",
 				"cosmetic": ""},

@@ -23,6 +23,12 @@ const ULT_SIZE := 54.0
 const CARD_SIZE := Vector2(150.0, 150.0)
 const REVIVE_SECONDS := 8.0
 const COUNTDOWN := 1.5
+## Baú: duração de cada etapa (segundos), arco e brilho do ícone que voa para a lista.
+const CHEST_SHAKE := 0.9
+const CHEST_FLY := 0.4
+const CHEST_FADE := 0.25
+const CHEST_ARC := 36.0
+const CHEST_GLOW := Color(1.8, 1.8, 1.5)
 
 var game: HyakkiGame
 var joystick: TouchJoystick
@@ -54,11 +60,17 @@ var _banish: Button
 var _banish_mode: bool = false
 var _opened_at: int = 0
 var _chest_panel: Control
+var _chest_image: TextureRect
+var _chest_frame: AtlasTexture
 var _chest_list: VBoxContainer
-var _chest_spinner: TextureRect
 var _chest_close: Button
-var _chest_left: float = 0.0
 var _chest_rewards: Array[Dictionary] = []
+var _chest_icons: Array[TextureRect] = []
+var _chest_labels: Array[Label] = []
+var _chest_flyers: Array[TextureRect] = []
+var _chest_tween: Tween
+var _chest_busy: bool = false
+var _chest_run: int = 0
 var _kami_panel: Control
 var _kami_row: HBoxContainer
 var _kami_ids: Array[StringName] = []
@@ -163,6 +175,7 @@ func _ready() -> void:
 
 func start_run() -> void:
 	_level_panel.visible = false
+	_chest_cancel()
 	_chest_panel.visible = false
 	_kami_panel.visible = false
 	_pause_panel.visible = false
@@ -388,27 +401,21 @@ func _build_level_panel() -> void:
 	box.add_child(actions)
 
 
-# --- Baú (roleta) -------------------------------------------------------------------
+# --- Baú -------------------------------------------------------------------------------
 
+## Tremor, abertura, itens voando um a um (cada um com som) e texto ao lado de cada ícone.
 func show_chest(rewards: Array[Dictionary]) -> void:
+	_chest_cancel()
 	_chest_rewards = rewards
 	_chest_panel.visible = true
 	joystick.release()
 	for child: Node in _chest_list.get_children():
+		_chest_list.remove_child(child)
 		child.queue_free()
-	_chest_list.visible = false
-	_chest_spinner.visible = true
-	# Roleta de 3–5 s conforme o tamanho do prêmio, pulável com um toque (plano 4.8).
-	_chest_left = 1.5 + rewards.size() * 0.6
-	_chest_close.text = tr("chest.skip")
-	AudioManager.play("jingle_chest_big" if rewards.size() >= 4 else "bonus2")
-
-
-func _reveal_chest() -> void:
-	_chest_left = 0.0
-	_chest_spinner.visible = false
-	_chest_list.visible = true
-	for reward: Dictionary in _chest_rewards:
+	_chest_icons.clear()
+	_chest_labels.clear()
+	# As linhas já ocupam o espaço, com ícone e texto transparentes até o item pousar.
+	for reward: Dictionary in rewards:
 		var line := HBoxContainer.new()
 		line.add_theme_constant_override("separation", 6)
 		var icon := TextureRect.new()
@@ -416,38 +423,181 @@ func _reveal_chest() -> void:
 		icon.custom_minimum_size = Vector2(16, 16)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.modulate.a = 0.0
 		line.add_child(icon)
 		var text := String(reward.get("title", ""))
 		if reward.has("text") and String(reward["kind"]) in ["evolution", "union"]:
 			text += " — " + String(reward["text"])
 		elif reward.has("tag"):
 			text = "%s (%s)" % [text, reward["tag"]]
-		line.add_child(_label(text, HORIZONTAL_ALIGNMENT_LEFT))
+		var label := _label(text, HORIZONTAL_ALIGNMENT_LEFT)
+		label.modulate.a = 0.0
+		line.add_child(label)
 		_chest_list.add_child(line)
+		_chest_icons.append(icon)
+		_chest_labels.append(label)
+	_chest_busy = true
+	_chest_close.text = tr("chest.skip")
+	_chest_run += 1
+	_chest_begin(_chest_run)
+
+
+func chest_animating() -> bool:
+	return _chest_busy
+
+
+## Linhas com texto visível (o roteiro E2E confere depois de pular ou esperar a animação).
+func chest_lines_shown() -> int:
+	var shown := 0
+	for label: Label in _chest_labels:
+		if label.modulate.a >= 1.0:
+			shown += 1
+	return shown
+
+
+func chest_lines_total() -> int:
+	return _chest_labels.size()
+
+
+func _chest_begin(run: int) -> void:
+	# Duas esperas de quadro: o VBox precisa calcular as posições das linhas (alvos dos ícones).
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if run != _chest_run or not _chest_busy:
+		return
+	var from := _chest_image.get_global_rect().get_center()
+	var tween := create_tween()
+	_chest_tween = tween
+	tween.tween_method(_chest_shake, 0.0, 1.0, CHEST_SHAKE)
+	tween.tween_callback(_chest_open)
+	tween.tween_property(_chest_image, "scale", Vector2.ONE * 1.35, 0.1) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(_chest_image, "modulate", Color.WHITE, 0.2)
+	tween.tween_property(_chest_image, "scale", Vector2.ONE, 0.15) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	for i: int in _chest_icons.size():
+		var to := _chest_icons[i].get_global_rect().get_center()
+		tween.tween_callback(_chest_spawn.bind(i))
+		tween.parallel().tween_method(_chest_fly.bind(i, from, to), 0.0, 1.0, CHEST_FLY)
+		tween.parallel().tween_callback(_chest_land.bind(i)).set_delay(CHEST_FLY)
+		# O texto do item anterior surge enquanto o próximo sai do baú.
+		if i > 0:
+			tween.parallel().tween_property(_chest_labels[i - 1], "modulate:a", 1.0, CHEST_FADE)
+	if not _chest_labels.is_empty():
+		tween.tween_property(_chest_labels[-1], "modulate:a", 1.0, CHEST_FADE)
+	tween.tween_callback(_chest_settle)
+
+
+## Balança cada vez mais forte até abrir.
+func _chest_shake(t: float) -> void:
+	_chest_image.rotation = sin(t * 60.0) * 0.16 * t
+
+
+## Abertura: quadro aberto, pop de escala, brilho e som.
+func _chest_open() -> void:
+	_chest_frame.region = Rect2(16, 0, 16, 14)
+	_chest_image.rotation = 0.0
+	_chest_image.modulate = Color(2.2, 2.2, 1.8)
+	AudioManager.play("k_wood_0", 1.0, 0.05)
+	AudioManager.play("magic1", 1.0, 0.0, -3.0)
+
+
+## O item sai do baú: ícone pequeno e um ding com tom subindo (especiais têm fanfarra).
+func _chest_spawn(i: int) -> void:
+	var flyer := TextureRect.new()
+	flyer.texture = _chest_icons[i].texture
+	flyer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flyer.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	flyer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flyer.size = Vector2(16, 16)
+	flyer.pivot_offset = Vector2(8, 8)
+	flyer.scale = Vector2.ONE * 0.4
+	flyer.modulate = CHEST_GLOW
+	_root.add_child(flyer)
+	_chest_flyers.append(flyer)
+	var kind := String(_chest_rewards[i].get("kind", ""))
+	if kind in ["evolution", "union"]:
+		AudioManager.play("powerup")
+		AudioManager.play("j_temple_bell", 1.0, 0.0, -2.0)
+	else:
+		AudioManager.play("coin", pow(1.12, i))
+
+
+## Trajeto em arco do baú até a linha; cresce e perde o brilho no caminho.
+func _chest_fly(t: float, i: int, from: Vector2, to: Vector2) -> void:
+	var flyer := _chest_flyers[i]
+	if not is_instance_valid(flyer):
+		return
+	var at := from.lerp(to, t) - Vector2(0.0, sin(t * PI) * CHEST_ARC)
+	flyer.global_position = at - Vector2(8.0, 8.0)
+	flyer.scale = Vector2.ONE * lerpf(0.4, 1.0, t)
+	flyer.modulate = Color.WHITE.lerp(CHEST_GLOW, 1.0 - t)
+
+
+## O ícone pousou na linha: some o voador e mostra o ícone da linha.
+func _chest_land(i: int) -> void:
+	if is_instance_valid(_chest_flyers[i]):
+		_chest_flyers[i].queue_free()
+	_chest_icons[i].modulate.a = 1.0
+
+
+## Estado final: baú aberto, todas as linhas com texto. Usado no fim natural e ao pular.
+func _chest_settle() -> void:
+	_chest_busy = false
+	_chest_clear_flyers()
+	_chest_frame.region = Rect2(16, 0, 16, 14)
+	_chest_image.rotation = 0.0
+	_chest_image.scale = Vector2.ONE
+	_chest_image.modulate = Color.WHITE
+	for i: int in _chest_icons.size():
+		_chest_icons[i].modulate = Color.WHITE
+		_chest_labels[i].modulate = Color.WHITE
 	_chest_close.text = tr("chest.close")
-	AudioManager.play("jingle_success")
+	AudioManager.play("jingle_chest_big" if _chest_rewards.size() >= 4 else "jingle_success")
+
+
+## Pular: mata a animação e mostra o estado final de uma vez.
+func _chest_skip() -> void:
+	if _chest_tween != null and _chest_tween.is_valid():
+		_chest_tween.kill()
+	_chest_settle()
+
+
+## Para tudo quando o painel fecha no meio da animação (bot, troca de tela, nova partida).
+func _chest_cancel() -> void:
+	_chest_busy = false
+	if _chest_tween != null and _chest_tween.is_valid():
+		_chest_tween.kill()
+	_chest_clear_flyers()
+
+
+func _chest_clear_flyers() -> void:
+	for flyer: TextureRect in _chest_flyers:
+		if is_instance_valid(flyer):
+			flyer.queue_free()
+	_chest_flyers.clear()
 
 
 func _build_chest_panel() -> void:
 	var box := _overlay_box()
 	_chest_panel = box.get_parent().get_parent() as Control
 	box.add_child(_label(tr("chest.title"), HORIZONTAL_ALIGNMENT_CENTER))
-	_chest_spinner = TextureRect.new()
-	# A imagem tem dois quadros (fechado | aberto): na roleta mostra só o baú fechado.
-	var chest_frame := AtlasTexture.new()
-	chest_frame.atlas = _icon("res://assets/art/items/treasure/BigTreasureChest.png")
-	chest_frame.region = Rect2(0, 0, 16, 14)
-	_chest_spinner.texture = chest_frame
-	_chest_spinner.custom_minimum_size = Vector2(48, 48)
-	_chest_spinner.pivot_offset = Vector2(24, 24)
-	_chest_spinner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_chest_spinner.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	box.add_child(_chest_spinner)
+	_chest_image = TextureRect.new()
+	# A imagem tem dois quadros (fechado | aberto): começa com o baú fechado.
+	_chest_frame = AtlasTexture.new()
+	_chest_frame.atlas = _icon("res://assets/art/items/treasure/BigTreasureChest.png")
+	_chest_frame.region = Rect2(0, 0, 16, 14)
+	_chest_image.texture = _chest_frame
+	_chest_image.custom_minimum_size = Vector2(48, 48)
+	_chest_image.pivot_offset = Vector2(24, 24)
+	_chest_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_chest_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	box.add_child(_chest_image)
 	_chest_list = VBoxContainer.new()
 	box.add_child(_chest_list)
 	_chest_close = _menu_button(tr("chest.skip"), func() -> void:
-		if _chest_left > 0.0:
-			_reveal_chest()
+		if _chest_busy:
+			_chest_skip()
 		else:
 			_chest_panel.visible = false
 			chest_closed.emit())
@@ -664,6 +814,7 @@ func bot_answer() -> void:
 		_level_panel.visible = false
 		card_chosen.emit(0)
 	elif _chest_panel.visible:
+		_chest_cancel()
 		_chest_panel.visible = false
 		chest_closed.emit()
 	elif _kami_panel.visible and not _kami_ids.is_empty():
@@ -683,11 +834,6 @@ func _process(delta: float) -> void:
 	if _boss_line_left > 0.0:
 		_boss_line_left -= delta
 		_boss_line.visible = _boss_line_left > 0.0
-	if _chest_panel.visible and _chest_left > 0.0:
-		_chest_left -= delta
-		_chest_spinner.rotation = sin(Time.get_ticks_msec() / 60.0) * 0.15
-		if _chest_left <= 0.0:
-			_reveal_chest()
 	if _revive_panel.visible:
 		_revive_left -= delta
 		_revive_label.text = tr("revive.countdown") % ceili(maxf(_revive_left, 0.0))

@@ -47,8 +47,9 @@ func step(dt: float) -> void:
 		var i := int(boss["index"])
 		var enemies := game.enemies
 		if enemies.alive[i] == 0 or enemies.type_ids[enemies.kind[i]] != StringName(boss["id"]):
-			_on_dead(boss)
+			# Sai da lista antes: on_boss_defeated volta à música da fase se não restar chefe.
 			bosses.remove_at(k)
+			_on_dead(boss)
 			continue
 		_update_phase(boss)
 		_step_boss(boss, dt)

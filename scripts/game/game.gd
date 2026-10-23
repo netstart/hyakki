@@ -83,6 +83,9 @@ var _night: CanvasModulate
 var _weapon_layer: Node2D
 var _shake: float = 0.0
 var _ad_revive_used: bool = false
+## Verdadeiro enquanto o anúncio do reviver passa: o Android pode mandar o jogo para o
+## segundo plano (foco perdido), e aí a partida não deve abrir o menu de pausa.
+var _ad_in_progress: bool = false
 var _speed_min: int = 3
 var _speed_max: int = 1
 var _perf_sum_ms: float = 0.0
@@ -188,7 +191,8 @@ func snapshot() -> Dictionary:
 		"ult_charge": ultimate.charge, "kills": tracker.kills, "ryo_run": tracker.ryo,
 		"evolutions": Array(tracker.evolutions).map(func(e: StringName) -> String: return String(e)),
 		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
-		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used, "speed": GameClock.speed,
+		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
+		"dead": not player.is_alive, "speed": GameClock.speed,
 		"damage": player.damage.summary(),
 	}
 
@@ -234,7 +238,13 @@ func restore_snapshot(s: Dictionary) -> void:
 	endless_phase = bool(s.get("endless_phase", false))
 	_ad_revive_used = bool(s.get("ad_revive_used", false))
 	hud.refresh_speed()
-	open_pause()
+	if bool(s.get("dead", false)):
+		# Salva durante a morte: volta ao mesmo ponto e mostra de novo a oferta de reviver.
+		player.hp = 0.0
+		player.is_alive = false
+		_on_player_died()
+	else:
+		open_pause()
 
 
 func is_bot() -> bool:
@@ -493,7 +503,8 @@ func _handle_actions() -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and running and not _bot and not hud.overlay_open():
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and running and not _bot and not hud.overlay_open() \
+			and not _ad_in_progress:
 		open_pause()
 
 
@@ -928,10 +939,10 @@ func cycle_speed() -> void:
 func _on_player_died() -> void:
 	if not running:
 		return
-	# Reviver por anúncio: 1× por partida, só depois do Revive do Santuário, fora do
-	# Desafio Diário e nunca contra o Shinigami (plano 17.6).
-	var offer := not _ad_revive_used and not _bot and not bool(config.get("daily", false)) \
-			and not _shinigami_present() and AdsManager.rewarded_available()
+	# Reviver por anúncio: 1× por partida, só depois do Revive do Santuário, em todos os
+	# modos (inclusive o Desafio Diário) e nunca contra o Shinigami (plano 17.6).
+	var offer := not _ad_revive_used and not _bot and not _shinigami_present() \
+			and AdsManager.rewarded_available()
 	if offer:
 		GameClock.paused = true
 		hud.show_revive_offer()
@@ -951,7 +962,9 @@ func _on_revive_answered(accept: bool) -> void:
 		_end_run(false)
 		return
 	_ad_revive_used = true
+	_ad_in_progress = true
 	AdsManager.show_rewarded("revive", func(rewarded: bool) -> void:
+		_ad_in_progress = false
 		if rewarded:
 			tracker.revived_by_ad = true
 			SaveManager.data["stats"]["revives_by_ad"] = int(SaveManager.data["stats"]["revives_by_ad"]) + 1
@@ -1024,6 +1037,7 @@ func build_result(victory: bool, gave_up: bool) -> Dictionary:
 			"stage": String(stage["id"]), "mode": mode, "moon": moon, "time": GameClock.game_time,
 			"level": level, "kills": tracker.kills, "ryo_run": tracker.ryo, "weapons": weapon_rows,
 			"endless": endless_phase, "daily": bool(config.get("daily", false)),
+			"revived_by_ad": tracker.revived_by_ad,
 			"daily_date": String(config.get("daily_date", "")), "speed_min": _speed_min,
 			"speed_max": _speed_max, "damage_taken": player.damage.summary()}
 

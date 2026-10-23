@@ -5,6 +5,7 @@ extends Node
 ## O save do jogador é copiado antes e restaurado no fim; nada do perfil real se perde.
 
 const SAVE_FILES := ["user://save.json", "user://save.bak"]
+const GAME_SCENE := "res://scenes/game/Game.tscn"
 
 var _count: int = 0
 var _failures: int = 0
@@ -23,7 +24,9 @@ func _ready() -> void:
 	_test_sanctuary()
 	_test_shop_clock()
 	_test_ads_rules()
+	_test_frozen_tint()
 	await _test_suspended_run()
+	await _test_revive_by_ad()
 	_restore_save()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -250,8 +253,18 @@ func _test_ads_rules() -> void:
 
 
 ## Partida suspensa (plano 10.11): snapshot → nova partida → restaurar dá o mesmo estado.
+## Congelado (ampulheta): só troca a cor do sprite, sem desenho extra por inimigo.
+func _test_frozen_tint() -> void:
+	var base := Color(1.0, 0.5, 0.2, 0.7)
+	_check(EnemyManager.frozen_tint(base, false) == base, "fora do congelamento a cor não muda")
+	var frozen := EnemyManager.frozen_tint(base, true)
+	_check(frozen != base, "congelado muda a cor do inimigo")
+	_check(frozen.b > base.b, "congelado fica mais azulado")
+	_check(is_equal_approx(frozen.a, base.a), "congelado mantém a transparência")
+
+
 func _test_suspended_run() -> void:
-	var scene := load("res://scenes/game/Game.tscn") as PackedScene
+	var scene := load(GAME_SCENE) as PackedScene
 	var cfg := {"hero": "goro", "stage": "bamboo", "moon": 1, "mode": "normal", "seed": 77, "speed": 2}
 	var first := scene.instantiate() as HyakkiGame
 	first.config = cfg.duplicate()
@@ -284,3 +297,79 @@ func _test_suspended_run() -> void:
 	second.queue_free()
 	GameClock.paused = false
 	await get_tree().process_frame
+
+
+## Reviver por anúncio (17.6): em qualquer modo, inclusive o Desafio Diário, o anúncio
+## recompensado devolve o herói no mesmo instante, sem reiniciar: mesmo tempo, abates, nível
+## e armas. Um segundo reviver não é oferecido. Partida salva durante a morte volta com a oferta.
+func _test_revive_by_ad() -> void:
+	var scene := load(GAME_SCENE) as PackedScene
+	var modes := [
+		{"name": "campanha", "daily": false, "endless": false},
+		{"name": "noite sem fim", "daily": false, "endless": true},
+		{"name": "diário", "daily": true, "endless": false},
+	]
+	AdsManager.auto_answer = true
+	for mode: Dictionary in modes:
+		var label: String = mode["name"]
+		var cfg := {"hero": "goro", "stage": "bamboo", "moon": 0, "mode": "normal", "seed": 91,
+				"speed": 1, "daily": mode["daily"], "endless": mode["endless"]}
+		var game := scene.instantiate() as HyakkiGame
+		game.config = cfg
+		add_child(game)
+		await get_tree().process_frame
+		game.player.god_mode = true
+		game.endless_phase = bool(mode["endless"])
+		game.tracker.kills = 7
+		game.level = 4
+		await get_tree().create_timer(1.0).timeout
+		game.player.god_mode = false
+		game.player.revives_used = 99
+		game.player.invuln = 0.0
+		var weapons_before := game.weapons.size()
+		game.player.take_damage(99999.0)
+		_check(game.hud.revive_open(), "%s: morrer abre a oferta de reviver" % label)
+		_check(GameClock.paused, "%s: a morte pausa o tempo" % label)
+		var time_at_death := GameClock.game_time
+		var snap := game.snapshot()
+		_check(bool(snap["dead"]) and not bool(snap["ad_revive_used"]),
+				"%s: partida salva na morte guarda a morte" % label)
+
+		# Aceitar (o painel fecha antes de emitir, como no botão).
+		game.hud._revive_panel.visible = false
+		game.hud.revive_answered.emit(true)
+		var waited := 0.0
+		while GameClock.paused and waited < 8.0:
+			await get_tree().create_timer(0.1).timeout
+			waited += 0.1
+		_check(game.running and game.player.is_alive, "%s: depois do anúncio a partida segue viva" % label)
+		_check(GameClock.game_time >= time_at_death and GameClock.game_time < time_at_death + 1.0,
+				"%s: o tempo de jogo continua de onde parou" % label)
+		_check(game.tracker.kills == 7 and game.level == 4 and game.weapons.size() == weapons_before,
+				"%s: abates, nível e armas são mantidos" % label)
+		_check(game.tracker.revived_by_ad, "%s: o resultado marca o reviver por anúncio" % label)
+		var later := GameClock.game_time
+		await get_tree().create_timer(0.5).timeout
+		_check(GameClock.game_time > later, "%s: o tempo volta a correr" % label)
+
+		# Um segundo reviver não é oferecido.
+		game.player.invuln = 0.0
+		game.player.take_damage(99999.0)
+		_check(not game.hud.revive_open() and not game.running,
+				"%s: só um reviver por partida" % label)
+
+		if label == "campanha":
+			# App fechado durante o anúncio: a partida salva volta à morte, com a oferta.
+			var json_snap: Dictionary = JSON.parse_string(JSON.stringify(snap))
+			var again := scene.instantiate() as HyakkiGame
+			again.config = json_snap["config"]
+			add_child(again)
+			await get_tree().process_frame
+			again.restore_snapshot(json_snap)
+			_check(again.hud.revive_open(), "partida salva durante a morte volta com a oferta")
+			again.queue_free()
+			await get_tree().process_frame
+		game.queue_free()
+		await get_tree().process_frame
+	AdsManager.auto_answer = false
+	GameClock.paused = true
