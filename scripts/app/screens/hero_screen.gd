@@ -25,8 +25,9 @@ func _ready() -> void:
 	row.offset_bottom = -12
 	row.add_theme_constant_override("separation", 12)
 	add_child(row)
+	# 4 colunas: 7 heróis em 2 linhas, sobrando largura para o painel.
 	_grid = GridContainer.new()
-	_grid.columns = 3
+	_grid.columns = 4
 	_grid.add_theme_constant_override("h_separation", 6)
 	_grid.add_theme_constant_override("v_separation", 6)
 	row.add_child(_grid)
@@ -37,11 +38,20 @@ func _ready() -> void:
 	var box := panel()
 	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var inner := HBoxContainer.new()
+	inner.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	inner.add_theme_constant_override("separation", 8)
-	_face = icon_rect("", Vector2(64, 64))
+	_face = icon_rect("", Vector2(48, 48))
 	inner.add_child(_face)
-	_info = wrap_label("", 230)
-	inner.add_child(_info)
+	# Texto em rolagem vertical: textos longos (ru, de, fr, id) rolam dentro do painel
+	# e não empurram a linha de botões para fora da tela.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inner.add_child(scroll)
+	_info = wrap_label("", 0)
+	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_info)
 	box.add_child(inner)
 	side.add_child(box)
 	var bottom := HBoxContainer.new()
@@ -64,7 +74,7 @@ func on_show() -> void:
 		var unlocked := MetaProgress.is_hero_unlocked(id)
 		var data: Dictionary = DB.heroes[id]
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(70, 70)
+		b.custom_minimum_size = Vector2(60, 60)
 		b.icon = load(String(data["face"])) as Texture2D
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -88,14 +98,13 @@ func _select(id: StringName) -> void:
 	_face.texture = load(String(data["face"])) as Texture2D
 	_face.modulate = Color.WHITE if unlocked else Color(0.3, 0.3, 0.35)
 	var lines: PackedStringArray = [
-		tr("hero.%s.name" % id), tr("hero.%s.role" % id), "",
+		tr("hero.%s.name" % id), tr("hero.%s.role" % id),
 		tr("heroes.weapon") % tr("weapon.%s.name" % data["weapon"]),
 		tr("heroes.bonus") % _bonus_text(id, data),
 		tr("heroes.ultimate") % tr("ultimate.%s.name" % data["ultimate"]["type"]),
 		tr("ultimate.%s.desc" % data["ultimate"]["type"]),
 	]
 	if not unlocked:
-		lines.append("")
 		lines.append(tr("heroes.locked") % tr("achievement.%s.desc" % data["unlock"]))
 	_info.text = "\n".join(lines)
 	_go.disabled = not unlocked

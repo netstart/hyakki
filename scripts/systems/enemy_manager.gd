@@ -21,6 +21,7 @@ const ELITE_HP := 10.0
 const STUCK_SECONDS := 3.0
 const SHADE_DARK_SPEED := 1.2
 const SHADE_DARK_ALPHA := 0.4
+const FROZEN_TINT := Color(0.6, 0.85, 1.0)
 const AI_CODES := {"chaser": AI.CHASER, "swarm": AI.SWARM, "charger": AI.CHARGER,
 		"shooter": AI.SHOOTER, "tank": AI.TANK, "shade": AI.SHADE, "splitter": AI.SPLITTER,
 		"prop": AI.PROP}
@@ -514,6 +515,16 @@ func _by_y(a: int, b: int) -> bool:
 	return pos[a].y < pos[b].y
 
 
+## Congelado: tom azulado no próprio sprite. Não usa desenho extra por inimigo, que dobrava
+## os draw calls com centenas de inimigos e derrubava o FPS (o jogador parecia travado).
+static func frozen_tint(base: Color, frozen: bool) -> Color:
+	if not frozen:
+		return base
+	var tint := base.lerp(FROZEN_TINT, 0.5)
+	tint.a = base.a
+	return tint
+
+
 func _draw() -> void:
 	var a := GameClock.alpha
 	var time := GameClock.game_time
@@ -532,6 +543,7 @@ func _draw() -> void:
 			color.a = SHADE_DARK_ALPHA
 		if decoy[i] == 1:
 			color.a = 0.85
+		color = frozen_tint(color, freeze_time > 0.0)
 		var src: Rect2
 		var flip := false
 		if sheet.layout == "region":
@@ -554,7 +566,7 @@ func _draw() -> void:
 		elif elite[i] == 1:
 			tex = sheet.outline_texture
 		draw_texture_rect_region(tex, Rect2(Vector2(-size.x * 0.5, -size.y + 2.0), size), src, color)
-		if stun[i] > 0.0 or freeze_time > 0.0:
+		if stun[i] > 0.0:
 			draw_set_transform(foot, 0.0, Vector2.ONE)
 			draw_circle(Vector2(0, -size.y * s - 2), 1.5, Color(0.6, 0.85, 1.0, 0.9))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

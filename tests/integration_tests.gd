@@ -27,6 +27,8 @@ func _ready() -> void:
 	_test_frozen_tint()
 	await _test_suspended_run()
 	await _test_revive_by_ad()
+	await _test_hero_screen_layout()
+	await _test_shop_layout()
 	_restore_save()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -57,6 +59,149 @@ func _restore_save() -> void:
 			file.store_buffer(bytes)
 			file.close()
 	SaveManager.load_profile()
+
+
+# --- Tela de guardiões ------------------------------------------------------------
+
+## Cada guardião (bloqueado e desbloqueado) em cada idioma: a grade, o painel de texto,
+## "Escolher fase" e "voltar" ficam inteiramente dentro de 678x305 (o viewport do jogo).
+func _test_hero_screen_layout() -> void:
+	var view := Rect2(Vector2.ZERO, Vector2(678, 305))
+	var all_heroes: Array = []
+	for id: StringName in DB.ids("heroes"):
+		all_heroes.append(String(id))
+	var original_unlocked: Array = (SaveManager.data["unlocked"]["heroes"] as Array).duplicate()
+	for lang: String in Locale.SUPPORTED:
+		Locale.set_language(lang, false)
+		for unlock_all: bool in [false, true]:
+			SaveManager.data["unlocked"]["heroes"] = all_heroes.duplicate() if unlock_all else original_unlocked.duplicate()
+			var app := App.new()
+			add_child(app)
+			await get_tree().process_frame
+			app.go(&"heroes")
+			await get_tree().process_frame
+			await get_tree().process_frame
+			var screen := (app.get("_screens") as Dictionary)[&"heroes"] as Control
+			var grid := screen.get("_grid") as Control
+			_check(grid.get_child_count() == DB.ids("heroes").size(),
+					"%s: a grade mostra todos os guardiões" % lang)
+			for id: StringName in DB.ids("heroes"):
+				screen.call("_select", id)
+				await get_tree().process_frame
+				var state := "%s, %s, %s" % [lang, id, "desbloqueado" if MetaProgress.is_hero_unlocked(id) else "bloqueado"]
+				var controls: Array[Control] = [screen.get("_go") as Control, screen.get("_cosmetic") as Control]
+				_buttons_in(screen, controls)
+				for control: Control in controls:
+					_check(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
+							"%s: %s dentro da tela (%s)" % [state, control.get_class(), control.get_path()])
+				var info := screen.get("_info") as Control
+				_check(view.encloses(info.get_parent().get_global_rect()),
+						"%s: o painel de texto dentro da tela" % state)
+			app.queue_free()
+			await get_tree().process_frame
+	SaveManager.data["unlocked"]["heroes"] = original_unlocked
+	Locale.set_language("pt_BR", false)
+
+
+## Coleta os botões (BaseButton) de uma árvore de controles.
+func _buttons_in(node: Node, out: Array[Control]) -> void:
+	for child: Node in node.get_children():
+		if child is BaseButton and not out.has(child):
+			out.append(child as Control)
+		_buttons_in(child, out)
+
+
+# --- Loja -------------------------------------------------------------------------
+
+## Loja em cada idioma: ao abrir, depois de um resgate, com status de falha e sem anúncio,
+## título, voltar, as 6 vagas, dica, status e a linha de botões ficam dentro de 678x305 e
+## com pelo menos 8 px até a borda inferior.
+func _test_shop_layout() -> void:
+	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
+	AdsManager.auto_answer = true
+	for lang: String in Locale.SUPPORTED:
+		Locale.set_language(lang, false)
+		SaveManager.data = SaveManager.default_profile()
+		AdsManager.mock_fill = true
+		# Host com o tamanho do viewport do jogo: a tela sozinha na árvore de testes não tem esse tamanho.
+		var host := Control.new()
+		host.size = Vector2(678, 305)
+		add_child(host)
+		var screen := (load("res://scripts/app/screens/shop_screen.gd") as GDScript).new() as Control
+		host.add_child(screen)
+		screen.on_show()
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var status := screen.get("_status") as Label
+		_check_shop_layout(screen, view, "%s, ao abrir" % lang)
+
+		# Resgate bem-sucedido (anúncio simulado até o fim): a vaga volta a ficar em cronômetro.
+		screen.call("_claim", &"slot_ryo")
+		var waited := 0.0
+		while ShopManager.is_ready(&"slot_ryo") and waited < 10.0:
+			await get_tree().create_timer(0.1).timeout
+			waited += 0.1
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_check(not ShopManager.is_ready(&"slot_ryo"), "%s: o resgate põe a vaga em cronômetro" % lang)
+		_check(status.text == tr("shop.received") % tr("shop.slot_ryo.name"),
+				"%s: o status mostra o recebido" % lang)
+		_check_shop_layout(screen, view, "%s, depois do resgate" % lang)
+
+		# Status de falha (o texto mais longo de cada caso).
+		var long_reward := tr("shop.received") % tr("shop.slot_lantern.name")
+		for text: String in [tr("shop.failed"), tr("shop.pending"), tr("shop.watch_full"), long_reward]:
+			status.text = text
+			await get_tree().process_frame
+			_check_shop_layout(screen, view, "%s, status \"%s\"" % [lang, text])
+
+		# Sem anúncio disponível: as vagas prontas ficam desativadas com o aviso.
+		SaveManager.data = SaveManager.default_profile()
+		AdsManager.mock_fill = false
+		screen.call("on_show")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_check_shop_layout(screen, view, "%s, sem anúncio" % lang)
+		AdsManager.mock_fill = true
+		host.queue_free()
+		await get_tree().process_frame
+	AdsManager.auto_answer = false
+	Locale.set_language("pt_BR", false)
+
+
+## Confere que cada botão e texto da Loja está dentro de `view` (ou seja, visível e com
+## a folga da borda inferior).
+func _check_shop_layout(screen: Control, view: Rect2, state: String) -> void:
+	var controls: Array[Control] = []
+	_shop_controls_in(screen, controls)
+	_check(controls.size() >= 12, "%s: a Loja mostra os controles" % state)
+	for control: Control in controls:
+		_check(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
+				"%s: %s dentro da tela com folga (%s, %s)" % [state, control.get_class(),
+				control.get_global_rect(), control.get_path()])
+		# Texto inteiro (sem corte): o motor calcula a altura necessária com a quebra de linha
+		# da largura real; ela tem de caber na caixa (Label) ou no botão.
+		if control is Label and (control as Label).text != "":
+			var label_node := control as Label
+			var font := label_node.get_theme_font("font")
+			var needed := label_node.get_line_count() * font.get_height(label_node.get_theme_font_size("font_size"))
+			_check(needed <= label_node.size.y + 0.5,
+					"%s: o texto \"%s\" cabe na caixa (%.0f de %.0f px)" % [state, label_node.text,
+					needed, label_node.size.y])
+		if control is Button and (control as Button).text != "":
+			var button_node := control as Button
+			var minimum := button_node.get_combined_minimum_size()
+			_check(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
+					"%s: o botão \"%s\" mostra o texto inteiro (%s de %s)" % [state, button_node.text,
+					minimum, button_node.size])
+
+
+## Coleta botões e textos de uma árvore de controles.
+func _shop_controls_in(node: Node, out: Array[Control]) -> void:
+	for child: Node in node.get_children():
+		if (child is BaseButton or child is Label) and not out.has(child):
+			out.append(child as Control)
+		_shop_controls_in(child, out)
 
 
 # --- Dados ------------------------------------------------------------------------
@@ -318,11 +463,13 @@ func _test_revive_by_ad() -> void:
 		game.config = cfg
 		add_child(game)
 		await get_tree().process_frame
-		game.player.god_mode = true
+		# Estado fixado logo antes da morte, sem esperar tempo real: abates e níveis só
+		# mudam pelo que a própria simulação faz, e aqui não há nenhum passo entre a
+		# montagem e a morte.
 		game.endless_phase = bool(mode["endless"])
+		GameClock.game_time = 42.0
 		game.tracker.kills = 7
 		game.level = 4
-		await get_tree().create_timer(1.0).timeout
 		game.player.god_mode = false
 		game.player.revives_used = 99
 		game.player.invuln = 0.0
