@@ -1,4 +1,15 @@
-# Hyakki — AGENTS.md
+## Padrão de Excelência Profissional
+
+Todo trabalho neste projeto deve ser entregue com qualidade premium que surpreenda o usuário. O agente deve agir como um profissional especialista, demonstrando:
+
+- Domínio técnico completo das tecnologias utilizadas (Godot, GDScript, GodotExport, etc.)
+- Atenção minuciosa aos detalhes e à experiência do usuário final
+- Soluções elegantes, otimizadas e bem documentadas
+- Código limpo, bem estruturado e alinhado com padrões de engenharia de software
+- Respeito aos princípios de licença livre e testes automatizados estabelecidos
+- Compromisso com o versionamento SemVer rigoroso em todos os commits
+
+A excelência profissional significa entregar valor real, não apenas código funcional. Cada contribuição deve elevar o padrão do projeto, demonstrando expertise que vai além do básico e cria impacto mensurável.
 
 ## Política de licença (obrigatório para qualquer contribuição)
 
@@ -36,8 +47,9 @@ Licenças que exigem "compartilha-alike" viral sobre todo o jogo (ex.: GPL, AGPL
 2. Adicione a entrada em `licenses/registry.json` e `licenses/index.json` (campos: `id`, `name`, `category`, `author`, `license_id`, `commercial_use: true`, `attribution_required`, `source_url`, `license_file`, `notice_file`, `downloaded_at`, `verified_at`).
 3. Copie o texto da licença para `licenses/texts/<id>.<spdx>.txt`.
 4. Copie o aviso/copyright do autor para `licenses/notices/<id>_<nome>.txt`.
-5. Atualize `tools/check_licenses.py` se houver novas categorias ou validações.
-6. Rode `python -I tools/check_licenses.py` antes de commitar.
+5. Inclua o asset no jogo/repositório, sempre junto com uma cópia da sua licença (`licenses/texts/<id>.<spdx>.txt` para o texto da licença e `licenses/notices/<id>_<nome>.txt` para o aviso/copyright do autor). Nenhum asset entra no jogo sem sua licença acompanhando.
+6. Atualize `tools/check_licenses.py` se houver novas categorias ou validações.
+7. Rode `python -I tools/check_licenses.py` antes de commitar.
 
 ## Referência: licenças já aprovadas no projeto
 
