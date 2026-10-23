@@ -11,6 +11,9 @@ const ACCEL_TIME := 0.08
 const INVULN_TIME := DamageControl.INVULN_TIME
 const REVIVE_INVULN := 2.0
 const HURT_NUMBER_COLOR := Color("ff5a4f")
+## Duração da pose de ataque e intervalo mínimo entre duas poses (várias armas disparando).
+const CAST_TIME := 0.25
+const CAST_GAP := 0.45
 
 var hero: Dictionary = {}
 var stats := StatBlock.new()
@@ -40,6 +43,8 @@ var show_hitbox: bool = false
 ## Modo de teste: recebe dano visualmente, mas não morre.
 var god_mode: bool = false
 var lantern_tint := Color(1.0, 0.8, 0.3)
+## Pose de ataque procedural (só desenho): tempo restante, de CAST_TIME até 0.
+var cast_time: float = 0.0
 
 var _sheet: SpriteSheet
 var _shadow: Texture2D
@@ -48,6 +53,15 @@ var _hit_flash: float = 0.0
 ## Só para heróis "side": tamanho do quadro e nº de quadros (parado, andando).
 var _side_size := Vector2.ZERO
 var _side_counts := Vector2i(1, 1)
+## O desenho "side" original olha para a esquerda ("faces_left" em heroes.json).
+var _faces_left: bool = false
+## Mão de onde saem os poderes ("hand" em heroes.json): deslocamento a partir de sim_pos,
+## x positivo = lado para onde o herói olha. Sem "hand", os poderes saem de sim_pos.
+var _hand := Vector2.ZERO
+var _has_hand: bool = false
+## Trava da pose de ataque: evita reiniciar a pose sem parar.
+var _cast_lock: float = 0.0
+var _cast_color := Color(1.0, 0.92, 0.65)
 
 
 func _ready() -> void:
@@ -58,13 +72,21 @@ func setup(hero_data: Dictionary) -> void:
 	hero = hero_data
 	if String(hero_data.get("layout", "dir4")) == "side":
 		# Herói desenhado de lado (2 linhas: parado e andando), espelhado para a esquerda.
+		# "draw_scale" reduz a folha uma vez, em quadros de pixels inteiros (sem escala no desenho).
 		var frame: Array = hero_data.get("frame", [16, 16])
-		_side_size = Vector2(float(frame[0]), float(frame[1]))
 		_side_counts = Vector2i(int(hero_data.get("idle_frames", 1)), int(hero_data.get("walk_frames", 1)))
-		_sheet = SpriteSheet.load_sheet(String(hero_data["sprite"]), "side", _side_size, 1)
+		_faces_left = bool(hero_data.get("faces_left", false))
+		_sheet = SpriteSheet.load_sheet(String(hero_data["sprite"]), "side",
+				Vector2(float(frame[0]), float(frame[1])), 1, false, float(hero_data.get("draw_scale", 1.0)))
+		_side_size = _sheet.frame_size
 	else:
 		_side_size = Vector2.ZERO
+		_faces_left = false
 		_sheet = SpriteSheet.load_sheet(String(hero_data["sprite"]), "dir4", Vector2(16, 16), 4)
+	var hand: Array = hero_data.get("hand", [])
+	_has_hand = hand.size() == 2
+	_hand = Vector2(float(hand[0]), float(hand[1])) if _has_hand else Vector2.ZERO
+	_cast_color = Color(String(hero_data.get("cast_color", "ffeba6")))
 	stats.clear()
 	stats.set_source("hero", hero_data.get("modifiers", {}))
 
@@ -88,6 +110,8 @@ func reset() -> void:
 	aura_radius = 0.0
 	clone_time = 0.0
 	damage_taken_time = 0.0
+	cast_time = 0.0
+	_cast_lock = 0.0
 	damage.reset()
 	position = Vector2.ZERO
 
@@ -198,10 +222,36 @@ func clone_position() -> Vector2:
 	return sim_pos + clone_offset.rotated(GameClock.game_time * 1.5)
 
 
+func has_hand() -> bool:
+	return _has_hand
+
+
+## Mão do herói em coordenadas do mundo, a partir de `from` (sim_pos ou a posição do clone).
+## Só usa estado da simulação (sim_pos e facing_x): determinística. Sem "hand", devolve `from`.
+func hand_position(from: Vector2 = Vector2.INF) -> Vector2:
+	if from == Vector2.INF:
+		from = sim_pos
+	if not _has_hand:
+		return from
+	return from + Vector2(_hand.x * facing_x, _hand.y)
+
+
+## Uma arma disparou: começa a pose de ataque, no máximo uma a cada CAST_GAP s. Só desenho.
+func on_cast() -> void:
+	if _cast_lock > 0.0:
+		return
+	cast_time = CAST_TIME
+	_cast_lock = CAST_GAP
+
+
 func _process(delta: float) -> void:
 	position = prev_pos.lerp(sim_pos, GameClock.alpha).round()
 	if _hit_flash > 0.0:
 		_hit_flash -= delta
+	if cast_time > 0.0:
+		cast_time = maxf(0.0, cast_time - delta)
+	if _cast_lock > 0.0:
+		_cast_lock -= delta
 	queue_redraw()
 
 
@@ -236,25 +286,58 @@ func _draw_body(offset: Vector2, tint: Color, main: bool) -> void:
 	else:
 		draw_texture_rect_region(tex, Rect2(offset + Vector2(-8.0, -13.0), Vector2(16, 16)), _sheet.region(frame, dir), tint)
 	if main:
-		# Brilho da lanterna carregada pela guardiã.
-		var glow := offset + Vector2(5.0 * facing_x, -5.0)
+		# Brilho da lanterna carregada pela guardiã (na mão, para heróis com "hand").
+		var glow := offset + (_hand_offset() if _has_hand else Vector2(5.0 * facing_x, -5.0))
 		draw_circle(glow, 3.0, Color(lantern_tint.r, lantern_tint.g, lantern_tint.b, 0.35))
 		draw_circle(glow, 1.5, Color(1.0, 0.95, 0.7, 0.9))
+	if cast_time > 0.0 and _has_hand:
+		_draw_cast_spark(offset + _hand_offset())
+
+
+## Mão relativa a sim_pos, já espelhada para o lado em que o herói olha.
+func _hand_offset() -> Vector2:
+	return Vector2(_hand.x * facing_x, _hand.y)
+
+
+## Fração da pose de ataque: 0 → 1 → 0 ao longo de CAST_TIME.
+func _cast_pose() -> float:
+	if cast_time <= 0.0:
+		return 0.0
+	return sin(PI * (1.0 - cast_time / CAST_TIME))
+
+
+## Faísca na mão durante a pose de ataque: núcleo claro, halo e quatro raios que somem.
+func _draw_cast_spark(at: Vector2) -> void:
+	var k := clampf(cast_time / CAST_TIME, 0.0, 1.0)
+	var calm := bool(Settings.get_value("reduce_flashes"))
+	var c := _cast_color
+	var a := k * (0.5 if calm else 1.0)
+	draw_circle(at, 2.0 + 4.0 * (1.0 - k), Color(c.r, c.g, c.b, 0.3 * a))
+	draw_circle(at, 1.5 + k, Color(1.0, 1.0, 1.0, 0.9 * a))
+	if calm:
+		return
+	var reach := 3.0 + 5.0 * (1.0 - k)
+	for i: int in range(4):
+		var d := Vector2.from_angle(TAU * i / 4.0 + PI * 0.25 + (1.0 - k))
+		draw_line(at + d * 1.5, at + d * reach, Color(c.r, c.g, c.b, 0.85 * a), 1.0)
 
 
 ## Linha 0 = parado (anima sempre), linha 1 = andando (conforme a distância). Pés na base.
+## Na pose de ataque o corpo avança 1 px para o lado em que olha e estica um pouco para cima.
 func _draw_side(tex: Texture2D, offset: Vector2, moving: bool, tint: Color) -> void:
 	var row := 1 if moving else 0
 	var count := _side_counts.y if moving else _side_counts.x
 	var t := _walk_time * 14.0 if moving else Time.get_ticks_msec() / 110.0
 	var src := Rect2(Vector2(posmod(int(t), maxi(1, count)) * _side_size.x, row * _side_size.y), _side_size)
-	var dest := Rect2(offset + Vector2(-_side_size.x * 0.5, 3.0 - _side_size.y), _side_size)
-	if facing_x < 0.0:
-		draw_set_transform(Vector2(offset.x * 2.0, 0.0), 0.0, Vector2(-1.0, 1.0))
-		draw_texture_rect_region(tex, dest, src, tint)
-		draw_set_transform(Vector2.ZERO)
-	else:
-		draw_texture_rect_region(tex, dest, src, tint)
+	var pose := _cast_pose()
+	# Espelha quando o lado do desenho original difere do lado para onde o herói olha.
+	var flip := -1.0 if (facing_x < 0.0) != _faces_left else 1.0
+	var feet := offset + Vector2(roundf(pose) * facing_x, 3.0)
+	var stretch := Vector2(1.0 - 0.06 * pose, 1.0 + 0.08 * pose)
+	var dest := Rect2(Vector2(-_side_size.x * 0.5, -_side_size.y), _side_size)
+	draw_set_transform(feet, 0.0, Vector2(flip * stretch.x, stretch.y))
+	draw_texture_rect_region(tex, dest, src, tint)
+	draw_set_transform(Vector2.ZERO)
 
 
 ## Topo do desenho da guardiã (para a barra de vida acima da cabeça).

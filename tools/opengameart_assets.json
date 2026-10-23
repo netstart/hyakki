@@ -1,0 +1,10 @@
+{
+  "_doc": "Raios de \"Lightning\" (oglsdl, OpenGameArt, CC0), baixados em C:/src/assets/opengameart/lightning-1.",
+  "pack_root": "C:/src/assets/opengameart/lightning-1",
+  "license_id": "opengameart_lightning_1",
+  "folders": {},
+  "files": {
+    "lightning.png": "art/fx/lightning/lightning.png",
+    "LICENSE.txt": "licenses_src/opengameart_lightning_1_LICENSE.txt"
+  }
+}

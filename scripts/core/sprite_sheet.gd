@@ -23,8 +23,8 @@ var faces_left: bool = false
 
 
 static func load_sheet(path: String, p_layout: String = "dir4", size: Vector2 = Vector2(16, 16),
-		p_frames: int = 0, p_faces_left: bool = false) -> SpriteSheet:
-	var key := "%s|%s|%s|%d|%s" % [path, p_layout, size, p_frames, p_faces_left]
+		p_frames: int = 0, p_faces_left: bool = false, p_scale: float = 1.0) -> SpriteSheet:
+	var key := "%s|%s|%s|%d|%s|%s" % [path, p_layout, size, p_frames, p_faces_left, p_scale]
 	if _cache.has(key):
 		return _cache[key]
 	var sheet := SpriteSheet.new()
@@ -41,6 +41,11 @@ static func load_sheet(path: String, p_layout: String = "dir4", size: Vector2 = 
 	if image.is_compressed():
 		image.decompress()
 	image.convert(Image.FORMAT_RGBA8)
+	if not is_equal_approx(p_scale, 1.0) and size.x > 0.0 and size.y > 0.0:
+		var cell := Vector2i(roundi(size.x * p_scale), roundi(size.y * p_scale))
+		image = _scale_cells(image, Vector2i(size), cell)
+		size = Vector2(cell)
+		sheet.texture = ImageTexture.create_from_image(image)
 	sheet.layout = p_layout
 	sheet.faces_left = p_faces_left
 	if p_layout == "strip":
@@ -82,6 +87,29 @@ static func dir_from_vector(v: Vector2, previous: int = Dir.DOWN) -> int:
 	if absf(v.x) > absf(v.y):
 		return Dir.RIGHT if v.x > 0.0 else Dir.LEFT
 	return Dir.DOWN if v.y > 0.0 else Dir.UP
+
+
+## Reduz cada quadro da grade para `cell` (em pixels inteiros, sem escala fracionária no
+## desenho): média bilinear com alfa pré-multiplicado e, depois, alfa 0/1 de novo para manter
+## as bordas nítidas do pixel art (como tools/make_side_sheet.gd).
+static func _scale_cells(source: Image, size: Vector2i, cell: Vector2i) -> Image:
+	var cols := maxi(1, source.get_width() / size.x)
+	var rows := maxi(1, source.get_height() / size.y)
+	var out := Image.create_empty(cols * cell.x, rows * cell.y, false, Image.FORMAT_RGBA8)
+	for r: int in range(rows):
+		for c: int in range(cols):
+			var f := source.get_region(Rect2i(Vector2i(c * size.x, r * size.y), size))
+			f.premultiply_alpha()
+			f.resize(cell.x, cell.y, Image.INTERPOLATE_BILINEAR)
+			for y: int in range(cell.y):
+				for x: int in range(cell.x):
+					var p := f.get_pixel(x, y)
+					if p.a < 0.45:
+						f.set_pixel(x, y, Color(0, 0, 0, 0))
+					else:
+						f.set_pixel(x, y, Color(p.r / p.a, p.g / p.a, p.b / p.a, 1.0).clamp())
+			out.blit_rect(f, Rect2i(Vector2i.ZERO, cell), Vector2i(c * cell.x, r * cell.y))
+	return out
 
 
 static func _silhouette(source: Image, color: Color) -> Image:

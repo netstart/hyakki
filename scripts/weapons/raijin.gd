@@ -14,11 +14,13 @@ func fire(origin: Vector2) -> void:
 	var r := raw("radius") * area()
 	var chain := int(flags.get("chain", 0))
 	var chain_range := float(flags.get("chain_range", 70.0))
+	# Herói com mão: o raio sai dela (origin já é a mão); sem mão, só cai do céu.
+	var source := origin if game.player.has_hand() else Vector2.INF
 	for _k: int in range(amount()):
 		var target := game.enemies.random_alive(origin, RANGE)
 		if target < 0:
 			return
-		game.areas.lightning(id, target, damage(), r, chain, chain_range)
+		game.areas.lightning(id, target, damage(), r, chain, chain_range, source)
 		var now := GameClock.game_time
 		if now - _last_thunder >= THUNDER_GAP:
 			_last_thunder = now

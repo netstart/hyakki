@@ -22,6 +22,11 @@ func step(dt: float) -> void:
 	super.step(dt)
 
 
+## Golpe em volta do corpo: sai de sim_pos, não da mão.
+func from_hand() -> bool:
+	return false
+
+
 func fire(origin: Vector2) -> void:
 	var dmg := damage()
 	var lifesteal := float(flags.get("lifesteal", 0.0))

@@ -11,22 +11,50 @@ enum Kind { POOL, RING, HURRICANE, TYPHOON, TELEGRAPH, BEAM, HAZARD_POOL, LAVA }
 
 const SMOKE_FRAMES := 6
 const RING_THICKNESS := 10.0
+## Raios do céu (Raijin): 8 variantes de 32x256, branco sobre preto, desenhadas em modo aditivo.
+const BOLT_TEXTURE := "res://assets/art/fx/lightning/lightning.png"
+const BOLT_VARIANTS := 8
+const BOLT_SIZE := Vector2(32, 256)
+const BOLT_LIFE := 0.2
+## Altura de onde o raio cai, acima do alvo.
+const BOLT_FALL := 180.0
+const BOLT_WIDTH := 20.0
+const CHAIN_WIDTH := 12.0
+## Teto de raios desenhados ao mesmo tempo (o mais velho sai primeiro).
+const MAX_BOLTS := 24
+const BOLT_COLOR := Color(0.6, 0.85, 1.0)
 
 var game: HyakkiGame
 var effects: Array[Dictionary] = []
+## Raios só de desenho: {"from", "to", "variant", "width", "life"}.
+var bolts: Array[Dictionary] = []
 
 var _near: Array[int] = []
 var _smoke: SpriteSheet
 var _thunder: SpriteSheet
+var _bolt_texture: Texture2D
+## Camada aditiva acima dos inimigos: o preto do PNG não aparece.
+var _bolt_layer: Node2D
+## Variante do raio: fora da simulação, não mexe no determinismo.
+var _look := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
 	_smoke = SpriteSheet.load_sheet("res://assets/art/fx/smoke/SpriteSheet.png", "strip", Vector2(32, 32))
 	_thunder = SpriteSheet.load_sheet("res://assets/art/fx/thunder/SpriteSheet.png", "strip", Vector2(16, 28))
+	_bolt_texture = load(BOLT_TEXTURE) as Texture2D
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_bolt_layer = Node2D.new()
+	_bolt_layer.material = additive
+	_bolt_layer.z_index = 13
+	_bolt_layer.draw.connect(_draw_bolts)
+	add_child(_bolt_layer)
 
 
 func reset() -> void:
 	effects.clear()
+	bolts.clear()
 
 
 func count() -> int:
@@ -99,19 +127,36 @@ func blast(weapon: StringName, at: Vector2, r: float, damage: float, knockback: 
 
 
 ## Raio instantâneo num inimigo (Raio de Raijin). Pode encadear para vizinhos.
+## Com `source` (a mão do herói), um raio também sai dela até o primeiro alvo. Só desenho.
 func lightning(weapon: StringName, enemy: int, damage: float, r: float, chain: int = 0,
-		chain_range: float = 70.0) -> void:
+		chain_range: float = 70.0, source: Vector2 = Vector2.INF) -> void:
 	var already: Array[int] = []
 	var current := enemy
+	var previous := Vector2.INF
 	for _link: int in range(chain + 1):
 		if current < 0 or game.enemies.alive[current] == 0:
 			break
 		already.append(current)
 		var at := game.enemies.pos[current]
+		# Raio do céu no alvo e, na corrente, o mesmo raio esticado desde o elo anterior.
+		add_bolt(at - Vector2(0, BOLT_FALL), at, BOLT_WIDTH)
+		if previous != Vector2.INF:
+			add_bolt(previous, at, CHAIN_WIDTH)
+		elif source != Vector2.INF:
+			add_bolt(source, at, CHAIN_WIDTH)
+		previous = at
 		game.fx.play_anim("thunder", at - Vector2(0, 10), 1.0 + r / 30.0)
 		blast(weapon, at, r, damage, 30.0)
 		current = game.enemies.nearest(at, chain_range, already)
 	AudioManager.play("magic2", 1.3, 0.1, -4.0)
+
+
+## Raio só de desenho de `from` até `to`, com uma das 8 variantes ao acaso.
+func add_bolt(from: Vector2, to: Vector2, width: float = BOLT_WIDTH) -> void:
+	if bolts.size() >= MAX_BOLTS:
+		bolts.pop_front()
+	bolts.append({"from": from, "to": to, "variant": _look.randi_range(0, BOLT_VARIANTS - 1),
+			"width": width, "life": BOLT_LIFE})
 
 
 # --- Passo --------------------------------------------------------------------
@@ -156,6 +201,10 @@ func step(dt: float) -> void:
 					player.take_damage(float(e["damage"]), e["source"])
 		if float(e["life"]) <= 0.0:
 			effects.remove_at(i)
+	for i: int in range(bolts.size() - 1, -1, -1):
+		bolts[i]["life"] = float(bolts[i]["life"]) - dt
+		if float(bolts[i]["life"]) <= 0.0:
+			bolts.remove_at(i)
 
 
 func _step_pool(e: Dictionary, dt: float) -> void:
@@ -250,6 +299,30 @@ func _step_beam(e: Dictionary, dt: float) -> void:
 
 func _process(_delta: float) -> void:
 	queue_redraw()
+	_bolt_layer.queue_redraw()
+
+
+## Raios em modo aditivo: o eixo vertical da textura vai de `from` a `to` e o alfa some no fim.
+## Com "reduzir clarões", o raio fica mais fraco e sem o brilho no chão.
+func _draw_bolts() -> void:
+	if bolts.is_empty() or _bolt_texture == null:
+		return
+	var calm := bool(Settings.get_value("reduce_flashes"))
+	for b: Dictionary in bolts:
+		var from: Vector2 = (b["from"] as Vector2).round()
+		var to: Vector2 = (b["to"] as Vector2).round()
+		var span := to - from
+		if span.length() < 1.0:
+			continue
+		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0) * (0.55 if calm else 1.0)
+		var src := Rect2(Vector2(int(b["variant"]) * BOLT_SIZE.x, 0.0), BOLT_SIZE)
+		var s := Vector2(float(b["width"]) / BOLT_SIZE.x, span.length() / BOLT_SIZE.y)
+		_bolt_layer.draw_set_transform(from, span.angle() - PI * 0.5, s)
+		_bolt_layer.draw_texture_rect_region(_bolt_texture, Rect2(Vector2(-BOLT_SIZE.x * 0.5, 0.0), BOLT_SIZE),
+				src, Color(BOLT_COLOR.r, BOLT_COLOR.g, BOLT_COLOR.b, a))
+		_bolt_layer.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if not calm:
+			_bolt_layer.draw_circle(to, 8.0, Color(BOLT_COLOR.r, BOLT_COLOR.g, BOLT_COLOR.b, 0.35 * a))
 
 
 func _draw() -> void:

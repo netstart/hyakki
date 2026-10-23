@@ -1818,6 +1818,12 @@
   "sha256": "b1787c9c617563cd961d13463187b17f4a984c8ded0de10ed1f115b4007b38bc"
  },
  {
+  "file": "assets/art/fx/lightning/lightning.png",
+  "source": "C:/src/assets/opengameart/lightning-1/lightning.png",
+  "license_id": "opengameart_lightning_1",
+  "sha256": "d05bdd8dc24af8cf03c3d0430da6c4a4762a96c293c37aa756140f1391cedd7d"
+ },
+ {
   "file": "assets/art/fx/particle/Bamboo.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/FX/Particle/Bamboo.png",
   "license_id": "ninja_adventure",
@@ -5188,5 +5194,11 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/README.md",
   "license_id": "ninja_adventure",
   "sha256": "6865198a6d7b052636269e9db0de966304737d5f8bacf683f2ac06ad60a68bd7"
+ },
+ {
+  "file": "assets/licenses_src/opengameart_lightning_1_LICENSE.txt",
+  "source": "C:/src/assets/opengameart/lightning-1/LICENSE.txt",
+  "license_id": "opengameart_lightning_1",
+  "sha256": "eb3b601c3c8c21ea9d4920ad4471993b0d5eb069d4259f6a3839dcd5a174e01d"
  }
 ]

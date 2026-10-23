@@ -17,6 +17,7 @@ Design, programação e direção: Clayton K. N. Passos
 - **Helton Yan's Pixel Combat** — Helton Yan and Beto Bezerra (CC-BY-4.0) — https://heltonyan.itch.io/pixelcombat
 - **Platformer character pack (free sample)** — Merakintsugi (LicenseRef-Merakintsugi) — https://merakintsugi.itch.io/platformer-character-pack
 - **甘茶の音楽工房 (Amacha) - Japanese-style background music** — 甘茶 (Amacha) (LicenseRef-Amacha) — https://amachamusic.chagasi.com/genre_asia.html
+- **Lightning (OpenGameArt)** — oglsdl (CC0-1.0) — https://opengameart.org/content/lightning-1
 
 ## Software
 

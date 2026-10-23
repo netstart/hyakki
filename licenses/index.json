@@ -227,5 +227,20 @@
     "source_url": "https://amachamusic.chagasi.com/genre_asia.html",
     "license_file": "res://licenses/texts/LicenseRef-Amacha.txt",
     "files_count": 17
+  },
+  {
+    "id": "opengameart_lightning_1",
+    "name": "Lightning (OpenGameArt)",
+    "author": "oglsdl",
+    "license_id": "CC0-1.0",
+    "category": "art",
+    "version": "lightning.png (256x256, 8 bolts of 32x256), downloaded 2026-10-23",
+    "downloaded_at": "2026-10-23",
+    "verified_at": "2026-10-23",
+    "modifications": "copied unchanged; drawn with additive blending and tinted at runtime",
+    "source_url": "https://opengameart.org/content/lightning-1",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/opengameart_lightning_1_LICENSE.txt",
+    "files_count": 2
   }
 ]

@@ -99,13 +99,26 @@ func step(dt: float) -> void:
 		fire_all()
 
 
+## Com "hand" no herói, as armas que saem dele (projéteis, raios) partem da mão; auras,
+## anéis e golpes em volta do corpo (from_hand() falso) continuam em sim_pos.
 func fire_all() -> void:
-	fire(game.player.sim_pos)
-	if game.player.clone_time > 0.0:
-		fire(game.player.clone_position())
+	var player := game.player
+	var hand := from_hand()
+	fire(player.hand_position(player.sim_pos) if hand else player.sim_pos)
+	if player.clone_time > 0.0:
+		var clone := player.clone_position()
+		fire(player.hand_position(clone) if hand else clone)
+	if hand:
+		player.on_cast()
 
 
-## Implementado por cada arma. `origin` é a posição da guardiã (ou do clone).
+## Diz se o disparo sai da mão do herói (e mostra a pose de ataque). Falso nas armas
+## centradas no corpo.
+func from_hand() -> bool:
+	return true
+
+
+## Implementado por cada arma. `origin` é a mão da guardiã (ou do clone), ou a posição dela.
 func fire(_origin: Vector2) -> void:
 	pass
 

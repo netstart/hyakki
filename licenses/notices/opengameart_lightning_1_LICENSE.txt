@@ -1,0 +1,4 @@
+Lightning (256x256, 8 raios verticais de 32x256, branco sobre fundo preto opaco)
+Autor: oglsdl
+Fonte: https://opengameart.org/content/lightning-1
+Licença: CC0 1.0 (domínio público)

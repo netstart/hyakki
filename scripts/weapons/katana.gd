@@ -7,6 +7,11 @@ var _hits: Array[int] = []
 var _hit_counter: int = 0
 
 
+## Golpe em volta do corpo: sai de sim_pos, não da mão.
+func from_hand() -> bool:
+	return false
+
+
 func fire(origin: Vector2) -> void:
 	var player := game.player
 	var sides: Array[float] = [player.facing_x]

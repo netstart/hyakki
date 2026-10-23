@@ -11,6 +11,10 @@ const GAME_SCENE := "res://scenes/game/Game.tscn"
 const OLD_OPTIONS_HEIGHT := 618.0
 const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
 const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
+## Raios do céu do Raijin (separado para o arquivo caber no limite de linhas do gdlint).
+const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
+## Mão, tamanho e pose de ataque dos heróis "side" (Yuki).
+const HeroHandTests := preload("res://tests/hero_hand_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -36,6 +40,8 @@ func _ready() -> void:
 	await _test_suspended_run()
 	await _test_revive_by_ad()
 	await _test_thunder_weapons()
+	await _test_raijin_bolts()
+	await _test_hero_hand()
 	await _test_sound_options()
 	await _test_options_layout()
 	await _test_kami_layout()
@@ -1108,3 +1114,15 @@ func _test_thunder_weapons() -> void:
 	game.queue_free()
 	GameClock.paused = false
 	await get_tree().process_frame
+
+
+## Tambor de Raijin e Fúria de Raijin: cada elo do raio desenha um raio caindo do céu
+## sobre o alvo (variante 0..7 do lightning.png); a corrente estica o raio entre os alvos.
+## Os raios são só desenho: expiram em ~0,2 s, têm teto e somem no reset().
+func _test_raijin_bolts() -> void:
+	await RaijinBoltTests.new().run(self, _check)
+
+
+## Yuki menor, com a mão de onde saem os poderes e a pose de ataque (tests/hero_hand_tests.gd).
+func _test_hero_hand() -> void:
+	await HeroHandTests.new().run(self, _check)

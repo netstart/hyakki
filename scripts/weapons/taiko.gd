@@ -4,6 +4,11 @@ extends Weapon
 ## A evolução solta duas ondas seguidas que atordoam.
 
 
+## Golpe em volta do corpo: sai de sim_pos, não da mão.
+func from_hand() -> bool:
+	return false
+
+
 func fire(origin: Vector2) -> void:
 	var r := raw("radius") * area()
 	var stun := float(flags.get("stun", 0.0))

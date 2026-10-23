@@ -6,6 +6,11 @@ extends Weapon
 var _hits: Array[int] = []
 
 
+## Golpe em volta do corpo: sai de sim_pos, não da mão.
+func from_hand() -> bool:
+	return false
+
+
 func fire(origin: Vector2) -> void:
 	var reach := raw("range") * area()
 	var half_angle := raw("angle") * 0.5
