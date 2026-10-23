@@ -182,7 +182,8 @@ static func _met(c: Dictionary, result: Dictionary, tracker: RunTracker) -> bool
 		"dark_survive":
 			return tracker.max_dark_streak >= float(c["seconds"])
 		"no_damage":
-			return tracker.max_no_damage >= float(c["seconds"])
+			# Conquista de "sem morrer": não vale em partida com reviver por anúncio (17.6).
+			return tracker.max_no_damage >= float(c["seconds"]) and not tracker.revived_by_ad
 		"win_moon":
 			return victory and String(result["mode"]) != "brisa" and int(result["moon"]) >= int(c["moon"])
 		"win_mode":

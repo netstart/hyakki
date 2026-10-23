@@ -31,6 +31,7 @@ func _ready() -> void:
 	_test_shop_clock()
 	_test_shop_coin_items()
 	_test_ads_rules()
+	_test_unscathed_achievement()
 	_test_frozen_tint()
 	await _test_suspended_run()
 	await _test_revive_by_ad()
@@ -983,6 +984,36 @@ func _test_revive_by_ad() -> void:
 		await get_tree().process_frame
 	AdsManager.auto_answer = false
 	GameClock.paused = true
+
+
+## Intocável (ach_unscathed, 300 s sem dano): vale numa partida sem reviver por anúncio
+## e não vale quando a partida teve reviver (plano 17.6). Usa o perfil dos testes.
+func _test_unscathed_achievement() -> void:
+	var result := {"victory": false, "time": 400.0, "hero": "goro", "stage": "bamboo",
+			"mode": "normal", "moon": 0, "level": 1, "daily": false}
+	var done: Dictionary = SaveManager.data["achievements"]
+	# Sem reviver: 300 s sem dano dão a conquista.
+	done.erase("ach_unscathed")
+	var tracker := RunTracker.new()
+	tracker.max_no_damage = 300.0
+	tracker.revived_by_ad = false
+	var unlocked := MetaProgress.check_achievements(result, tracker)
+	_check(unlocked.has(&"ach_unscathed") and done.has("ach_unscathed"),
+			"Intocável é dada com 300 s sem dano e sem reviver")
+	# Com reviver: a mesma marca não dá a conquista.
+	done.erase("ach_unscathed")
+	tracker = RunTracker.new()
+	tracker.max_no_damage = 300.0
+	tracker.revived_by_ad = true
+	unlocked = MetaProgress.check_achievements(result, tracker)
+	_check(not unlocked.has(&"ach_unscathed") and not done.has("ach_unscathed"),
+			"Intocável não é dada quando a partida teve reviver por anúncio")
+	# Abaixo de 300 s não basta.
+	tracker = RunTracker.new()
+	tracker.max_no_damage = 299.0
+	tracker.revived_by_ad = false
+	unlocked = MetaProgress.check_achievements(result, tracker)
+	_check(not unlocked.has(&"ach_unscathed"), "Intocável exige 300 s sem dano")
 
 
 # --- Armas de trovão --------------------------------------------------------------
