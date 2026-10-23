@@ -27,6 +27,7 @@ func _ready() -> void:
 	_test_frozen_tint()
 	await _test_suspended_run()
 	await _test_revive_by_ad()
+	await _test_kami_layout()
 	await _test_hero_screen_layout()
 	await _test_shop_layout()
 	_restore_save()
@@ -59,6 +60,74 @@ func _restore_save() -> void:
 			file.store_buffer(bytes)
 			file.close()
 	SaveManager.load_profile()
+
+
+# --- Kami -------------------------------------------------------------------------
+
+## "Um Kami oferece um pacto" em cada idioma: título, os 3 cartões (ícone e texto) e
+## "Ignorar o santuário" ficam dentro de 678x305, com 4 px de folga. Cada Kami aparece em
+## cada posição, e Hachiman (bênção, especial e custo: o texto mais longo) em cada uma delas.
+func _test_kami_layout() -> void:
+	var view := Rect2(Vector2(4, 4), Vector2(670, 297))
+	var hud := Hud.new()
+	add_child(hud)
+	await get_tree().process_frame
+	# O teste roda numa janela menor que o jogo: a raiz da HUD recebe o tamanho do viewport do jogo.
+	var root := hud.get("_root") as Control
+	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	root.size = Vector2(678, 305)
+	await get_tree().process_frame
+	var ids := DB.ids("kami")
+	var count := ids.size()
+	var offers: Array = []
+	for i: int in count:
+		offers.append([ids[i], ids[(i + 1) % count], ids[(i + 2) % count]])
+	for slot: int in 3:
+		var offer: Array = [StringName("inari"), StringName("raijin"), StringName("inari")]
+		offer[slot] = StringName("hachiman")
+		offers.append(offer)
+	for lang: String in Locale.SUPPORTED:
+		Locale.set_language(lang, false)
+		for offer: Array in offers:
+			var typed: Array[StringName] = []
+			typed.assign(offer)
+			hud.show_kami(typed)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			var state := "%s, %s" % [lang, ", ".join(offer)]
+			var panel := hud.get("_kami_panel") as Control
+			var controls: Array[Control] = []
+			_kami_controls_in(panel, controls)
+			_check(controls.size() >= 3 + 3 + 1, "%s: o painel mostra título, cartões e botão" % state)
+			for control: Control in controls:
+				_check(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
+						"%s: %s dentro da tela (%s)" % [state, control.get_class(), control.get_global_rect()])
+				if control is Button and (control as Button).text != "":
+					var button_node := control as Button
+					var minimum := button_node.get_combined_minimum_size()
+					_check(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
+							"%s: o cartão mostra o texto inteiro (%s de %s)" % [state, minimum, button_node.size])
+			var row := hud.get("_kami_row") as HBoxContainer
+			_check(row.get_child_count() == 3, "%s: três cartões" % state)
+			for card: Node in row.get_children():
+				var icons := 0
+				for child: Node in card.get_children():
+					if child is TextureRect and (child as TextureRect).texture != null:
+						icons += 1
+						_check(view.encloses((child as Control).get_global_rect()),
+								"%s: ícone do cartão dentro da tela" % state)
+				_check(icons == 1, "%s: cada cartão mostra o ícone do Kami" % state)
+	hud.queue_free()
+	await get_tree().process_frame
+	Locale.set_language("pt_BR", false)
+
+
+## Coleta botões, textos e ícones de uma árvore de controles (o painel de Kami).
+func _kami_controls_in(node: Node, out: Array[Control]) -> void:
+	for child: Node in node.get_children():
+		if (child is BaseButton or child is Label or child is TextureRect) and not out.has(child):
+			out.append(child as Control)
+		_kami_controls_in(child, out)
 
 
 # --- Tela de guardiões ------------------------------------------------------------
@@ -248,7 +317,7 @@ func _test_data_integrity() -> void:
 
 func _test_assets_exist() -> void:
 	var paths: Array[String] = []
-	for table: String in ["heroes", "weapons", "passives", "enemies", "bosses", "items", "shop"]:
+	for table: String in ["heroes", "weapons", "passives", "enemies", "bosses", "items", "shop", "kami"]:
 		var rows: Dictionary = DB.get(table)
 		for id: StringName in rows:
 			for key: String in ["sprite", "face", "icon", "attack_sprite"]:
@@ -260,6 +329,11 @@ func _test_assets_exist() -> void:
 		if not ResourceLoader.exists(path):
 			missing.append(path)
 	_check(missing.is_empty(), "todos os sprites/ícones existem (%d): faltam %s" % [paths.size(), missing])
+	# Todo Kami tem ícone, e o arquivo carrega como textura (não só existe no disco).
+	for id: StringName in DB.ids("kami"):
+		var icon_path := String(DB.kami[id].get("icon", ""))
+		_check(icon_path.begins_with("res://") and load(icon_path) is Texture2D,
+				"Kami %s tem ícone que carrega (%s)" % [id, icon_path])
 	for id: StringName in DB.ids("stages"):
 		var music := "res://assets/audio/music/%s" % DB.stages[id].get("music", "")
 		_check(ResourceLoader.exists(music + ".ogg") or ResourceLoader.exists(music + ".mp3"),

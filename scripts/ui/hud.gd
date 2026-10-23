@@ -29,6 +29,10 @@ const CHEST_FLY := 0.4
 const CHEST_FADE := 0.25
 const CHEST_ARC := 36.0
 const CHEST_GLOW := Color(1.8, 1.8, 1.5)
+## Kami: o ícone fica no topo do cartão, numa caixa de 32 px; o texto começa abaixo dela.
+const KAMI_ICON_TOP := 8.0
+const KAMI_ICON_BOX := 32.0
+const KAMI_TEXT_TOP := 46.0
 
 var game: HyakkiGame
 var joystick: TouchJoystick
@@ -626,8 +630,16 @@ func show_kami(offer: Array[StringName]) -> void:
 		button.custom_minimum_size = Vector2(150, 150)
 		button.focus_mode = Control.FOCUS_NONE
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.add_theme_stylebox_override("normal", ThemeFactory.card_box())
-		button.add_theme_stylebox_override("hover", ThemeFactory.card_box_hover())
+		# Moldura com um leve tom da cor do Kami e margem no topo para o ícone.
+		var normal := ThemeFactory.card_box()
+		var hover := ThemeFactory.card_box_hover()
+		var tint := Color(String(data["color"])).lerp(Color.WHITE, 0.6)
+		for box: StyleBoxTexture in [normal, hover]:
+			box.set_content_margin(SIDE_TOP, KAMI_TEXT_TOP)
+			box.modulate_color = tint
+		button.add_theme_stylebox_override("normal", normal)
+		button.add_theme_stylebox_override("hover", hover)
+		button.add_child(_kami_icon(data))
 		var blessing := LevelUpSystem.describe_stats(data.get("blessing", {}))
 		if data.has("special"):
 			blessing = (blessing + "\n" if not blessing.is_empty() else "") + tr("kami.%s.special" % id)
@@ -641,6 +653,27 @@ func show_kami(offer: Array[StringName]) -> void:
 			_kami_panel.visible = false
 			kami_chosen.emit(id))
 		_kami_row.add_child(button)
+
+
+## Ícone do Kami em escala inteira (pixel-perfect), centralizado na faixa do topo do cartão.
+func _kami_icon(data: Dictionary) -> TextureRect:
+	var tex := _icon(String(data.get("icon", "")))
+	var icon := TextureRect.new()
+	icon.texture = tex
+	icon.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_SCALE
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if tex:
+		var size := tex.get_size()
+		var factor := maxi(1, floori(KAMI_ICON_BOX / maxf(size.x, size.y)))
+		var shown := size * factor
+		icon.offset_left = floorf(-shown.x * 0.5)
+		icon.offset_right = icon.offset_left + shown.x
+		icon.offset_top = KAMI_ICON_TOP + floorf((KAMI_ICON_BOX - shown.y) * 0.5)
+		icon.offset_bottom = icon.offset_top + shown.y
+	return icon
 
 
 func _build_kami_panel() -> void:
