@@ -34,6 +34,8 @@ func _check(condition: bool, label: String) -> void:
 	if not condition:
 		_failures += 1
 		printerr("FALHOU: " + label)
+	elif "--verbose" in OS.get_cmdline_user_args():
+		print("ok: " + label)
 
 
 func _backup_save() -> void:
