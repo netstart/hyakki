@@ -4,5 +4,11 @@
   {"id": "slot_chest", "icon": "res://assets/art/items/treasure/LittleTreasureChest.png", "reward": "next_run", "start_chest": 1},
   {"id": "slot_luck", "icon": "res://assets/art/ui/icons/spell/Permutation.png", "reward": "next_run", "modifiers": {"reroll": 2, "skip": 1}},
   {"id": "slot_embers", "icon": "res://assets/art/ui/icons/spell/Upgrade.png", "reward": "next_run", "modifiers": {"growth": 0.25}},
-  {"id": "slot_cosmetic", "icon": "res://assets/art/ui/icons/spell/OrbLight.png", "reward": "cosmetic"}
+  {"id": "slot_cosmetic", "icon": "res://assets/art/ui/icons/spell/OrbLight.png", "reward": "cosmetic"},
+  {"id": "coin_onigiri", "icon": "res://assets/art/items/food/Onigiri.png", "reward": "next_run", "price": 180, "modifiers": {"max_hp": 0.20, "regen": 0.3}},
+  {"id": "coin_fortune", "icon": "res://assets/art/items/food/FortuneCookie.png", "reward": "next_run", "price": 200, "modifiers": {"luck": 0.25, "reroll": 1}},
+  {"id": "coin_scroll", "icon": "res://assets/art/items/scroll/Scroll.png", "reward": "next_run", "price": 250, "modifiers": {"growth": 0.15}},
+  {"id": "coin_bag", "icon": "res://assets/art/items/object/Bag.png", "reward": "next_run", "price": 120, "modifiers": {"magnet": 0.50}},
+  {"id": "coin_gourd", "icon": "res://assets/art/items/object/Gourd.png", "reward": "next_run", "price": 300, "modifiers": {"might": 0.10}},
+  {"id": "coin_chest", "icon": "res://assets/art/items/treasure/BigTreasureChest.png", "reward": "next_run", "price": 450, "start_chest": 1}
 ]

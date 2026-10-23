@@ -1,0 +1,9 @@
+Registro de origem - hyakki_generated_sfx (2026-10-23)
+
+Arquivos: assets/audio/sfx/g_*.wav (41 arquivos: 13 grupos x 3 variações + chest_open x 2).
+Origem: gerados pelo próprio projeto com tools/gen_sfx.py (síntese procedural, só
+biblioteca padrão do Python, sementes fixas; rodar de novo reproduz os mesmos bytes).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma gravação, sample de terceiros ou modelo de IA de áudio foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_sfx.py

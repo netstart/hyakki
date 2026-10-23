@@ -18,3 +18,4 @@ func step(dt: float) -> void:
 		game.areas.hurricane(id, at, raw("radius") * area(), damage(), raw("cooldown"), LIFETIME,
 				raw("speed"), 110.0, true)
 	AudioManager.play("magic4", 0.8, 0.0, -4.0)
+	AudioManager.play("zap", 0.8, 0.05, -8.0)

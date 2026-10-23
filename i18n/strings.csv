@@ -172,6 +172,7 @@ damage.source.statue,Estátua,Statue,Estatua,Statue,Statue,Статуя,Patung,�
 damage.source.unknown,Desconhecido,Unknown,Desconocido,Unbekannt,Inconnu,Неизвестно,Tak diketahui,不明,알 수 없음,未知,未知
 delta.amount,%s projétil,%s projectile,%s proyectil,%s Projektil,%s projectile,%s снаряд,%s proyektil,発射数 %s,투사체 %s,投射物 %s,投射物 %s
 delta.area,%s área,%s area,%s área,%s Fläche,%s zone,%s область,%s area,範囲 %s,범위 %s,範圍 %s,范围 %s
+delta.chain,%s salto,%s chain,%s salto,%s Sprung,%s rebond,%s скачок,%s lompatan,連鎖 %s,연쇄 %s,連鎖 %s,连锁 %s
 delta.cooldown,%s recarga,%s cooldown,%s recarga,%s Abklingzeit,%s recharge,%s перезарядка,%s jeda,クールダウン %s,재사용 대기 %s,冷卻 %s,冷却 %s
 delta.damage,%s dano,%s damage,%s daño,%s Schaden,%s dégâts,%s урона,%s damage,ダメージ %s,피해 %s,傷害 %s,伤害 %s
 delta.duration,%s duração,%s duration,%s duración,%s Dauer,%s durée,%s длительность,%s durasi,持続 %s,지속 시간 %s,持續 %s,持续 %s
@@ -367,11 +368,13 @@ moon.rule5,Lua V: os Kami oferecem só 2 pactos.,Moon V: Kami offer only 2 pacts
 options.about,Sobre,About,Acerca de,Über,À propos,Об игре,Tentang,情報,정보,關於,关于
 options.colorblind,Modo daltônico,Colorblind mode,Modo daltónico,Farbenblind-Modus,Mode daltonien,Режим для дальтоников,Mode buta warna,色覚サポート,색각 보조 모드,色盲模式,色盲模式
 options.damage_numbers,Números de dano,Damage numbers,Números de daño,Schadenszahlen,Chiffres de dégâts,Числа урона,Angka damage,ダメージ表示,피해 숫자,傷害數字,伤害数字
+options.damage_sounds,Sons de dano nos inimigos,Enemy hit sounds,Sonidos de golpe a enemigos,Treffergeräusche bei Gegnern,Sons des coups sur les ennemis,Звуки ударов по врагам,Suara serangan ke musuh,敵への攻撃音,적 타격음,敵人受擊音效,敌人受击音效
 options.fps,Quadros por segundo,Frame rate,Fotogramas por segundo,Bildrate,Images par seconde,Частота кадров,Frame rate,フレームレート,프레임 속도,畫面更新率,画面帧率
 options.fps120,120 (usa mais bateria),120 (uses more battery),120 (más batería),120 (mehr Akku),120 (plus de batterie),120 (больше заряда),120 (lebih boros),120（電池消費大）,120 (배터리 많이 사용),120（較耗電）,120（较耗电）
 options.fps30,30 (economia),30 (saver),30 (ahorro),30 (Sparen),30 (économie),30 (экономия),30 (hemat),30（省電力）,30 (절약),30（省電）,30（省电）
 options.fps60,60 (padrão),60 (default),60 (predeterminado),60 (Standard),60 (par défaut),60 (по умолчанию),60 (standar),60（標準）,60 (기본),60（預設）,60（默认）
 options.hp_bar_below,Vida abaixo da guardiã,Health bar below the guardian,Vida debajo de la guardiana,Lebensbalken unter der Wächterin,Vie sous la gardienne,Здоровье под стражем,Bar HP di bawah penjaga,体力バーを下に表示,체력바를 아래에 표시,生命條在下方,生命条在下方
+options.hurt_sounds,Sons de dano no herói,Hero hurt sounds,Sonidos de daño al héroe,Schadensgeräusche beim Helden,Sons des dégâts du héros,Звуки урона герою,Suara pahlawan terluka,主人公の被ダメージ音,영웅 피격음,英雄受傷音效,英雄受伤音效
 options.joystick_fixed,Fixo,Fixed,Fijo,Fest,Fixe,Фиксированный,Tetap,固定,고정,固定,固定
 options.joystick_floating,Flutuante,Floating,Flotante,Schwebend,Flottant,Плавающий,Mengambang,フローティング,플로팅,浮動,浮动
 options.joystick_mode,Joystick,Joystick,Joystick,Joystick,Joystick,Джойстик,Joystick,ジョイスティック,조이스틱,搖桿,摇杆
@@ -388,6 +391,10 @@ options.reset,Apagar progresso,Erase progress,Borrar progreso,Fortschritt lösch
 options.reset_button,Apagar tudo,Erase everything,Borrar todo,Alles löschen,Tout effacer,Стереть всё,Hapus semua,すべて削除,모두 삭제,全部清除,全部清除
 options.reset_confirm,Toque de novo para confirmar,Tap again to confirm,Toca de nuevo para confirmar,Zum Bestätigen erneut tippen,Touche encore pour confirmer,Нажми ещё раз для подтверждения,Ketuk lagi untuk konfirmasi,もう一度タップで確定,다시 눌러 확인,再點一次確認,再点一次确认
 options.reset_done,Progresso apagado,Progress erased,Progreso borrado,Fortschritt gelöscht,Progression effacée,Прогресс стёрт,Progres dihapus,削除しました,삭제되었습니다,已清除進度,已清除进度
+options.section_account,Conta e sobre,Account and about,Cuenta y acerca de,Konto und Info,Compte et à propos,Аккаунт и об игре,Akun dan tentang,アカウントと情報,계정 및 정보,帳號與關於,账号与关于
+options.section_audio,Idioma e áudio,Language and audio,Idioma y audio,Sprache und Audio,Langue et audio,Язык и звук,Bahasa dan audio,言語とサウンド,언어 및 오디오,語言與音效,语言与音效
+options.section_controls,Controles e desempenho,Controls and performance,Controles y rendimiento,Steuerung und Leistung,Commandes et performances,Управление и производительность,Kontrol dan performa,操作とパフォーマンス,조작 및 성능,操作與效能,操作与性能
+options.section_display,Exibição e acessibilidade,Display and accessibility,Pantalla y accesibilidad,Anzeige und Barrierefreiheit,Affichage et accessibilité,Экран и доступность,Tampilan dan aksesibilitas,表示とアクセシビリティ,화면 및 접근성,顯示與無障礙,显示与无障碍
 options.sfx_volume,Efeitos,Effects,Efectos,Effekte,Effets,Эффекты,Efek,効果音,효과음,音效,音效
 options.side_left,Esquerda,Left,Izquierda,Links,Gauche,Слева,Kiri,左,왼쪽,左,左
 options.side_right,Direita (canhoto),Right (left-handed),Derecha (zurdo),Rechts (Linkshänder),Droite (gaucher),Справа (левша),Kanan (kidal),右（左利き）,오른쪽 (왼손잡이),右（左撇子）,右（左撇子）
@@ -459,6 +466,15 @@ sanctuary.per_level,por nível,per level,por nivel,pro Stufe,par niveau,за у�
 sanctuary.refund,Reembolsar tudo,Refund all,Reembolsar todo,Alles erstatten,Tout rembourser,Вернуть всё,Kembalikan semua,すべて返金,전부 환불,全部退還,全部退还
 sanctuary.refunded,%s ryō devolvidos,%s ryō returned,%s ryō devueltos,%s Ryō erstattet,%s ryō rendus,Возвращено %s рё,%s ryō dikembalikan,%s両を返却,%s료 반환,已退還%s兩,已退还%s两
 sanctuary.title,Santuário,Sanctuary,Santuario,Heiligtum,Sanctuaire,Святилище,Kuil,神社,신사,神社,神社
+shop.coin.queued,Guardado,Queued,Guardado,Vorgemerkt,Réservé,Отложено,Disimpan,次回に使用,다음 판 사용,下一局使用,下一局使用
+shop.coin.start_chest,+1 baú no início,+1 chest at start,+1 cofre al inicio,+1 Truhe zu Beginn,+1 coffre au départ,+1 сундук на старте,+1 peti di awal,開始時に宝箱+1,시작 시 상자 +1,開局寶箱+1,开局宝箱+1
+shop.coin_bag.name,Bolsa do Peregrino,Pilgrim's Pouch,Bolsa del peregrino,Pilgerbeutel,Besace du pèlerin,Сума паломника,Kantong Peziarah,巡礼者の袋,순례자의 주머니,巡禮者布袋,巡礼者布袋
+shop.coin_chest.name,Baú do Mercador,Merchant's Chest,Cofre del mercader,Händlertruhe,Coffre du marchand,Сундук торговца,Peti Pedagang,商人の宝箱,상인의 상자,商人寶箱,商人宝箱
+shop.coin_fortune.name,Biscoito da Sorte,Fortune Cookie,Galleta de la suerte,Glückskeks,Biscuit chinois,Печенье удачи,Kue Keberuntungan,おみくじ煎餅,포춘 쿠키,幸運餅乾,幸运饼干
+shop.coin_gourd.name,Cabaça de Saquê,Sake Gourd,Calabaza de sake,Sake-Kürbis,Gourde de saké,Тыква с саке,Labu Sake,酒の瓢箪,술 표주박,酒葫蘆,酒葫芦
+shop.coin_onigiri.name,Onigiri da Vovó,Grandma's Onigiri,Onigiri de la abuela,Omas Onigiri,Onigiri de mamie,Онигири бабушки,Onigiri Nenek,おばあちゃんのおにぎり,할머니 주먹밥,奶奶的飯糰,奶奶的饭团
+shop.coin_row,Comprar com moedas · reforços para a próxima partida,Buy with coins · boosts for your next run,Comprar con monedas · refuerzos para la próxima partida,Mit Münzen kaufen · Boosts für den nächsten Lauf,Acheter avec des pièces · bonus pour la partie suivante,Купить за монеты · усиления на следующий забег,Beli dengan koin · penguat untuk main berikutnya,コインで購入 · 次回の強化,코인으로 구매 · 다음 판 강화,用錢幣購買 · 下一局強化,用钱币购买 · 下一局强化
+shop.coin_scroll.name,Pergaminho do Sábio,Sage's Scroll,Pergamino del sabio,Schriftrolle des Weisen,Parchemin du sage,Свиток мудреца,Gulungan Orang Bijak,賢者の巻物,현자의 두루마리,賢者卷軸,贤者卷轴
 shop.failed,A compra não foi concluída,Purchase not completed,La compra no se completó,Kauf nicht abgeschlossen,Achat non finalisé,Покупка не завершена,Pembelian tidak selesai,購入は完了しませんでした,구매가 완료되지 않았습니다,購買未完成,购买未完成
 shop.hint,Assista a um anúncio até o fim para receber a recompensa. Cada uma volta em 6 h.,Watch an ad to the end to get the reward. Each one returns in 6 h.,Mira un anuncio completo para recibir la recompensa. Cada una vuelve en 6 h.,Sieh eine Werbung bis zum Ende für die Belohnung. Jede kehrt nach 6 h zurück.,Regarde une pub jusqu'au bout pour la récompense. Chacune revient en 6 h.,"Досмотри рекламу до конца, чтобы получить награду. Каждая возвращается через 6 ч.",Tonton iklan sampai habis untuk hadiahnya. Tiap hadiah kembali dalam 6 jam.,広告を最後まで見ると報酬。それぞれ6時間後に復活。,광고를 끝까지 보면 보상을 받습니다. 각각 6시간 후 돌아옵니다.,完整觀看廣告即可獲得獎勵。每項6小時後恢復。,完整观看广告即可获得奖励。每项6小时后恢复。
 shop.no_ads,Sem anúncios agora,No ads right now,Sin anuncios ahora,Gerade keine Werbung,Pas de pub pour l'instant,Сейчас нет рекламы,Tidak ada iklan,現在広告なし,지금은 광고 없음,目前沒有廣告,目前没有广告
@@ -606,10 +622,14 @@ weapon.hitodama.desc,Chamas-espírito buscam os mais fortes.,Spirit flames seek 
 weapon.hitodama.name,Hitodama,Hitodama,Hitodama,Hitodama,Hitodama,Хитодама,Hitodama,人魂,히토다마,人魂,人魂
 weapon.hundred_blades.desc,UNIÃO: um ciclone de lâminas gira à sua volta.,UNION: a cyclone of blades spins around you.,UNIÓN: un ciclón de hojas gira a tu alrededor.,VEREINIGUNG: ein Klingenwirbel umkreist dich.,UNION : un cyclone de lames tourne autour de toi.,СОЮЗ: вихрь клинков вращается вокруг.,PENYATUAN: siklon bilah berputar di sekitarmu.,合体：刃の竜巻が周囲を回る。,합체: 칼날 회오리가 주위를 돈다.,合體：刀刃旋風環繞著你。,合体：刀刃旋风环绕着你。
 weapon.hundred_blades.name,Cem Lâminas,Hundred Blades,Cien Hojas,Hundert Klingen,Cent lames,Сто клинков,Seratus Bilah,百刃,백 개의 칼날,百刃,百刃
+weapon.inazuma.desc,Raios saem do seu corpo e saltam de inimigo em inimigo.,"Lightning leaps from your body, jumping from foe to foe.",Rayos salen de tu cuerpo y saltan de enemigo en enemigo.,Blitze schießen aus deinem Körper von Gegner zu Gegner.,Des éclairs jaillissent de ton corps et sautent d'ennemi en ennemi.,Молнии бьют из твоего тела и перескакивают с врага на врага.,Petir memancar dari tubuhmu dan melompat dari musuh ke musuh.,体から稲妻が放たれ、敵から敵へ飛び移る。,몸에서 번개가 뻗어 적에서 적으로 튄다.,閃電從你身上射出，在敵人間跳躍。,闪电从你身上射出，在敌人间跳跃。
+weapon.inazuma.name,Inazuma,Inazuma,Inazuma,Inazuma,Inazuma,Инадзума,Inazuma,稲妻,이나즈마,閃電,闪电
 weapon.incense.desc,Fumaça sagrada fere quem chega perto.,Sacred smoke hurts anything nearby.,Humo sagrado hiere a quien se acerque.,Heiliger Rauch verletzt alles in der Nähe.,Une fumée sacrée blesse tout ce qui approche.,Священный дым ранит всех рядом.,Asap suci melukai yang mendekat.,聖なる煙が近づく者を傷つける。,신성한 연기가 가까운 적을 해친다.,神聖煙霧傷害靠近者。,神圣烟雾伤害靠近者。
 weapon.incense.name,Incenso,Incense,Incienso,Räucherwerk,Encens,Благовония,Dupa,お香,향,線香,线香
 weapon.inverted_procession.desc,Os yōkai vencidos marcham ao seu lado por um tempo.,Fallen yōkai march at your side for a while.,Los yōkai vencidos marchan a tu lado un tiempo.,Besiegte Yōkai marschieren eine Weile mit dir.,Les yōkai vaincus marchent un temps à tes côtés.,Побеждённые ёкаи какое-то время идут с тобой.,Yōkai yang kalah berbaris di sisimu sementara.,倒した妖怪がしばらく味方として行進する。,쓰러뜨린 요괴가 잠시 곁에서 행진한다.,被擊敗的妖怪暫時與你同行。,被击败的妖怪暂时与你同行。
 weapon.inverted_procession.name,Procissão Invertida,Inverted Procession,Procesión Invertida,Umgekehrte Prozession,Procession inversée,Обратное шествие,Arak-arakan Terbalik,逆さ百鬼,역행진,逆行百鬼,逆行百鬼
+weapon.kaminari.desc,Um raio do céu cai sobre o maior grupo de inimigos.,A bolt from the sky strikes the thickest crowd of enemies.,Un rayo del cielo cae sobre el mayor grupo de enemigos.,Ein Blitz vom Himmel trifft die dichteste Gegnergruppe.,Un éclair tombe du ciel sur le plus gros groupe d'ennemis.,Молния с неба бьёт в самую большую толпу врагов.,Petir dari langit menyambar kerumunan musuh terbesar.,天からの雷が最も密集した敵に落ちる。,하늘의 번개가 가장 밀집한 적 무리에 떨어진다.,天降雷霆劈向最密集的敵群。,天降雷霆劈向最密集的敌群。
+weapon.kaminari.name,Kaminari,Kaminari,Kaminari,Kaminari,Kaminari,Каминари,Kaminari,雷,카미나리,雷霆,雷霆
 weapon.katana.desc,Corta em arco na direção em que você anda.,Slashes in an arc toward where you move.,Corta en arco hacia donde te mueves.,Schlägt im Bogen in Laufrichtung.,Tranche en arc dans ta direction.,Рубит дугой по направлению движения.,Menebas melengkung ke arah gerakanmu.,進む方向へ弧を描いて斬る。,이동 방향으로 호를 그리며 벤다.,朝移動方向弧形斬擊。,朝移动方向弧形斩击。
 weapon.katana.name,Katana,Katana,Katana,Katana,Katana,Катана,Katana,刀,카타나,武士刀,武士刀
 weapon.kunai.desc,Lança facas no inimigo mais próximo.,Throws knives at the nearest enemy.,Lanza cuchillos al enemigo más cercano.,Wirft Messer auf den nächsten Gegner.,Lance des couteaux sur l'ennemi le plus proche.,Метает ножи в ближайшего врага.,Melempar pisau ke musuh terdekat.,最も近い敵に投げる。,가장 가까운 적에게 던진다.,向最近的敵人擲出。,向最近的敌人掷出。
@@ -624,6 +644,8 @@ weapon.raijin.desc,Raios caem em inimigos aleatórios.,Lightning strikes random 
 weapon.raijin.name,Tambor de Raijin,Raijin's Drum,Tambor de Raijin,Raijins Trommel,Tambour de Raijin,Барабан Райдзина,Genderang Raijin,雷神の太鼓,라이진의 북,雷神之鼓,雷神之鼓
 weapon.raijin_fury.desc,Raios que saltam de inimigo em inimigo.,Lightning that chains between enemies.,Rayos que saltan de enemigo en enemigo.,Blitze springen von Gegner zu Gegner.,Une foudre qui rebondit d'ennemi en ennemi.,Молнии перескакивают между врагами.,Petir yang melompat antarmusuh.,敵から敵へ連鎖する雷。,적 사이를 연쇄하는 번개.,在敵人間連鎖的雷電。,在敌人间连锁的雷电。
 weapon.raijin_fury.name,Fúria de Raijin,Raijin's Fury,Furia de Raijin,Raijins Zorn,Fureur de Raijin,Ярость Райдзина,Amarah Raijin,雷神の怒り,라이진의 분노,雷神之怒,雷神之怒
+weapon.raikiri.desc,O corta-raios: descargas que saltam por oito inimigos.,The lightning cutter: bolts that leap through eight foes.,El cortarrayos: descargas que saltan por ocho enemigos.,Der Blitzschneider: Blitze springen durch acht Gegner.,Le coupe-foudre : des éclairs qui traversent huit ennemis.,Рассекающий молнии: разряды скачут через восемь врагов.,Pemotong petir: kilat melompati delapan musuh.,雷切：八体の敵を駆け抜ける稲妻。,번개 베기: 여덟 적을 꿰뚫고 튀는 번개.,雷切：穿梭八名敵人的閃電。,雷切：穿梭八名敌人的闪电。
+weapon.raikiri.name,Raikiri,Raikiri,Raikiri,Raikiri,Raikiri,Райкири,Raikiri,雷切,라이키리,雷切,雷切
 weapon.reaper_chain.desc,Várias foices giram em espiral.,Several sickles whirl in a spiral.,Varias hoces giran en espiral.,Mehrere Sicheln wirbeln spiralförmig.,Plusieurs faucilles tournoient en spirale.,Несколько серпов кружат по спирали.,Beberapa sabit berputar spiral.,複数の鎌が螺旋を描く。,여러 낫이 나선으로 회전한다.,多把鐮刀螺旋飛舞。,多把镰刀螺旋飞舞。
 weapon.reaper_chain.name,Corrente do Ceifador,Reaper's Chain,Cadena del Segador,Kette des Schnitters,Chaîne du faucheur,Цепь жнеца,Rantai Malaikat Maut,死神の鎖,사신의 사슬,死神之鏈,死神之链
 weapon.ritual_thunder.desc,Cada batida do tambor atordoa ao redor.,Every drumbeat stuns all around.,Cada golpe de tambor aturde alrededor.,Jeder Trommelschlag betäubt ringsum.,Chaque coup de tambour étourdit alentour.,Каждый удар барабана оглушает всех вокруг.,Setiap tabuhan melumpuhkan sekitar.,太鼓の一打ごとに周囲を気絶させる。,북을 칠 때마다 주위를 기절시킨다.,每一聲鼓響震暈四周。,每一声鼓响震晕四周。
@@ -636,6 +658,8 @@ weapon.steel_storm.desc,Um anel de estrelas que nunca para.,A ring of stars that
 weapon.steel_storm.name,Tempestade de Aço,Steel Storm,Tormenta de Acero,Stahlsturm,Tempête d'acier,Стальная буря,Badai Baja,鋼の嵐,강철 폭풍,鋼鐵風暴,钢铁风暴
 weapon.taiko.desc,Ondas de som empurram tudo ao redor.,Sound waves push everything around you.,Ondas de sonido empujan todo a tu alrededor.,Schallwellen stoßen alles um dich weg.,Des ondes sonores repoussent tout autour.,Звуковые волны отбрасывают всё вокруг.,Gelombang suara mendorong semua di sekitar.,音の波が周りを押し返す。,음파가 주위를 밀어낸다.,聲波震退四周。,声波震退四周。
 weapon.taiko.name,Taiko,Taiko,Taiko,Taiko,Taiko,Тайко,Taiko,太鼓,태고,太鼓,太鼓
+weapon.takemikazuchi.desc,Três raios divinos atordoam e eletrificam o chão.,Three divine bolts stun and electrify the ground.,Tres rayos divinos aturden y electrifican el suelo.,Drei göttliche Blitze betäuben und setzen den Boden unter Strom.,Trois éclairs divins étourdissent et électrisent le sol.,Три божественные молнии оглушают и электризуют землю.,Tiga petir ilahi melumpuhkan dan mengaliri tanah.,三筋の神雷が敵を気絶させ、地面を帯電させる。,세 줄기 신의 번개가 적을 기절시키고 땅에 전기를 흘린다.,三道神雷震暈敵人，令大地帶電。,三道神雷震晕敌人，令大地带电。
+weapon.takemikazuchi.name,Takemikazuchi,Takemikazuchi,Takemikazuchi,Takemikazuchi,Takemikazuchi,Такэмикадзути,Takemikazuchi,建御雷,다케미카즈치,建御雷,建御雷
 weapon.temple_smoke.desc,Uma aura enorme que também cura você.,A huge aura that also heals you.,Un aura enorme que también te cura.,"Eine riesige Aura, die dich auch heilt.",Une aura immense qui te soigne aussi.,"Огромная аура, которая ещё и лечит.",Aura raksasa yang juga memulihkanmu.,回復もする巨大なオーラ。,체력도 회복시키는 거대한 오라.,同時治療你的巨大光環。,同时治疗你的巨大光环。
 weapon.temple_smoke.name,Fumaça do Templo,Temple Smoke,Humo del Templo,Tempelrauch,Fumée du temple,Храмовый дым,Asap Kuil,寺の煙,사원의 연기,寺院之煙,寺院之烟
 weapon.thousand_needles.desc,Uma chuva de kunai sem pausa.,A nonstop rain of kunai.,Una lluvia incesante de kunai.,Ein pausenloser Kunai-Regen.,Une pluie incessante de kunai.,Непрерывный дождь кунаев.,Hujan kunai tanpa henti.,絶え間ない苦無の雨。,끊임없는 쿠나이 비.,連綿不絕的苦無雨。,连绵不绝的苦无雨。

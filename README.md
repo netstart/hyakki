@@ -18,9 +18,30 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 
 ## Rodar no PC
 
+Para abrir o projeto no editor do Godot 4.7.2:
+
+```powershell
+C:\src\tools\godot\Godot_v4.7.2-stable_win64.exe --editor --path C:\src\hyakki
+```
+
+Na primeira abertura, espere a importação dos recursos terminar e pressione **F5** para executar o projeto
+(ou use **Executar projeto** no canto superior direito). O jogo também pode ser aberto diretamente:
+
 ```powershell
 C:\src\tools\godot\Godot_v4.7.2-stable_win64.exe --path C:\src\hyakki
 ```
+
+### Testar todos os heróis
+
+Execute este comando para abrir o jogo em modo de desenvolvimento com os sete guardiões liberados:
+
+```powershell
+C:\src\tools\godot\Godot_v4.7.2-stable_win64.exe --path C:\src\hyakki
+```
+
+Ao iniciar, a build de desenvolvimento libera e salva automaticamente Aki, Kenta, Hana, Goro, Rin, Tora e
+Yuki no perfil local, preservando o restante do progresso. Esse desbloqueio automático é exclusivo da build
+de desenvolvimento; na build de produção, os heróis continuam sendo liberados pela progressão normal.
 
 Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espaço/E** Golpe da Lanterna ·
 **F3** desempenho · **F4** hitboxes. O mouse simula o toque (arraste na metade esquerda para o joystick).

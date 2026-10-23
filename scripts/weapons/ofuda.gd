@@ -12,6 +12,7 @@ var _angle: float = 0.0
 var _last_hit: Dictionary = {}
 var _near: Array[int] = []
 var _tex: Texture2D
+var _announced: bool = false
 
 
 func _init(p_game: HyakkiGame, p_id: StringName) -> void:
@@ -22,6 +23,9 @@ func _init(p_game: HyakkiGame, p_id: StringName) -> void:
 
 func step(dt: float) -> void:
 	var permanent := bool(flags.get("permanent", false))
+	if not _announced:
+		_announced = true
+		_cast_sound()
 	if not permanent:
 		if _active_left > 0.0:
 			_active_left -= dt
@@ -31,6 +35,7 @@ func step(dt: float) -> void:
 			_pause_left -= dt
 			if _pause_left <= 0.0:
 				_active_left = duration()
+				_cast_sound()
 			return
 	_angle += raw("speed") * stats().get_stat("proj_speed") * dt
 	var time := GameClock.game_time
@@ -47,6 +52,11 @@ func step(dt: float) -> void:
 			game.deal_damage(id, j, dmg, (game.enemies.pos[j] - game.player.sim_pos).normalized(), knockback())
 	if _last_hit.size() > 2000:
 		_last_hit.clear()
+
+
+## Os selos aparecem (ou voltam depois da pausa).
+func _cast_sound() -> void:
+	AudioManager.play("ofuda_cast", 1.1 if is_evolved() else 1.0, 0.06, -8.0)
 
 
 func is_active() -> bool:

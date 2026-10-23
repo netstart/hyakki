@@ -31,6 +31,24 @@ const VARIANTS := {
 	"slash": ["slash", "hy_slash_0", "hy_slash_1", "hy_slash_2", "hy_slash_3", "hy_slash_4", "hy_slash_5"],
 	"whoosh": ["whoosh", "hy_swish_0", "hy_swish_1", "hy_swish_2", "hy_swish_3", "hy_swish_4", "hy_swish_5"],
 	"crit": ["hy_crit_0", "hy_crit_1", "hy_crit_2", "hy_crit_3", "hy_crit_4", "hy_crit_5"],
+	# Efeitos procedurais do projeto (g_*, CC0, tools/gen_sfx.py) por tipo de arma/acerto.
+	"thunder": ["g_thunder_0", "g_thunder_1", "g_thunder_2"],
+	"zap": ["g_zap_0", "g_zap_1", "g_zap_2"],
+	"chain_zap": ["g_chain_zap_0", "g_chain_zap_1", "g_chain_zap_2"],
+	"hit_blade": ["g_hit_blade_0", "g_hit_blade_1", "g_hit_blade_2", "slash2", "slash3",
+			"hy_slash_0", "hy_slash_2", "hy_slash_4"],
+	"hit_projectile": ["g_hit_projectile_0", "g_hit_projectile_1", "g_hit_projectile_2",
+			"k_hit_punch_0", "k_hit_punch_2", "hy_smack_1", "hy_smack_3"],
+	"hit_fire": ["g_hit_fire_0", "g_hit_fire_1", "g_hit_fire_2"],
+	"hit_thunder": ["g_hit_thunder_0", "g_hit_thunder_1", "g_hit_thunder_2"],
+	"hit_wind": ["g_hit_wind_0", "g_hit_wind_1", "g_hit_wind_2"],
+	"hit_area": ["g_hit_area_0", "g_hit_area_1", "g_hit_area_2", "k_hit_soft_0", "k_hit_soft_1",
+			"k_hit_soft_2"],
+	"hit_orbit": ["g_hit_orbit_0", "g_hit_orbit_1", "g_hit_orbit_2"],
+	"hit_poison": ["g_hit_poison_0", "g_hit_poison_1", "g_hit_poison_2"],
+	"ofuda_cast": ["g_ofuda_cast_0", "g_ofuda_cast_1", "g_ofuda_cast_2"],
+	"incense_pulse": ["g_incense_pulse_0", "g_incense_pulse_1", "g_incense_pulse_2"],
+	"chest_open": ["g_chest_open_0", "g_chest_open_1"],
 }
 
 var _music_a: AudioStreamPlayer

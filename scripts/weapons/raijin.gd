@@ -4,6 +4,10 @@ extends Weapon
 ## A evolução encadeia cada raio em 3 alvos.
 
 const RANGE := 260.0
+## Trovão de fundo: mais agudo e baixo que o do Kaminari, no máximo a cada THUNDER_GAP s.
+const THUNDER_GAP := 0.8
+
+var _last_thunder: float = -100.0
 
 
 func fire(origin: Vector2) -> void:
@@ -15,3 +19,7 @@ func fire(origin: Vector2) -> void:
 		if target < 0:
 			return
 		game.areas.lightning(id, target, damage(), r, chain, chain_range)
+		var now := GameClock.game_time
+		if now - _last_thunder >= THUNDER_GAP:
+			_last_thunder = now
+			AudioManager.play("thunder", 1.35, 0.08, -11.0)

@@ -109,6 +109,21 @@
     "files_count": 37
   },
   {
+    "id": "hyakki_generated_sfx",
+    "name": "Hyakki - procedural sound effects",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "license_id": "CC0-1.0",
+    "category": "audio",
+    "version": "tools/gen_sfx.py (2026-10-23)",
+    "downloaded_at": "2026-10-23",
+    "verified_at": "2026-10-23",
+    "modifications": "original work, synthesized procedurally by tools/gen_sfx.py (g_*.wav)",
+    "source_url": "tools/gen_sfx.py",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/hyakki_generated_sfx_NOTICE.txt",
+    "files_count": 41
+  },
+  {
     "id": "poing_admob_plugin",
     "name": "Poing Studios AdMob Plugin for Godot",
     "author": "Poing Studios",

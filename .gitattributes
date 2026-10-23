@@ -1,2 +1,4 @@
 # Textos de licença ficam com LF: tools/fetch_licenses.py compara o conteúdo byte a byte.
 licenses/** text eol=lf
+# Snapshots de origem: o hash em licenses/registry.json vale para os bytes exatos.
+docs/licenses/** -text

@@ -12,6 +12,8 @@ func _initialize() -> void:
 	_test_spatial_hash()
 	_test_segment_hit()
 	_test_damage_control()
+	_test_hit_sounds()
+	_test_settings_defaults()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -96,3 +98,31 @@ func _test_segment_hit() -> void:
 			"não acerta alvo fora do raio")
 	_check(not Geometry.segment_hits_circle(a, b, Vector2(40.0, 0.0), 5.0),
 			"não acerta alvo depois do fim do segmento")
+
+
+func _test_hit_sounds() -> void:
+	var cases := {
+		"katana": "hit_blade", "blade_cyclone": "hit_blade",
+		"shuriken": "hit_projectile", "kunai": "hit_projectile", "yumi": "hit_projectile",
+		"kusarigama": "hit_projectile", "hitodama": "hit_fire", "raijin": "hit_thunder",
+		"typhoon": "hit_thunder", "fujin_fan": "hit_wind", "hurricane": "hit_wind",
+		"taiko": "hit_area", "incense": "hit_area", "ofuda": "hit_orbit", "smoke_bomb": "hit_poison",
+	}
+	for behavior: String in cases:
+		_check(HitSounds.for_weapon({"behavior": behavior, "tags": []}) == cases[behavior],
+				"som do golpe: %s -> %s" % [behavior, cases[behavior]])
+	_check(HitSounds.for_weapon({"behavior": "taiko", "tags": ["area"]}) == "hit_area",
+			"comportamento vence a tag (Trovão Ritual usa taiko)")
+	_check(HitSounds.for_weapon({"behavior": "kaminari", "tags": ["thunder"]}) == "hit_thunder",
+			"arma nova com tag thunder -> hit_thunder")
+	_check(HitSounds.for_weapon({"behavior": "x", "tags": ["projectile", "fire"]}) == "hit_fire",
+			"fogo tem prioridade sobre projétil")
+	_check(HitSounds.for_weapon({}) == "hit", "sem arma (Kami, especial) -> hit")
+	_check(HitSounds.for_weapon({"behavior": "x", "tags": ["nada"]}) == "hit", "desconhecido -> hit")
+
+## Opções novas vêm ligadas: números de dano, sons de golpe nos inimigos e de dano no herói.
+func _test_settings_defaults() -> void:
+	var script := load("res://scripts/autoload/settings.gd") as GDScript
+	var defaults: Dictionary = script.get_script_constant_map()["DEFAULTS"]
+	for key: String in ["damage_numbers", "damage_sounds", "hurt_sounds"]:
+		_check(defaults.get(key) == true, "opção %s vem ligada por padrão" % key)

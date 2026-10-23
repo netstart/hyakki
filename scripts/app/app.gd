@@ -44,6 +44,9 @@ func _ready() -> void:
 	if args.has("--bot") or args.has("--play"):
 		_start_direct()
 		return
+	# Em execução pelo editor, libera os sete guardiões sem apagar o restante do save.
+	if OS.is_debug_build() and SaveManager.unlock_all_heroes():
+		SaveManager.save_profile()
 	_layer = CanvasLayer.new()
 	_layer.layer = 20
 	add_child(_layer)

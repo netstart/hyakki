@@ -82,6 +82,8 @@ func _suite_full() -> void:
 			_shot(String(item[1]))
 			await _tap_text("menu.back", true)
 			await _expect_screen(&"title", "%s → voltar ao título" % item[1])
+	_step("loja: reforço por ryō")
+	await _shop_coin_item()
 	await _tap_text("title.options", true)
 	if await _expect_screen(&"options", "título → options (de novo)"):
 		_host("key BACK")
@@ -144,6 +146,10 @@ func _suite_full() -> void:
 			_check(await _wait_for(func() -> bool: return not game.hud.chest_open(), 4.0), "baú fecha de novo")
 	else:
 		_check(false, "baú abre")
+
+	_step("armas de trovão")
+	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
+	await _thunder_weapons(game)
 
 	_step("pausa")
 	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
@@ -224,12 +230,76 @@ func _suite_resume() -> void:
 	await _expect_screen(&"title", "resultados → título")
 
 
+## Kaminari e Inazuma na partida de verdade: com inimigos por perto, as duas ferem dentro
+## de alguns segundos (o raio do céu cai depois do aviso; o raio do corpo salta entre eles).
+func _thunder_weapons(game: HyakkiGame) -> void:
+	for id: StringName in [&"kaminari", &"inazuma"]:
+		if not game.has_weapon(id):
+			game.add_weapon(id)
+		_check(game.has_weapon(id), "%s entra na partida" % id)
+	var damaged := func() -> bool:
+		var origin := game.player.sim_pos
+		if game.enemies.nearest(origin, 120.0) < 0:
+			for k: int in range(6):
+				game.enemies.spawn(&"slime_rice", origin + Vector2.from_angle(TAU * k / 6.0) * 70.0, 50.0, 0.0)
+		return float(game.tracker.damage_by_weapon.get(&"kaminari", 0.0)) > 0.0 \
+				and float(game.tracker.damage_by_weapon.get(&"inazuma", 0.0)) > 0.0
+	_check(await _wait_for(damaged, WAIT), "Kaminari e Inazuma ferem inimigos")
+	_shot("armas_trovao")
+
+
+## Loja: rola o meio com um arrasto de verdade (adb swipe) e compra um reforço com ryō
+## tocando no cartão; confere o desconto, a fila da próxima partida e o saldo na tela.
+func _shop_coin_item() -> void:
+	await _tap_text("title.shop", true)
+	if not await _expect_screen(&"shop", "título → loja (reforços)"):
+		return
+	var screen: Control = null
+	for node: Node in get_tree().root.find_children("*", "Control", true, false):
+		var script := node.get_script() as Script
+		if script != null and script.resource_path.ends_with("shop_screen.gd") and (node as Control).is_visible_in_tree():
+			screen = node as Control
+	if screen == null:
+		_check(false, "tela da loja encontrada")
+		return
+	var scroll := screen.get("_scroll") as ScrollContainer
+	var item := &"coin_bag"
+	# Build de debug: garante ryō e o reforço livre para a compra.
+	(SaveManager.data["shop"]["next_run"] as Dictionary).erase(String(item))
+	SaveManager.data["ryo"] = maxi(SaveManager.ryo(), 1000)
+	screen.call("_update_coin_cards")
+	var area := scroll.get_global_rect()
+	var from := _to_screen(Vector2(area.get_center().x, area.end.y - 12.0))
+	var to := _to_screen(Vector2(area.get_center().x, area.position.y + 12.0))
+	_host("swipe %d %d %d %d 600" % [from.x, from.y, to.x, to.y])
+	await _seconds(HOST_DELAY + 1.0)
+	_check(scroll.scroll_vertical > 0, "arrastar o dedo rola a loja (%d px)" % scroll.scroll_vertical)
+	var card := (screen.get("_coin_cards")[item] as Dictionary)["button"] as Button
+	if not area.encloses(card.get_global_rect()):
+		scroll.ensure_control_visible(card)
+		await _seconds(0.3)
+	_shot("loja_rolada")
+	var before := SaveManager.ryo()
+	await _tap_control(card)
+	var price := ShopManager.coin_price(item)
+	_check(await _wait_for(func() -> bool: return ShopManager.is_queued(item), 4.0),
+			"tocar o cartão compra o reforço")
+	_check(SaveManager.ryo() == before - price, "a compra desconta %d ryō" % price)
+	_check((screen.get("_ryo") as Label).text.contains(Locale.format_number(SaveManager.ryo())),
+			"o saldo na tela atualiza")
+	_shot("loja_reforco")
+	await _tap_text("menu.back", true)
+	await _expect_screen(&"title", "loja → voltar ao título")
+
+
 # --- Ajudantes ----------------------------------------------------------------------
 
 func _start_run_from_title() -> void:
 	await _tap_text("title.play", true)
 	if not await _expect_screen(&"heroes", "jogar → heróis"):
 		return
+	for id: StringName in DB.ids("heroes"):
+		_check(MetaProgress.is_hero_unlocked(id), "build de debug libera o guardião %s" % id)
 	_shot("herois")
 	await _tap_text("heroes.next", true)
 	if not await _expect_screen(&"stages", "heróis → fases"):

@@ -503,7 +503,8 @@ func _chest_open() -> void:
 	_chest_image.rotation = 0.0
 	_chest_image.modulate = Color(2.2, 2.2, 1.8)
 	AudioManager.play("k_wood_0", 1.0, 0.05)
-	AudioManager.play("magic1", 1.0, 0.0, -3.0)
+	AudioManager.play("chest_open")
+	AudioManager.play("magic1", 1.0, 0.0, -8.0)
 
 
 ## O item sai do baú: ícone pequeno e um ding com tom subindo (especiais têm fanfarra).

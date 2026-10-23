@@ -69,7 +69,7 @@ def data_keys() -> set:
                                         "azure_lantern", "violet_lantern")}
     keys |= {f"licenses.cat_{c}" for c in ("all", "engine", "art", "audio", "font", "android")}
     for key in ("music_volume", "sfx_volume", "ui_volume", "joystick_mode", "joystick_side", "fps",
-                "vibration", "colorblind", "reduce_flashes", "damage_numbers", "hp_bar_below",
+                "vibration", "colorblind", "reduce_flashes", "damage_numbers", "damage_sounds", "hurt_sounds", "hp_bar_below",
                 "notifications"):
         keys.add(f"options.{key}")
     keys |= {"options.joystick_floating", "options.joystick_fixed", "options.side_left",

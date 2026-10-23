@@ -9,9 +9,15 @@ signal unlocked(kind: String, id: StringName)
 const PATH := "user://save.json"
 const BACKUP_PATH := "user://save.bak"
 const TEMP_PATH := "user://save.tmp"
+## Arquivos dos testes de integração (use_test_files): o save do jogador nunca é tocado.
+const TEST_PATHS := ["user://test_save.json", "user://test_save.bak", "user://test_save.tmp"]
 const VERSION := 1
 
 var data: Dictionary = {}
+## Arquivos em uso: os do jogo (PATH, BACKUP_PATH, TEMP_PATH) ou os dos testes.
+var path: String = PATH
+var backup_path: String = BACKUP_PATH
+var temp_path: String = TEMP_PATH
 ## true quando o save principal estava corrompido e o backup foi usado.
 var recovered_from_backup: bool = false
 
@@ -27,8 +33,10 @@ static func default_profile() -> Dictionary:
 		"ryo_total": 0,
 		"spent": 0,
 		"powerups": {},
-		"unlocked": {"heroes": ["aki"], "weapons": [], "passives": [], "stages": ["village"],
-				"cosmetics": [], "kami": []},
+		"unlocked": {
+			"heroes": ["aki", "kenta", "hana", "goro", "rin", "tora", "yuki"],
+			"weapons": [], "passives": [], "stages": ["village"], "cosmetics": [], "kami": [],
+		},
 		"achievements": {},
 		"stats": {"kills": 0, "runs": 0, "wins": 0, "deaths": 0, "time_played": 0.0,
 				"evolved": [], "kills_by_enemy": {}, "bosses_defeated": {}, "revives_by_ad": 0,
@@ -51,11 +59,23 @@ static func default_profile() -> Dictionary:
 	}
 
 
+## Testes: passa a ler e gravar nos TEST_PATHS, começando de um perfil novo. Mesmo um
+## teste interrompido no meio não mexe no save do jogador.
+func use_test_files() -> void:
+	path = TEST_PATHS[0]
+	backup_path = TEST_PATHS[1]
+	temp_path = TEST_PATHS[2]
+	for file: String in TEST_PATHS:
+		if FileAccess.file_exists(file):
+			DirAccess.remove_absolute(file)
+	load_profile()
+
+
 func load_profile() -> void:
 	recovered_from_backup = false
-	var loaded := _read(PATH)
-	if loaded.is_empty() and FileAccess.file_exists(PATH):
-		loaded = _read(BACKUP_PATH)
+	var loaded := _read(path)
+	if loaded.is_empty() and FileAccess.file_exists(path):
+		loaded = _read(backup_path)
 		recovered_from_backup = not loaded.is_empty()
 	data = migrate(loaded) if not loaded.is_empty() else default_profile()
 
@@ -78,16 +98,16 @@ static func _fill_missing(target: Dictionary, defaults: Dictionary) -> void:
 
 func save_profile() -> void:
 	var text := JSON.stringify(data, "\t")
-	var file := FileAccess.open(TEMP_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(temp_path, FileAccess.WRITE)
 	if file == null:
-		push_error("SaveManager: não abriu " + TEMP_PATH)
+		push_error("SaveManager: não abriu " + temp_path)
 		return
 	file.store_string(text)
 	file.close()
 	var dir := DirAccess.open("user://")
-	if FileAccess.file_exists(PATH):
-		dir.copy(PATH, BACKUP_PATH)
-	dir.rename(TEMP_PATH, PATH)
+	if FileAccess.file_exists(path):
+		dir.copy(path, backup_path)
+	dir.rename(temp_path, path)
 	saved.emit()
 
 
@@ -96,10 +116,10 @@ func reset_profile() -> void:
 	save_profile()
 
 
-func _read(path: String) -> Dictionary:
-	if not FileAccess.file_exists(path):
+func _read(file_path: String) -> Dictionary:
+	if not FileAccess.file_exists(file_path):
 		return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(file_path))
 	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
 
 
@@ -126,6 +146,15 @@ func unlock(kind: String, id: StringName) -> bool:
 	list.append(String(id))
 	unlocked.emit(kind, id)
 	return true
+
+
+## Libera todos os heróis no perfil atual. Chamado apenas pela inicialização de debug.
+func unlock_all_heroes() -> bool:
+	var changed := false
+	for id: StringName in DB.ids("heroes"):
+		if unlock("heroes", id):
+			changed = true
+	return changed
 
 
 func powerup_level(id: StringName) -> int:

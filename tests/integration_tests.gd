@@ -2,18 +2,24 @@ extends Node
 ## Testes com os autoloads carregados (plano 14.1 e 15.1): dados, idiomas, fontes,
 ## atributos, Santuário, Loja e save. Rodar:
 ##   godot --headless --path . res://tests/integration_tests.tscn
-## O save do jogador é copiado antes e restaurado no fim; nada do perfil real se perde.
+## Save e opções vão para arquivos próprios dos testes (SaveManager.use_test_files e
+## Settings.use_test_file) antes de qualquer verificação: nem um teste interrompido no meio
+## mexe no perfil ou no settings.cfg do jogador.
 
-const SAVE_FILES := ["user://save.json", "user://save.bak"]
 const GAME_SCENE := "res://scenes/game/Game.tscn"
+## Altura do conteúdo das Opções na grade antiga (1 opção por linha, tema do jogo, 678x305).
+const OLD_OPTIONS_HEIGHT := 618.0
+const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
+const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 
 var _count: int = 0
 var _failures: int = 0
-var _backup: Dictionary = {}
+## md5 do save e das opções do jogador antes dos testes ("" = não existia).
+var _real_files: Dictionary = {}
 
 
 func _ready() -> void:
-	_backup_save()
+	_use_test_files()
 	_test_data_integrity()
 	_test_assets_exist()
 	_test_i18n()
@@ -23,14 +29,19 @@ func _ready() -> void:
 	_test_save_migration()
 	_test_sanctuary()
 	_test_shop_clock()
+	_test_shop_coin_items()
 	_test_ads_rules()
 	_test_frozen_tint()
 	await _test_suspended_run()
 	await _test_revive_by_ad()
+	await _test_thunder_weapons()
+	await _test_sound_options()
+	await _test_options_layout()
 	await _test_kami_layout()
 	await _test_hero_screen_layout()
 	await _test_shop_layout()
-	_restore_save()
+	await _test_shop_scroll()
+	_remove_test_files()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -44,22 +55,31 @@ func _check(condition: bool, label: String) -> void:
 		print("ok: " + label)
 
 
-func _backup_save() -> void:
-	for path: String in SAVE_FILES:
-		_backup[path] = FileAccess.get_file_as_bytes(path) if FileAccess.file_exists(path) else null
+func _use_test_files() -> void:
+	for path: String in [SaveManager.PATH, SaveManager.BACKUP_PATH, Settings.PATH]:
+		_real_files[path] = FileAccess.get_md5(path) if FileAccess.file_exists(path) else ""
+	SaveManager.use_test_files()
+	Settings.use_test_file()
+	_check(SaveManager.path not in _real_files and Settings.path not in _real_files,
+			"testes usam arquivos próprios de save e opções")
+	for key: String in ["damage_numbers", "damage_sounds", "hurt_sounds"]:
+		_check(Settings.get_value(key) == true, "arquivo de opções dos testes começa com %s ligado" % key)
 
 
-func _restore_save() -> void:
-	for path: String in SAVE_FILES:
-		var bytes: Variant = _backup[path]
-		if bytes == null:
-			if FileAccess.file_exists(path):
-				DirAccess.remove_absolute(path)
-		else:
-			var file := FileAccess.open(path, FileAccess.WRITE)
-			file.store_buffer(bytes)
-			file.close()
+## Apaga os arquivos dos testes e volta aos do jogador (lidos de novo, sem gravar).
+func _remove_test_files() -> void:
+	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)
+	for path: String in _real_files:
+		var now := FileAccess.get_md5(path) if FileAccess.file_exists(path) else ""
+		_check(now == _real_files[path], "testes não mexeram em %s do jogador" % path)
+	SaveManager.path = SaveManager.PATH
+	SaveManager.backup_path = SaveManager.BACKUP_PATH
+	SaveManager.temp_path = SaveManager.TEMP_PATH
 	SaveManager.load_profile()
+	Settings.path = Settings.PATH
+	Settings.load_settings()
 
 
 # --- Kami -------------------------------------------------------------------------
@@ -183,8 +203,9 @@ func _buttons_in(node: Node, out: Array[Control]) -> void:
 # --- Loja -------------------------------------------------------------------------
 
 ## Loja em cada idioma: ao abrir, depois de um resgate, com status de falha e sem anúncio,
-## título, voltar, as 6 vagas, dica, status e a linha de botões ficam dentro de 678x305 e
-## com pelo menos 8 px até a borda inferior.
+## título, voltar, saldo, status e a linha de botões ficam dentro de 678x305 e com pelo
+## menos 8 px até a borda inferior; as 6 vagas, a dica e os 6 reforços ficam alcançáveis
+## rolando o meio (ver _check_shop_layout).
 func _test_shop_layout() -> void:
 	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
 	AdsManager.auto_answer = true
@@ -196,7 +217,7 @@ func _test_shop_layout() -> void:
 		var host := Control.new()
 		host.size = Vector2(678, 305)
 		add_child(host)
-		var screen := (load("res://scripts/app/screens/shop_screen.gd") as GDScript).new() as Control
+		var screen := (load(SHOP_SCREEN) as GDScript).new() as Control
 		host.add_child(screen)
 		screen.on_show()
 		await get_tree().process_frame
@@ -238,31 +259,189 @@ func _test_shop_layout() -> void:
 	Locale.set_language("pt_BR", false)
 
 
-## Confere que cada botão e texto da Loja está dentro de `view` (ou seja, visível e com
-## a folga da borda inferior).
+## Confere que cada botão e texto da Loja está visível: os fixos (topo, status e botões)
+## dentro de `view` e fora da área rolável; os do meio, alcançáveis rolando (dentro da
+## largura visível e da altura do conteúdo, sem estouro horizontal nem cobrir a barra).
 func _check_shop_layout(screen: Control, view: Rect2, state: String) -> void:
 	var controls: Array[Control] = []
 	_shop_controls_in(screen, controls)
-	_check(controls.size() >= 12, "%s: a Loja mostra os controles" % state)
+	_check(controls.size() >= 24, "%s: a Loja mostra os controles (%d)" % [state, controls.size()])
+	var scroll := screen.get("_scroll") as ScrollContainer
+	if scroll == null:
+		_check(false, "%s: a Loja tem a área rolável" % state)
+		return
+	var scroll_rect := scroll.get_global_rect()
+	var content := scroll.get_child(0) as Control
+	var content_rect := content.get_global_rect()
+	_check(view.encloses(scroll_rect), "%s: a área rolável fica dentro da tela (%s)" % [state, scroll_rect])
+	_check(content.get_combined_minimum_size().x <= content.size.x + 0.5
+			and content_rect.end.x <= scroll_rect.end.x + 0.5,
+			"%s: o conteúdo rolável não estoura na horizontal (%s em %s)" % [state,
+			content.get_combined_minimum_size(), scroll.size])
+	var bar := scroll.get_v_scroll_bar()
+	if bar.visible:
+		_check(content_rect.end.x <= bar.get_global_rect().position.x + 0.5,
+				"%s: a barra de rolagem não cobre os cartões" % state)
 	for control: Control in controls:
-		_check(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
-				"%s: %s dentro da tela com folga (%s, %s)" % [state, control.get_class(),
-				control.get_global_rect(), control.get_path()])
+		var rect := control.get_global_rect()
+		var path := "%s (%s, %s)" % [control.get_class(), rect, control.get_path()]
+		if scroll.is_ancestor_of(control):
+			var local := Rect2(rect.position - content_rect.position, rect.size)
+			_check(control.is_visible_in_tree() and local.position.x >= -0.5 and local.position.y >= -0.5
+					and local.end.x <= content.size.x + 0.5 and local.end.y <= content.size.y + 0.5
+					and rect.size.y <= scroll_rect.size.y + 0.5,
+					"%s: %s alcançável rolando" % [state, path])
+		else:
+			_check(control.is_visible_in_tree() and view.encloses(rect),
+					"%s: %s dentro da tela com folga" % [state, path])
+			_check(not rect.intersects(scroll_rect), "%s: %s fixo fora da área rolável" % [state, path])
+		# Nada sai da caixa que o corta (ex.: o preço dentro do cartão).
+		var clip := _clip_parent(control, scroll)
+		if clip != null and control.is_visible_in_tree():
+			_check(clip.get_global_rect().grow(0.5).encloses(rect),
+					"%s: %s cabe na caixa %s" % [state, path, clip.get_global_rect()])
 		# Texto inteiro (sem corte): o motor calcula a altura necessária com a quebra de linha
 		# da largura real; ela tem de caber na caixa (Label) ou no botão.
 		if control is Label and (control as Label).text != "":
 			var label_node := control as Label
 			var font := label_node.get_theme_font("font")
-			var needed := label_node.get_line_count() * font.get_height(label_node.get_theme_font_size("font_size"))
+			var font_size := label_node.get_theme_font_size("font_size")
+			var needed := label_node.get_line_count() * font.get_height(font_size)
 			_check(needed <= label_node.size.y + 0.5,
 					"%s: o texto \"%s\" cabe na caixa (%.0f de %.0f px)" % [state, label_node.text,
 					needed, label_node.size.y])
+			if label_node.autowrap_mode == TextServer.AUTOWRAP_OFF:
+				var width := font.get_string_size(label_node.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+				_check(width <= label_node.size.x + 0.5,
+						"%s: o texto \"%s\" cabe na largura (%.0f de %.0f px)" % [state, label_node.text,
+						width, label_node.size.x])
 		if control is Button and (control as Button).text != "":
 			var button_node := control as Button
 			var minimum := button_node.get_combined_minimum_size()
 			_check(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
 					"%s: o botão \"%s\" mostra o texto inteiro (%s de %s)" % [state, button_node.text,
 					minimum, button_node.size])
+
+
+## Ancestral mais próximo que corta o conteúdo (até a área rolável, que é conferida à parte).
+func _clip_parent(control: Control, stop: Control) -> Control:
+	var node := control.get_parent()
+	while node != null and node != stop:
+		if node is Control and (node as Control).clip_contents:
+			return node as Control
+		node = node.get_parent()
+	return null
+
+
+## Reforços comprados com ryō na Loja: preço, fila da próxima partida (1 de cada), falta de
+## ryō, consumo por take_next_run_bonuses e save antigo migrado.
+func _test_shop_coin_items() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	_check(ShopManager.coin_items().size() == 6, "Loja: 6 reforços por ryō")
+	_check(ShopManager.ad_slots().size() == 6, "Loja: as 6 vagas por anúncio continuam")
+	for id: StringName in ShopManager.coin_items():
+		_check(ShopManager.coin_price(id) > 0, "reforço %s tem preço" % id)
+		var effect := ShopManager.coin_effect(id)
+		_check(effect != "" and not effect.contains("%s"), "reforço %s descreve o efeito: %s" % [id, effect])
+		_check(not DB.powerups.has(id), "reforço %s não é power-up do Santuário" % id)
+	SaveManager.data["ryo"] = 1000
+	var price := ShopManager.coin_price(&"coin_scroll")
+	_check(ShopManager.buy_coin(&"coin_scroll"), "compra reforço com ryō suficiente")
+	_check(SaveManager.ryo() == 1000 - price, "a compra desconta o preço (%d)" % price)
+	_check(ShopManager.is_queued(&"coin_scroll") and ShopManager.pending_next_run().has("coin_scroll"),
+			"o reforço fica guardado para a próxima partida")
+	_check(not ShopManager.buy_coin(&"coin_scroll") and SaveManager.ryo() == 1000 - price,
+			"no máximo 1 de cada reforço por partida")
+	_check(int(SaveManager.data["spent"]) == 0, "reforço não entra no reembolso do Santuário")
+	var chest_price := ShopManager.coin_price(&"coin_chest")
+	SaveManager.data["ryo"] = chest_price - 1
+	_check(not ShopManager.can_buy_coin(&"coin_chest") and not ShopManager.buy_coin(&"coin_chest"),
+			"sem ryō suficiente a compra falha")
+	_check(SaveManager.ryo() == chest_price - 1 and not ShopManager.is_queued(&"coin_chest"),
+			"compra que falhou não desconta nem guarda")
+	SaveManager.data["ryo"] = 1000
+	_check(ShopManager.buy_coin(&"coin_chest"), "compra o Baú do Mercador")
+	SaveManager.data["shop"]["next_run"]["slot_chest"] = true
+	var bonus := ShopManager.take_next_run_bonuses()
+	_check(is_equal_approx(float(bonus["modifiers"].get("growth", 0.0)), 0.15), "o pergaminho dá +15% de crescimento")
+	_check(int(bonus["start_chest"]) == 2, "baú comprado soma com o baú da vaga")
+	_check(ShopManager.pending_next_run().is_empty() and not ShopManager.is_queued(&"coin_scroll"),
+			"take_next_run_bonuses consome os reforços")
+	_check(ShopManager.can_buy_coin(&"coin_scroll"), "depois da partida o reforço pode ser comprado de novo")
+	# Save antigo sem a fila next_run: a migração completa e a compra funciona.
+	SaveManager.data = SaveManager.migrate({"version": 0, "ryo": 500, "shop": {"slots": {}}})
+	_check(ShopManager.buy_coin(&"coin_bag") and SaveManager.ryo() == 500 - ShopManager.coin_price(&"coin_bag"),
+			"save migrado compra reforço")
+	SaveManager.data = SaveManager.default_profile()
+
+
+## Loja rolável: o meio rola (conteúdo mais alto que a área), o arrasto chega ao
+## ScrollContainer, os cartões do fim ficam visíveis rolando e a compra pela tela atualiza
+## o saldo, o cartão e o status; um toque que virou arrasto não compra.
+func _test_shop_scroll() -> void:
+	Locale.set_language("pt_BR", false)
+	SaveManager.data = SaveManager.default_profile()
+	AdsManager.mock_fill = true
+	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
+	var host := Control.new()
+	host.size = Vector2(678, 305)
+	add_child(host)
+	var screen := (load(SHOP_SCREEN) as GDScript).new() as Control
+	host.add_child(screen)
+	screen.on_show()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var scroll := screen.get("_scroll") as ScrollContainer
+	var content := scroll.get_child(0) as Control
+	_check(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
+			and scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED, "Loja: rola só na vertical")
+	_check(content.size.y > scroll.size.y, "Loja: conteúdo (%.0f) mais alto que a área (%.0f) rola" % [
+			content.size.y, scroll.size.y])
+	_check(scroll.get_v_scroll_bar().visible and scroll.get_v_scroll_bar().max_value > scroll.size.y,
+			"Loja: a barra de rolagem aparece")
+	_check(scroll.scroll_deadzone > 0, "Loja: zona morta evita rolar com um toque")
+	var cards: Dictionary = screen.get("_coin_cards")
+	_check(cards.size() == 6, "Loja: 6 cartões de reforço")
+	for id: StringName in cards:
+		var b := cards[id]["button"] as Button
+		_check(b.mouse_filter == Control.MOUSE_FILTER_PASS, "Loja: cartão %s deixa o arrasto passar" % id)
+		_check(b.disabled, "Loja: sem ryō o cartão %s fica apagado" % id)
+	var ad_cards: Dictionary = screen.get("_cards")
+	for id: StringName in ad_cards:
+		_check((ad_cards[id]["button"] as Button).mouse_filter == Control.MOUSE_FILTER_PASS,
+				"Loja: vaga %s deixa o arrasto passar" % id)
+	var last := cards[&"coin_chest"]["button"] as Button
+	_check(not scroll.get_global_rect().encloses(last.get_global_rect()), "Loja: o último cartão começa fora da vista")
+	scroll.scroll_vertical = int(content.size.y)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(scroll.scroll_vertical > 0, "Loja: rola até o fim")
+	_check(scroll.get_global_rect().grow(0.5).encloses(last.get_global_rect()),
+			"Loja: rolando, o último cartão aparece inteiro")
+	_check_shop_layout(screen, view, "pt_BR, rolada até o fim")
+	var status := screen.get("_status") as Label
+	_check(not bool(screen.call("_buy_coin", &"coin_bag")) and status.text == tr("sanctuary.not_enough"),
+			"Loja: sem ryō a compra pela tela falha e avisa")
+	SaveManager.data["ryo"] = 1000
+	screen.call("_update_coin_cards")
+	var bag := cards[&"coin_bag"]["button"] as Button
+	_check(not bag.disabled, "Loja: com ryō o cartão acende")
+	_check(bool(screen.call("_buy_coin", &"coin_bag")), "Loja: compra pela tela")
+	var left := 1000 - ShopManager.coin_price(&"coin_bag")
+	_check(SaveManager.ryo() == left and (screen.get("_ryo") as Label).text.contains(Locale.format_number(left)),
+			"Loja: o saldo mostrado cai para %d" % left)
+	_check(bag.disabled and (cards[&"coin_bag"]["price"] as Label).text == tr("shop.coin.queued"),
+			"Loja: o cartão comprado fica apagado como guardado")
+	_check(status.text == tr("shop.received") % tr("shop.coin_bag.name"), "Loja: o status mostra a compra")
+	# Toque que virou arrasto: apertou com a rolagem no topo e soltou com o conteúdo rolado.
+	screen.set("_press_scroll", 0)
+	_check(not bool(screen.call("_buy_coin", &"coin_scroll")) and SaveManager.ryo() == left,
+			"Loja: arrastar sobre o cartão não compra")
+	await get_tree().process_frame
+	_check_shop_layout(screen, view, "pt_BR, depois da compra")
+	host.queue_free()
+	await get_tree().process_frame
+	SaveManager.data = SaveManager.default_profile()
 
 
 ## Coleta botões e textos de uma árvore de controles.
@@ -345,6 +524,26 @@ func _test_assets_exist() -> void:
 	for mid: String in ids:
 		var base := "res://assets/audio/music/" + mid
 		_check(ResourceLoader.exists(base + ".ogg") or ResourceLoader.exists(base + ".mp3"), "música %s existe" % mid)
+	_test_sfx_variants_exist()
+
+
+## Todo arquivo de todo grupo de AudioManager.VARIANTS existe em assets/audio/sfx/.
+func _test_sfx_variants_exist() -> void:
+	var missing: Array[String] = []
+	var total := 0
+	for group: String in AudioManager.VARIANTS:
+		var files: Array = AudioManager.VARIANTS[group]
+		_check(not files.is_empty(), "grupo de som %s tem arquivos" % group)
+		for file: String in files:
+			total += 1
+			var base := AudioManager.SFX_DIR + file
+			if not (ResourceLoader.exists(base + ".wav") or ResourceLoader.exists(base + ".ogg")
+					or ResourceLoader.exists(base + ".mp3")):
+				missing.append("%s/%s" % [group, file])
+	_check(missing.is_empty(), "todos os sons dos grupos existem (%d): faltam %s" % [total, missing])
+	for group: String in ["thunder", "zap", "chain_zap", "hit_blade", "hit_projectile", "hit_fire",
+			"hit_thunder", "hit_wind", "hit_area", "hit_orbit", "hit_poison", "ofuda_cast", "incense_pulse", "chest_open"]:
+		_check(AudioManager.VARIANTS.has(group), "grupo de som %s registrado" % group)
 
 
 # --- Idiomas ----------------------------------------------------------------------
@@ -424,6 +623,14 @@ func _test_save_migration() -> void:
 	_check((migrated["unlocked"]["heroes"] as Array).has("kenta"), "migração mantém heróis")
 	_check(migrated["unlocked"].has("stages") and migrated.has("shop"), "migração completa campos novos")
 	_check(int(migrated["version"]) == SaveManager.VERSION, "migração atualiza versão")
+	var original_data := SaveManager.data
+	SaveManager.data = SaveManager.default_profile()
+	SaveManager.data["unlocked"]["heroes"] = ["aki"]
+	_check(SaveManager.unlock_all_heroes(), "libera guardiões que faltam no perfil de desenvolvimento")
+	for id: StringName in DB.ids("heroes"):
+		_check(SaveManager.is_unlocked("heroes", id), "guardião %s fica liberado" % id)
+	_check(not SaveManager.unlock_all_heroes(), "não altera perfil que já tem todos os guardiões")
+	SaveManager.data = original_data
 
 
 func _test_sanctuary() -> void:
@@ -518,6 +725,188 @@ func _test_suspended_run() -> void:
 	await get_tree().process_frame
 
 
+## Opções de som e de números de dano: padrão ligado, um CheckButton para cada uma na tela
+## de Opções (alcançável pela rolagem em 678x305) e cada uma respeitada no jogo. As
+## opções vão para o arquivo dos testes (Settings.use_test_file), nunca o do jogador.
+func _test_sound_options() -> void:
+	_check(Settings.path == Settings.TEST_PATH, "Opções: os testes gravam em %s" % Settings.TEST_PATH)
+	var keys := ["damage_numbers", "damage_sounds", "hurt_sounds"]
+	for key: String in keys:
+		_check(Settings.DEFAULTS.get(key) == true, "opção %s existe e vem ligada" % key)
+		Settings.set_value(key, true)
+
+	# Tela de Opções: CheckButton "opt_<chave>" com o rótulo, visível depois de rolar até ele.
+	var view := Rect2(Vector2.ZERO, Vector2(678, 305))
+	Locale.set_language("pt_BR", false)
+	# Host com o tamanho do viewport do jogo, como na Loja.
+	var host := Control.new()
+	host.size = view.size
+	add_child(host)
+	var screen := (load(OPTIONS_SCREEN) as GDScript).new() as Control
+	host.add_child(screen)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var scroll := screen.get("_scroll") as ScrollContainer
+	for key: String in keys:
+		var found := screen.find_child("opt_%s" % key, true, false) as CheckButton
+		_check(found != null, "Opções: CheckButton de %s" % key)
+		if found == null:
+			continue
+		var cell_label := found.get_parent().get_child(0) as Label
+		_check(cell_label != null and cell_label.text == tr("options.%s" % key),
+				"Opções: %s tem o rótulo na mesma célula" % key)
+		_check(found.button_pressed, "Opções: %s aparece ligado" % key)
+		_check(scroll != null and scroll.is_ancestor_of(found), "Opções: %s fica dentro da rolagem" % key)
+		if scroll != null:
+			scroll.ensure_control_visible(found)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			_check(found.is_visible_in_tree() and view.encloses(found.get_global_rect())
+					and scroll.get_global_rect().encloses(found.get_global_rect()),
+					"Opções: %s alcançável na tela de celular" % key)
+		found.button_pressed = false
+		_check(Settings.get_value(key) == false, "Opções: desligar %s grava a opção" % key)
+		found.button_pressed = true
+	host.queue_free()
+	await get_tree().process_frame
+
+	# No jogo: som do golpe por arma, som de dano no herói e números de dano.
+	var scene := load(GAME_SCENE) as PackedScene
+	var game := scene.instantiate() as HyakkiGame
+	game.config = {"hero": "goro", "stage": "bamboo", "moon": 1, "mode": "normal", "seed": 5, "speed": 1}
+	add_child(game)
+	await get_tree().process_frame
+	var enemy := game.enemies.spawn(&"slime_rice", game.player.sim_pos + Vector2(60, 0), 1000.0, 1.0)
+	_check(enemy >= 0, "inimigo de teste nasceu")
+	if enemy >= 0:
+		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(game.last_hit_sound == "hit_blade", "golpe da katana toca hit_blade")
+		game.deal_damage(&"raijin", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(game.last_hit_sound == "hit_thunder", "golpe do raijin toca hit_thunder")
+		game.deal_damage(&"kami_test", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(game.last_hit_sound == "hit", "golpe sem arma toca hit")
+		Settings.set_value("damage_sounds", false)
+		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(game.last_hit_sound == "", "damage_sounds desligado silencia o golpe")
+		var n_before := int(game.fx.get("_n_next"))
+		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(int(game.fx.get("_n_next")) != n_before, "número de dano aparece com a opção ligada")
+		Settings.set_value("damage_numbers", false)
+		n_before = int(game.fx.get("_n_next"))
+		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
+		game.player.invuln = 0.0
+		game.player.take_damage(1.0)
+		_check(int(game.fx.get("_n_next")) == n_before, "damage_numbers desligado esconde inimigo e herói")
+	_check(game.player.play_hurt_sound(), "hurt_sounds ligado toca o som do herói")
+	Settings.set_value("hurt_sounds", false)
+	_check(not game.player.play_hurt_sound(), "hurt_sounds desligado silencia o herói")
+	game.queue_free()
+	GameClock.paused = false
+	await get_tree().process_frame
+
+	for key: String in keys:
+		Settings.set_value(key, true)
+
+
+## Opções compactas em cada idioma, no viewport 678x305 com o tema do jogo: todas as opções
+## e botões existem ("opt_<chave>"), nenhum controle passa da largura nem encosta em outro,
+## cada um tem altura de toque e é alcançável pela rolagem, os rótulos quebram linha sem
+## cortar texto e o conteúdo é bem mais baixo que o da grade antiga de 1 opção por linha.
+func _test_options_layout() -> void:
+	var view := Rect2(Vector2.ZERO, Vector2(678, 305))
+	var names := ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds", "hurt_sounds",
+			"joystick_mode", "joystick_side", "vibration", "fps", "colorblind", "reduce_flashes",
+			"damage_numbers", "hp_bar_below", "notifications", "privacy", "restore", "credits",
+			"licenses", "reset", "version"]
+	for lang: String in Locale.SUPPORTED:
+		Locale.set_language(lang, false)
+		var host := Control.new()
+		host.size = view.size
+		host.theme = ThemeFactory.build()
+		add_child(host)
+		var screen := (load(OPTIONS_SCREEN) as GDScript).new() as Control
+		host.add_child(screen)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var scroll := screen.get("_scroll") as ScrollContainer
+		var content := scroll.get_child(0) as Control
+		_check(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
+				and scroll.scroll_deadzone > 0, "%s: Opções rolam só na vertical, com zona morta" % lang)
+		_check(content.size.y < OLD_OPTIONS_HEIGHT * 0.75,
+				"%s: conteúdo das Opções (%.0f px) bem abaixo dos %.0f px antigos" % [lang, content.size.y, OLD_OPTIONS_HEIGHT])
+		_check(content.size.y > scroll.size.y and scroll.get_v_scroll_bar().visible,
+				"%s: o que não cabe rola" % lang)
+		var controls: Array[Control] = []
+		for key: String in names:
+			var control := screen.find_child("opt_%s" % key, true, false) as Control
+			_check(control != null, "%s: Opções têm opt_%s" % [lang, key])
+			if control != null:
+				controls.append(control)
+		var interactive: Array[Control] = []
+		for control: Control in controls:
+			if control is BaseButton or control is Range:
+				interactive.append(control)
+		# Sem rolar: largura, altura de toque e sobreposição.
+		var area := scroll.get_global_rect()
+		for i: int in interactive.size():
+			var a := interactive[i]
+			var rect := a.get_global_rect()
+			_check(rect.position.x >= area.position.x - 0.5 and rect.end.x <= area.end.x + 0.5,
+					"%s: %s não passa da largura" % [lang, a.name])
+			_check(rect.size.y >= 24.0, "%s: %s tem altura de toque (%.0f px)" % [lang, a.name, rect.size.y])
+			for j: int in range(i + 1, interactive.size()):
+				var b := interactive[j]
+				_check(not rect.grow(-0.5).intersects(b.get_global_rect().grow(-0.5)),
+						"%s: %s não encosta em %s" % [lang, a.name, b.name])
+		# Rótulos: quebram linha sem cortar, cabem na largura e não ficam sob um controle.
+		var labels: Array[Label] = []
+		_labels_in(content, labels)
+		for l: Label in labels:
+			var rect := l.get_global_rect()
+			_check(l.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING
+					and (l.autowrap_mode == TextServer.AUTOWRAP_OFF or l.get_line_count() <= l.get_visible_line_count()),
+					"%s: rótulo \"%s\" inteiro, sem cortar" % [lang, l.text])
+			_check(rect.position.x >= area.position.x - 0.5 and rect.end.x <= area.end.x + 0.5,
+					"%s: rótulo \"%s\" dentro da largura" % [lang, l.text])
+			for control: Control in interactive:
+				_check(not rect.grow(-0.5).intersects(control.get_global_rect().grow(-0.5)),
+						"%s: rótulo \"%s\" não fica sob %s" % [lang, l.text, control.name])
+		# Cada controle aparece inteiro rolando até ele.
+		for control: Control in controls:
+			scroll.ensure_control_visible(control)
+			await get_tree().process_frame
+			_check(view.encloses(control.get_global_rect())
+					and scroll.get_global_rect().grow(0.5).encloses(control.get_global_rect()),
+					"%s: %s alcançável pela rolagem" % [lang, control.name])
+		host.queue_free()
+		await get_tree().process_frame
+
+	# Apagar o progresso pede dois toques (no save dos testes).
+	Locale.set_language("pt_BR", false)
+	var host2 := Control.new()
+	host2.size = view.size
+	add_child(host2)
+	var screen2 := (load(OPTIONS_SCREEN) as GDScript).new() as Control
+	host2.add_child(screen2)
+	await get_tree().process_frame
+	var reset := screen2.find_child("opt_reset", true, false) as Button
+	SaveManager.data["ryo"] = 77
+	reset.pressed.emit()
+	_check(reset.text == tr("options.reset_confirm") and SaveManager.ryo() == 77,
+			"Opções: o primeiro toque em apagar só pede confirmação")
+	reset.pressed.emit()
+	_check(reset.text == tr("options.reset_done") and SaveManager.ryo() == 0,
+			"Opções: o segundo toque apaga o progresso")
+	host2.queue_free()
+	await get_tree().process_frame
+
+
+func _labels_in(node: Node, out: Array[Label]) -> void:
+	for child: Node in node.get_children():
+		if child is Label and (child as Label).is_visible_in_tree():
+			out.append(child as Label)
+		_labels_in(child, out)
+
 ## Reviver por anúncio (17.6): em qualquer modo, inclusive o Desafio Diário, o anúncio
 ## recompensado devolve o herói no mesmo instante, sem reiniciar: mesmo tempo, abates, nível
 ## e armas. Um segundo reviver não é oferecido. Partida salva durante a morte volta com a oferta.
@@ -594,3 +983,97 @@ func _test_revive_by_ad() -> void:
 		await get_tree().process_frame
 	AdsManager.auto_answer = false
 	GameClock.paused = true
+
+
+# --- Armas de trovão --------------------------------------------------------------
+
+## Kaminari e Inazuma (e as evoluções Takemikazuchi e Raikiri): carregam do DB com a tag
+## "thunder", nascem em _make_weapon com o comportamento certo, sobem até o nível máximo e,
+## disparadas numa partida, ferem inimigos. O Kaminari avisa no chão antes de cair; o
+## Inazuma salta de inimigo em inimigo. O Kami Raijin soma raios nas duas.
+func _test_thunder_weapons() -> void:
+	var expected := {&"kaminari": "Kaminari", &"inazuma": "Inazuma",
+			&"takemikazuchi": "Kaminari", &"raikiri": "Inazuma"}
+	for id: StringName in expected:
+		var data := DB.weapon(id)
+		_check(not data.is_empty(), "%s existe no DB" % id)
+		_check((data.get("tags", []) as Array).has("thunder"), "%s tem a tag thunder" % id)
+		_check(tr("weapon.%s.name" % id) != "weapon.%s.name" % id, "%s tem nome traduzido" % id)
+	for id: StringName in [&"kaminari", &"inazuma"]:
+		var data := DB.weapon(id)
+		_check((data["levels"] as Array).size() == 8, "%s tem 8 níveis" % id)
+		_check(String(data.get("unlock", "x")) == "", "%s vem liberada" % id)
+		_check(DB.weapon(StringName(data["evolution"])).get("from", "") == String(id),
+				"%s evolui para uma arma que aponta de volta" % id)
+
+	var scene := load(GAME_SCENE) as PackedScene
+	var game := scene.instantiate() as HyakkiGame
+	game.config = {"hero": "goro", "stage": "bamboo", "moon": 0, "mode": "normal", "seed": 13, "speed": 1}
+	add_child(game)
+	await get_tree().process_frame
+	game.player.god_mode = true
+	var origin := game.player.sim_pos
+	# Campo limpo: só os inimigos de teste contam para mira e grupo.
+	for i: int in range(EnemyManager.CAPACITY):
+		if game.enemies.alive[i] == 1:
+			game.enemies.despawn(i)
+	for id: StringName in expected:
+		var weapon := game._make_weapon(id)
+		_check(weapon != null and weapon.get_script().get_global_name() == StringName(expected[id]),
+				"%s nasce com o comportamento %s" % [id, expected[id]])
+		if weapon == null:
+			continue
+		if not weapon.is_evolved():
+			var first_damage := weapon.damage()
+			while weapon.level < weapon.max_level:
+				weapon.level_up()
+			_check(weapon.level == 8 and weapon.damage() > first_damage, "%s sobe até o nível 8 e ganha dano" % id)
+		# Inimigos em fila, longe dos outros: alvo, e dois para o raio saltar.
+		var targets: Array[int] = []
+		for k: int in range(3):
+			targets.append(game.enemies.spawn(&"slime_rice", origin + Vector2(50 + 35 * k, 0), 1000.0, 1.0))
+		_check(not targets.has(-1), "%s: inimigos de teste nasceram" % id)
+		if targets.has(-1):
+			continue
+		# O hash espacial só é refeito no passo dos inimigos; sem passo, a área (query_circle)
+		# veria índices antigos. Refaz como o passo faz, para o teste não depender da ordem.
+		game.enemies.spatial.clear()
+		for i: int in range(EnemyManager.CAPACITY):
+			if game.enemies.alive[i] == 1:
+				game.enemies.spatial.insert(i, game.enemies.pos[i])
+		var hp_before := game.enemies.hp[targets[0]]
+		var dealt_before := float(game.tracker.damage_by_weapon.get(id, 0.0))
+		weapon.fire(origin)
+		if weapon is Kaminari:
+			var kaminari := weapon as Kaminari
+			_check(not kaminari.strikes.is_empty(), "%s marca o chão antes de cair" % id)
+			_check(game.enemies.hp[targets[0]] == hp_before, "%s não fere durante o aviso" % id)
+			for _t: int in range(10):
+				kaminari.step(0.1)
+			_check(not kaminari.bolts.is_empty() or kaminari.strikes.is_empty(), "%s desenha o raio do céu" % id)
+			var hits := 0
+			for j: int in targets:
+				if game.enemies.hp[j] < game.enemies.max_hp[j]:
+					hits += 1
+			_check(hits >= 2, "%s fere em área (%d de 3 inimigos)" % [id, hits])
+		else:
+			var inazuma := weapon as Inazuma
+			_check(not inazuma.bolts.is_empty(), "%s desenha o raio a partir do herói" % id)
+			var chained := true
+			for j: int in targets:
+				chained = chained and game.enemies.hp[j] < game.enemies.max_hp[j]
+			_check(chained, "%s salta para os 3 inimigos em fila" % id)
+		_check(game.enemies.hp[targets[0]] < hp_before, "%s fere o inimigo" % id)
+		_check(float(game.tracker.damage_by_weapon.get(id, 0.0)) > dealt_before, "%s conta o dano da arma" % id)
+		for j: int in targets:
+			game.enemies.despawn(j)
+	# Kami Raijin: +2 raios em armas de trovão, nas duas novas.
+	var plain := game._make_weapon(&"inazuma")
+	var before := plain.amount()
+	game.kami.accept(&"raijin", true)
+	_check(game._make_weapon(&"inazuma").amount() == before + 2, "Kami Raijin soma 2 raios no Inazuma")
+	game.add_weapon(&"kaminari")
+	_check(game.has_weapon(&"kaminari"), "Kaminari entra na partida pelo add_weapon")
+	game.queue_free()
+	GameClock.paused = false
+	await get_tree().process_frame

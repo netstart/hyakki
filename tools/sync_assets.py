@@ -68,6 +68,13 @@ def main() -> int:
     for path in manifests:
         if path.exists():
             missing += sync_manifest(path, index)
+    # Assets gerados por ferramentas do próprio repositório (ex.: tools/gen_sfx.py) ficam no índice.
+    old_index = ASSETS / "asset_index.json"
+    if old_index.exists():
+        for row in json.loads(old_index.read_text(encoding="utf-8")):
+            target = ROOT / row["file"]
+            if row.get("source", "").startswith("tools/") and target.exists():
+                index.append({**row, "sha256": sha256(target)})
     index.sort(key=lambda item: item["file"])
     (ASSETS / "asset_index.json").write_text(
         json.dumps(index, indent=1, ensure_ascii=False), encoding="utf-8")

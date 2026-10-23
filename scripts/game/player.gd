@@ -135,6 +135,14 @@ func game() -> HyakkiGame:
 	return get_parent() as HyakkiGame
 
 
+## Som de dano no herói; desligado pela opção "hurt_sounds". Diz se tocou (testes).
+func play_hurt_sound() -> bool:
+	if not bool(Settings.get_value("hurt_sounds")):
+		return false
+	AudioManager.play("player_hurt", 1.0, 0.05, -2.0)
+	return true
+
+
 ## Única porta de entrada do dano recebido (plano 4.15). `source` é o id do inimigo, do
 ## chefe ou do perigo, para o registro e a causa da morte.
 func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> void:
@@ -154,7 +162,7 @@ func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> v
 	damage_taken_time = 0.0
 	game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), final, false, HURT_NUMBER_COLOR)
 	Events.player_hit.emit(final)
-	AudioManager.play("player_hurt", 1.0, 0.05, -2.0)
+	play_hurt_sound()
 	Settings.vibrate(40)
 	game().shake(2.0)
 	if god_mode:

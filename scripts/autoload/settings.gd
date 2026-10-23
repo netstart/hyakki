@@ -5,6 +5,8 @@ extends Node
 signal changed(key: String)
 
 const PATH := "user://settings.cfg"
+## Arquivo dos testes de integração (use_test_file): o do jogador nunca é tocado por eles.
+const TEST_PATH := "user://test_settings.cfg"
 ## 2: barra de vida passa a ficar sobre a cabeça por padrão.
 const VERSION := 2
 const DEFAULTS := {
@@ -20,12 +22,16 @@ const DEFAULTS := {
 	"colorblind": false,
 	"reduce_flashes": false,
 	"damage_numbers": true,
+	"damage_sounds": true,
+	"hurt_sounds": true,
 	"hp_bar_below": false,
 	"speed": 1,
 	"notifications": false,
 	"show_fps": false,
 }
 
+## Arquivo em uso: PATH no jogo, TEST_PATH nos testes.
+var path: String = PATH
 var _values: Dictionary = {}
 var _last_vibration_ms: int = 0
 
@@ -34,10 +40,19 @@ func _ready() -> void:
 	load_settings()
 
 
+## Testes: passa a ler e gravar em TEST_PATH, começando dos padrões. Mesmo um teste
+## interrompido no meio não deixa opções trocadas no settings.cfg do jogador.
+func use_test_file() -> void:
+	path = TEST_PATH
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+	load_settings()
+
+
 func load_settings() -> void:
 	_values = DEFAULTS.duplicate(true)
 	var config := ConfigFile.new()
-	if config.load(PATH) == OK:
+	if config.load(path) == OK:
 		for key: String in DEFAULTS:
 			if config.has_section_key("settings", key):
 				_values[key] = config.get_value("settings", key)
@@ -51,7 +66,7 @@ func save_settings() -> void:
 	for key: String in _values:
 		config.set_value("settings", key, _values[key])
 	config.set_value("meta", "version", VERSION)
-	config.save(PATH)
+	config.save(path)
 
 
 func get_value(key: String) -> Variant:

@@ -2,6 +2,9 @@ extends Node
 ## Loja de recompensas (plano 17.3): 6 vagas; cada uma libera uma recompensa ao assistir
 ## um anúncio até o fim e entra em espera de 6 h. Sem servidor: guarda o horário de
 ## liberação e o maior horário já visto; se o relógio voltar, a espera não diminui.
+## Também vende, com ryō, reforços de uso único para a próxima partida (linhas de
+## data/shop.json com "price"). Eles entram na mesma fila de next_run das vagas: no máximo
+## 1 de cada por partida, consumidos por take_next_run_bonuses().
 
 signal slot_claimed(slot_id: StringName)
 
@@ -33,10 +36,64 @@ func is_ready(slot: StringName) -> bool:
 
 
 func any_ready() -> bool:
-	for id: StringName in DB.ids("shop"):
+	for id: StringName in ad_slots():
 		if is_ready(id):
 			return true
 	return false
+
+
+## Vagas liberadas por anúncio (linhas sem preço), na ordem do arquivo.
+func ad_slots() -> Array[StringName]:
+	var list: Array[StringName] = []
+	list.assign(DB.ids("shop").filter(func(id: StringName) -> bool: return not is_coin_item(id)))
+	return list
+
+
+## Reforços comprados com ryō (linhas com preço), na ordem do arquivo.
+func coin_items() -> Array[StringName]:
+	var list: Array[StringName] = []
+	list.assign(DB.ids("shop").filter(is_coin_item))
+	return list
+
+
+func is_coin_item(id: StringName) -> bool:
+	return (DB.shop.get(id, {}) as Dictionary).has("price")
+
+
+func coin_price(id: StringName) -> int:
+	return int((DB.shop.get(id, {}) as Dictionary).get("price", 0))
+
+
+## Já está guardado para a próxima partida (vale para vagas e reforços).
+func is_queued(id: StringName) -> bool:
+	return (SaveManager.data["shop"]["next_run"] as Dictionary).has(String(id))
+
+
+func can_buy_coin(id: StringName) -> bool:
+	return is_coin_item(id) and not is_queued(id) and SaveManager.ryo() >= coin_price(id)
+
+
+## Compra o reforço com ryō e guarda para a próxima partida. Não entra no "spent" do
+## Santuário (o reembolso do Santuário não devolve consumíveis).
+func buy_coin(id: StringName) -> bool:
+	if not can_buy_coin(id):
+		return false
+	SaveManager.add_ryo(-coin_price(id))
+	(SaveManager.data["shop"]["next_run"] as Dictionary)[String(id)] = true
+	SaveManager.save_profile()
+	return true
+
+
+## Efeito do reforço em texto, no idioma atual (ex.: "+15% Crescimento").
+func coin_effect(id: StringName) -> String:
+	var data: Dictionary = DB.shop.get(id, {})
+	var parts: PackedStringArray = []
+	var mods: Dictionary = data.get("modifiers", {})
+	if not mods.is_empty():
+		parts.append(LevelUpSystem.describe_stats(mods))
+	if int(data.get("start_chest", 0)) > 0:
+		parts.append(tr("shop.coin.start_chest"))
+	return ", ".join(parts)
 
 
 ## Valor do Saco de Ryō: cresce com o progresso da campanha (150 → 400).
