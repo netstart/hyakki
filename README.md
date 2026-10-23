@@ -82,6 +82,17 @@ emulador, abre o jogo e falha se houver erro do Godot no logcat. Opções: `-Ver
 
 ## Testes no aparelho (build de debug)
 
+Para testar à mão, dê dois cliques em **`Testar no emulador.bat`** (raiz do projeto): ele compila o
+APK de debug, liga o emulador `Redmi_Note_14_Pro_Plus_5G` se estiver desligado, instala, abre o jogo
+e fica mostrando o log do Godot. Pela linha de comando aceita opções:
+
+```bash
+powershell -ExecutionPolicy Bypass -File tools\run_emulator.ps1 -NoBuild -Scenario chest
+```
+
+`-NoBuild` reinstala o último APK sem compilar, `-Scenario X` abre num dos cenários abaixo e `-NoLog`
+encerra assim que o jogo abre.
+
 Cenários que levam direto a telas difíceis de alcançar jogando (só funcionam em build de debug):
 
 ```bash
