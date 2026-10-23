@@ -59,6 +59,8 @@ func _ready() -> void:
 	selection = (SaveManager.data["selected"] as Dictionary).duplicate()
 	if OS.is_debug_build() and _scenario_from_args(args):
 		return
+	if E2EDriver.requested():
+		add_child(E2EDriver.new(self))
 	_show_splash()
 
 

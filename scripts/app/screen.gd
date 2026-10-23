@@ -52,7 +52,9 @@ func button(text: String, on_press: Callable, min_size: Vector2 = Vector2(150, 3
 	b.custom_minimum_size = min_size
 	b.focus_mode = Control.FOCUS_ALL
 	b.pressed.connect(func() -> void: AudioManager.play_ui("ui_accept"))
-	b.pressed.connect(on_press)
+	# Callable() vazio: quem chama conecta a ação depois (ex.: confirmação em dois toques).
+	if on_press.is_valid():
+		b.pressed.connect(on_press)
 	return b
 
 

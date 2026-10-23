@@ -186,6 +186,23 @@ func pause_open() -> bool:
 	return _pause_panel.visible
 
 
+func level_up_open() -> bool:
+	return _level_panel.visible
+
+
+func chest_open() -> bool:
+	return _chest_panel.visible
+
+
+func revive_open() -> bool:
+	return _revive_panel.visible
+
+
+## Cartas visíveis do nível novo (o roteiro E2E toca nelas).
+func level_cards() -> Array[Button]:
+	return _cards.filter(func(b: Button) -> bool: return b.visible)
+
+
 # --- Topo: XP, tempo, abates, ícones -------------------------------------------------
 
 func _draw_top() -> void:

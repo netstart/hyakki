@@ -36,6 +36,26 @@ Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gd
 permitidas), limites da ficha da loja, testes de integração (dados, idiomas, cobertura de glifos, Loja,
 Santuário, save, regras de anúncio), determinismo 1x/2x/3x e estresse com 500 inimigos.
 
+Para um relatório completo (cada verificação listada, tempos e logs) em `build\test-report\<data_hora>\relatorio.html`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1 -E2E
+```
+
+`-E2E` inclui os testes de ponta a ponta no emulador (abaixo); `-SkipStress` pula o estresse e `-NoOpen`
+não abre o navegador.
+
+### Ponta a ponta no emulador (E2E)
+
+Dois cliques em **`Testes E2E no emulador.bat`** (ou `tools\run_e2e.ps1 [-NoBuild]`). O script instala a
+build de debug, apaga os dados do app (**perde o save do emulador**) e liga o roteiro de
+[scripts/app/e2e_driver.gd](scripts/app/e2e_driver.gd). O jogo pede ao PC, pelo logcat, toques e arrastos
+reais (`adb shell input`), o botão voltar, ir para segundo plano, fechar/reabrir e capturas de tela, e
+confere o efeito de cada um. O roteiro cobre: abertura, consentimento, introdução, todos os menus,
+seleção, controle por toque, nível novo, baú, pausa, derrota com oferta de reviver, resultados, partida
+suspensa e "Continuar". Relatório com as capturas em `build\e2e-report\<data_hora>\`. Anúncios ficam no
+modo simulado (o AdMob abre outra tela do Android).
+
 Opções de teste (depois de `--`): `--bot`, `--seed=N`, `--speed=1|2|3`, `--hero=ID`, `--stage=ID`,
 `--moon=0..5`, `--mode=normal|brisa`, `--endless`, `--god`, `--quit-at=S`, `--hash-at=S`,
 `--log-every=S`, `--stress=N`, `--screenshot-at=S`, `--screenshot=arquivo.png`. Detalhes em
@@ -92,6 +112,9 @@ powershell -ExecutionPolicy Bypass -File tools\run_emulator.ps1 -NoBuild -Scenar
 
 `-NoBuild` reinstala o último APK sem compilar, `-Scenario X` abre num dos cenários abaixo e `-NoLog`
 encerra assim que o jogo abre.
+
+Para jogar a **build de produção** (APK de release otimizado e assinado), dois cliques em
+**`Testar release no emulador.bat`** (`tools\run_emulator_release.ps1`, aceita `-NoBuild` e `-NoLog`).
 
 Cenários que levam direto a telas difíceis de alcançar jogando (só funcionam em build de debug):
 

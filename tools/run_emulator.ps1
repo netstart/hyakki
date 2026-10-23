@@ -8,12 +8,14 @@
 #   -NoBuild     reinstala o último APK (build\hyakki-debug.apk) sem exportar de novo
 #   -Scenario X  abre direto num cenário de teste: chest, kami, revive, dawn, ending, secret, hero:yuki
 #   -NoLog       não fica mostrando o log depois de abrir
+#   -NoLaunch    só compila e instala (usado por run_e2e.ps1)
 #   -Avd nome    emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G)
 
 param(
     [switch]$NoBuild,
     [string]$Scenario = '',
     [switch]$NoLog,
+    [switch]$NoLaunch,
     [string]$Avd = 'Redmi_Note_14_Pro_Plus_5G',
     [string]$Godot = $(if ($env:GODOT) { $env:GODOT } else { 'C:\src\tools\godot\Godot_v4.7.2-stable_win64_console.exe' }),
     [string]$AndroidSdk = 'C:\android-sdk'
@@ -107,6 +109,7 @@ if ($install -match 'INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match'
     $install = & $adb -s $serial install $apk 2>&1 | Out-String
 }
 if ($install -notmatch 'Success') { Write-Host $install; Fail 'a instalação falhou' }
+if ($NoLaunch) { Write-Host 'PRONTO: instalado no emulador.' -ForegroundColor Green; exit 0 }
 
 Step 'Abrindo o jogo'
 & $adb -s $serial shell am force-stop $package

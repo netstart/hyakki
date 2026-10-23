@@ -33,6 +33,10 @@ func _ready() -> void:
 			auto_answer = true
 		elif arg == "--ads-mock":
 			provider = "forced_mock"
+	# Roteiro E2E no emulador: anúncio simulado que responde sozinho (o AdMob abre outra Activity).
+	if OS.is_debug_build() and FileAccess.file_exists(E2EDriver.FILE):
+		provider = "forced_mock"
+		auto_answer = true
 	if provider == "mock" and AdMobProvider.is_supported():
 		provider = "admob"
 		_admob = AdMobProvider.new()
