@@ -237,6 +237,9 @@ func _suite_resume() -> void:
 	_host("key BACK")
 	if await _wait_for(func() -> bool: return game.hud.pause_open(), WAIT):
 		await _tap_text("pause.quit", true)
+		_check(await _wait_for(func() -> bool: return game.hud.pause_menu().confirm_open(), 3.0),
+				"desistir pede confirmação")
+		await _tap_text("pause.quit_confirm")
 	await _expect_screen(&"results", "desistir leva aos resultados")
 	_check(bool(app.last_result.get("gave_up", false)) or not bool(app.last_result.get("victory", true)),
 			"resultado registra a desistência")

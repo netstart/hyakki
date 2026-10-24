@@ -109,6 +109,21 @@
     "files_count": 59
   },
   {
+    "id": "kenney_game_icons",
+    "name": "Kenney - Game Icons",
+    "author": "Kenney Vleugels (Kenney.nl)",
+    "license_id": "CC0-1.0",
+    "category": "art",
+    "version": "kenney_game-icons.zip (PNG/White/1x, 50x50), downloaded 2026-10-24",
+    "downloaded_at": "2026-10-24",
+    "verified_at": "2026-10-24",
+    "modifications": "a subset of icons copied and renamed; downscaled and tinted at runtime",
+    "source_url": "https://kenney.nl/assets/game-icons",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/kenney_game_icons_License.txt",
+    "files_count": 8
+  },
+  {
     "id": "hyakki_generated_sfx",
     "name": "Hyakki - procedural sound effects",
     "author": "Hyakki project (Clayton K. N. Passos)",

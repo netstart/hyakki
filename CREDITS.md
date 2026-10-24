@@ -12,6 +12,7 @@ Design, programação e direção: Clayton K. N. Passos
 - **Cubic 11 (Fusion Pixel upstream)** — ACh-K (OFL-1.1) — https://github.com/ACh-K/Cubic-11
 - **Galmuri (Fusion Pixel upstream)** — Lee Minseo (quiple) (OFL-1.1) — https://github.com/quiple/galmuri
 - **Kenney - Impact Sounds, Interface Sounds, Music Jingles, RPG Audio and Casino Audio** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/music-jingles
+- **Kenney - Game Icons** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/game-icons
 - **Hyakki - procedural sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_sfx.py
 - **効果音ラボ (Sound Effect Lab) - Japanese sound effects** — 効果音ラボ (LicenseRef-SoundEffectLab) — https://soundeffect-lab.info/
 - **Helton Yan's Pixel Combat** — Helton Yan and Beto Bezerra (CC-BY-4.0) — https://heltonyan.itch.io/pixelcombat

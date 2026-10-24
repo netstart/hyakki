@@ -296,6 +296,7 @@ heroes.ultimate,Golpe da Lanterna: %s,Lantern Strike: %s,Golpe de Linterna: %s,L
 heroes.weapon,Arma inicial: %s,Starting weapon: %s,Arma inicial: %s,Startwaffe: %s,Arme de départ : %s,Начальное оружие: %s,Senjata awal: %s,初期武器: %s,시작 무기: %s,初始武器：%s,初始武器：%s
 hud.kills,Abates,Kills,Bajas,Siege,Éliminés,Убито,Kalah,撃破,처치,擊敗,击败
 hud.level,Nv %d,Lv %d,Nv %d,St %d,Nv %d,Ур %d,Lv %d,Lv %d,Lv %d,Lv %d,Lv %d
+hud.pause,Pausar,Pause,Pausar,Pausieren,Pause,Пауза,Jeda,一時停止,일시정지,暫停,暂停
 hud.ryo,Ryō,Ryō,Ryō,Ryō,Ryō,Рё,Ryō,両,료,兩,两
 item.chest.name,Baú,Chest,Cofre,Truhe,Coffre,Сундук,Peti,宝箱,상자,寶箱,宝箱
 item.coin.name,Moeda,Coin,Moneda,Münze,Pièce,Монета,Koin,小判,동전,錢幣,钱币
@@ -418,10 +419,18 @@ passive.sake.name,Saquê Sagrado,Sacred Sake,Sake Sagrado,Heiliger Sake,Saké sa
 passive.sandals.name,Sandálias de Palha,Straw Sandals,Sandalias de Paja,Strohsandalen,Sandales de paille,Соломенные сандалии,Sandal Jerami,草鞋,짚신,草鞋,草鞋
 passive.scroll.name,Pergaminho Antigo,Ancient Scroll,Pergamino Antiguo,Alte Schriftrolle,Parchemin ancien,Древний свиток,Gulungan Kuno,古の巻物,고대 두루마리,古卷軸,古卷轴
 passive.tengu_feather.name,Pena de Tengu,Tengu Feather,Pluma de Tengu,Tengu-Feder,Plume de tengu,Перо тэнгу,Bulu Tengu,天狗の羽,텐구의 깃털,天狗之羽,天狗之羽
+pause.items,Itens,Items,Objetos,Gegenstände,Objets,Предметы,Item,アイテム,아이템,道具,道具
+pause.max,MÁX,MAX,MÁX,MAX,MAX,МАКС,MAKS,MAX,MAX,滿級,满级
+pause.no_items,Nenhum item ainda,No items yet,Aún no hay objetos,Noch keine Gegenstände,Aucun objet pour l'instant,Пока нет предметов,Belum ada item,アイテムはまだない,아직 아이템이 없어요,尚無道具,尚无道具
+pause.off,Desligada,Off,Desactivada,Aus,Coupée,Выкл.,Mati,オフ,꺼짐,關,关
+pause.on,Ligada,On,Activada,An,Activée,Вкл.,Nyala,オン,켜짐,開,开
 pause.quit,Desistir,Give up,Rendirse,Aufgeben,Abandonner,Сдаться,Menyerah,あきらめる,포기,放棄,放弃
+pause.quit_body,A vigília termina aqui e você vai para os resultados.,The vigil ends here and you go to the results.,La vigilia termina aquí y pasarás a los resultados.,Die Wache endet hier und du gehst zu den Ergebnissen.,La veille s'arrête ici et tu passes aux résultats.,"Дозор закончится, и ты перейдёшь к итогам.",Jaga malam berakhir di sini dan kamu menuju hasil.,見張りはここで終わり、結果画面へ進みます。,파수가 여기서 끝나고 결과 화면으로 갑니다.,守夜到此結束，將前往結算畫面。,守夜到此结束，将前往结算画面。
+pause.quit_confirm,"Sim, desistir","Yes, give up","Sí, abandonar","Ja, aufgeben","Oui, abandonner","Да, сдаться","Ya, menyerah",はい、あきらめる,"네, 포기할게요",確定放棄,确定放弃
+pause.quit_title,Desistir da partida?,Give up this run?,¿Abandonar la partida?,Diesen Lauf aufgeben?,Abandonner la partie ?,Сдаться и завершить забег?,Menyerah dari permainan ini?,この挑戦をあきらめる？,이번 판을 포기할까요?,放棄這一局？,放弃这一局？
 pause.resume,Continuar,Resume,Continuar,Fortsetzen,Reprendre,Продолжить,Lanjutkan,再開,계속,繼續,继续
-pause.sound,Som liga/desliga,Sound on/off,Sonido sí/no,Ton an/aus,Son on/off,Звук вкл/выкл,Suara nyala/mati,サウンド オン/オフ,소리 켜기/끄기,音效開/關,音效开/关
-pause.speed,Velocidade: %s,Speed: %s,Velocidad: %s,Tempo: %s,Vitesse : %s,Скорость: %s,Kecepatan: %s,速度: %s,속도: %s,速度：%s,速度：%s
+pause.speed_caption,Velocidade,Speed,Velocidad,Tempo,Vitesse,Скорость,Kecepatan,速度,속도,速度,速度
+pause.stats,Atributos,Stats,Atributos,Werte,Attributs,Параметры,Atribut,ステータス,능력치,屬性,属性
 pause.title,Pausado,Paused,En pausa,Pausiert,En pause,Пауза,Jeda,一時停止,일시정지,暫停,暂停
 powerup.pu_amount.name,Oferenda de Multidão,Offering of Many,Ofrenda de Multitud,Gabe der Vielen,Offrande du nombre,Дар множества,Persembahan Banyak,数の奉納,다수의 공물,數量供奉,数量供奉
 powerup.pu_area.name,Oferenda de Alcance,Offering of Reach,Ofrenda de Alcance,Gabe der Reichweite,Offrande de portée,Дар охвата,Persembahan Jangkauan,範囲の奉納,범위의 공물,範圍供奉,范围供奉

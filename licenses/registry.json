@@ -236,6 +236,37 @@
     "downloaded_at": "2026-10-21"
   },
   {
+    "id": "kenney_game_icons",
+    "name": "Kenney - Game Icons",
+    "category": "art",
+    "author": "Kenney Vleugels (Kenney.nl)",
+    "version": "kenney_game-icons.zip (PNG/White/1x, 50x50), downloaded 2026-10-24",
+    "source_url": "https://kenney.nl/assets/game-icons",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_source": "assets/licenses_src/kenney_game-icons_License.txt",
+    "notice_file": "licenses/notices/kenney_game_icons_License.txt",
+    "snapshot_url": "https://kenney.nl/assets/game-icons",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "a subset of icons copied and renamed; downscaled and tinted at runtime",
+    "files": [
+      "assets/art/ui/icons/kenney/*",
+      "assets/licenses_src/kenney_game-icons_*"
+    ],
+    "verified_at": "2026-10-24",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "68a86b3a620be3366d6dc28a4a8ffb8d5de12e0b86b5199c86e51fc617e29a49",
+      "snapshot_file": "d3e0aad5d396528e8ccc9638f4f5ffd207d703c1abe2969f3bd90840231ee5a0"
+    },
+    "snapshot_file": "docs/licenses/kenney_game_icons_2026-10-24.pdf",
+    "downloaded_at": "2026-10-24"
+  },
+  {
     "id": "hyakki_generated_sfx",
     "name": "Hyakki - procedural sound effects",
     "category": "audio",

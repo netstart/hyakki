@@ -1,0 +1,16 @@
+{
+  "_doc": "Ícones de interface \"Game Icons\" da Kenney (CC0), baixados em C:/src/assets/kenney-free/game-icons (versão branca 1x, 50x50).",
+  "pack_root": "C:/src/assets/kenney-free/game-icons",
+  "license_id": "kenney_game_icons",
+  "folders": {},
+  "files": {
+    "PNG/White/1x/pause.png": "art/ui/icons/kenney/pause.png",
+    "PNG/White/1x/forward.png": "art/ui/icons/kenney/play.png",
+    "PNG/White/1x/fastForward.png": "art/ui/icons/kenney/fast_forward.png",
+    "PNG/White/1x/musicOn.png": "art/ui/icons/kenney/music_on.png",
+    "PNG/White/1x/musicOff.png": "art/ui/icons/kenney/music_off.png",
+    "PNG/White/1x/exitLeft.png": "art/ui/icons/kenney/exit.png",
+    "PNG/White/1x/warning.png": "art/ui/icons/kenney/warning.png",
+    "license.txt": "licenses_src/kenney_game-icons_License.txt"
+  }
+}

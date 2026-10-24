@@ -19,6 +19,11 @@ signal revive_answered(accept: bool)
 ## Bloqueio após abrir o level-up, para não escolher sem querer (plano 7.4).
 const CARD_LOCK_MS := 350
 const CORNER_BUTTON := Vector2(38.0, 28.0)
+## Ícone de pausa (Kenney) no botão do canto e ícone + multiplicador no vizinho.
+const PAUSE_ICON := 14
+const SPEED_ICON := 12
+## Cor do botão de velocidade em cada multiplicador: 1x calmo, 2x dourado, 3x vermelhão.
+const SPEED_TINT := {1: Color("fff4e0"), 2: Color("ffd166"), 3: Color("ff8a5c")}
 const ULT_SIZE := 54.0
 const CARD_SIZE := Vector2(150.0, 150.0)
 const REVIVE_SECONDS := 8.0
@@ -89,9 +94,11 @@ var _chest_run: int = 0
 var _kami_panel: Control
 var _kami_row: HBoxContainer
 var _kami_ids: Array[StringName] = []
-var _pause_panel: Control
-var _pause_speed: Button
-var _pause_stats: RichTextLabel
+## Tela de pausa (scripts/ui/pause_menu.gd).
+var _pause: PauseMenu
+## Velocidade mostrada no botão do canto e o "soco" de escala do toque.
+var _speed_shown: int = 1
+var _speed_tween: Tween
 var _revive_panel: Control
 var _revive_label: Label
 var _revive_left: float = 0.0
@@ -115,10 +122,20 @@ func _ready() -> void:
 	_top.draw.connect(_draw_top)
 	_root.add_child(_top)
 
-	_pause_button = _corner_button("II", 0)
+	_pause_button = _corner_button("", 0)
+	_pause_button.icon = UiIcons.get_icon("pause", PAUSE_ICON)
+	_pause_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pause_button.tooltip_text = tr("hud.pause")
+	_pause_button.add_theme_color_override("icon_normal_color", ThemeFactory.TEXT)
+	_pause_button.add_theme_color_override("icon_hover_color", Color.WHITE)
+	_pause_button.add_theme_color_override("icon_pressed_color", ThemeFactory.ACCENT)
 	_pause_button.pressed.connect(func() -> void: pause_pressed.emit())
-	_speed_button = _corner_button("1x", 1)
-	_speed_button.pressed.connect(func() -> void: speed_pressed.emit())
+	_speed_button = _corner_button("", 1)
+	_speed_button.pivot_offset = CORNER_BUTTON * 0.5
+	_speed_button.draw.connect(_draw_speed)
+	_speed_button.pressed.connect(func() -> void:
+		_punch(_speed_button)
+		speed_pressed.emit())
 
 	_ult_button = Button.new()
 	_ult_button.flat = true
@@ -199,7 +216,8 @@ func start_run() -> void:
 	_chest_cancel()
 	_chest_panel.visible = false
 	_kami_panel.visible = false
-	_pause_panel.visible = false
+	_pause.close(false)
+	_show_play_hud(true)
 	_revive_panel.visible = false
 	set_gameplay_alpha(1.0)
 	_banish_mode = false
@@ -214,11 +232,21 @@ func start_run() -> void:
 
 func overlay_open() -> bool:
 	return _level_panel.visible or _chest_panel.visible or _kami_panel.visible \
-			or _pause_panel.visible or _revive_panel.visible
+			or _pause.is_open() or _revive_panel.visible
 
 
 func pause_open() -> bool:
-	return _pause_panel.visible
+	return _pause.is_open()
+
+
+## A tela de pausa (testes e capturas).
+func pause_menu() -> PauseMenu:
+	return _pause
+
+
+## "Voltar" com a pausa aberta: true se só fechou a confirmação de desistir.
+func pause_back() -> bool:
+	return _pause.back()
 
 
 func level_up_open() -> bool:
@@ -725,72 +753,35 @@ func _build_kami_panel() -> void:
 
 func show_pause() -> void:
 	refresh_speed()
-	_pause_panel.visible = true
 	joystick.release()
-	var stats := game.player.stats
-	var lines: PackedStringArray = []
-	for weapon: Weapon in game.weapons:
-		lines.append("%s  %s" % [tr("weapon.%s.name" % weapon.id), tr("hud.level") % weapon.level])
-	for id: StringName in game.level_up.passive_levels:
-		lines.append("%s  %s" % [tr("passive.%s.name" % id), tr("hud.level") % int(game.level_up.passive_levels[id])])
-	lines.append("")
-	for stat: String in ["max_hp", "regen", "armor", "speed", "might", "area", "cooldown", "amount",
-			"duration", "magnet", "luck", "growth", "greed", "curse", "light"]:
-		var value := stats.get_stat(stat)
-		var mode: String = StatBlock.DEFS[stat][1]
-		var shown := ("%d" % roundi(value)) if mode == "flat" or stat in ["max_hp", "speed", "magnet", "light"] \
-				else ("%d%%" % roundi(value * 100.0))
-		lines.append("%s: %s" % [tr("statname.%s" % stat), shown])
-	_pause_stats.text = "\n".join(lines)
+	_pause.open(pause_snapshot())
+	_show_play_hud(false)
 
 
 func hide_pause() -> void:
-	_pause_panel.visible = false
+	_pause.close()
+	_show_play_hud(true)
+
+
+## A HUD de jogo (barra, ícones, botões do canto, avisos) some sob a pausa, para não brigar
+## com o título; volta com a opacidade da sequência de morte.
+func _show_play_hud(shown: bool) -> void:
+	for control: Control in _gameplay:
+		if control != joystick:
+			control.modulate.a = _gameplay_alpha if shown else 0.0
+
+
+## Dados da partida para a tela de pausa (ver PauseMenu.snapshot_of).
+func pause_snapshot() -> Dictionary:
+	return PauseMenu.snapshot_of(game)
 
 
 func _build_pause_panel() -> void:
-	var overlay := Control.new()
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	var dim := ColorRect.new()
-	dim.color = Color(0.03, 0.02, 0.08, 0.75)
-	overlay.add_child(_full_rect(dim))
-	var row := HBoxContainer.new()
-	row.set_anchors_preset(Control.PRESET_FULL_RECT)
-	row.offset_left = 30
-	row.offset_right = -30
-	row.offset_top = 20
-	row.offset_bottom = -20
-	row.add_theme_constant_override("separation", 16)
-	overlay.add_child(row)
-	var menu := VBoxContainer.new()
-	menu.alignment = BoxContainer.ALIGNMENT_CENTER
-	menu.add_theme_constant_override("separation", 6)
-	menu.custom_minimum_size = Vector2(190, 0)
-	menu.add_child(_label(tr("pause.title"), HORIZONTAL_ALIGNMENT_CENTER))
-	menu.add_child(_menu_button(tr("pause.resume"), func() -> void: resume_pressed.emit()))
-	_pause_speed = _menu_button("", func() -> void: speed_pressed.emit())
-	menu.add_child(_pause_speed)
-	var sound := _menu_button(tr("pause.sound"), func() -> void:
-		var muted := float(Settings.get_value("music_volume")) <= 0.0
-		Settings.set_value("music_volume", 0.7 if muted else 0.0))
-	menu.add_child(sound)
-	menu.add_child(_menu_button(tr("pause.quit"), func() -> void:
-		_pause_panel.visible = false
-		quit_pressed.emit()))
-	row.add_child(menu)
-	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var scroll := ScrollContainer.new()
-	_pause_stats = RichTextLabel.new()
-	_pause_stats.fit_content = true
-	_pause_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_pause_stats)
-	panel.add_child(scroll)
-	row.add_child(panel)
-	overlay.visible = false
-	_root.add_child(overlay)
-	_pause_panel = overlay
+	_pause = PauseMenu.new()
+	_root.add_child(_pause)
+	_pause.resume_pressed.connect(func() -> void: resume_pressed.emit())
+	_pause.speed_pressed.connect(func() -> void: speed_pressed.emit())
+	_pause.quit_pressed.connect(func() -> void: quit_pressed.emit())
 
 
 # --- Reviver por anúncio (plano 17.6) --------------------------------------------------
@@ -943,10 +934,58 @@ func hide_boss() -> void:
 # --- Utilidades -----------------------------------------------------------------------
 
 func refresh_speed() -> void:
-	var label := "%dx" % GameClock.speed
-	_speed_button.text = label
-	if _pause_speed:
-		_pause_speed.text = tr("pause.speed") % label
+	_speed_shown = GameClock.speed
+	_speed_button.tooltip_text = "%s %dx" % [tr("pause.speed_caption"), _speed_shown]
+	_speed_button.queue_redraw()
+	if _pause:
+		_pause.set_speed(_speed_shown)
+
+
+## Velocidade mostrada no botão do canto (testes).
+func speed_shown() -> int:
+	return _speed_shown
+
+
+## Cor atual do ícone e do multiplicador no botão de velocidade.
+func speed_tint() -> Color:
+	return SPEED_TINT.get(_speed_shown, SPEED_TINT[3])
+
+
+## Mesma moldura do botão de pausa (o par se lê como um conjunto): ícone de avanço rápido e o
+## multiplicador. Em 1x, claro como o ícone de pausa; acelerado, vai para um selo escuro
+## embutido, na cor da velocidade, com aro que respira (parado com "Reduzir flashes").
+func _draw_speed() -> void:
+	var b := _speed_button
+	var tint := speed_tint()
+	var fast := _speed_shown > 1
+	var icon := UiIcons.get_icon("fast_forward", SPEED_ICON)
+	var font := Locale.font
+	var label := "%dx" % _speed_shown
+	var text_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var total := SPEED_ICON + 2.0 + text_w
+	var x := floorf((b.size.x - total) * 0.5)
+	var cy := floorf(b.size.y * 0.5)
+	if fast:
+		var pulse := 1.0 if bool(Settings.get_value("reduce_flashes")) \
+				else 0.65 + 0.35 * sin(Time.get_ticks_msec() * 0.006)
+		var chip := Rect2(x - 3.0, cy - 8.0, total + 6.0, 16.0)
+		b.draw_rect(chip, Color(0.14, 0.05, 0.03, 0.92))
+		b.draw_rect(chip.grow(-0.5), Color(tint, 0.45 + 0.5 * pulse), false, 1.0)
+	if icon:
+		b.draw_texture(icon, Vector2(x, cy - SPEED_ICON * 0.5), tint)
+	var base := Vector2(x + SPEED_ICON + 2.0, cy + 5.0)
+	b.draw_string_outline(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0.1, 0.05, 0.05))
+	b.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, tint)
+
+
+## "Soco" de escala no toque: encolhe e volta com um leve quique.
+func _punch(control: Control) -> void:
+	if _speed_tween != null and _speed_tween.is_valid():
+		_speed_tween.kill()
+	control.scale = Vector2.ONE * 0.86
+	_speed_tween = create_tween()
+	_speed_tween.tween_property(control, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK) \
+			.set_ease(Tween.EASE_OUT)
 
 
 func toast(text: String, seconds: float = 2.5) -> void:
@@ -995,6 +1034,8 @@ func bot_answer() -> void:
 func _process(delta: float) -> void:
 	_top.queue_redraw()
 	_ult_button.queue_redraw()
+	if _speed_shown > 1 and _speed_button.visible:
+		_speed_button.queue_redraw()
 	if _toast_left > 0.0:
 		_toast_left -= delta
 		_toast.visible = _toast_left > 0.0

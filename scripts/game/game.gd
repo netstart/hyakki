@@ -497,7 +497,8 @@ func _process(delta: float) -> void:
 func _handle_actions() -> void:
 	if Input.is_action_just_pressed(&"pause"):
 		if hud.pause_open():
-			close_pause()
+			if not hud.pause_back():
+				close_pause()
 		elif running and not hud.overlay_open():
 			open_pause()
 	if Input.is_action_just_pressed(&"speed"):
@@ -934,6 +935,10 @@ func open_pause() -> void:
 	if death.is_active():
 		# Na morte não há pausa: "voltar" (ou Esc) só segue do aviso para os resultados.
 		death.skip()
+		return
+	if hud.pause_open():
+		# "Voltar" do Android com a pausa aberta: fecha a confirmação de desistir, se houver.
+		hud.pause_back()
 		return
 	if not running or hud.overlay_open():
 		return

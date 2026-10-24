@@ -3192,6 +3192,48 @@
   "sha256": "81d6652ca12c40a851bc1ecbf151a9ba5e288350c0b6f4d777cfc4cd2e76dd9f"
  },
  {
+  "file": "assets/art/ui/icons/kenney/exit.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/exitLeft.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "318fb2b451c446c81ba43acee119bfefe6dd482f77a3619bffc23a37d3f1a780"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/fast_forward.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/fastForward.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "bc23e4edc9804d2e6ee15e86e30f7c658f950ce41ab17c05742d931bc9ea021c"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/music_off.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/musicOff.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "f45b0a638fbe50aa7db97be5023bc4f1d8e9bafe570bf50e4fd5695c7e43a2b0"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/music_on.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/musicOn.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "479859cecc0caf9560c0b10139e02eef7f538cfdfc29433aadce0628b7e43b4b"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/pause.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/pause.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "e2f5600a771c5da6e523ab1345ba9a4c5251c688933e0a6ff6c75e0982311e25"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/play.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/forward.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "c6cb584576c5a4638ad6f883ff14700071b56f0bb83980b15ffc1baf6576f03b"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/warning.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/warning.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "eef0c5c0d29977eef35f51cf8c243fcd6fb56bc75dacede4e5122aa8765f6ffb"
+ },
+ {
   "file": "assets/art/ui/icons/meteo/Moon.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Ui/Skill Icon/Meteo/Moon.png",
   "license_id": "ninja_adventure",
@@ -5290,6 +5332,12 @@
   "source": "C:/src/assets/kenney/casino-audio/License.txt",
   "license_id": "kenney_audio",
   "sha256": "3d9c53acb6e236d760da14030f54bc53e1d8c2599f78470c36b96fddcde09221"
+ },
+ {
+  "file": "assets/licenses_src/kenney_game-icons_License.txt",
+  "source": "C:/src/assets/kenney-free/game-icons/license.txt",
+  "license_id": "kenney_game_icons",
+  "sha256": "68a86b3a620be3366d6dc28a4a8ffb8d5de12e0b86b5199c86e51fc617e29a49"
  },
  {
   "file": "assets/licenses_src/kenney_impact-sounds_License.txt",
