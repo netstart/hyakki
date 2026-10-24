@@ -21,6 +21,14 @@ func active_count() -> int:
 	return bosses.size()
 
 
+## Se um chefe com esse id está em campo (o Shinigami impede o reviver por anúncio).
+func has_boss(id: StringName) -> bool:
+	for boss: Dictionary in bosses:
+		if StringName(boss["id"]) == id:
+			return true
+	return false
+
+
 func spawn(id: StringName) -> void:
 	var data: Dictionary = DB.bosses.get(id, {})
 	if data.is_empty():

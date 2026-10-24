@@ -18,7 +18,7 @@
   {"id": "ach_union", "icon": "res://assets/art/ui/icons/spell/MagicWeapon.png", "condition": {"type": "union_any"}, "reward": "ryo:1000"},
   {"id": "ach_boss_tanuki", "icon": "res://assets/art/bosses/tanuki/Faceset.png", "condition": {"type": "boss_defeat", "boss": "tanuki"}, "reward": "weapon:taiko"},
   {"id": "ach_boss_kitsune", "icon": "res://assets/art/bosses/kitsune/Faceset.png", "condition": {"type": "boss_defeat", "boss": "kitsune_nine"}, "reward": "ryo:500"},
-  {"id": "ach_boss_red_oni", "icon": "res://assets/art/bosses/oni/Faceset.png", "condition": {"type": "boss_defeat", "boss": "red_oni"}, "reward": "hero:yuki"},
+  {"id": "ach_boss_red_oni", "icon": "res://assets/art/bosses/oni/Faceset.png", "condition": {"type": "boss_defeat", "boss": "red_oni"}, "reward": "hero:yuki,weapon:onikiri"},
   {"id": "ach_boss_kuroe", "icon": "res://assets/art/bosses/kuroe/Faceset.png", "condition": {"type": "boss_defeat", "boss": "kuroe"}, "reward": "ryo:1000"},
   {"id": "ach_level_30", "icon": "res://assets/art/ui/icons/spell/Upgrade.png", "condition": {"type": "level_reach", "level": 30}, "reward": "passive:rosary"},
   {"id": "ach_level_50", "icon": "res://assets/art/ui/icons/spell/Upgrade.png", "condition": {"type": "level_reach", "level": 50}, "reward": "ryo:800"},

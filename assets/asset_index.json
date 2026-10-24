@@ -4800,6 +4800,18 @@
   "sha256": "a4171ed1a4a17fb858a38de1c59b5b42e50d8f046c525706c0e3ac8671f189f5"
  },
  {
+  "file": "assets/audio/sfx/k_blade_slice_0.ogg",
+  "source": "C:/src/assets/kenney/rpg-audio/Audio/knifeSlice.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "4cd96dc630bed9840c15f1dd2306da2cc56a4da26a5d3f1a03c5a7265ac5e54f"
+ },
+ {
+  "file": "assets/audio/sfx/k_blade_slice_1.ogg",
+  "source": "C:/src/assets/kenney/rpg-audio/Audio/knifeSlice2.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "6c2064d0ef988d1ec3d56868e823ea8823a5cac00f2742560052633529407def"
+ },
+ {
   "file": "assets/audio/sfx/k_hit_punch_0.ogg",
   "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_000.ogg",
   "license_id": "kenney_audio",
@@ -4912,6 +4924,114 @@
   "source": "C:/src/assets/kenney/music-jingles/Audio/Steel jingles/jingles_STEEL01.ogg",
   "license_id": "kenney_audio",
   "sha256": "099b192f120f7eb7c24613be277428628b9ec9c81e1f8420254abce336fbe7e5"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_fan_0.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-fan-1.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "7a9758ccad8899baef1b9f60b4064e4baa724a548293832fdaea07e6e07e638d"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_fan_1.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-fan-2.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "5743373c9dde00c6eee949a2c8e65d75946522768999167e1f5632451630e848"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_place_0.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-place-1.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "d8f26c33a665dcbdcc6f632f6050bc9dd548feb0d4942d4547615926d3926810"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_place_1.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-place-2.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "903d5050718595e87864dd755643b476ab1a5533080dcc2dddc72570d33ba9f8"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_place_2.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-place-3.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "1d988631a6e5201ed1bb0d728f2e43a3ec79401258426858793598044ac95841"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_place_3.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-place-4.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "18e3ba713b7259605fd27cdc048085ed56cf86b32403f070b6cb125019f77183"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_shove_0.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-shove-1.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "1ea667aa6795d5f14239192116ebcbd8f3f47eb1c7faaf2ec56844b9067b8b06"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_shove_1.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-shove-2.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "8e95c1d3ae94b5b91bc663432ad7c3bf4e03a541c22ec10fa51c65fe0e29054b"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_shove_2.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-shove-3.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "399520d483a1466fcaa850b9c407b4edbd5c7f0cbdf17e84dea12e9636326d0d"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_shove_3.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-shove-4.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "0a1ad3a2f16bd2ed73349e6342426ca7a59a6e26b7e26e36d51d51c2c2349d6f"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_0.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-1.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "006cf9822d15d7063f8899e56041f41646df30adb6fbd8b974ee5d5420012690"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_1.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-2.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "e674a1679ec87b507047fe012d068ad2c412125f56186f0e732684705c2a6888"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_2.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-3.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "af2ab62656cb3df73316ce5771b8ee1111a840962b21607e3202151e7413c52c"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_3.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-4.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "b9c82bcdbe6b7d00a06e2546bd2683a9ab082ca5fd090a42882f33eddd925b7f"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_4.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-5.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "8638ab0c17f029aded0e27a4f9b9bb9f8c621b19a6e9975e855cb40ea63e2201"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_5.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-6.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "be85da181ac879c20cb667d0f9f156dbdc236d3751737ad27359a15e946430a0"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_6.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-7.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "bda2040194f43484d03ee3c65ed6fff57251882ea7227abce4214bfa30bf2705"
+ },
+ {
+  "file": "assets/audio/sfx/k_paper_slide_7.ogg",
+  "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-8.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "95d9aa26f8c63af9934f27a8e3b7e9b583f177640f0bbd6982f12dba52b9ae6b"
  },
  {
   "file": "assets/audio/sfx/k_ui_back_0.ogg",
@@ -5166,6 +5286,12 @@
   "sha256": "86a3ee9495f942f0243f18c103da9faca27adb88142613edb8bb852e56c892c1"
  },
  {
+  "file": "assets/licenses_src/kenney_casino-audio_License.txt",
+  "source": "C:/src/assets/kenney/casino-audio/License.txt",
+  "license_id": "kenney_audio",
+  "sha256": "3d9c53acb6e236d760da14030f54bc53e1d8c2599f78470c36b96fddcde09221"
+ },
+ {
   "file": "assets/licenses_src/kenney_impact-sounds_License.txt",
   "source": "C:/src/assets/kenney/impact-sounds/License.txt",
   "license_id": "kenney_audio",
@@ -5182,6 +5308,12 @@
   "source": "C:/src/assets/kenney/music-jingles/License.txt",
   "license_id": "kenney_audio",
   "sha256": "373b1c880ee6c7a83c1ccf209f251cf45fc9ea9b1f0330844fa7be64a401adc4"
+ },
+ {
+  "file": "assets/licenses_src/kenney_rpg-audio_License.txt",
+  "source": "C:/src/assets/kenney/rpg-audio/License.txt",
+  "license_id": "kenney_audio",
+  "sha256": "5735dfd72cb64cbbceda4ebc00c380c41ca680edb82ff153aa7c9ab97614c539"
  },
  {
   "file": "assets/licenses_src/ninja_adventure_LICENSE.txt",

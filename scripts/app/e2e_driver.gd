@@ -177,11 +177,20 @@ func _suite_full() -> void:
 		game.player.invuln = 0.0
 		game.player.take_damage(99999.0)
 		await get_tree().process_frame
+	_check(game.death.is_active() and app.current != &"results", "a morte começa a sequência (antes de qualquer menu)")
 	if await _wait_for(func() -> bool: return game.hud.revive_open(), 3.0):
 		_check(true, "oferta de reviver aparece")
+		_check(game.player.down >= 1.0, "a oferta aparece com a guardiã caída no chão")
 		_shot("reviver")
 		await _tap_text("revive.results")
-	if not await _expect_screen(&"results", "derrota leva aos resultados"):
+	# Aviso da morte (faixa de tinta): fica na tela até um toque, depois da trava.
+	_check(await _wait_for(func() -> bool: return game.death.notice_open(), 4.0), "aviso da morte aparece")
+	_check(app.current != &"results" and app.game != null, "resultados só depois do aviso")
+	await _seconds(0.6)
+	_shot("aviso_morte")
+	await _wait_for(func() -> bool: return game.death.can_skip(), 3.0)
+	await _tap_control(game.death.notice_control())
+	if not await _expect_screen(&"results", "toque no aviso leva aos resultados"):
 		return
 	_check(app.game == null, "partida encerrada")
 	_check(not bool(app.last_result.get("victory", true)), "resultado registra a derrota")

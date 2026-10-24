@@ -8,7 +8,7 @@ func fire(origin: Vector2) -> void:
 	for k: int in range(amount()):
 		var dir := Vector2.from_angle(TAU * k / float(maxi(1, amount())) + game.rng.randf() * 0.5)
 		spawn_flame(origin, dir, "flame")
-	AudioManager.play("spirit", 1.2, 0.1, -10.0)
+	AudioManager.play("spirit", 1.2, 0.1, -5.0)
 
 
 func spawn_flame(origin: Vector2, dir: Vector2, kind_name: String) -> void:

@@ -66,7 +66,7 @@
     "cast_color": "a8dcff",
     "idle_frames": 10,
     "walk_frames": 24,
-    "weapon": "raijin",
+    "weapon": "onikiri",
     "modifiers": {"might": 0.10, "speed": 0.05, "max_hp": -0.10},
     "ultimate": {"type": "oni_awakening", "radius": 150, "base_damage": 35, "force": 260, "duration": 6.0, "might": 0.4},
     "unlock": "ach_boss_red_oni"

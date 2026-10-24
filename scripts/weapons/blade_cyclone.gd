@@ -38,7 +38,7 @@ func step(dt: float) -> void:
 	if _slash_timer <= 0.0:
 		_slash_timer = 0.8
 		game.fx.play_anim("slash_circular", game.player.sim_pos, r / 14.0, _angle, Color(1, 0.95, 0.8, 0.8))
-		AudioManager.play("slash3", 1.1, 0.1, -8.0)
+		AudioManager.play("slash", 1.1, 0.1, -7.0)
 
 
 func draw(canvas: CanvasItem) -> void:

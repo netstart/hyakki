@@ -14,6 +14,7 @@ func _initialize() -> void:
 	_test_damage_control()
 	_test_hit_sounds()
 	_test_settings_defaults()
+	_test_journey_geo()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -102,7 +103,7 @@ func _test_segment_hit() -> void:
 
 func _test_hit_sounds() -> void:
 	var cases := {
-		"katana": "hit_blade", "blade_cyclone": "hit_blade",
+		"katana": "hit_blade", "blade_cyclone": "hit_blade", "onikiri": "hit_blade",
 		"shuriken": "hit_projectile", "kunai": "hit_projectile", "yumi": "hit_projectile",
 		"kusarigama": "hit_projectile", "hitodama": "hit_fire", "raijin": "hit_thunder",
 		"typhoon": "hit_thunder", "fujin_fan": "hit_wind", "hurricane": "hit_wind",
@@ -126,3 +127,38 @@ func _test_settings_defaults() -> void:
 	var defaults: Dictionary = script.get_script_constant_map()["DEFAULTS"]
 	for key: String in ["damage_numbers", "damage_sounds", "hurt_sounds"]:
 		_check(defaults.get(key) == true, "opção %s vem ligada por padrão" % key)
+
+
+## Mapa da Jornada (scripts/app/journey_geo.gd): estados, projeção, encaixe, contornos,
+## afastamento dos pontos, estrada e tracejado.
+func _test_journey_geo() -> void:
+	_check(JourneyGeo.stage_state(true, true) == &"cleared", "jornada: vencida -> cleared")
+	_check(JourneyGeo.stage_state(false, true) == &"open", "jornada: liberada -> open")
+	_check(JourneyGeo.stage_state(false, false) == &"locked", "jornada: bloqueada -> locked")
+	var tokyo := JourneyGeo.project(Vector2(139.45, 35.7))
+	var sendai := JourneyGeo.project(Vector2(140.9, 38.27))
+	_check(sendai.y < tokyo.y and sendai.x > tokyo.x, "jornada: norte fica em cima, leste à direita")
+	var area := Rect2(10, 40, 300, 200)
+	var pts: Array[Vector2] = []
+	for id: StringName in JourneyGeo.STAGES:
+		pts.append(JourneyGeo.project(JourneyGeo.STAGES[id]))
+	var xf := JourneyGeo.fit(pts, area)
+	var inside := true
+	for p: Vector2 in pts:
+		inside = inside and area.grow(0.01).has_point(xf * p)
+	_check(inside, "jornada: encaixe põe todos os pontos na área")
+	for poly: Array in [JourneyGeo.HONSHU, JourneyGeo.HOKKAIDO, JourneyGeo.SHIKOKU, JourneyGeo.KYUSHU,
+			JourneyGeo.KOREA] + JourneyGeo.ISLETS:
+		var projected := JourneyGeo.project_all(poly, xf)
+		_check(not Geometry2D.triangulate_polygon(projected).is_empty(),
+				"jornada: contorno de %d pontos é um polígono válido" % poly.size())
+	var crowded := {&"a": Vector2(50, 50), &"b": Vector2(52, 51), &"c": Vector2(300, 100)}
+	var apart := JourneyGeo.separate(crowded, 30.0, Rect2(0, 0, 400, 200))
+	var gap: Vector2 = ((apart[&"b"] as Vector2) - (apart[&"a"] as Vector2)).abs()
+	_check(maxf(gap.x, gap.y) >= 29.9, "jornada: pontos colados se afastam até os quadrados não se tocarem")
+	_check(apart[&"c"] == Vector2(300, 100), "jornada: ponto já afastado não se mexe")
+	var curve := JourneyGeo.catmull_rom(PackedVector2Array([Vector2.ZERO, Vector2(10, 5), Vector2(20, 0)]), 4)
+	_check(curve[0] == Vector2.ZERO and curve[curve.size() - 1] == Vector2(20, 0) and curve.size() == 9,
+			"jornada: estrada passa pelas pontas")
+	var dash := JourneyGeo.dashes(PackedVector2Array([Vector2.ZERO, Vector2(20, 0)]), 4.0, 2.0)
+	_check(dash.size() == 8 and dash[1] == Vector2(4, 0) and dash[2] == Vector2(6, 0), "jornada: tracejado 4/2")

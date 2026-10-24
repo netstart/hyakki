@@ -75,7 +75,8 @@ func _process(_delta: float) -> void:
 	var view := game.view_size()
 	var cam := game.camera.get_screen_center_position()
 	var hero := game.player.position
-	var uv := (hero - cam) / view + Vector2(0.5, 0.5)
+	# Com zoom (a câmera se aproxima na morte), a distância na tela cresce junto.
+	var uv := (hero - cam) * game.camera.zoom / view + Vector2(0.5, 0.5)
 	_material.set_shader_parameter("hero_screen_uv", uv)
 	_material.set_shader_parameter("screen_px", view)
 	_material.set_shader_parameter("radius_px", radius)

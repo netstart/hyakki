@@ -35,6 +35,9 @@ var _root: Control
 var _backdrop: MenuBackdrop
 var _screens: Dictionary = {}
 var _after_story: Callable = Callable()
+## Melhor tempo da fase antes da partida atual (o MetaProgress.apply_run já o atualiza antes
+## do fim): vai para last_result["prev_best_time"], para o selo de recorde dos Resultados.
+var _prev_best_time: float = 0.0
 
 
 func _ready() -> void:
@@ -211,6 +214,7 @@ func start_run(daily: bool = false) -> void:
 		cfg["shop_modifiers"] = bonus["modifiers"]
 		cfg["ult_start"] = bonus["ult_start"]
 		cfg["start_chest"] = bonus["start_chest"]
+	_remember_best(String(cfg["stage"]))
 	_layer.visible = false
 	game = load(GAME_SCENE).instantiate() as HyakkiGame
 	game.config = cfg
@@ -240,6 +244,7 @@ func continue_run() -> void:
 	clear_suspended_run()
 	var cfg: Dictionary = s["config"]
 	cfg["speed"] = int(s.get("speed", cfg.get("speed", 1)))
+	_remember_best(String(cfg["stage"]))
 	_layer.visible = false
 	game = load(GAME_SCENE).instantiate() as HyakkiGame
 	game.config = cfg
@@ -271,8 +276,15 @@ func _apply_daily(cfg: Dictionary) -> void:
 	cfg["daily_date"] = date
 
 
+## Guarda o melhor tempo da fase antes de a partida começar (sem criar a entrada no save).
+func _remember_best(stage_id: String) -> void:
+	var best: Dictionary = (SaveManager.data["stage_best"] as Dictionary).get(stage_id, {})
+	_prev_best_time = float(best.get("best_time", 0.0))
+
+
 func _on_run_finished(result: Dictionary) -> void:
 	last_result = result
+	result["prev_best_time"] = _prev_best_time
 	clear_suspended_run()
 	if game:
 		game.queue_free()

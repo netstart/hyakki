@@ -7,6 +7,7 @@ const DEFAULT := "hit"
 const BY_BEHAVIOR := {
 	"katana": "hit_blade",
 	"blade_cyclone": "hit_blade",
+	"onikiri": "hit_blade",
 	"shuriken": "hit_projectile",
 	"kunai": "hit_projectile",
 	"yumi": "hit_projectile",

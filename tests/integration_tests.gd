@@ -9,12 +9,27 @@ extends Node
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 ## Altura do conteúdo das Opções na grade antiga (1 opção por linha, tema do jogo, 678x305).
 const OLD_OPTIONS_HEIGHT := 618.0
-const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
+## Layout e rolagem da Loja (separado para o arquivo caber no limite de linhas do gdlint).
+const ShopLayoutTests := preload("res://tests/shop_layout_tests.gd")
 const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 ## Raios do céu do Raijin (separado para o arquivo caber no limite de linhas do gdlint).
 const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
+## Onikiri e Dōjigiri, a espada da Yuki: combo, meia-lua, golpe final e onda.
+const OnikiriTests := preload("res://tests/onikiri_tests.gd")
 ## Mão, tamanho e pose de ataque dos heróis "side" (Yuki).
 const HeroHandTests := preload("res://tests/hero_hand_tests.gd")
+## Santuário sem rolagem: cartões, painel de detalhes e estados, em todos os idiomas.
+const SanctuaryLayoutTests := preload("res://tests/sanctuary_layout_tests.gd")
+## Som das armas: prioridade de canais, Katana em camadas e farfalhar da Ofuda.
+const WeaponAudioTests := preload("res://tests/weapon_audio_tests.gd")
+## Sequência de morte: queda, aviso, reviver, bot, desistir e restauração.
+const DeathSequenceTests := preload("res://tests/death_sequence_tests.gd")
+## Resultados: colunas, armas, conquistas, dobrar ryō e recorde em cada idioma.
+const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
+## Título: coluna de menu, bloco de ação, selos e foco, em todos os idiomas.
+const TitleLayoutTests := preload("res://tests/title_layout_tests.gd")
+## Jornada do Guardião (seleção de fase): mapa, pontos, estados e pergaminho em cada idioma.
+const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 ## Explosão atrás do baú da fase: abertura, centro, fim sozinho, pular e novo baú.
 const ChestBurstTests := preload("res://tests/chest_burst_tests.gd")
 
@@ -41,14 +56,21 @@ func _ready() -> void:
 	_test_frozen_tint()
 	await _test_suspended_run()
 	await _test_revive_by_ad()
+	await DeathSequenceTests.new().run(self, _check)
 	await _test_thunder_weapons()
 	await _test_raijin_bolts()
+	await OnikiriTests.new().run(self, _check)
 	await _test_hero_hand()
+	await WeaponAudioTests.new().run(self, _check)
 	await _test_sound_options()
 	await _test_options_layout()
 	await _test_kami_layout()
 	await ChestBurstTests.new().run(self, _check)
 	await _test_hero_screen_layout()
+	await SanctuaryLayoutTests.new().run(self, _check)
+	await ResultsLayoutTests.new().run(self, _check)
+	await TitleLayoutTests.new().run(self, _check)
+	await StageMapLayoutTests.new().run(self, _check)
 	await _test_shop_layout()
 	await _test_shop_scroll()
 	_remove_test_files()
@@ -212,135 +234,9 @@ func _buttons_in(node: Node, out: Array[Control]) -> void:
 
 # --- Loja -------------------------------------------------------------------------
 
-## Loja em cada idioma: ao abrir, depois de um resgate, com status de falha e sem anúncio,
-## título, voltar, saldo, status e a linha de botões ficam dentro de 678x305 e com pelo
-## menos 8 px até a borda inferior; as 6 vagas, a dica e os 6 reforços ficam alcançáveis
-## rolando o meio (ver _check_shop_layout).
+## Loja em cada idioma (layout, cartões, ícones, hover e aviso): tests/shop_layout_tests.gd.
 func _test_shop_layout() -> void:
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
-	AdsManager.auto_answer = true
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		AdsManager.mock_fill = true
-		# Host com o tamanho do viewport do jogo: a tela sozinha na árvore de testes não tem esse tamanho.
-		var host := Control.new()
-		host.size = Vector2(678, 305)
-		add_child(host)
-		var screen := (load(SHOP_SCREEN) as GDScript).new() as Control
-		host.add_child(screen)
-		screen.on_show()
-		await get_tree().process_frame
-		await get_tree().process_frame
-		var status := screen.get("_status") as Label
-		_check_shop_layout(screen, view, "%s, ao abrir" % lang)
-
-		# Resgate bem-sucedido (anúncio simulado até o fim): a vaga volta a ficar em cronômetro.
-		screen.call("_claim", &"slot_ryo")
-		var waited := 0.0
-		while ShopManager.is_ready(&"slot_ryo") and waited < 10.0:
-			await get_tree().create_timer(0.1).timeout
-			waited += 0.1
-		await get_tree().process_frame
-		await get_tree().process_frame
-		_check(not ShopManager.is_ready(&"slot_ryo"), "%s: o resgate põe a vaga em cronômetro" % lang)
-		_check(status.text == tr("shop.received") % tr("shop.slot_ryo.name"),
-				"%s: o status mostra o recebido" % lang)
-		_check_shop_layout(screen, view, "%s, depois do resgate" % lang)
-
-		# Status de falha (o texto mais longo de cada caso).
-		var long_reward := tr("shop.received") % tr("shop.slot_lantern.name")
-		for text: String in [tr("shop.failed"), tr("shop.pending"), tr("shop.watch_full"), long_reward]:
-			status.text = text
-			await get_tree().process_frame
-			_check_shop_layout(screen, view, "%s, status \"%s\"" % [lang, text])
-
-		# Sem anúncio disponível: as vagas prontas ficam desativadas com o aviso.
-		SaveManager.data = SaveManager.default_profile()
-		AdsManager.mock_fill = false
-		screen.call("on_show")
-		await get_tree().process_frame
-		await get_tree().process_frame
-		_check_shop_layout(screen, view, "%s, sem anúncio" % lang)
-		AdsManager.mock_fill = true
-		host.queue_free()
-		await get_tree().process_frame
-	AdsManager.auto_answer = false
-	Locale.set_language("pt_BR", false)
-
-
-## Confere que cada botão e texto da Loja está visível: os fixos (topo, status e botões)
-## dentro de `view` e fora da área rolável; os do meio, alcançáveis rolando (dentro da
-## largura visível e da altura do conteúdo, sem estouro horizontal nem cobrir a barra).
-func _check_shop_layout(screen: Control, view: Rect2, state: String) -> void:
-	var controls: Array[Control] = []
-	_shop_controls_in(screen, controls)
-	_check(controls.size() >= 24, "%s: a Loja mostra os controles (%d)" % [state, controls.size()])
-	var scroll := screen.get("_scroll") as ScrollContainer
-	if scroll == null:
-		_check(false, "%s: a Loja tem a área rolável" % state)
-		return
-	var scroll_rect := scroll.get_global_rect()
-	var content := scroll.get_child(0) as Control
-	var content_rect := content.get_global_rect()
-	_check(view.encloses(scroll_rect), "%s: a área rolável fica dentro da tela (%s)" % [state, scroll_rect])
-	_check(content.get_combined_minimum_size().x <= content.size.x + 0.5
-			and content_rect.end.x <= scroll_rect.end.x + 0.5,
-			"%s: o conteúdo rolável não estoura na horizontal (%s em %s)" % [state,
-			content.get_combined_minimum_size(), scroll.size])
-	var bar := scroll.get_v_scroll_bar()
-	if bar.visible:
-		_check(content_rect.end.x <= bar.get_global_rect().position.x + 0.5,
-				"%s: a barra de rolagem não cobre os cartões" % state)
-	for control: Control in controls:
-		var rect := control.get_global_rect()
-		var path := "%s (%s, %s)" % [control.get_class(), rect, control.get_path()]
-		if scroll.is_ancestor_of(control):
-			var local := Rect2(rect.position - content_rect.position, rect.size)
-			_check(control.is_visible_in_tree() and local.position.x >= -0.5 and local.position.y >= -0.5
-					and local.end.x <= content.size.x + 0.5 and local.end.y <= content.size.y + 0.5
-					and rect.size.y <= scroll_rect.size.y + 0.5,
-					"%s: %s alcançável rolando" % [state, path])
-		else:
-			_check(control.is_visible_in_tree() and view.encloses(rect),
-					"%s: %s dentro da tela com folga" % [state, path])
-			_check(not rect.intersects(scroll_rect), "%s: %s fixo fora da área rolável" % [state, path])
-		# Nada sai da caixa que o corta (ex.: o preço dentro do cartão).
-		var clip := _clip_parent(control, scroll)
-		if clip != null and control.is_visible_in_tree():
-			_check(clip.get_global_rect().grow(0.5).encloses(rect),
-					"%s: %s cabe na caixa %s" % [state, path, clip.get_global_rect()])
-		# Texto inteiro (sem corte): o motor calcula a altura necessária com a quebra de linha
-		# da largura real; ela tem de caber na caixa (Label) ou no botão.
-		if control is Label and (control as Label).text != "":
-			var label_node := control as Label
-			var font := label_node.get_theme_font("font")
-			var font_size := label_node.get_theme_font_size("font_size")
-			var needed := label_node.get_line_count() * font.get_height(font_size)
-			_check(needed <= label_node.size.y + 0.5,
-					"%s: o texto \"%s\" cabe na caixa (%.0f de %.0f px)" % [state, label_node.text,
-					needed, label_node.size.y])
-			if label_node.autowrap_mode == TextServer.AUTOWRAP_OFF:
-				var width := font.get_string_size(label_node.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-				_check(width <= label_node.size.x + 0.5,
-						"%s: o texto \"%s\" cabe na largura (%.0f de %.0f px)" % [state, label_node.text,
-						width, label_node.size.x])
-		if control is Button and (control as Button).text != "":
-			var button_node := control as Button
-			var minimum := button_node.get_combined_minimum_size()
-			_check(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
-					"%s: o botão \"%s\" mostra o texto inteiro (%s de %s)" % [state, button_node.text,
-					minimum, button_node.size])
-
-
-## Ancestral mais próximo que corta o conteúdo (até a área rolável, que é conferida à parte).
-func _clip_parent(control: Control, stop: Control) -> Control:
-	var node := control.get_parent()
-	while node != null and node != stop:
-		if node is Control and (node as Control).clip_contents:
-			return node as Control
-		node = node.get_parent()
-	return null
+	await ShopLayoutTests.new().run_layout(self, _check)
 
 
 ## Reforços comprados com ryō na Loja: preço, fila da próxima partida (1 de cada), falta de
@@ -385,81 +281,9 @@ func _test_shop_coin_items() -> void:
 	SaveManager.data = SaveManager.default_profile()
 
 
-## Loja rolável: o meio rola (conteúdo mais alto que a área), o arrasto chega ao
-## ScrollContainer, os cartões do fim ficam visíveis rolando e a compra pela tela atualiza
-## o saldo, o cartão e o status; um toque que virou arrasto não compra.
+## Loja rolável (compra e restauração no fim da rolagem): tests/shop_layout_tests.gd.
 func _test_shop_scroll() -> void:
-	Locale.set_language("pt_BR", false)
-	SaveManager.data = SaveManager.default_profile()
-	AdsManager.mock_fill = true
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
-	var host := Control.new()
-	host.size = Vector2(678, 305)
-	add_child(host)
-	var screen := (load(SHOP_SCREEN) as GDScript).new() as Control
-	host.add_child(screen)
-	screen.on_show()
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var scroll := screen.get("_scroll") as ScrollContainer
-	var content := scroll.get_child(0) as Control
-	_check(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
-			and scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED, "Loja: rola só na vertical")
-	_check(content.size.y > scroll.size.y, "Loja: conteúdo (%.0f) mais alto que a área (%.0f) rola" % [
-			content.size.y, scroll.size.y])
-	_check(scroll.get_v_scroll_bar().visible and scroll.get_v_scroll_bar().max_value > scroll.size.y,
-			"Loja: a barra de rolagem aparece")
-	_check(scroll.scroll_deadzone > 0, "Loja: zona morta evita rolar com um toque")
-	var cards: Dictionary = screen.get("_coin_cards")
-	_check(cards.size() == 6, "Loja: 6 cartões de reforço")
-	for id: StringName in cards:
-		var b := cards[id]["button"] as Button
-		_check(b.mouse_filter == Control.MOUSE_FILTER_PASS, "Loja: cartão %s deixa o arrasto passar" % id)
-		_check(b.disabled, "Loja: sem ryō o cartão %s fica apagado" % id)
-	var ad_cards: Dictionary = screen.get("_cards")
-	for id: StringName in ad_cards:
-		_check((ad_cards[id]["button"] as Button).mouse_filter == Control.MOUSE_FILTER_PASS,
-				"Loja: vaga %s deixa o arrasto passar" % id)
-	var last := cards[&"coin_chest"]["button"] as Button
-	_check(not scroll.get_global_rect().encloses(last.get_global_rect()), "Loja: o último cartão começa fora da vista")
-	scroll.scroll_vertical = int(content.size.y)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	_check(scroll.scroll_vertical > 0, "Loja: rola até o fim")
-	_check(scroll.get_global_rect().grow(0.5).encloses(last.get_global_rect()),
-			"Loja: rolando, o último cartão aparece inteiro")
-	_check_shop_layout(screen, view, "pt_BR, rolada até o fim")
-	var status := screen.get("_status") as Label
-	_check(not bool(screen.call("_buy_coin", &"coin_bag")) and status.text == tr("sanctuary.not_enough"),
-			"Loja: sem ryō a compra pela tela falha e avisa")
-	SaveManager.data["ryo"] = 1000
-	screen.call("_update_coin_cards")
-	var bag := cards[&"coin_bag"]["button"] as Button
-	_check(not bag.disabled, "Loja: com ryō o cartão acende")
-	_check(bool(screen.call("_buy_coin", &"coin_bag")), "Loja: compra pela tela")
-	var left := 1000 - ShopManager.coin_price(&"coin_bag")
-	_check(SaveManager.ryo() == left and (screen.get("_ryo") as Label).text.contains(Locale.format_number(left)),
-			"Loja: o saldo mostrado cai para %d" % left)
-	_check(bag.disabled and (cards[&"coin_bag"]["price"] as Label).text == tr("shop.coin.queued"),
-			"Loja: o cartão comprado fica apagado como guardado")
-	_check(status.text == tr("shop.received") % tr("shop.coin_bag.name"), "Loja: o status mostra a compra")
-	# Toque que virou arrasto: apertou com a rolagem no topo e soltou com o conteúdo rolado.
-	screen.set("_press_scroll", 0)
-	_check(not bool(screen.call("_buy_coin", &"coin_scroll")) and SaveManager.ryo() == left,
-			"Loja: arrastar sobre o cartão não compra")
-	await get_tree().process_frame
-	_check_shop_layout(screen, view, "pt_BR, depois da compra")
-	host.queue_free()
-	await get_tree().process_frame
-	SaveManager.data = SaveManager.default_profile()
-
-
-## Coleta botões e textos de uma árvore de controles.
-func _shop_controls_in(node: Node, out: Array[Control]) -> void:
-	for child: Node in node.get_children():
-		if (child is BaseButton or child is Label) and not out.has(child):
-			out.append(child as Control)
-		_shop_controls_in(child, out)
+	await ShopLayoutTests.new().run_scroll(self, _check)
 
 
 # --- Dados ------------------------------------------------------------------------
@@ -911,6 +735,14 @@ func _test_options_layout() -> void:
 	await get_tree().process_frame
 
 
+## Espera em tempo real até `condition` valer (ou o tempo acabar).
+func _wait_until(condition: Callable, timeout: float) -> void:
+	var waited := 0.0
+	while not bool(condition.call()) and waited < timeout:
+		await get_tree().create_timer(0.05).timeout
+		waited += 0.05
+
+
 func _labels_in(node: Node, out: Array[Label]) -> void:
 	for child: Node in node.get_children():
 		if child is Label and (child as Label).is_visible_in_tree():
@@ -948,10 +780,13 @@ func _test_revive_by_ad() -> void:
 		game.player.invuln = 0.0
 		var weapons_before := game.weapons.size()
 		game.player.take_damage(99999.0)
-		_check(game.hud.revive_open(), "%s: morrer abre a oferta de reviver" % label)
 		_check(GameClock.paused, "%s: a morte pausa o tempo" % label)
+		_check(not game.hud.revive_open() and game.death.is_active(),
+				"%s: a oferta espera o corpo cair (sequência de morte)" % label)
 		var time_at_death := GameClock.game_time
 		var snap := game.snapshot()
+		await _wait_until(func() -> bool: return game.hud.revive_open(), 3.0)
+		_check(game.hud.revive_open(), "%s: morrer abre a oferta de reviver" % label)
 		_check(bool(snap["dead"]) and not bool(snap["ad_revive_used"]),
 				"%s: partida salva na morte guarda a morte" % label)
 
@@ -975,8 +810,11 @@ func _test_revive_by_ad() -> void:
 		# Um segundo reviver não é oferecido.
 		game.player.invuln = 0.0
 		game.player.take_damage(99999.0)
-		_check(not game.hud.revive_open() and not game.running,
-				"%s: só um reviver por partida" % label)
+		await _wait_until(func() -> bool: return game.death.can_skip(), 4.0)
+		_check(not game.hud.revive_open() and game.death.notice_open(),
+				"%s: só um reviver por partida (direto ao aviso da morte)" % label)
+		game.death.skip()
+		_check(not game.running, "%s: tocar no aviso encerra a partida" % label)
 
 		if label == "campanha":
 			# App fechado durante o anúncio: a partida salva volta à morte, com a oferta.

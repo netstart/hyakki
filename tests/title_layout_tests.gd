@@ -1,0 +1,154 @@
+extends RefCounted
+## Tela de título em 678x305: coluna de menu, saldo, bloco de ação e selos (Loja pronta,
+## Desafio Diário feito, partida suspensa) em todos os idiomas; foco no botão principal e
+## entrada animada que não acumula deslocamento. Chamado por tests/integration_tests.gd.
+
+const VIEW := Rect2(Vector2.ZERO, Vector2(678, 305))
+
+
+func run(host: Node, check: Callable) -> void:
+	var original := SaveManager.data
+	for lang: String in Locale.SUPPORTED:
+		Locale.set_language(lang, false)
+		for state: int in 4:
+			# bit 0: Loja pronta; bit 1: Desafio Diário feito e partida suspensa.
+			var shop_ready := state & 1 == 1
+			var done := state & 2 == 2
+			_setup(shop_ready, done)
+			var app := App.new()
+			host.add_child(app)
+			await host.get_tree().process_frame
+			_fit_game_view(app)
+			app.go(&"title")
+			var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
+			await _settle(host, screen)
+			var tag := "Título %s (loja %s, diário %s)" % [lang, shop_ready, done]
+			_check_layout(screen, check, tag)
+			_check_states(app, screen, check, tag, shop_ready, done)
+			if state == 0:
+				await _check_repeat(host, app, screen, check, tag)
+			app.queue_free()
+			await host.get_tree().process_frame
+	SaveManager.data = original
+	Locale.set_language("pt_BR", false)
+
+
+## O teste roda numa janela menor que o jogo (64x64 no --headless, e o PixelScaler deixa o
+## viewport lógico desse tamanho): a raiz das telas recebe o tamanho do viewport do jogo,
+## como no aparelho. A tela ancora o saldo e o bloco de ação nos cantos dessa raiz.
+static func _fit_game_view(app: App) -> void:
+	var root := app.get("_root") as Control
+	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	root.size = VIEW.size
+
+
+func _setup(shop_ready: bool, done: bool) -> void:
+	SaveManager.data = SaveManager.default_profile()
+	SaveManager.data["ryo"] = 1234567
+	var now := int(Time.get_unix_time_from_system())
+	var slots: Dictionary = SaveManager.data["shop"]["slots"]
+	for id: StringName in ShopManager.ad_slots():
+		slots[String(id)] = 0 if shop_ready else now + ShopManager.COOLDOWN
+	SaveManager.data["daily"]["date"] = Time.get_date_string_from_system() if done else "2000-01-01"
+	if done:
+		SaveManager.data["suspended"] = {"version": 1, "saved_unix": now, "config": {"stage": "village"}}
+
+
+func _settle(host: Node, screen: Control) -> void:
+	await host.get_tree().process_frame
+	screen.call("_finish_intro")
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+
+
+func _buttons(screen: Control) -> Array[Button]:
+	var list: Array[Button] = []
+	for node: Node in screen.find_children("*", "Button", true, false):
+		if (node as Button).is_visible_in_tree():
+			list.append(node as Button)
+	return list
+
+
+func _check_layout(screen: Control, check: Callable, tag: String) -> void:
+	var buttons := _buttons(screen)
+	var expected := 8 if (screen.get("_continue") as Button).visible else 7
+	check.call(buttons.size() == expected, "%s: %d botões visíveis (%d)" % [tag, expected, buttons.size()])
+	var rects: Array[Rect2] = []
+	for b: Button in buttons:
+		var rect := b.get_global_rect()
+		check.call(VIEW.encloses(rect), "%s: '%s' inteiro na tela (%s)" % [tag, b.text, rect])
+		check.call(rect.size.y >= 30, "%s: '%s' com alvo de toque ≥ 30 (%.0f)" % [tag, b.text, rect.size.y])
+		check.call(is_equal_approx(b.modulate.a, 1.0), "%s: '%s' terminou de aparecer" % [tag, b.text])
+		var font := b.get_theme_font("font")
+		var font_size := b.get_theme_font_size("font_size")
+		var box := b.get_theme_stylebox("normal")
+		var need := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + box.get_margin(SIDE_LEFT) \
+				+ box.get_margin(SIDE_RIGHT)
+		check.call(need <= rect.size.x + 0.5 and b.get_minimum_size().x <= rect.size.x + 0.5,
+				"%s: texto '%s' cabe no botão (%.0f > %.0f)" % [tag, b.text, need, rect.size.x])
+		for other: Rect2 in rects:
+			check.call(not other.intersects(rect), "%s: '%s' não encosta em outro botão" % [tag, b.text])
+		rects.append(rect)
+	var rows: Array = screen.get("_rows")
+	for row: Button in rows:
+		var icon := row.get_node("Icon") as TextureRect
+		check.call(icon.texture != null and row.get_global_rect().encloses(icon.get_global_rect()),
+				"%s: ícone de '%s' dentro da linha" % [tag, row.text])
+		var box := row.get_theme_stylebox("normal")
+		check.call(icon.get_global_rect().end.x <= row.get_global_rect().position.x + box.get_margin(SIDE_LEFT),
+				"%s: ícone de '%s' antes do texto" % [tag, row.text])
+	var title := (screen.get("_title_box") as Control).get_global_rect()
+	check.call(VIEW.encloses(title), "%s: título inteiro na tela" % tag)
+	for row: Button in rows:
+		check.call(not title.intersects(row.get_global_rect()), "%s: título não cobre '%s'" % [tag, row.text])
+	var chip := (screen.get("_chip") as Control).get_global_rect()
+	check.call(VIEW.encloses(chip) and not title.intersects(chip), "%s: saldo inteiro e longe do título" % tag)
+	var ryo := screen.get("_ryo") as Label
+	check.call(ryo.text == Locale.format_number(1234567) and chip.encloses(ryo.get_global_rect()),
+			"%s: saldo mostra o ryō dentro do selo" % tag)
+	for rect: Rect2 in rects:
+		check.call(not rect.intersects(chip), "%s: saldo não encosta em botão" % tag)
+
+
+func _check_states(app: App, screen: Control, check: Callable, tag: String, shop_ready: bool, done: bool) -> void:
+	var shop := screen.get("_shop_button") as Button
+	check.call(shop.text == TranslationServer.translate("title.shop"), "%s: Loja sem sufixo de texto" % tag)
+	var badge := screen.get("_shop_badge") as Control
+	check.call(badge.is_visible_in_tree() == ShopManager.any_ready() and badge.visible == shop_ready,
+			"%s: selo da Loja só com vaga pronta" % tag)
+	check.call(shop.get_global_rect().encloses(badge.get_global_rect()), "%s: selo dentro da linha da Loja" % tag)
+	var daily := screen.get("_daily") as Button
+	check.call(daily.text == TranslationServer.translate("title.daily"), "%s: Desafio sem sufixo de texto" % tag)
+	check.call((screen.get("_daily_done") as Control).is_visible_in_tree() == done,
+			"%s: visto do Desafio Diário só quando feito hoje" % tag)
+	check.call((screen.get("_daily_new") as Control).is_visible_in_tree() != done,
+			"%s: ponto de novo no Desafio Diário só quando falta" % tag)
+	var cont := screen.get("_continue") as Button
+	check.call(cont.is_visible_in_tree() == app.has_suspended_run() and cont.visible == done,
+			"%s: Continuar só com partida suspensa" % tag)
+	var primary := cont if done else screen.get("_play") as Button
+	check.call(screen.get_viewport().gui_get_focus_owner() == primary, "%s: foco no botão principal" % tag)
+	check.call(primary.get_global_rect().size.y >= 44, "%s: botão principal grande" % tag)
+	for b: Button in _buttons(screen):
+		check.call(b == primary or b.get_global_rect().size.y < primary.get_global_rect().size.y,
+				"%s: '%s' menor que o principal" % [tag, b.text])
+
+
+func _check_repeat(host: Node, app: App, screen: Control, check: Callable, tag: String) -> void:
+	var before := _positions(screen)
+	app.go(&"options")
+	await host.get_tree().process_frame
+	app.go(&"title")
+	screen.call("on_show")
+	await _settle(host, screen)
+	check.call(_positions(screen) == before, "%s: mostrar de novo não desloca nada" % tag)
+	await host.get_tree().create_timer(0.6).timeout
+	check.call(_positions(screen) == before, "%s: entrada termina nas mesmas posições" % tag)
+
+
+func _positions(screen: Control) -> Array[Vector2]:
+	var list: Array[Vector2] = []
+	for b: Button in _buttons(screen):
+		list.append(b.get_global_rect().position)
+	list.append((screen.get("_title_box") as Control).get_global_rect().position)
+	return list

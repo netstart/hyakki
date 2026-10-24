@@ -14,6 +14,28 @@ const HURT_NUMBER_COLOR := Color("ff5a4f")
 ## Duração da pose de ataque e intervalo mínimo entre duas poses (várias armas disparando).
 const CAST_TIME := 0.25
 const CAST_GAP := 0.45
+## Sequência de morte (DeathSequence): cor fria do corpo caído e largura da sombra deitada.
+const CORPSE_TINT := Color(0.84, 0.88, 1.0)
+const LYING_SHADOW := 2.2
+## Contorno de luar frio no corpo caído (a silhueta branca deslocada 1 px), para o corpo
+## escuro ler sobre o chão escurecido.
+const CORPSE_RIM := Color(0.74, 0.84, 1.0, 0.7)
+const RIM_DIRS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
+## Golpe de espada procedural (só desenho, on_slash): duração do golpe comum e do arremate
+## (passo 2 do combo). Fases: preparo (recua e agacha), corte (avança e estica) e retorno.
+const SLASH_TIME := 0.26
+const SLASH_FINISHER_TIME := 0.34
+const SLASH_WINDUP := 0.05
+const SLASH_WINDUP_FINISHER := 0.07
+const SLASH_STRIKE := 0.06
+const SLASH_STRIKE_FINISHER := 0.08
+## Quadro parado (linha 0) mostrado durante o golpe: postura firme, com a espada à vista.
+const SLASH_FRAME := 0
+## Vultos do avanço: atraso (s) e opacidade de cada um, atrás do corpo.
+const SLASH_GHOST_LAG: Array[float] = [0.022, 0.045]
+const SLASH_GHOST_ALPHA: Array[float] = [0.35, 0.18]
+## Tempo para os vultos sumirem depois do corte.
+const SLASH_GHOST_FADE := 0.07
 
 var hero: Dictionary = {}
 var stats := StatBlock.new()
@@ -45,6 +67,16 @@ var god_mode: bool = false
 var lantern_tint := Color(1.0, 0.8, 0.3)
 ## Pose de ataque procedural (só desenho): tempo restante, de CAST_TIME até 0.
 var cast_time: float = 0.0
+## Pose da morte (só desenho, controlada pela DeathSequence): 0 = de pé, 1 = deitada no chão,
+## girando em torno dos pés para o lado em que olha.
+var down: float = 0.0
+## 0 = cor normal, 1 = cinza-azulado frio do corpo.
+var chill: float = 0.0
+## Brilho da lanterna na mão: 1 = acesa, 0 = apagada.
+var glow: float = 1.0
+## Golpe de espada (só desenho): tempo restante, de SLASH_TIME (ou SLASH_FINISHER_TIME) até 0.
+## O lado do corte vira o corpo só no desenho (facing_x, da simulação, não muda).
+var slash_time: float = 0.0
 
 var _sheet: SpriteSheet
 var _shadow: Texture2D
@@ -62,6 +94,10 @@ var _has_hand: bool = false
 ## Trava da pose de ataque: evita reiniciar a pose sem parar.
 var _cast_lock: float = 0.0
 var _cast_color := Color(1.0, 0.92, 0.65)
+## Duração do golpe atual, lado do corte e passo do combo (0, 1 ou 2 = arremate).
+var _slash_len: float = 0.0
+var _slash_dir: float = 1.0
+var _slash_step: int = 0
 
 
 func _ready() -> void:
@@ -112,6 +148,11 @@ func reset() -> void:
 	damage_taken_time = 0.0
 	cast_time = 0.0
 	_cast_lock = 0.0
+	slash_time = 0.0
+	_slash_len = 0.0
+	down = 0.0
+	chill = 0.0
+	glow = 1.0
 	damage.reset()
 	position = Vector2.ZERO
 
@@ -222,6 +263,25 @@ func clone_position() -> Vector2:
 	return sim_pos + clone_offset.rotated(GameClock.game_time * 1.5)
 
 
+## Apaga o clarão branco do golpe (opção "reduce_flashes" na morte).
+func clear_flash() -> void:
+	_hit_flash = 0.0
+
+
+## Ângulo da queda: 90° na pose deitada, para o lado em que o herói olha.
+func fall_angle() -> float:
+	return down * PI * 0.5 * facing_x
+
+
+## Lanterna relativa a sim_pos, acompanhando a queda (gira em torno dos pés).
+func lantern_offset() -> Vector2:
+	var at := _hand_offset() if _has_hand else Vector2(5.0 * facing_x, -5.0)
+	if down <= 0.0:
+		return at
+	var feet := Vector2(0.0, 3.0)
+	return feet + (at - feet).rotated(fall_angle())
+
+
 func has_hand() -> bool:
 	return _has_hand
 
@@ -244,6 +304,65 @@ func on_cast() -> void:
 	_cast_lock = CAST_GAP
 
 
+## Um golpe de espada (chamado pela arma a cada corte): o corpo prepara, avança e volta,
+## virado para `dir_x` só no desenho. `step` é o passo do combo: 0 e 1 alternam o corte
+## (descendente e ascendente), 2 é o arremate, mais longo e forte. Não toca na simulação.
+func on_slash(dir_x: float, step: int) -> void:
+	if not is_alive or down > 0.0:
+		return
+	_slash_dir = -1.0 if dir_x < 0.0 else 1.0
+	_slash_step = clampi(step, 0, 2)
+	_slash_len = SLASH_FINISHER_TIME if _slash_step == 2 else SLASH_TIME
+	slash_time = _slash_len
+	# O golpe manda no corpo: sem a pose genérica por cima, nem ela recomeçando no meio.
+	cast_time = 0.0
+	_cast_lock = maxf(_cast_lock, _slash_len)
+
+
+## Golpe de espada visível agora (de pé e viva).
+func is_slashing() -> bool:
+	return slash_time > 0.0 and is_alive and down <= 0.0
+
+
+## Lado para onde o corpo olha no desenho: o do golpe durante o corte, senão facing_x.
+func visual_facing_x() -> float:
+	return _slash_dir if is_slashing() else facing_x
+
+
+## Pose do golpe `lag` s atrás do instante atual (os vultos usam lag > 0): "lunge" = avanço
+## em px para o lado do corte, "lift" = deslocamento vertical em px, "scale" = escala do corpo
+## e "tilt" = giro em rad (positivo = inclina para a frente). Fora do golpe, a pose de repouso.
+func slash_pose(lag: float = 0.0) -> Dictionary:
+	var elapsed := _slash_len - slash_time - lag
+	var rest := {"lunge": 0.0, "lift": 0.0, "scale": Vector2.ONE, "tilt": 0.0}
+	if slash_time <= 0.0 or elapsed < 0.0 or elapsed >= _slash_len:
+		return rest
+	var fin := _slash_step == 2
+	var windup := SLASH_WINDUP_FINISHER if fin else SLASH_WINDUP
+	var strike := SLASH_STRIKE_FINISHER if fin else SLASH_STRIKE
+	# Preparo: recua 1 px, agacha e inclina para trás. Corte: avança, estica e inclina para a
+	# frente. Passo 0 corta de cima para baixo (inclina mais e achata); passo 1 sobe (inclina
+	# menos, cresce para cima e ergue 1 px); o arremate vai mais longe e mais fundo.
+	var back_scale := Vector2(1.06, 0.94)
+	var back_tilt := deg_to_rad(6.0 if fin else 4.0)
+	var reach := 3.0 if fin else 2.0
+	var hit_scale := Vector2(1.18, 0.9) if fin else (Vector2(1.08, 1.06) if _slash_step == 1 else Vector2(1.14, 0.93))
+	var hit_tilt := deg_to_rad(14.0 if fin else (7.0 if _slash_step == 1 else 11.0))
+	var hit_lift := -1.0 if _slash_step == 1 else 0.0
+	if elapsed < windup:
+		var a := smoothstep(0.0, 1.0, elapsed / windup)
+		return {"lunge": -a, "lift": 0.0, "scale": Vector2.ONE.lerp(back_scale, a), "tilt": -back_tilt * a}
+	if elapsed < windup + strike:
+		# Ease-out cúbico: o corte sai de uma vez e freia na ponta.
+		var s := 1.0 - pow(1.0 - (elapsed - windup) / strike, 3.0)
+		return {"lunge": lerpf(-1.0, reach, s), "lift": hit_lift * s, "scale": back_scale.lerp(hit_scale, s),
+				"tilt": lerpf(-back_tilt, hit_tilt, s)}
+	# Retorno em ease-in-out (smoothstep) até o repouso.
+	var r := smoothstep(0.0, 1.0, (elapsed - windup - strike) / (_slash_len - windup - strike))
+	return {"lunge": lerpf(reach, 0.0, r), "lift": lerpf(hit_lift, 0.0, r), "scale": hit_scale.lerp(Vector2.ONE, r),
+			"tilt": lerpf(hit_tilt, 0.0, r)}
+
+
 func _process(delta: float) -> void:
 	position = prev_pos.lerp(sim_pos, GameClock.alpha).round()
 	if _hit_flash > 0.0:
@@ -252,51 +371,125 @@ func _process(delta: float) -> void:
 		cast_time = maxf(0.0, cast_time - delta)
 	if _cast_lock > 0.0:
 		_cast_lock -= delta
+	if slash_time > 0.0:
+		slash_time = maxf(0.0, slash_time - delta)
 	queue_redraw()
 
 
 func _draw() -> void:
-	if aura_radius > 0.0:
+	# Caída (ou morta): sem aura, clone e barra de vida; só o corpo no chão.
+	var posed := down > 0.0 or not is_alive
+	if aura_radius > 0.0 and not posed:
 		draw_circle(Vector2.ZERO, aura_radius, Color(aura_color.r, aura_color.g, aura_color.b, 0.07))
 		draw_arc(Vector2.ZERO, aura_radius, 0.0, TAU, 40, Color(aura_color.r, aura_color.g, aura_color.b, 0.25), 1.0)
 	if _sheet == null:
 		return
-	if clone_time > 0.0:
+	if clone_time > 0.0 and not posed:
 		var offset := clone_position() - sim_pos
 		_draw_body(offset, Color(0.35, 0.3, 0.55, 0.6), false)
 	_draw_body(Vector2.ZERO, Color.WHITE, true)
-	if bool(Settings.get_value("hp_bar_below")):
-		_draw_hp(Vector2(-8.0, 7.0))
-	else:
-		_draw_hp(Vector2(-8.0, sprite_top() - 9.0))
+	if not posed:
+		var below := bool(Settings.get_value("hp_bar_below"))
+		_draw_hp(Vector2(-8.0, 7.0) if below else Vector2(-8.0, sprite_top() - 9.0))
 	if show_hitbox:
 		draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 16, Color.CYAN, 1.0)
 
 
 func _draw_body(offset: Vector2, tint: Color, main: bool) -> void:
-	draw_texture(_shadow, offset + Vector2(-_shadow.get_width() * 0.5, 1.0))
-	var moving := velocity.length() > 5.0
+	var angle := fall_angle() if main else 0.0
+	_draw_shadow(offset, angle)
+	var swing := angle == 0.0 and is_slashing()
+	# No golpe o corpo segura um quadro parado em vez de seguir o ciclo de passos.
+	var moving := velocity.length() > 5.0 and angle == 0.0 and not swing
 	var frame := int(_walk_time * 8.0) if moving else 0
-	var blink := main and invuln > 0.0 and int(invuln * 20.0) % 2 == 0
+	# Caída ou com o relógio parado (pausa, contagem depois do reviver), o corpo não pisca: o
+	# invuln fica congelado e o quadro "piscando" viraria um branco fixo.
+	var blink := main and invuln > 0.0 and down <= 0.0 and not GameClock.paused and int(invuln * 20.0) % 2 == 0
 	var tex := _sheet.flash_texture if (blink or (main and _hit_flash > 0.0)) else _sheet.texture
-	if not is_alive and main:
-		tint = Color(0.6, 0.6, 0.7)
-	if _side_size != Vector2.ZERO:
-		_draw_side(tex, offset, moving, tint)
-	else:
-		draw_texture_rect_region(tex, Rect2(offset + Vector2(-8.0, -13.0), Vector2(16, 16)), _sheet.region(frame, dir), tint)
-	if main:
+	if main and swing and _side_size != Vector2.ZERO:
+		_draw_slash_trail(offset)
+	if main and chill > 0.0:
+		tint = tint.lerp(CORPSE_TINT, chill)
+		var rim := Color(CORPSE_RIM.r, CORPSE_RIM.g, CORPSE_RIM.b, CORPSE_RIM.a * chill)
+		for d: Vector2 in RIM_DIRS:
+			_draw_sprite(_sheet.flash_texture, offset + d, false, rim, angle, frame)
+	_draw_sprite(tex, offset, moving, tint, angle, frame)
+	if main and glow > 0.0:
 		# Brilho da lanterna carregada pela guardiã (na mão, para heróis com "hand").
-		var glow := offset + (_hand_offset() if _has_hand else Vector2(5.0 * facing_x, -5.0))
-		draw_circle(glow, 3.0, Color(lantern_tint.r, lantern_tint.g, lantern_tint.b, 0.35))
-		draw_circle(glow, 1.5, Color(1.0, 0.95, 0.7, 0.9))
-	if cast_time > 0.0 and _has_hand:
+		var at := offset + lantern_offset() + (_swing_shift() if swing else Vector2.ZERO)
+		draw_circle(at, 3.0, Color(lantern_tint.r, lantern_tint.g, lantern_tint.b, 0.35 * glow))
+		draw_circle(at, 1.5, Color(1.0, 0.95, 0.7, 0.9 * glow))
+	if cast_time > 0.0 and _has_hand and angle == 0.0:
 		_draw_cast_spark(offset + _hand_offset())
 
 
-## Mão relativa a sim_pos, já espelhada para o lado em que o herói olha.
+func _draw_sprite(tex: Texture2D, offset: Vector2, moving: bool, tint: Color, angle: float, frame: int) -> void:
+	if _side_size != Vector2.ZERO:
+		_draw_side(tex, offset, moving, tint, angle)
+	elif angle != 0.0:
+		draw_set_transform(offset + Vector2(0.0, 3.0), angle)
+		draw_texture_rect_region(tex, Rect2(Vector2(-8.0, -16.0), Vector2(16, 16)), _sheet.region(frame, dir), tint)
+		draw_set_transform(Vector2.ZERO)
+	else:
+		# Heróis de 4 direções só dão o passo do golpe (sem giro: o quadro de frente não inclina).
+		var shift := _swing_shift() if is_slashing() else Vector2.ZERO
+		draw_texture_rect_region(tex, Rect2(offset + shift + Vector2(-8.0, -13.0), Vector2(16, 16)),
+				_sheet.region(frame, dir), tint)
+
+
+## Deslocamento do corpo no golpe agora, em px inteiros (o desenho fica nítido).
+func _swing_shift(lag: float = 0.0) -> Vector2:
+	var p := slash_pose(lag)
+	return Vector2(roundf(float(p["lunge"])) * _slash_dir, roundf(float(p["lift"])))
+
+
+## Rastro do golpe atrás do corpo: dois vultos na cor dos poderes, nas poses de instantes
+## antes (ficam para trás no avanço), que só aparecem do corte em diante e somem logo. No
+## arremate, vultos mais fortes e um contorno branco no fim do corte.
+func _draw_slash_trail(offset: Vector2) -> void:
+	var fin := _slash_step == 2
+	var windup := SLASH_WINDUP_FINISHER if fin else SLASH_WINDUP
+	var strike := SLASH_STRIKE_FINISHER if fin else SLASH_STRIKE
+	var since := _slash_len - slash_time - windup
+	if since < 0.0:
+		return
+	var fade := 1.0 - clampf((since - strike) / SLASH_GHOST_FADE, 0.0, 1.0)
+	if fade > 0.0:
+		var c := _cast_color
+		var boost := 1.35 if fin else 1.0
+		for i: int in range(SLASH_GHOST_LAG.size()):
+			var a := minf(SLASH_GHOST_ALPHA[i] * boost, 1.0) * fade
+			_draw_side(_sheet.flash_texture, offset, false, Color(c.r, c.g, c.b, a), 0.0, SLASH_GHOST_LAG[i])
+	if not fin:
+		return
+	# Contorno branco da segunda metade do corte até pouco depois: o golpe "acende".
+	var rim := 1.0 - absf(since - strike) / (strike * 0.5 + 0.03)
+	if rim <= 0.0:
+		return
+	var calm := bool(Settings.get_value("reduce_flashes"))
+	var white := Color(1.0, 1.0, 1.0, rim * (0.35 if calm else 0.85))
+	for d: Vector2 in RIM_DIRS:
+		_draw_side(_sheet.flash_texture, offset + d, false, white)
+
+
+## Sombra nos pés; deitada, ela se alarga e acompanha o corpo para o lado da queda.
+func _draw_shadow(offset: Vector2, angle: float) -> void:
+	var w := float(_shadow.get_width())
+	if angle == 0.0:
+		draw_texture(_shadow, offset + Vector2(-w * 0.5, 1.0))
+		return
+	var k := absf(angle) / (PI * 0.5)
+	var width := w * lerpf(1.0, LYING_SHADOW, k)
+	var center := offset.x + signf(angle) * body_height() * 0.45 * k
+	# Mais rasa e clara deitada, para não engolir o contorno do corpo.
+	draw_texture_rect(_shadow, Rect2(center - width * 0.5, offset.y + 2.0, width, float(_shadow.get_height())), false,
+			Color(1.0, 1.0, 1.0, lerpf(1.0, 0.45, k)))
+
+
+## Mão relativa a sim_pos, já espelhada para o lado em que o herói olha no desenho (durante
+## o golpe, o lado do corte). Os disparos usam hand_position(), que só lê facing_x.
 func _hand_offset() -> Vector2:
-	return Vector2(_hand.x * facing_x, _hand.y)
+	return Vector2(_hand.x * visual_facing_x(), _hand.y)
 
 
 ## Fração da pose de ataque: 0 → 1 → 0 ao longo de CAST_TIME.
@@ -324,20 +517,39 @@ func _draw_cast_spark(at: Vector2) -> void:
 
 ## Linha 0 = parado (anima sempre), linha 1 = andando (conforme a distância). Pés na base.
 ## Na pose de ataque o corpo avança 1 px para o lado em que olha e estica um pouco para cima.
-func _draw_side(tex: Texture2D, offset: Vector2, moving: bool, tint: Color) -> void:
+## No golpe de espada segura o quadro SLASH_FRAME, vira para o corte e segue slash_pose(lag).
+func _draw_side(tex: Texture2D, offset: Vector2, moving: bool, tint: Color, angle: float = 0.0,
+		lag: float = 0.0) -> void:
+	var swing := angle == 0.0 and is_slashing()
+	moving = moving and not swing
 	var row := 1 if moving else 0
 	var count := _side_counts.y if moving else _side_counts.x
 	var t := _walk_time * 14.0 if moving else Time.get_ticks_msec() / 110.0
-	var src := Rect2(Vector2(posmod(int(t), maxi(1, count)) * _side_size.x, row * _side_size.y), _side_size)
-	var pose := _cast_pose()
+	var col := SLASH_FRAME if swing else posmod(int(t), maxi(1, count))
+	var src := Rect2(Vector2(col * _side_size.x, row * _side_size.y), _side_size)
+	var look := visual_facing_x()
 	# Espelha quando o lado do desenho original difere do lado para onde o herói olha.
-	var flip := -1.0 if (facing_x < 0.0) != _faces_left else 1.0
-	var feet := offset + Vector2(roundf(pose) * facing_x, 3.0)
-	var stretch := Vector2(1.0 - 0.06 * pose, 1.0 + 0.08 * pose)
+	var flip := -1.0 if (look < 0.0) != _faces_left else 1.0
+	var feet := offset + Vector2(0.0, 3.0)
+	var stretch := Vector2.ONE
+	if swing:
+		var p := slash_pose(lag)
+		feet += _swing_shift(lag)
+		stretch = p["scale"]
+		angle = float(p["tilt"]) * look
+	else:
+		var pose := _cast_pose()
+		feet.x += roundf(pose) * look
+		stretch = Vector2(1.0 - 0.06 * pose, 1.0 + 0.08 * pose)
 	var dest := Rect2(Vector2(-_side_size.x * 0.5, -_side_size.y), _side_size)
-	draw_set_transform(feet, 0.0, Vector2(flip * stretch.x, stretch.y))
+	draw_set_transform(feet, angle, Vector2(flip * stretch.x, stretch.y))
 	draw_texture_rect_region(tex, dest, src, tint)
 	draw_set_transform(Vector2.ZERO)
+
+
+## Altura do desenho (pés à cabeça): o comprimento do corpo deitado.
+func body_height() -> float:
+	return _side_size.y if _side_size != Vector2.ZERO else 16.0
 
 
 ## Topo do desenho da guardiã (para a barra de vida acima da cabeça).

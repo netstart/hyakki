@@ -69,6 +69,7 @@ func run(host: Node, check: Callable) -> void:
 		player.cast_time = 0.01
 		player.on_cast()
 		check.call(is_equal_approx(player.cast_time, 0.01), "%s: pose de ataque com intervalo mínimo" % hero_id)
+		await _check_slash(host, player, hero_id, check)
 		var incense := game._make_weapon(&"incense")
 		check.call(incense != null and not incense.from_hand(), "Incenso sai do corpo, não da mão")
 		if target >= 0:
@@ -76,3 +77,59 @@ func run(host: Node, check: Callable) -> void:
 		game.queue_free()
 		GameClock.paused = false
 		await host.get_tree().process_frame
+
+
+## Golpe de espada (on_slash): pose só de desenho, virada para o corte, que acaba sozinha.
+func _check_slash(host: Node, player: Player, hero_id: StringName, check: Callable) -> void:
+	player.cast_time = 0.0
+	player._cast_lock = 0.0
+	player.facing_x = 1.0
+	var pos := player.sim_pos
+	player.on_slash(-1.0, 0)
+	check.call(player.is_slashing() and is_equal_approx(player.slash_time, Player.SLASH_TIME),
+			"%s: on_slash começa o golpe" % hero_id)
+	check.call(player.sim_pos == pos and player.facing_x == 1.0, "%s: on_slash não mexe na simulação" % hero_id)
+	check.call(player.visual_facing_x() == -1.0, "%s: no golpe o corpo vira para o lado do corte" % hero_id)
+	player.on_cast()
+	check.call(player.cast_time == 0.0, "%s: disparo no meio do golpe não reinicia a pose de ataque" % hero_id)
+	# Preparo recua, o corte avança além do repouso e inclina para a frente.
+	player.slash_time = Player.SLASH_TIME - Player.SLASH_WINDUP
+	check.call(float(player.slash_pose()["lunge"]) < 0.0, "%s: o preparo recua o corpo" % hero_id)
+	player.slash_time = Player.SLASH_TIME - Player.SLASH_WINDUP - Player.SLASH_STRIKE * 0.99
+	var hit := player.slash_pose()
+	check.call(float(hit["lunge"]) >= 1.5 and float(hit["tilt"]) > 0.1, "%s: o corte avança e inclina" % hero_id)
+	# Desenha no meio do golpe (com o clone sombra) para exercitar o caminho de desenho.
+	player.clone_time = 0.5
+	player.queue_redraw()
+	await host.get_tree().process_frame
+	player.clone_time = 0.0
+	pos = player.sim_pos
+	player.slash_time = Player.SLASH_TIME
+	for i: int in range(12):
+		player._process(0.025)
+	check.call(player.sim_pos == pos and player.facing_x == 1.0, "%s: o golpe não mexe na simulação" % hero_id)
+	var rest := player.slash_pose()
+	check.call(not player.is_slashing() and float(rest["lunge"]) == 0.0 and float(rest["tilt"]) == 0.0
+			and rest["scale"] == Vector2.ONE, "%s: o golpe acaba em repouso" % hero_id)
+	check.call(player.visual_facing_x() == 1.0, "%s: depois do golpe o corpo volta a olhar para facing_x" % hero_id)
+	# Passos do combo: o 1 corta de outro jeito; o arremate (2) dura mais.
+	player.on_slash(1.0, 0)
+	player.slash_time -= Player.SLASH_WINDUP + Player.SLASH_STRIKE
+	var cut0 := player.slash_pose()
+	player.on_slash(1.0, 1)
+	player.slash_time -= Player.SLASH_WINDUP + Player.SLASH_STRIKE
+	check.call(player.slash_pose() != cut0, "%s: os passos 0 e 1 do combo são cortes diferentes" % hero_id)
+	player.on_slash(1.0, 2)
+	check.call(player.slash_time > Player.SLASH_TIME and is_equal_approx(player.slash_time, Player.SLASH_FINISHER_TIME),
+			"%s: o arremate dura mais que o golpe comum" % hero_id)
+	player.queue_redraw()
+	await host.get_tree().process_frame
+	player.reset()
+	check.call(player.slash_time == 0.0 and not player.is_slashing(), "%s: reset() limpa o golpe" % hero_id)
+	player.is_alive = false
+	player.on_slash(1.0, 0)
+	check.call(not player.is_slashing(), "%s: sem golpe quando caída/morta" % hero_id)
+	player.is_alive = true
+	player.sim_pos = pos
+	player.prev_pos = pos
+	player.hp = player.max_hp()

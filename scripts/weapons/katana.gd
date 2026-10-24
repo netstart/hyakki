@@ -38,4 +38,16 @@ func fire(origin: Vector2) -> void:
 						player.heal(1.0)
 		game.fx.play_anim("slash_double" if is_evolved() else "slash", center, width / 30.0, 0.0,
 				Color(1.0, 0.95, 0.8) if is_evolved() else Color.WHITE, 22.0, side < 0.0)
+	_slash_sound(sides.size())
+
+
+## Corte em camadas: o "shing" metálico (Kenney knifeSlice) e o swish de ar (hy_slash),
+## acima dos acertos (-14 dB). Cortando dos dois lados, só um swish extra mais grave, sem
+## dobrar o volume. A Lâmina do Amanhecer soma um brilho agudo e baixo de sino.
+func _slash_sound(sides: int) -> void:
+	AudioManager.play("katana", 1.0, 0.06, -3.0)
 	AudioManager.play("slash", 1.0, 0.08, -4.0)
+	if sides >= 2:
+		AudioManager.play("whoosh", 0.88, 0.05, -10.0)
+	if is_evolved():
+		AudioManager.play("bell", 2.2, 0.04, -16.0)

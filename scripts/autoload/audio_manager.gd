@@ -4,13 +4,20 @@ extends Node
 ## - Cooldown por efeito (30 ms) e variação de tom ±8% nos acertos.
 ## - O limite e o cooldown contam em tempo real, para não embolar em 2x/3x (plano 4.14).
 ## - Sons de perigo (prioridade) nunca são descartados e abaixam os outros (ducking).
+## - Acertos ("hit", "crit", "hit_*") são de baixa prioridade: ocupam no máximo 2/3 do pool,
+##   nunca roubam canal, e qualquer outro som rouba o acerto mais antigo com o pool cheio.
+##   Assim o golpe das armas (1 por recarga) não some no meio de dezenas de acertos.
 
 const MUSIC_DIR := "res://assets/audio/music/"
 const SFX_DIR := "res://assets/audio/sfx/"
 const MAX_PER_SOUND := 4
 const SOUND_COOLDOWN_MS := 30
-const POOL_SIZE := 24
+const POOL_SIZE := 32
+## Teto de canais com acertos tocando (2/3 do pool).
+const MAX_HIT_PLAYERS := 21
 const CROSSFADE := 1.5
+## Volume da música "apagada" por fade_music (o mesmo piso do crossfade).
+const MUSIC_SILENT := -40.0
 const PRIORITY := ["alert", "alert3", "jingle_gameover"]
 ## Grupos de variações (plano 15.7: 6+ variações por som evitam a fadiga em 15 min).
 ## `play("hit")` sorteia um dos arquivos. Sorteio fora da simulação: não afeta o determinismo.
@@ -28,8 +35,9 @@ const VARIANTS := {
 	"achievement": ["k_jingle_pizzi_0", "k_jingle_pizzi_1", "k_jingle_pizzi_2", "k_jingle_pizzi_3"],
 	"fanfare": ["k_jingle_steel_0", "k_jingle_steel_1"],
 	"taiko": ["j_taiko_0", "j_taiko_1"],
-	"slash": ["slash", "hy_slash_0", "hy_slash_1", "hy_slash_2", "hy_slash_3", "hy_slash_4", "hy_slash_5"],
-	"whoosh": ["whoosh", "hy_swish_0", "hy_swish_1", "hy_swish_2", "hy_swish_3", "hy_swish_4", "hy_swish_5"],
+	# Sem slash.wav e whoosh.wav (rms -28/-32 dB): baixos demais para o golpe das armas.
+	"slash": ["hy_slash_0", "hy_slash_1", "hy_slash_2", "hy_slash_3", "hy_slash_4", "hy_slash_5"],
+	"whoosh": ["hy_swish_0", "hy_swish_1", "hy_swish_2", "hy_swish_3", "hy_swish_4", "hy_swish_5"],
 	"crit": ["hy_crit_0", "hy_crit_1", "hy_crit_2", "hy_crit_3", "hy_crit_4", "hy_crit_5"],
 	# Efeitos procedurais do projeto (g_*, CC0, tools/gen_sfx.py) por tipo de arma/acerto.
 	"thunder": ["g_thunder_0", "g_thunder_1", "g_thunder_2"],
@@ -49,7 +57,23 @@ const VARIANTS := {
 	"ofuda_cast": ["g_ofuda_cast_0", "g_ofuda_cast_1", "g_ofuda_cast_2"],
 	"incense_pulse": ["g_incense_pulse_0", "g_incense_pulse_1", "g_incense_pulse_2"],
 	"chest_open": ["g_chest_open_0", "g_chest_open_1"],
+	# Kenney RPG Audio e Casino Audio (CC0): lâmina e papel.
+	"katana": ["k_blade_slice_0", "k_blade_slice_1"],
+	"ofuda_fan": ["k_paper_fan_0", "k_paper_fan_1", "k_paper_shove_0", "k_paper_shove_1",
+			"k_paper_shove_2", "k_paper_shove_3"],
+	"paper_flutter": ["k_paper_slide_0", "k_paper_slide_1", "k_paper_slide_2", "k_paper_slide_3",
+			"k_paper_slide_4", "k_paper_slide_5", "k_paper_slide_6", "k_paper_slide_7"],
+	"paper_fold": ["k_paper_place_0", "k_paper_place_1", "k_paper_place_2", "k_paper_place_3"],
+	# Flecha: o swish forte (hy_swish), tocado agudo pelo Yumi.
+	"arrow": ["hy_swish_0", "hy_swish_1", "hy_swish_2", "hy_swish_3", "hy_swish_4", "hy_swish_5"],
+	# Estalo curto de madeira (Kenney Impact), agudo: a corda do arco.
+	"bow": ["k_wood_0", "k_wood_1"],
 }
+
+## Último som pedido e quantos pedidos por id (inclusive os descartados), para os testes,
+## como o last_hit_sound do HyakkiGame.
+var last_requested: String = ""
+var request_count: Dictionary = {}
 
 var _music_a: AudioStreamPlayer
 var _music_b: AudioStreamPlayer
@@ -60,9 +84,15 @@ var _playing_ids: Dictionary = {}
 var _last_play_ms: Dictionary = {}
 var _streams: Dictionary = {}
 var _duck_tween: Tween
+var _music_fade: Tween
+## Crossfade em andamento e a faixa que ele está calando.
+var _crossfade: Tween
+var _crossfade_old: AudioStreamPlayer
 var _heartbeat: AudioStreamPlayer
 var _beating: bool = false
 var _low_pass: AudioEffectLowPassFilter
+## Ordem de início dos efeitos, para achar o acerto mais antigo.
+var _seq: int = 0
 
 
 func _ready() -> void:
@@ -130,6 +160,8 @@ func play_music(id: String, fade: float = CROSSFADE) -> void:
 		(stream as AudioStreamOggVorbis).loop = true
 	elif stream is AudioStreamMP3:
 		(stream as AudioStreamMP3).loop = true
+	if _music_fade and _music_fade.is_valid():
+		_music_fade.kill()
 	var next := _music_b if _active_music == _music_a else _music_a
 	next.stream = stream
 	next.volume_db = -40.0
@@ -140,6 +172,8 @@ func play_music(id: String, fade: float = CROSSFADE) -> void:
 	var old := _active_music
 	tween.chain().tween_callback(old.stop)
 	_active_music = next
+	_crossfade = tween
+	_crossfade_old = old
 
 
 func stop_music(fade: float = 1.0) -> void:
@@ -149,26 +183,59 @@ func stop_music(fade: float = 1.0) -> void:
 	tween.tween_callback(_active_music.stop)
 
 
+## Leva o volume da faixa atual a `to_db` sem trocar nem parar a faixa: a sequência de morte
+## silencia a música (MUSIC_SILENT) e, no reviver, a mesma faixa volta (0 dB) de onde estava.
+func fade_music(to_db: float, seconds: float) -> void:
+	if _music_fade and _music_fade.is_valid():
+		_music_fade.kill()
+	# Um crossfade no meio subiria a faixa de volta: termina já, calando a faixa antiga.
+	if _crossfade and _crossfade.is_valid():
+		_crossfade.kill()
+		if _crossfade_old != _active_music:
+			_crossfade_old.stop()
+	_music_fade = create_tween()
+	_music_fade.tween_property(_active_music, "volume_db", to_db, maxf(seconds, 0.01))
+
+
+## Volume atual da faixa de fundo, em dB (testes).
+func music_volume_db() -> float:
+	return _active_music.volume_db
+
+
+## Id da faixa de fundo atual ("" sem música).
+func music_id() -> String:
+	return _music_id
+
+
 ## Toca um efeito. `pitch_jitter` em fração (0,08 = ±8%). `pitch` permite a escala das brasas.
 func play(id: String, pitch: float = 1.0, pitch_jitter: float = 0.0, volume_db: float = 0.0,
 		bus: String = "SFX") -> void:
 	var priority := PRIORITY.has(id)
+	var hit := is_hit(id)
+	last_requested = id
+	request_count[id] = int(request_count.get(id, 0)) + 1
 	var now := Time.get_ticks_msec()
 	if not priority:
 		if now - int(_last_play_ms.get(id, -1000)) < SOUND_COOLDOWN_MS:
 			return
 		if int(_playing_ids.get(id, 0)) >= MAX_PER_SOUND:
 			return
+	if hit and _hits_playing() >= MAX_HIT_PLAYERS:
+		return
 	var file := String((VARIANTS[id] as Array).pick_random()) if VARIANTS.has(id) else id
 	var stream := _sfx(file)
 	if stream == null:
 		return
-	var player := _free_player(priority)
+	var player := _free_player(priority, hit)
 	if player == null:
 		return
 	_last_play_ms[id] = now
 	_playing_ids[id] = int(_playing_ids.get(id, 0)) + 1
+	_seq += 1
 	player.set_meta("sound_id", id)
+	player.set_meta("counted", true)
+	player.set_meta("hit", hit)
+	player.set_meta("seq", _seq)
 	player.stream = stream
 	player.bus = bus
 	player.volume_db = volume_db
@@ -217,21 +284,72 @@ func _beat_again() -> void:
 		_heartbeat.play()
 
 
-func _free_player(priority: bool) -> AudioStreamPlayer:
+## Acertos ("hit", "crit", "hit_*"): baixa prioridade no pool. "player_hurt" não é acerto.
+static func is_hit(id: String) -> bool:
+	return id == "hit" or id == "crit" or id.begins_with("hit_")
+
+
+## Ids dos efeitos tocando agora (testes e depuração).
+func active_sounds() -> Array[String]:
+	var ids: Array[String] = []
+	for player: AudioStreamPlayer in _pool:
+		if player.playing:
+			ids.append(String(player.get_meta("sound_id", "")))
+	return ids
+
+
+## Para todos os efeitos do pool e zera as contagens.
+func stop_sfx() -> void:
+	for player: AudioStreamPlayer in _pool:
+		player.stop()
+		player.set_meta("counted", false)
+	_playing_ids.clear()
+	_last_play_ms.clear()
+
+
+func _hits_playing() -> int:
+	var count := 0
+	for player: AudioStreamPlayer in _pool:
+		if player.playing and bool(player.get_meta("hit", false)):
+			count += 1
+	return count
+
+
+## Canal livre; com o pool cheio, um som que não é acerto rouba o acerto mais antigo, e o
+## som de perigo, sem acertos tocando, rouba o primeiro canal. Acerto nunca rouba.
+func _free_player(priority: bool, hit: bool) -> AudioStreamPlayer:
 	for player: AudioStreamPlayer in _pool:
 		if not player.playing:
+			# O som pode ter acabado no servidor de áudio antes do sinal finished chegar.
+			_release(player)
 			return player
-	if priority:
-		# Toma o lugar do mais antigo; ajusta a contagem do som interrompido.
-		var stolen := _pool[0]
-		var old_id := String(stolen.get_meta("sound_id", ""))
-		_playing_ids[old_id] = maxi(0, int(_playing_ids.get(old_id, 0)) - 1)
-		stolen.stop()
-		return stolen
-	return null
+	if hit:
+		return null
+	var stolen: AudioStreamPlayer = null
+	for player: AudioStreamPlayer in _pool:
+		if bool(player.get_meta("hit", false)) and (stolen == null
+				or int(player.get_meta("seq", 0)) < int(stolen.get_meta("seq", 0))):
+			stolen = player
+	if stolen == null and priority:
+		stolen = _pool[0]
+	if stolen == null:
+		return null
+	# Toma o lugar do som interrompido e ajusta a contagem dele.
+	_release(stolen)
+	stolen.stop()
+	return stolen
 
 
 func _on_sfx_finished(player: AudioStreamPlayer) -> void:
+	_release(player)
+
+
+## Devolve a vaga do som do canal na contagem por id, uma vez só por som tocado: o canal
+## reaproveitado (ou roubado) antes do finished não deixa a contagem presa no teto.
+func _release(player: AudioStreamPlayer) -> void:
+	if not bool(player.get_meta("counted", false)):
+		return
+	player.set_meta("counted", false)
 	var id := String(player.get_meta("sound_id", ""))
 	_playing_ids[id] = maxi(0, int(_playing_ids.get(id, 0)) - 1)
 

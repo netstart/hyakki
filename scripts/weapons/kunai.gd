@@ -14,4 +14,4 @@ func fire(origin: Vector2) -> void:
 		var lateral := aim.orthogonal() * offset * 5.0 if spread <= 0.0 else Vector2.ZERO
 		game.projectiles.spawn(id, "needle" if is_evolved() else "kunai", origin + lateral,
 				dir * proj_speed(), damage(), 3.0, int(raw("pierce")), duration(), knockback())
-	AudioManager.play("whoosh2", 1.4, 0.1, -12.0)
+	AudioManager.play("whoosh", 1.5, 0.1, -13.0)

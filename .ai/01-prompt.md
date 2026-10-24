@@ -1,3 +1,6 @@
+
+me supreenda, como um profissional faça um trabalho de alta qualidade premium.
+
 quero criar um no jogo no estilo do "Vampire Survivor", porém quero utilizar apenas assets gratuitos, livres pra uso comercial, mapas, sprites, sons, itens, armadura, personagens, tudo, absotulamente tudo baseado em sprites gratuitos, quero que você como m especialistalista em game design, faça uma pesquisa profunda na interente, entenda o jogo https://play.google.com/store/apps/details?id=com.poncle.vampiresurvivors&hl=pt_BR
 
 "Vampire Survivor" e seus concorentes

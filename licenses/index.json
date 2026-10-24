@@ -95,18 +95,18 @@
   },
   {
     "id": "kenney_audio",
-    "name": "Kenney - Impact Sounds, Interface Sounds and Music Jingles",
+    "name": "Kenney - Impact Sounds, Interface Sounds, Music Jingles, RPG Audio and Casino Audio",
     "author": "Kenney Vleugels (Kenney.nl)",
     "license_id": "CC0-1.0",
     "category": "audio",
-    "version": "kenney_impact-sounds.zip, kenney_interface-sounds.zip, kenney_music-jingles.zip (2023)",
+    "version": "kenney_impact-sounds.zip, kenney_interface-sounds.zip, kenney_music-jingles.zip (2023); kenney_rpg-audio.zip, kenney_casino-audio.zip 1.1 (2026-10-23)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
     "modifications": "a subset of files copied and renamed (k_*.ogg)",
     "source_url": "https://kenney.nl/assets/music-jingles",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/kenney_audio_License.txt",
-    "files_count": 37
+    "files_count": 59
   },
   {
     "id": "hyakki_generated_sfx",

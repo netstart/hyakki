@@ -60,7 +60,7 @@ def data_keys() -> set:
     for s in data("shop"):
         keys.add(f"shop.{s['id']}.name")
     for s in data("stages"):
-        keys |= {f"stage.{s['id']}.{x}" for x in ("name", "desc", "opening", "dawn")}
+        keys |= {f"stage.{s['id']}.{x}" for x in ("name", "desc", "opening", "dawn", "region", "journey")}
     for story in data("story"):
         keys |= {p["text"] for p in story["panels"]}
     keys |= {f"moon.rule{n}" for n in range(1, 6)}

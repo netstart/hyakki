@@ -25,4 +25,4 @@ func fire(origin: Vector2) -> void:
 				game.deal_damage(id, i, damage(), dir, knockback())
 		game.fx.play_anim("smoke", origin + dir * reach * 0.5, reach / 30.0, dir.angle(),
 				Color(0.85, 1.0, 0.9, 0.8), 18.0)
-	AudioManager.play("whoosh2", 0.8, 0.1, -6.0)
+	AudioManager.play("whoosh", 0.75, 0.1, -4.0)

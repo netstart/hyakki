@@ -1,54 +1,89 @@
 extends Screen
 ## Loja de recompensas (plano 17.3): 6 vagas, cada uma libera uma recompensa ao assistir
-## um anúncio até o fim e volta em 6 h. Uma segunda linha vende, com ryō, reforços de uso
-## único para a próxima partida. Também oferece a compra "Remover anúncio de abertura" e
-## "Restaurar compras" (17.7).
+## um anúncio até o fim e volta em 6 h. Uma segunda seção vende, com ryō, reforços de uso
+## único para a próxima partida. No fim da rolagem ficam a compra "Remover anúncio de
+## abertura" e "Restaurar compras" (17.7).
 ##
-## Layout com alturas fixas (viewport 678x305): cada texto fica numa caixa de altura fixa
-## que cabe o número de linhas que o idioma mais longo precisa (quebra de linha, sem
-## reticências). Ficam fixos: o voltar, o título e o saldo de ryō no topo; a linha de status
-## e a linha de botões embaixo (a de botões a 10 px da borda). O meio (as duas linhas de
-## cartões e a dica) fica num ScrollContainer vertical: o conteúdo que não cabe rola com o
-## dedo. Os cartões usam MOUSE_FILTER_PASS para o arrasto chegar ao ScrollContainer, e um
-## toque que virou arrasto não compra nem resgata nada.
+## Layout (viewport 678x305): fixos só o voltar, o título e a pílula do saldo de ryō no topo.
+## Todo o resto rola num ScrollContainer vertical que vai até a borda inferior, em seções
+## com cabeçalho (título, filete e subtítulo): Oferendas (vagas por anúncio), Reforços
+## (itens por ryō) e Apoie o jogo (compra e restauração, por último).
+##
+## Cartões em grade de 6 colunas de largura fixa. Cada texto fica numa caixa de altura fixa
+## calculada no idioma atual com a quebra de linha da largura real (TextParagraph): a caixa
+## cabe o texto mais longo da linha de cartões, então os cartões de uma linha têm a mesma
+## altura, sem buracos e sem reticências. Os ícones ficam num poço de tamanho único, com
+## escala inteira e corte (nunca saem do cartão). O status vira um aviso flutuante (toast)
+## sobre a parte de baixo, que some sozinho.
+##
+## Os cartões usam MOUSE_FILTER_PASS para o arrasto chegar ao ScrollContainer, e um toque
+## que virou arrasto não compra nem resgata nada.
 
-const CARD_SIZE := Vector2(102, 124)
-const COIN_CARD_SIZE := Vector2(102, 146)
-const ICON_SIZE := Vector2(20, 20)
-const COIN_ICON_SIZE := Vector2(14, 14)
-const COIN_ICON := "res://assets/art/ui/icons/items/Money.png"
+const CARD_W := 103.0
+const GAP := 6.0
+const PAD := 4.0
+const SEP := 3.0
+const WELL_HEIGHT := 36.0
+const ICON_BOX := 32.0
+## Moeda redonda do jogo: folha com 4 quadros de 10x10 (a do saldo gira).
+const COIN_SHEET := "res://assets/art/items/treasure/Coin2.png"
+const COIN_FRAME := 10.0
+const COIN_FPS := 6.0
+const PREMIUM_ICON := "res://assets/art/ui/icons/items/Money.png"
 const CARD_TEXT_SIZE := 10
-const CARD_NAME_HEIGHT := 57.0   # até 3 linhas de fonte 10
-const CARD_STATE_HEIGHT := 38.0  # até 2 linhas de fonte 10
-const COIN_NAME_HEIGHT := 38.0   # até 2 linhas de fonte 10
-const COIN_EFFECT_HEIGHT := 57.0 # até 3 linhas de fonte 10
-const PRICE_HEIGHT := 19.0       # 1 linha de fonte 10
-const HINT_HEIGHT := 46.0       # até 2 linhas
-const HEADER_HEIGHT := 24.0     # 1 linha
-const STATUS_HEIGHT := 24.0     # 1 linha
-const BOTTOM_MARGIN := 10.0
-const BOTTOM_ROW_HEIGHT := 30.0  # 1 linha nos botões
-const SCROLL_TOP := 44.0
-const SIDE_MARGIN := 12.0
-const GAP := 4.0
+const CHIP_MARGIN_X := 3.0
+const CHIP_MARGIN_Y := 1.0
+const PILL_HEIGHT := 16.0
+const SIDE_MARGIN := 10.0
+const SCROLL_TOP := 42.0
+const SCROLL_RIGHT := 4.0
+const BAR_WIDTH := 6.0
+const TOAST_WIDTH := 440.0
+const TOAST_BOTTOM := 12.0
+## Tempo do aviso na tela (o último trecho é o esmaecer).
+const TOAST_TIME := 2.5
+const TOAST_FADE := 0.3
 ## Quanto o conteúdo pode rolar entre apertar e soltar um cartão para ainda valer o toque.
 const TAP_SLOP := 6
+## Quanto o ícone sobe no poço quando o cartão está em foco ou com o mouse em cima.
+const ICON_LIFT := 2.0
+
+const CARD_BG := Color("3b2329")
+const CARD_HOVER_BG := Color("54313a")
+const CARD_PRESSED_BG := Color("2a171c")
+const CARD_BORDER := Color("a0603a")
+const DIM_BG := Color("221519")
+const DIM_BORDER := Color("4d3436")
+const QUEUED_BG := Color("4a3420")
+const WELL_BG := Color(0.05, 0.02, 0.03, 0.55)
+const EFFECT_BG := Color("1f3a28")
+const EFFECT_TEXT := Color("c2f5b8")
+const MUTED := Color("cdb89c")
+const SHORT := Color("ff8f80")
+const CLOCK := Color("aab9cc")
+const LACQUER := Color("8f2333")
+const OWNED := Color("2c4a2e")
 
 var _scroll: ScrollContainer
 var _row: HBoxContainer
 var _coin_row: HBoxContainer
-var _hint: Label
 var _status: Label
+var _toast: PanelContainer
 var _ryo: Label
+var _balance_coin: TextureRect
+var _coin_time: float = 0.0
 var _buy: Button
 var _restore: Button
-## id -> {"button": Button, "name": Label, "state": Label}
+## id -> {"button": Button, "name": Label, "state": Label, "pill": PanelContainer, "dim": Array}
 var _cards: Dictionary = {}
-## id -> {"button": Button, "inner": Control, "price": Label, "coin": TextureRect}
+## id -> {"button": Button, "price": Label, "coin": TextureRect, "pill": PanelContainer, "dim": Array}
 var _coin_cards: Dictionary = {}
 var _refresh_timer: float = 0.0
 ## Posição da rolagem quando o dedo apertou um cartão (-1: nenhum aperto registrado).
 var _press_scroll: int = -1
+## Texto que o aviso mostrou por último e quanto tempo ainda fica na tela.
+var _toast_text: String = ""
+var _toast_left: float = 0.0
 
 
 func _ready() -> void:
@@ -60,86 +95,53 @@ func _ready() -> void:
 	title.offset_top = 6
 	title.clip_text = true
 	add_child(title)
-	# Saldo de ryō (fixo, canto superior direito).
-	var balance := HBoxContainer.new()
-	balance.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	balance.offset_left = -170
-	balance.offset_right = -SIDE_MARGIN
-	balance.offset_top = 12
-	balance.offset_bottom = 30
-	balance.alignment = BoxContainer.ALIGNMENT_END
-	balance.add_theme_constant_override("separation", 4)
-	balance.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(balance)
-	var coin := icon_rect(COIN_ICON, COIN_ICON_SIZE)
-	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	balance.add_child(coin)
-	_ryo = label("", 12, HORIZONTAL_ALIGNMENT_RIGHT)
-	_ryo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	balance.add_child(_ryo)
+	add_child(_balance_pill())
+	# Filete fino separando o topo fixo do conteúdo que rola.
+	var rule := ColorRect.new()
+	rule.color = Color(ThemeFactory.ACCENT, 0.22)
+	rule.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	rule.offset_left = SIDE_MARGIN
+	rule.offset_right = -SIDE_MARGIN
+	rule.offset_top = SCROLL_TOP - 3
+	rule.offset_bottom = SCROLL_TOP - 2
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(rule)
 
-	# Meio rolável: do título até acima da linha de status.
+	# Todo o resto rola, do topo até a borda inferior.
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"
 	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_scroll.offset_left = SIDE_MARGIN
-	_scroll.offset_right = -SIDE_MARGIN
+	_scroll.offset_right = -SCROLL_RIGHT
 	_scroll.offset_top = SCROLL_TOP
-	_scroll.offset_bottom = -(BOTTOM_MARGIN + BOTTOM_ROW_HEIGHT + GAP + STATUS_HEIGHT + GAP)
+	_scroll.offset_bottom = 0
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_scroll.scroll_deadzone = 8
 	_scroll.follow_focus = true
+	_style_scroll_bar(_scroll.get_v_scroll_bar())
 	add_child(_scroll)
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 6)
+	col.add_theme_constant_override("separation", 4)
 	col.mouse_filter = Control.MOUSE_FILTER_PASS
 	_scroll.add_child(col)
+	col.add_child(_section(tr("shop.section.offerings"), tr("shop.hint")))
 	_row = _card_row()
 	col.add_child(_row)
-	_hint = _text_label(tr("shop.hint"), HORIZONTAL_ALIGNMENT_CENTER, TextServer.AUTOWRAP_WORD_SMART)
-	col.add_child(_fixed_box(_hint, HINT_HEIGHT))
-	var header := _text_label(tr("shop.coin_row"), HORIZONTAL_ALIGNMENT_CENTER, TextServer.AUTOWRAP_WORD_SMART)
-	header.add_theme_color_override("font_color", ThemeFactory.ACCENT)
-	col.add_child(_fixed_box(header, HEADER_HEIGHT))
+	col.add_child(_spacer(6))
+	col.add_child(_section(tr("shop.section.boosts"), tr("shop.coin_row")))
 	_coin_row = _card_row()
 	col.add_child(_coin_row)
+	col.add_child(_spacer(6))
+	col.add_child(_section(tr("shop.section.support"), tr("shop.support_hint")))
+	col.add_child(_purchase_row())
+	col.add_child(_spacer(10))
 
-	# Status: fixo logo acima da linha de botões, sempre visível mesmo com o meio rolado.
-	var status_box := Control.new()
-	status_box.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	status_box.offset_left = SIDE_MARGIN
-	status_box.offset_right = -SIDE_MARGIN
-	status_box.offset_top = -(BOTTOM_MARGIN + BOTTOM_ROW_HEIGHT + GAP + STATUS_HEIGHT)
-	status_box.offset_bottom = -(BOTTOM_MARGIN + BOTTOM_ROW_HEIGHT + GAP)
-	status_box.clip_contents = true
-	status_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(status_box)
-	_status = _text_label("", HORIZONTAL_ALIGNMENT_CENTER, TextServer.AUTOWRAP_WORD_SMART)
-	_status.add_theme_color_override("font_color", ThemeFactory.ACCENT)
-	_status.set_anchors_preset(Control.PRESET_FULL_RECT)
-	status_box.add_child(_status)
-	# Linha de botões: ancorada na borda inferior, sempre visível.
-	var bottom := HBoxContainer.new()
-	bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -(BOTTOM_MARGIN + BOTTOM_ROW_HEIGHT)
-	bottom.offset_bottom = -BOTTOM_MARGIN
-	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
-	bottom.add_theme_constant_override("separation", 8)
-	add_child(bottom)
-	_buy = button("", _on_buy, Vector2(476, BOTTOM_ROW_HEIGHT))
-	_fit_button(_buy)
-	bottom.add_child(_buy)
-	_restore = button(tr("shop.restore"), func() -> void:
-		PurchaseManager.restore()
-		_status.text = tr("shop.restored")
-		on_show(), Vector2(170, BOTTOM_ROW_HEIGHT))
-	_fit_button(_restore)
-	bottom.add_child(_restore)
+	_build_toast()
 	PurchaseManager.purchase_finished.connect(func(_p: String, ok: bool) -> void:
 		var pending := bool(SaveManager.data["purchases"].get("pending", false))
-		_status.text = tr("shop.thanks") if ok else (tr("shop.pending") if pending else tr("shop.failed"))
+		_show_status(tr("shop.thanks") if ok else (tr("shop.pending") if pending else tr("shop.failed")))
 		on_show())
 
 
@@ -150,47 +152,72 @@ func on_show() -> void:
 		child.queue_free()
 	_cards.clear()
 	_coin_cards.clear()
+	var text_w := CARD_W - 2 * PAD
+	var chip_w := text_w - 2 * CHIP_MARGIN_X
+	# Vagas por anúncio: a caixa do nome cabe o nome mais longo da linha; a do estado, o
+	# mais longo entre "ver anúncio", "sem anúncios" e o cronômetro.
+	var slot_names: Dictionary = {}
+	var name_lines := 1
+	for id: StringName in ShopManager.ad_slots():
+		slot_names[id] = _slot_name(id)
+		name_lines = maxi(name_lines, _lines(slot_names[id], text_w))
+	var state_lines := 1
+	for text: String in ["> %s" % tr("shop.watch"), tr("shop.no_ads"), "00:00:00"]:
+		state_lines = maxi(state_lines, _lines(text, chip_w))
+	var slot_h := _card_height([_text_height(name_lines), _text_height(state_lines) + 2 * CHIP_MARGIN_Y])
 	for id: StringName in ShopManager.ad_slots():
 		var data: Dictionary = DB.shop[id]
-		var b := _card_button(CARD_SIZE, _claim.bind(id))
+		var b := _card_button(slot_h, _claim.bind(id))
+		b.name = "Slot_%s" % id
 		_row.add_child(b)
-		# Conteúdo do cartão: ícone, nome e estado, cada um em caixa de altura fixa.
 		var inner := _card_inner(b)
-		inner.add_child(_fixed_box(icon_rect(String(data["icon"]), ICON_SIZE), ICON_SIZE.y))
-		var name_label := _text_label("", HORIZONTAL_ALIGNMENT_CENTER, TextServer.AUTOWRAP_WORD_SMART, CARD_TEXT_SIZE)
-		inner.add_child(_fixed_box(name_label, CARD_NAME_HEIGHT))
-		var state_label := _text_label("", HORIZONTAL_ALIGNMENT_CENTER, TextServer.AUTOWRAP_WORD_SMART, CARD_TEXT_SIZE)
-		inner.add_child(_fixed_box(state_label, CARD_STATE_HEIGHT))
-		_cards[id] = {"button": b, "name": name_label, "state": state_label}
+		var well := _icon_well(String(data["icon"]), b)
+		inner.add_child(well)
+		var name_label := _card_label(String(slot_names[id]))
+		inner.add_child(_fixed_box(name_label, _text_height(name_lines)))
+		var state_label := _card_label("")
+		var pill := _chip(state_label, _text_height(state_lines))
+		inner.add_child(pill)
+		_cards[id] = {"button": b, "name": name_label, "state": state_label, "pill": pill, "dim": [well, name_label]}
+	# Reforços por ryō: nome, efeito (numa faixa) e preço (numa pílula).
+	var coin_name_lines := 1
+	var effect_lines := 1
+	for id: StringName in ShopManager.coin_items():
+		coin_name_lines = maxi(coin_name_lines, _lines(tr("shop.%s.name" % id), text_w))
+		effect_lines = maxi(effect_lines, _lines(ShopManager.coin_effect(id), chip_w))
+	var coin_h := _card_height([_text_height(coin_name_lines),
+			_text_height(effect_lines) + 2 * CHIP_MARGIN_Y, PILL_HEIGHT])
 	for id: StringName in ShopManager.coin_items():
 		var data: Dictionary = DB.shop[id]
-		var b := _card_button(COIN_CARD_SIZE, _buy_coin.bind(id))
+		var b := _card_button(coin_h, _buy_coin.bind(id))
 		b.name = "Coin_%s" % id
 		_coin_row.add_child(b)
-		# Ícone, nome, efeito e preço (com moeda), cada um em caixa de altura fixa.
 		var inner := _card_inner(b)
-		inner.add_child(_fixed_box(icon_rect(String(data["icon"]), ICON_SIZE), ICON_SIZE.y))
-		var name_label := _text_label(tr("shop.%s.name" % id), HORIZONTAL_ALIGNMENT_CENTER,
-				TextServer.AUTOWRAP_WORD_SMART, CARD_TEXT_SIZE)
-		inner.add_child(_fixed_box(name_label, COIN_NAME_HEIGHT))
-		var effect := _text_label(ShopManager.coin_effect(id), HORIZONTAL_ALIGNMENT_CENTER,
-				TextServer.AUTOWRAP_WORD_SMART, CARD_TEXT_SIZE)
-		effect.add_theme_color_override("font_color", Color(0.75, 0.95, 0.75))
-		inner.add_child(_fixed_box(effect, COIN_EFFECT_HEIGHT))
+		var well := _icon_well(String(data["icon"]), b)
+		inner.add_child(well)
+		var name_label := _card_label(tr("shop.%s.name" % id))
+		inner.add_child(_fixed_box(name_label, _text_height(coin_name_lines)))
+		var effect := _card_label(ShopManager.coin_effect(id))
+		effect.add_theme_color_override("font_color", EFFECT_TEXT)
+		var chip := _chip(effect, _text_height(effect_lines), _flat(EFFECT_BG, Color(EFFECT_TEXT, 0.25), 1, 2))
+		inner.add_child(chip)
+		var price_pill := PanelContainer.new()
+		price_pill.custom_minimum_size = Vector2(0, PILL_HEIGHT)
+		price_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var price_row := HBoxContainer.new()
 		price_row.alignment = BoxContainer.ALIGNMENT_CENTER
 		price_row.add_theme_constant_override("separation", 3)
 		price_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var coin := icon_rect(COIN_ICON, COIN_ICON_SIZE)
-		coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		price_pill.add_child(price_row)
+		var coin := _coin_rect()
 		price_row.add_child(coin)
 		var price := label("", CARD_TEXT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
 		price.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		price.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		price_row.add_child(price)
-		inner.add_child(_fixed_box(price_row, PRICE_HEIGHT))
-		_coin_cards[id] = {"button": b, "inner": inner, "price": price, "coin": coin}
+		inner.add_child(price_pill)
+		_coin_cards[id] = {"button": b, "price": price, "coin": coin, "pill": price_pill,
+				"dim": [well, name_label, chip]}
 	_update_cards()
 	var owned := PurchaseManager.owns()
 	_buy.text = tr("shop.owned") if owned else tr("shop.remove_ad") % PurchaseManager.price_text()
@@ -200,6 +227,10 @@ func on_show() -> void:
 func _process(delta: float) -> void:
 	if not visible:
 		return
+	_update_toast(delta)
+	_coin_time += delta
+	var frame := floori(_coin_time * COIN_FPS) % 4
+	(_balance_coin.texture as AtlasTexture).region = Rect2(frame * COIN_FRAME, 0, COIN_FRAME, COIN_FRAME)
 	_refresh_timer -= delta
 	if _refresh_timer <= 0.0:
 		_refresh_timer = 1.0
@@ -210,45 +241,66 @@ func _update_cards() -> void:
 	for id: StringName in _cards:
 		var card: Dictionary = _cards[id]
 		var b: Button = card["button"]
-		var card_name := tr("shop.%s.name" % id)
-		if id == &"slot_ryo":
-			card_name = tr("shop.slot_ryo.name_value") % ShopManager.ryo_value()
-		(card["name"] as Label).text = card_name
-		if ShopManager.is_ready(id):
+		(card["name"] as Label).text = _slot_name(id)
+		var state: Label = card["state"]
+		var pill: PanelContainer = card["pill"]
+		var is_ready := ShopManager.is_ready(id)
+		if is_ready:
 			b.disabled = not AdsManager.rewarded_available()
-			(card["state"] as Label).text = tr("shop.no_ads") if b.disabled else "> %s" % tr("shop.watch")
+		else:
+			b.disabled = true
+		if is_ready and not b.disabled:
+			# Chamada para ação: pílula dourada com texto escuro.
+			state.text = "> %s" % tr("shop.watch")
+			state.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
+			state.add_theme_constant_override("outline_size", 0)
+			pill.add_theme_stylebox_override("panel", _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 3))
 		else:
 			var left := ShopManager.seconds_left(id)
-			b.disabled = true
-			(card["state"] as Label).text = "%02d:%02d:%02d" % [
+			state.text = tr("shop.no_ads") if is_ready else "%02d:%02d:%02d" % [
 					floori(left / 3600.0), floori(fmod(left, 3600) / 60.0), left % 60]
+			state.add_theme_color_override("font_color", MUTED if is_ready else CLOCK)
+			state.remove_theme_constant_override("outline_size")
+			pill.add_theme_stylebox_override("panel", _flat(Color(0, 0, 0, 0.35), Color(CLOCK, 0.3), 1, 3))
+		for node: CanvasItem in card["dim"]:
+			node.modulate = Color(1, 1, 1, 0.5) if b.disabled else Color.WHITE
 	_update_coin_cards()
 
 
-## Saldo e estado dos reforços: apagado sem ryō suficiente ou quando já está guardado.
+## Saldo e estado dos reforços: apagado com preço em vermelho sem ryō suficiente; selo
+## dourado "guardado" quando já está na fila da próxima partida.
 func _update_coin_cards() -> void:
-	_ryo.text = "%s %s" % [tr("hud.ryo"), Locale.format_number(SaveManager.ryo())]
+	_ryo.text = Locale.format_number(SaveManager.ryo())
 	for id: StringName in _coin_cards:
 		var card: Dictionary = _coin_cards[id]
 		var b: Button = card["button"]
 		var queued := ShopManager.is_queued(id)
 		b.disabled = not ShopManager.can_buy_coin(id)
-		(card["inner"] as Control).modulate = Color(1, 1, 1, 0.45) if b.disabled and not queued else Color.WHITE
+		var short := b.disabled and not queued
+		b.add_theme_stylebox_override("disabled", _queued_style() if queued else _dim_style())
+		for node: CanvasItem in card["dim"]:
+			node.modulate = Color(1, 1, 1, 0.45) if short else Color.WHITE
 		var price: Label = card["price"]
+		var pill: PanelContainer = card["pill"]
 		(card["coin"] as Control).visible = not queued
 		if queued:
 			price.text = tr("shop.coin.queued")
-			price.add_theme_color_override("font_color", ThemeFactory.ACCENT)
+			price.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
+			price.add_theme_constant_override("outline_size", 0)
+			pill.add_theme_stylebox_override("panel", _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 6))
 		else:
 			price.text = Locale.format_number(ShopManager.coin_price(id))
-			price.remove_theme_color_override("font_color")
+			price.add_theme_color_override("font_color", SHORT if short else ThemeFactory.ACCENT)
+			price.remove_theme_constant_override("outline_size")
+			pill.add_theme_stylebox_override("panel",
+					_flat(Color(0.05, 0.02, 0.03, 0.7), Color(SHORT if short else ThemeFactory.ACCENT, 0.5), 1, 6))
 
 
 func _claim(id: StringName) -> void:
 	if _was_drag():
 		return
 	ShopManager.claim(id, func(ok: bool) -> void:
-		_status.text = tr("shop.received") % tr("shop.%s.name" % id) if ok else tr("shop.watch_full")
+		_show_status(tr("shop.received") % tr("shop.%s.name" % id) if ok else tr("shop.watch_full"))
 		if ok:
 			AudioManager.play("jingle_unlock")
 		_update_cards())
@@ -261,16 +313,22 @@ func _buy_coin(id: StringName) -> bool:
 	var ok := ShopManager.buy_coin(id)
 	if ok:
 		AudioManager.play("coin2")
-		_status.text = tr("shop.received") % tr("shop.%s.name" % id)
+		_show_status(tr("shop.received") % tr("shop.%s.name" % id))
 	else:
 		AudioManager.play_ui("ui_cancel")
-		_status.text = tr("sanctuary.not_enough")
+		_show_status(tr("sanctuary.not_enough"))
 	_update_coin_cards()
 	return ok
 
 
 func _on_buy() -> void:
 	PurchaseManager.purchase()
+
+
+func _on_restore() -> void:
+	PurchaseManager.restore()
+	_show_status(tr("shop.restored"))
+	on_show()
 
 
 ## O conteúdo rolou desde que o dedo apertou o cartão: foi arrasto, não toque.
@@ -280,23 +338,176 @@ func _was_drag() -> bool:
 	return moved
 
 
+# --- Aviso (toast) ------------------------------------------------------------------
+
+## Mostra o aviso (de novo, mesmo que o texto seja igual ao anterior).
+func _show_status(text: String) -> void:
+	_status.text = text
+	_toast_text = text
+	_toast_left = TOAST_TIME if text != "" else 0.0
+	_toast.modulate.a = 1.0 if text != "" else 0.0
+
+
+## O aviso acompanha `_status.text` (quem muda o texto direto também faz o aviso aparecer)
+## e esmaece no fim do tempo.
+func _update_toast(delta: float) -> void:
+	if _status.text != _toast_text:
+		_show_status(_status.text)
+		return
+	if _toast_left <= 0.0:
+		return
+	_toast_left = maxf(0.0, _toast_left - delta)
+	_toast.modulate.a = clampf(_toast_left / TOAST_FADE, 0.0, 1.0)
+
+
+func _build_toast() -> void:
+	_toast = PanelContainer.new()
+	_toast.name = "Toast"
+	_toast.anchor_left = 0.5
+	_toast.anchor_right = 0.5
+	_toast.anchor_top = 1.0
+	_toast.anchor_bottom = 1.0
+	_toast.offset_left = -TOAST_WIDTH / 2
+	_toast.offset_right = TOAST_WIDTH / 2
+	_toast.offset_top = -TOAST_BOTTOM
+	_toast.offset_bottom = -TOAST_BOTTOM
+	_toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast.modulate.a = 0.0
+	var box := _flat(Color(0.07, 0.03, 0.05, 0.94), ThemeFactory.ACCENT, 1, 4)
+	box.content_margin_left = 10
+	box.content_margin_right = 10
+	box.content_margin_top = 4
+	box.content_margin_bottom = 4
+	box.shadow_color = Color(0, 0, 0, 0.45)
+	box.shadow_size = 4
+	_toast.add_theme_stylebox_override("panel", box)
+	add_child(_toast)
+	_status = label("", 12, HORIZONTAL_ALIGNMENT_CENTER)
+	_status.name = "Status"
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status.custom_minimum_size = Vector2(TOAST_WIDTH - 20, 0)
+	_status.add_theme_color_override("font_color", ThemeFactory.ACCENT)
+	_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast.add_child(_status)
+
+
+# --- Peças do layout ----------------------------------------------------------------
+
+## Saldo de ryō numa pílula escura no canto superior direito (cresce para a esquerda).
+func _balance_pill() -> PanelContainer:
+	var pill := PanelContainer.new()
+	pill.name = "Balance"
+	pill.anchor_left = 1.0
+	pill.anchor_right = 1.0
+	pill.offset_left = -SIDE_MARGIN
+	pill.offset_right = -SIDE_MARGIN
+	pill.offset_top = 10
+	pill.offset_bottom = 32
+	pill.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box := _flat(Color(0.06, 0.02, 0.04, 0.85), Color(ThemeFactory.ACCENT, 0.55), 1, 10)
+	box.content_margin_left = 6
+	box.content_margin_right = 9
+	pill.add_theme_stylebox_override("panel", box)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 5)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pill.add_child(row)
+	_balance_coin = _coin_rect()
+	row.add_child(_balance_coin)
+	_ryo = label("", 12, HORIZONTAL_ALIGNMENT_RIGHT)
+	_ryo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ryo.add_theme_color_override("font_color", ThemeFactory.ACCENT)
+	_ryo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(_ryo)
+	return pill
+
+
+## Cabeçalho de seção: marca, título em destaque, filete até a borda e subtítulo.
+func _section(title: String, subtitle: String) -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 0)
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 5)
+	head.mouse_filter = Control.MOUSE_FILTER_PASS
+	box.add_child(head)
+	head.add_child(_rule(Vector2(8, 2), ThemeFactory.ACCENT))
+	var title_label_node := label(title, 12)
+	title_label_node.add_theme_color_override("font_color", ThemeFactory.ACCENT)
+	title_label_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(title_label_node)
+	var line := _rule(Vector2(0, 1), Color(ThemeFactory.ACCENT, 0.35))
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(line)
+	var sub := label(subtitle, CARD_TEXT_SIZE)
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sub.add_theme_color_override("font_color", MUTED)
+	sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(sub)
+	return box
+
+
+## Compra que remove o anúncio de abertura (destaque) e "Restaurar compras" (discreto).
+func _purchase_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	_buy = button("", _on_buy, Vector2(0, 38))
+	_buy.name = "RemoveAd"
+	_buy.clip_text = false
+	_buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_buy.mouse_filter = Control.MOUSE_FILTER_PASS
+	_buy.icon = load(PREMIUM_ICON) as Texture2D
+	_buy.add_theme_constant_override("h_separation", 8)
+	_buy.add_theme_stylebox_override("normal", _premium_style(LACQUER, ThemeFactory.ACCENT))
+	_buy.add_theme_stylebox_override("hover", _premium_style(LACQUER.lightened(0.15), Color("fff1c4")))
+	_buy.add_theme_stylebox_override("pressed", _premium_style(LACQUER.darkened(0.25), ThemeFactory.ACCENT))
+	_buy.add_theme_stylebox_override("disabled", _premium_style(OWNED, Color("8fd18a")))
+	_buy.add_theme_stylebox_override("focus", _focus_style())
+	_buy.add_theme_color_override("font_disabled_color", Color("d6f5d0"))
+	row.add_child(_buy)
+	_restore = button(tr("shop.restore"), _on_restore, Vector2(0, 26))
+	_restore.name = "Restore"
+	_restore.clip_text = false
+	_restore.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_restore.mouse_filter = Control.MOUSE_FILTER_PASS
+	_restore.add_theme_font_size_override("font_size", CARD_TEXT_SIZE)
+	_restore.add_theme_color_override("font_color", MUTED)
+	var quiet := _flat(Color(0, 0, 0, 0.25), Color(MUTED, 0.45), 1, 3)
+	quiet.content_margin_left = 10
+	quiet.content_margin_right = 10
+	_restore.add_theme_stylebox_override("normal", quiet)
+	var quiet_hover := quiet.duplicate() as StyleBoxFlat
+	quiet_hover.bg_color = Color(1, 1, 1, 0.08)
+	quiet_hover.border_color = ThemeFactory.ACCENT
+	_restore.add_theme_stylebox_override("hover", quiet_hover)
+	_restore.add_theme_stylebox_override("pressed", quiet_hover)
+	_restore.add_theme_stylebox_override("focus", _focus_style())
+	row.add_child(_restore)
+	return row
+
+
 func _card_row() -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", int(GAP))
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	return row
 
 
 ## Cartão-botão: PASS deixa o arrasto chegar ao ScrollContainer (rolar com o dedo).
-func _card_button(size: Vector2, on_press: Callable) -> Button:
+func _card_button(height: float, on_press: Callable) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = size
+	b.custom_minimum_size = Vector2(CARD_W, height)
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_filter = Control.MOUSE_FILTER_PASS
-	b.add_theme_stylebox_override("normal", ThemeFactory.card_box())
-	b.add_theme_stylebox_override("hover", ThemeFactory.card_box_hover())
-	b.add_theme_stylebox_override("disabled", ThemeFactory.dark_box())
+	b.add_theme_stylebox_override("normal", _card_style(CARD_BG, CARD_BORDER))
+	b.add_theme_stylebox_override("hover", _card_style(CARD_HOVER_BG, ThemeFactory.ACCENT, true))
+	b.add_theme_stylebox_override("pressed", _card_style(CARD_PRESSED_BG, ThemeFactory.ACCENT))
+	b.add_theme_stylebox_override("disabled", _dim_style())
+	b.add_theme_stylebox_override("focus", _focus_style())
 	b.button_down.connect(func() -> void: _press_scroll = _scroll.scroll_vertical)
 	b.pressed.connect(on_press)
 	return b
@@ -305,33 +516,99 @@ func _card_button(size: Vector2, on_press: Callable) -> Button:
 func _card_inner(b: Button) -> VBoxContainer:
 	var inner := VBoxContainer.new()
 	inner.set_anchors_preset(Control.PRESET_FULL_RECT)
-	inner.offset_left = 2
-	inner.offset_right = -2
-	inner.offset_top = 2
-	inner.offset_bottom = -2
-	inner.alignment = BoxContainer.ALIGNMENT_CENTER
+	inner.offset_left = PAD
+	inner.offset_right = -PAD
+	inner.offset_top = PAD
+	inner.offset_bottom = -PAD
 	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	inner.add_theme_constant_override("separation", 2)
+	inner.add_theme_constant_override("separation", int(SEP))
 	b.add_child(inner)
 	return inner
 
 
-## Texto que quebra em linhas dentro da caixa; nunca alarga o layout.
-func _text_label(text: String, align: HorizontalAlignment,
-		wrap: TextServer.AutowrapMode = TextServer.AUTOWRAP_OFF, size: int = 12) -> Label:
-	var l := label(text, size, align)
+## Altura do cartão: padding, poço do ícone e as caixas de texto, sem sobra.
+func _card_height(parts: Array) -> float:
+	var total := 2 * PAD + WELL_HEIGHT
+	for part: float in parts:
+		total += SEP + part
+	return total
+
+
+## Poço escuro do ícone: mesma caixa para todos, ícone em escala inteira e cortado na borda.
+## Folhas com quadros lado a lado (ex.: baús abrindo) mostram só o primeiro quadro.
+func _icon_well(path: String, card: Button) -> Panel:
+	var well := Panel.new()
+	well.name = "Well"
+	well.custom_minimum_size = Vector2(0, WELL_HEIGHT)
+	well.clip_contents = true
+	well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	well.add_theme_stylebox_override("panel", _flat(WELL_BG, Color(0, 0, 0, 0.35), 1, 3))
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var side := ICON_BOX
+	if ResourceLoader.exists(path):
+		var tex := load(path) as Texture2D
+		var frame := Vector2(tex.get_width(), tex.get_height())
+		var frames := floori(frame.x / frame.y)
+		if frames >= 2:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = tex
+			atlas.region = Rect2(0, 0, floorf(frame.x / frames), frame.y)
+			tex = atlas
+			frame = atlas.region.size
+		var scale_i := maxf(1.0, floorf(ICON_BOX / maxf(frame.x, frame.y)))
+		side = maxf(frame.x, frame.y) * scale_i
+		icon.texture = tex
+	icon.anchor_left = 0.5
+	icon.anchor_right = 0.5
+	icon.anchor_top = 0.5
+	icon.anchor_bottom = 0.5
+	icon.offset_left = -side / 2
+	icon.offset_right = side / 2
+	icon.offset_top = -side / 2
+	icon.offset_bottom = side / 2
+	well.add_child(icon)
+	# Mouse em cima ou foco: o ícone sobe um pouco no poço.
+	var lift := func(up: bool) -> void:
+		if card.disabled and up:
+			return
+		var tween := icon.create_tween()
+		tween.tween_property(icon, "offset_top", -side / 2 - (ICON_LIFT if up else 0.0), 0.08)
+		tween.parallel().tween_property(icon, "offset_bottom", side / 2 - (ICON_LIFT if up else 0.0), 0.08)
+	card.mouse_entered.connect(lift.bind(true))
+	card.mouse_exited.connect(lift.bind(false))
+	card.focus_entered.connect(lift.bind(true))
+	card.focus_exited.connect(lift.bind(false))
+	return well
+
+
+## Faixa (efeito, estado da vaga) com o texto numa caixa de altura fixa.
+func _chip(text: Label, text_height: float, style: StyleBoxFlat = null) -> PanelContainer:
+	var chip := PanelContainer.new()
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box := style if style != null else _flat(Color(0, 0, 0, 0.35), Color(0, 0, 0, 0), 0, 3)
+	box.content_margin_left = CHIP_MARGIN_X
+	box.content_margin_right = CHIP_MARGIN_X
+	box.content_margin_top = CHIP_MARGIN_Y
+	box.content_margin_bottom = CHIP_MARGIN_Y
+	chip.add_theme_stylebox_override("panel", box)
+	text.custom_minimum_size = Vector2(0, text_height)
+	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	chip.add_child(text)
+	return chip
+
+
+## Texto do cartão: quebra em linhas dentro da caixa; nunca alarga o layout.
+func _card_label(text: String) -> Label:
+	var l := label(text, CARD_TEXT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
 	l.clip_text = true
-	l.autowrap_mode = wrap
-	if wrap == TextServer.AUTOWRAP_OFF:
-		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
-
-
-## Botão sem corte: a largura mínima segue o texto, então o preço nunca fica cortado
-## (o teste confere que o botão cabe no texto inteiro).
-func _fit_button(b: Button) -> void:
-	b.clip_text = false
 
 
 ## Caixa de altura fixa: o conteúdo que não couber é cortado e não empurra os vizinhos.
@@ -343,3 +620,118 @@ func _fixed_box(node: Control, height: float) -> Control:
 	node.set_anchors_preset(Control.PRESET_FULL_RECT)
 	box.add_child(node)
 	return box
+
+
+func _spacer(height: float) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(0, height)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+func _rule(size_px: Vector2, color: Color) -> ColorRect:
+	var r := ColorRect.new()
+	r.color = color
+	r.custom_minimum_size = size_px
+	r.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+## Primeiro quadro da moeda redonda em escala 1 (nítida ao lado do texto de fonte 10-12).
+func _coin_rect() -> TextureRect:
+	var atlas := AtlasTexture.new()
+	atlas.atlas = load(COIN_SHEET) as Texture2D
+	atlas.region = Rect2(0, 0, COIN_FRAME, COIN_FRAME)
+	var rect := TextureRect.new()
+	rect.texture = atlas
+	rect.custom_minimum_size = Vector2(COIN_FRAME, COIN_FRAME)
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rect
+
+
+func _slot_name(id: StringName) -> String:
+	if id == &"slot_ryo":
+		return tr("shop.slot_ryo.name_value") % ShopManager.ryo_value()
+	return tr("shop.%s.name" % id)
+
+
+## Linhas que o texto ocupa na largura dada, com a mesma quebra do Label (WORD_SMART).
+func _lines(text: String, width: float) -> int:
+	var paragraph := TextParagraph.new()
+	paragraph.break_flags = TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND \
+			| TextServer.BREAK_ADAPTIVE | TextServer.BREAK_TRIM_START_EDGE_SPACES \
+			| TextServer.BREAK_TRIM_END_EDGE_SPACES
+	paragraph.width = width
+	paragraph.add_string(text, get_theme_font("font", "Label"), CARD_TEXT_SIZE)
+	return maxi(1, paragraph.get_line_count())
+
+
+## Altura de `lines` linhas do texto do cartão (fonte 10 com o espaçamento do Label).
+func _text_height(lines: int) -> float:
+	var font := get_theme_font("font", "Label")
+	var spacing := get_theme_constant("line_spacing", "Label")
+	return lines * font.get_height(CARD_TEXT_SIZE) + (lines - 1) * spacing
+
+
+# --- Estilos ------------------------------------------------------------------------
+
+func _flat(bg: Color, border: Color, width: int, radius: int) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.border_color = border
+	box.set_border_width_all(width)
+	box.set_corner_radius_all(radius)
+	box.corner_detail = 3
+	box.anti_aliasing = false
+	return box
+
+
+## Cartão laqueado: fundo escuro, borda de madeira (ou dourada) e brilho opcional.
+func _card_style(bg: Color, border: Color, glow: bool = false) -> StyleBoxFlat:
+	var box := _flat(bg, border, 1, 4)
+	box.border_width_bottom = 2
+	if glow:
+		box.shadow_color = Color(ThemeFactory.ACCENT, 0.35)
+		box.shadow_size = 3
+	return box
+
+
+func _dim_style() -> StyleBoxFlat:
+	return _card_style(DIM_BG, DIM_BORDER)
+
+
+func _queued_style() -> StyleBoxFlat:
+	var box := _card_style(QUEUED_BG, ThemeFactory.ACCENT)
+	box.set_border_width_all(2)
+	return box
+
+
+func _focus_style() -> StyleBoxFlat:
+	var box := _flat(Color(0, 0, 0, 0), ThemeFactory.ACCENT, 1, 4)
+	box.draw_center = false
+	return box
+
+
+func _premium_style(bg: Color, border: Color) -> StyleBoxFlat:
+	var box := _flat(bg, border, 2, 5)
+	box.border_width_bottom = 3
+	box.shadow_color = Color(ThemeFactory.ACCENT, 0.18)
+	box.shadow_size = 3
+	box.content_margin_left = 12
+	box.content_margin_right = 12
+	return box
+
+
+func _style_scroll_bar(bar: VScrollBar) -> void:
+	var track := _flat(Color(0, 0, 0, 0.3), Color(0, 0, 0, 0), 0, 3)
+	track.content_margin_left = BAR_WIDTH / 2
+	track.content_margin_right = BAR_WIDTH / 2
+	bar.add_theme_stylebox_override("scroll", track)
+	bar.add_theme_stylebox_override("scroll_focus", track)
+	bar.add_theme_stylebox_override("grabber", _flat(Color(ThemeFactory.ACCENT, 0.55), Color(0, 0, 0, 0), 0, 3))
+	bar.add_theme_stylebox_override("grabber_highlight", _flat(ThemeFactory.ACCENT, Color(0, 0, 0, 0), 0, 3))
+	bar.add_theme_stylebox_override("grabber_pressed", _flat(ThemeFactory.ACCENT, Color(0, 0, 0, 0), 0, 3))

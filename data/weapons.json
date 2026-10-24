@@ -57,6 +57,10 @@
    "levels": [{}, {"chain": 1}, {"damage": 3}, {"amount": 1}, {"chain": 1, "damage": 3}, {"cooldown": -0.1}, {"amount": 1}, {"damage": 6, "chain": 1}],
    "evolves_with": "scroll", "evolution": "raikiri", "unlock": ""},
 
+  {"id": "onikiri", "kind": "base", "behavior": "onikiri", "icon": "res://assets/art/items/weapons/sai.png", "tags": ["blade"],
+   "base": {"damage": 8, "cooldown": 0.9, "area": 1.0, "amount": 1, "knockback": 70, "radius": 34},
+   "levels": [{}, {"amount": 1}, {"damage": 4}, {"area": 0.1, "damage": 4}, {"cooldown": -0.1}, {"area": 0.1, "damage": 4}, {"damage": 4}, {"damage": 8}],
+   "evolves_with": "noh_mask", "evolution": "dojigiri", "unlock": "ach_boss_red_oni"},
   {"id": "dawn_blade", "kind": "evolution", "behavior": "katana", "icon": "res://assets/art/items/weapons/ninjaku.png", "tags": ["blade"],
    "base": {"damage": 50, "cooldown": 1.1, "area": 1.4, "amount": 2, "knockback": 120, "width": 46, "height": 22},
    "flags": {"heal_every_hits": 10}, "levels": [{}], "from": "katana"},
@@ -100,6 +104,9 @@
    "base": {"damage": 32, "cooldown": 1.4, "amount": 4, "chain": 8, "range": 240, "chain_range": 100, "knockback": 15},
    "flags": {"falloff": 0.9}, "levels": [{}], "from": "inazuma"},
 
+  {"id": "dojigiri", "kind": "evolution", "behavior": "onikiri", "icon": "res://assets/art/ui/icons/spell/AttackUpgrade.png", "tags": ["blade"],
+   "base": {"damage": 28, "cooldown": 0.75, "area": 1.3, "amount": 2, "knockback": 100, "radius": 34},
+   "flags": {"combo_wave": true}, "levels": [{}], "from": "onikiri"},
   {"id": "fujin_raijin", "kind": "union", "behavior": "typhoon", "icon": "res://assets/art/ui/icons/meteo/Rain.png", "tags": ["wind", "thunder"],
    "base": {"damage": 30, "cooldown": 0.25, "radius": 70, "speed": 55, "amount": 2},
    "requires": ["raijin_fury", "fujin_hurricane"], "levels": [{}]},

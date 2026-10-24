@@ -2,9 +2,12 @@ class_name Ofuda
 extends Weapon
 ## Ofuda Orbitante / Barreira de Amaterasu: papéis-selo giram em volta da guardiã
 ## (plano 4.5). Ficam ativos por "duration" e pausam por "cooldown"; a evolução é permanente.
+## Som: leque de papel ao aparecer, farfalhar acompanhando a órbita e papel recolhendo ao sumir.
 
 const HIT_COOLDOWN := 0.45
 const PAPER_RADIUS := 6.0
+## Intervalo mínimo entre dois farfalhares (tempo de jogo).
+const FLUTTER_GAP := 0.25
 
 var _active_left: float = 0.0
 var _pause_left: float = 0.0
@@ -13,6 +16,9 @@ var _last_hit: Dictionary = {}
 var _near: Array[int] = []
 var _tex: Texture2D
 var _announced: bool = false
+## Meia volta do conjunto em que o último selo cruzou o ângulo de referência.
+var _flutter_mark: int = 0
+var _flutter_wait: float = 0.0
 
 
 func _init(p_game: HyakkiGame, p_id: StringName) -> void:
@@ -31,13 +37,16 @@ func step(dt: float) -> void:
 			_active_left -= dt
 			if _active_left <= 0.0:
 				_pause_left = cooldown()
+				AudioManager.play("paper_fold", 1.0, 0.06, -8.0)
 		else:
 			_pause_left -= dt
 			if _pause_left <= 0.0:
 				_active_left = duration()
 				_cast_sound()
 			return
-	_angle += raw("speed") * stats().get_stat("proj_speed") * dt
+	var spin := raw("speed") * stats().get_stat("proj_speed")
+	_angle += spin * dt
+	_flutter(spin, dt)
 	var time := GameClock.game_time
 	var r := orbit_radius()
 	var dmg := damage()
@@ -54,9 +63,27 @@ func step(dt: float) -> void:
 		_last_hit.clear()
 
 
-## Os selos aparecem (ou voltam depois da pausa).
+## Os selos aparecem (ou voltam depois da pausa): papel abrindo em leque e o selo mágico.
 func _cast_sound() -> void:
+	AudioManager.play("ofuda_fan", 1.0, 0.06, -3.0)
 	AudioManager.play("ofuda_cast", 1.1 if is_evolved() else 1.0, 0.06, -8.0)
+
+
+## Farfalhar enquanto os selos giram: toca quando um selo cruza o ângulo de referência
+## (a cada meia volta do conjunto, derivado de _angle), com intervalo mínimo. O tom sobe
+## com a velocidade de giro e cada selo extra soma um pouco de volume (até +4 dB).
+func _flutter(spin: float, dt: float) -> void:
+	var count := maxi(1, amount())
+	var mark := floori(_angle / (PI / count))
+	_flutter_wait -= dt
+	if mark == _flutter_mark:
+		return
+	_flutter_mark = mark
+	if _flutter_wait > 0.0:
+		return
+	_flutter_wait = FLUTTER_GAP
+	var pitch := clampf(0.8 + 0.08 * absf(spin), 0.85, 1.35)
+	AudioManager.play("paper_flutter", pitch, 0.05, -8.0 + 0.8 * mini(count - 1, 5))
 
 
 func is_active() -> bool:

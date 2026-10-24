@@ -50,6 +50,7 @@ var chests: ChestSystem
 var ultimate: UltimateSystem
 var tracker: RunTracker
 var hud: Hud
+var death: DeathSequence
 var weapons: Array[Weapon] = []
 var level: int = 1
 var xp: int = 0
@@ -241,10 +242,10 @@ func restore_snapshot(s: Dictionary) -> void:
 	_ad_revive_used = bool(s.get("ad_revive_used", false))
 	hud.refresh_speed()
 	if bool(s.get("dead", false)):
-		# Salva durante a morte: volta ao mesmo ponto e mostra de novo a oferta de reviver.
+		# Salva durante a morte: volta com o corpo no chão e a oferta de reviver (ou o aviso).
 		player.hp = 0.0
 		player.is_alive = false
-		_on_player_died()
+		_on_player_died(true)
 	else:
 		open_pause()
 
@@ -316,6 +317,11 @@ func _build() -> void:
 	hud.kami_chosen.connect(_on_kami_chosen)
 	hud.chest_closed.connect(_on_chest_closed)
 	hud.revive_answered.connect(_on_revive_answered)
+	death = DeathSequence.new()
+	death.game = self
+	add_child(death)
+	death.offer_due.connect(_on_death_offer_due)
+	death.finished.connect(func() -> void: _end_run(false))
 
 
 func start_run(cfg: Dictionary) -> void:
@@ -383,6 +389,7 @@ func start_run(cfg: Dictionary) -> void:
 	for _k: int in range(int(cfg.get("start_chest", 0))):
 		_pending_chests.append(false)
 	hud.start_run()
+	death.reset()
 	GameClock.reset()
 	GameClock.speed = clampi(int(cfg.get("speed", Settings.get_value("speed"))), 1, 3)
 	_speed_min = GameClock.speed
@@ -506,7 +513,7 @@ func _handle_actions() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and running and not _bot and not hud.overlay_open() \
-			and not _ad_in_progress:
+			and not _ad_in_progress and not death.is_active():
 		open_pause()
 
 
@@ -680,6 +687,8 @@ func _make_weapon(id: StringName) -> Weapon:
 			return Kaminari.new(self, id)
 		"inazuma":
 			return Inazuma.new(self, id)
+		"onikiri":
+			return Onikiri.new(self, id)
 	push_error("Arma sem comportamento: %s" % id)
 	return null
 
@@ -922,6 +931,10 @@ func apply_kami_specials(specials: Dictionary) -> void:
 
 
 func open_pause() -> void:
+	if death.is_active():
+		# Na morte não há pausa: "voltar" (ou Esc) só segue do aviso para os resultados.
+		death.skip()
+		return
 	if not running or hud.overlay_open():
 		return
 	GameClock.paused = true
@@ -956,30 +969,32 @@ func cycle_speed() -> void:
 
 # --- Fim da partida --------------------------------------------------------------
 
-func _on_player_died() -> void:
+## O mundo para e começa a sequência de morte (DeathSequence); o bot encerra na hora.
+## `restored`: partida salva durante a morte, com o corpo já no chão.
+func _on_player_died(restored: bool = false) -> void:
 	if not running:
 		return
-	# Reviver por anúncio: 1× por partida, só depois do Revive do Santuário, em todos os
-	# modos (inclusive o Desafio Diário) e nunca contra o Shinigami (plano 17.6).
-	var offer := not _ad_revive_used and not _bot and not _shinigami_present() \
-			and AdsManager.rewarded_available()
+	if _bot:
+		_end_run(false)
+		return
+	GameClock.paused = true
+	AudioManager.set_low_health(false)
+	death.begin(restored)
+
+
+## Corpo no chão. Reviver por anúncio: 1× por partida, depois do Revive do Santuário, em todos
+## os modos (inclusive o Diário) e nunca contra o Shinigami (17.6). Sem oferta, o aviso.
+func _on_death_offer_due() -> void:
+	var offer := not _ad_revive_used and not bosses.has_boss(&"shinigami") and AdsManager.rewarded_available()
 	if offer:
-		GameClock.paused = true
 		hud.show_revive_offer()
 	else:
-		_end_run(false)
-
-
-func _shinigami_present() -> bool:
-	for boss: Dictionary in bosses.bosses:
-		if StringName(boss["id"]) == &"shinigami":
-			return true
-	return false
+		death.show_notice()
 
 
 func _on_revive_answered(accept: bool) -> void:
 	if not accept:
-		_end_run(false)
+		death.show_notice()
 		return
 	_ad_revive_used = true
 	_ad_in_progress = true
@@ -990,9 +1005,10 @@ func _on_revive_answered(accept: bool) -> void:
 			SaveManager.data["stats"]["revives_by_ad"] = int(SaveManager.data["stats"]["revives_by_ad"]) + 1
 			player.revive(0.5)
 			player.invuln = 3.0
-			_resume_if_clear()
+			# A guardiã se levanta (o caminho inverso da queda) e só então a partida volta.
+			death.rise(func() -> void: _resume_if_clear())
 		else:
-			_end_run(false))
+			death.show_notice())
 
 
 func _on_dawn() -> void:
@@ -1042,7 +1058,9 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 	var applied := MetaProgress.apply_run(result, tracker)
 	result["ryo_earned"] = applied["ryo"]
 	result["new_achievements"] = applied["achievements"]
-	AudioManager.play("jingle_success" if result["victory"] else "jingle_gameover")
+	# Na derrota, o aviso da morte já tocou o jingle; aqui só a música.
+	if result["victory"] or not death.jingle_played:
+		AudioManager.play("jingle_success" if result["victory"] else "jingle_gameover")
 	AudioManager.play_music("dawn" if result["victory"] else "defeat")
 	finished.emit(result)
 

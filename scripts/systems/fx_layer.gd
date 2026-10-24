@@ -9,6 +9,10 @@ const MAX_NUMBERS := 120
 const MAX_ANIMS := 160
 const NUMBER_LIFETIME := 0.6
 const RING_LIFETIME := 0.4
+## Fiapos de fumaça (a lanterna que se apaga na morte): poucos, lentos, sobem e se desfazem.
+const MAX_WISPS := 24
+const WISP_LIFETIME := 1.6
+const WISP_COLOR := Color(0.62, 0.63, 0.68)
 ## Animações: arquivo e largura do quadro (o quadro tem a altura da imagem).
 const ANIMS := {
 	"slash": ["res://assets/art/fx/slash_curved/SpriteSheet.png", 32],
@@ -46,6 +50,11 @@ var _n_text := PackedStringArray()
 var _n_color := PackedColorArray()
 var _n_next: int = 0
 
+var _w_pos := PackedVector2Array()
+var _w_vel := PackedVector2Array()
+var _w_life := PackedFloat32Array()
+var _w_next: int = 0
+
 var _anims: Array[Dictionary] = []
 var _rings: Array[Dictionary] = []
 var _font: Font
@@ -64,12 +73,16 @@ func _ready() -> void:
 	_n_life.resize(MAX_NUMBERS)
 	_n_text.resize(MAX_NUMBERS)
 	_n_color.resize(MAX_NUMBERS)
+	_w_pos.resize(MAX_WISPS)
+	_w_vel.resize(MAX_WISPS)
+	_w_life.resize(MAX_WISPS)
 	reset()
 
 
 func reset() -> void:
 	_p_life.fill(0.0)
 	_n_life.fill(0.0)
+	_w_life.fill(0.0)
 	_anims.clear()
 	_rings.clear()
 
@@ -83,6 +96,24 @@ func burst(at: Vector2, color: Color, count: int = 5) -> void:
 		_p_life[_p_next] = randf_range(0.25, 0.4)
 		_p_color[_p_next] = color
 		_p_next = (_p_next + 1) % MAX_PARTICLES
+
+
+## Fiapos de fumaça cinza subindo de `at` (decorativo; usa randf, fora da simulação).
+func add_wisp(at: Vector2, count: int = 5) -> void:
+	for k: int in range(count):
+		_w_pos[_w_next] = at + Vector2(randf_range(-1.5, 1.5), randf_range(-1.0, 1.0))
+		_w_vel[_w_next] = Vector2(randf_range(-4.0, 4.0), randf_range(-17.0, -9.0))
+		_w_life[_w_next] = WISP_LIFETIME * randf_range(0.75, 1.0)
+		_w_next = (_w_next + 1) % MAX_WISPS
+
+
+## Fiapos ainda no ar (testes).
+func wisps_alive() -> int:
+	var count := 0
+	for i: int in range(MAX_WISPS):
+		if _w_life[i] > 0.0:
+			count += 1
+	return count
 
 
 func add_number(at: Vector2, amount: float, crit: bool = false, color: Color = Color.WHITE) -> void:
@@ -115,6 +146,13 @@ func step(dt: float) -> void:
 		_p_life[i] -= dt
 		_p_pos[i] += _p_vel[i] * dt
 		_p_vel[i] *= 0.9
+	for i: int in range(MAX_WISPS):
+		if _w_life[i] <= 0.0:
+			continue
+		_w_life[i] -= dt
+		# Sobe perdendo força e ondula de lado, como fumaça.
+		_w_pos[i] += (_w_vel[i] + Vector2(sin(_w_life[i] * 6.0 + i) * 4.0, 0.0)) * dt
+		_w_vel[i] *= 1.0 - 0.5 * dt
 	for k: int in range(_anims.size() - 1, -1, -1):
 		var anim := _anims[k]
 		anim["time"] = float(anim["time"]) + dt
@@ -138,6 +176,13 @@ func _draw() -> void:
 	for i: int in range(MAX_PARTICLES):
 		if _p_life[i] > 0.0:
 			draw_rect(Rect2(_p_pos[i].round(), Vector2.ONE), _p_color[i])
+	for i: int in range(MAX_WISPS):
+		if _w_life[i] > 0.0:
+			# Cresce de 1 para 3 px enquanto some.
+			var k := _w_life[i] / WISP_LIFETIME
+			var s := roundf(3.0 - 2.0 * k)
+			draw_rect(Rect2(_w_pos[i].round() - Vector2(s, s) * 0.5, Vector2(s, s)),
+					Color(WISP_COLOR.r, WISP_COLOR.g, WISP_COLOR.b, 0.6 * k))
 	for anim: Dictionary in _anims:
 		var sheet: SpriteSheet = anim["sheet"]
 		var frame := mini(int(float(anim["time"]) * float(anim["fps"])), sheet.frames - 1)

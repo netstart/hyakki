@@ -33,6 +33,15 @@ const CHEST_GLOW := Color(1.8, 1.8, 1.5)
 const KAMI_ICON_TOP := 8.0
 const KAMI_ICON_BOX := 32.0
 const KAMI_TEXT_TOP := 46.0
+## Oferta de reviver no clima da morte: tinta clara e fria sobre a cena escurecida.
+const REVIVE_INK := Color(0.82, 0.86, 0.94)
+const REVIVE_FADE := 0.35
+const REVIVE_BAR := 120.0
+## Botões da oferta na linguagem da tela de resultados: vermelhão com borda dourada (principal)
+## e escuro discreto (secundário).
+const VERMILION := Color("b23a26")
+const REVIVE_DIM := Color(0.8, 0.76, 0.72)
+const REVIVE_WATCH := Vector2(250.0, 42.0)
 
 var game: HyakkiGame
 var joystick: TouchJoystick
@@ -86,6 +95,10 @@ var _pause_stats: RichTextLabel
 var _revive_panel: Control
 var _revive_label: Label
 var _revive_left: float = 0.0
+var _revive_bar: Control
+## HUD de jogo que some na morte (joystick, topo, botões, chefe, avisos).
+var _gameplay: Array[Control] = []
+var _gameplay_alpha: float = 1.0
 var _icons: Dictionary = {}
 
 
@@ -174,6 +187,8 @@ func _ready() -> void:
 	_build_kami_panel()
 	_build_pause_panel()
 	_build_revive_panel()
+	_gameplay = [joystick, _top, _pause_button, _speed_button, _ult_button, _boss_label, _boss_line,
+			_toast, _hint]
 	Settings.changed.connect(_on_setting)
 	_apply_joystick_settings()
 	start_run()
@@ -186,6 +201,7 @@ func start_run() -> void:
 	_kami_panel.visible = false
 	_pause_panel.visible = false
 	_revive_panel.visible = false
+	set_gameplay_alpha(1.0)
 	_banish_mode = false
 	_countdown_left = 0.0
 	_countdown_label.visible = false
@@ -783,20 +799,122 @@ func show_revive_offer() -> void:
 	_revive_panel.visible = true
 	_revive_left = REVIVE_SECONDS
 	joystick.release()
+	# Surge devagar sobre a cena da morte.
+	_revive_panel.modulate.a = 0.0
+	create_tween().tween_property(_revive_panel, "modulate:a", 1.0, REVIVE_FADE)
 
 
+## Sem a tela escura das outras: a cena da morte já vem cinza e escura, e o corpo da guardiã
+## fica à vista no centro, entre o título e a contagem (em cima) e os botões (embaixo).
 func _build_revive_panel() -> void:
-	var box := _overlay_box()
-	_revive_panel = box.get_parent().get_parent() as Control
-	box.add_child(_label(tr("revive.title"), HORIZONTAL_ALIGNMENT_CENTER))
+	_revive_panel = Control.new()
+	_revive_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_revive_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_revive_panel.visible = false
+	var veil := ColorRect.new()
+	veil.color = Color(0.02, 0.02, 0.05, 0.28)
+	_revive_panel.add_child(_full_rect(veil))
+	var top := VBoxContainer.new()
+	top.anchor_right = 1.0
+	top.offset_top = 30.0
+	top.add_theme_constant_override("separation", 2)
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_revive_panel.add_child(top)
+	var title := _label(tr("revive.title"), HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_color", REVIVE_INK)
+	top.add_child(title)
 	_revive_label = _label("", HORIZONTAL_ALIGNMENT_CENTER)
-	box.add_child(_revive_label)
-	box.add_child(_menu_button(tr("revive.watch"), func() -> void:
+	_revive_label.add_theme_font_size_override("font_size", 24)
+	_revive_label.add_theme_color_override("font_color", REVIVE_INK)
+	top.add_child(_revive_label)
+	# Traço de tinta que encolhe com o tempo da oferta.
+	_revive_bar = Control.new()
+	_revive_bar.custom_minimum_size = Vector2(0.0, 3.0)
+	_revive_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_revive_bar.draw.connect(_draw_revive_bar)
+	top.add_child(_revive_bar)
+	var bottom := CenterContainer.new()
+	bottom.anchor_top = 1.0
+	bottom.anchor_right = 1.0
+	bottom.anchor_bottom = 1.0
+	bottom.offset_top = -92.0
+	bottom.offset_bottom = -12.0
+	_revive_panel.add_child(bottom)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	bottom.add_child(box)
+	var watch := _menu_button(tr("revive.watch"), func() -> void:
 		_revive_panel.visible = false
-		revive_answered.emit(true), Vector2(200, 34)))
-	box.add_child(_menu_button(tr("revive.results"), func() -> void:
+		revive_answered.emit(true), REVIVE_WATCH)
+	box.add_child(watch)
+	var results := _menu_button(tr("revive.results"), func() -> void:
 		_revive_panel.visible = false
-		revive_answered.emit(false), Vector2(200, 30)))
+		revive_answered.emit(false), Vector2(200, 26))
+	box.add_child(results)
+	_root.add_child(_revive_panel)
+	_style_revive_buttons(watch, results)
+
+
+func _style_revive_buttons(watch: Button, results: Button) -> void:
+	var main := _flat(VERMILION, ThemeFactory.ACCENT, 2, 6)
+	main.shadow_size = 3
+	main.shadow_color = Color(ThemeFactory.ACCENT, 0.3)
+	_button_styles(watch, main, _flat(VERMILION.lightened(0.12), Color.WHITE, 2, 6),
+			_flat(VERMILION.darkened(0.25), ThemeFactory.ACCENT, 2, 6))
+	watch.add_theme_color_override("font_color", ThemeFactory.TEXT)
+	# Fonte 24 (2× da pixel) quando o texto cabe; senão a de 12, para não cortar em idioma longo.
+	var font := _root.theme.default_font
+	var fits := font.get_string_size(watch.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x <= REVIVE_WATCH.x - 16.0
+	watch.add_theme_font_size_override("font_size", 24 if fits else 12)
+	_button_styles(results, _flat(Color(0, 0, 0, 0.3), Color(REVIVE_DIM, 0.45), 1, 4),
+			_flat(Color(0, 0, 0, 0.45), ThemeFactory.ACCENT.darkened(0.2), 1, 4),
+			_flat(Color(0, 0, 0, 0.55), ThemeFactory.ACCENT, 1, 4))
+	results.add_theme_color_override("font_color", REVIVE_DIM)
+
+
+func _button_styles(button: Button, normal: StyleBoxFlat, hover: StyleBoxFlat, pressed: StyleBoxFlat) -> void:
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_stylebox_override("focus", _flat(Color(0, 0, 0, 0), Color.WHITE, 1, 6))
+
+
+static func _flat(bg: Color, border: Color, width: int, pad: int) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.border_color = border
+	box.set_border_width_all(width)
+	box.set_corner_radius_all(3)
+	box.anti_aliasing = false
+	box.set_content_margin_all(pad)
+	return box
+
+
+func _draw_revive_bar() -> void:
+	var k := clampf(_revive_left / REVIVE_SECONDS, 0.0, 1.0)
+	var width := REVIVE_BAR * k
+	var at := Vector2(roundf((_revive_bar.size.x - width) * 0.5), 1.0)
+	_revive_bar.draw_rect(Rect2(at, Vector2(roundf(width), 1.0)), Color(REVIVE_INK.r, REVIVE_INK.g, REVIVE_INK.b, 0.7))
+
+
+# --- Sequência de morte -----------------------------------------------------------------
+
+## Some com a HUD de jogo na morte e a traz de volta no reviver. Abaixo de 1, os botões não
+## recebem toque e o joystick solta e para de ler o polegar.
+func set_gameplay_alpha(alpha: float) -> void:
+	_gameplay_alpha = alpha
+	var live := alpha >= 0.999
+	for control: Control in _gameplay:
+		control.modulate.a = alpha
+	for button: Button in [_pause_button, _speed_button, _ult_button]:
+		button.mouse_filter = Control.MOUSE_FILTER_STOP if live else Control.MOUSE_FILTER_IGNORE
+	if not live:
+		joystick.release()
+	joystick.set_process_input(live)
+
+
+func gameplay_alpha() -> float:
+	return _gameplay_alpha
 
 
 # --- Chefe ----------------------------------------------------------------------------
@@ -886,6 +1004,7 @@ func _process(delta: float) -> void:
 	if _revive_panel.visible:
 		_revive_left -= delta
 		_revive_label.text = tr("revive.countdown") % ceili(maxf(_revive_left, 0.0))
+		_revive_bar.queue_redraw()
 		if _revive_left <= 0.0:
 			_revive_panel.visible = false
 			revive_answered.emit(false)
