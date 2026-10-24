@@ -38,6 +38,8 @@ const AchievementRewardTests := preload("res://tests/achievement_reward_tests.gd
 const MenuBackdropTests := preload("res://tests/menu_backdrop_tests.gd")
 ## Pausa: ícone do canto, botão de velocidade, música, desistir com confirmação e layout.
 const PauseMenuTests := preload("res://tests/pause_menu_tests.gd")
+## Créditos: toda entrada de licenses/index.json visível, layout, arrasto e roda.
+const CreditsScreenTests := preload("res://tests/credits_screen_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -80,6 +82,7 @@ func _ready() -> void:
 	await StageMapLayoutTests.new().run(self, _check)
 	await MenuBackdropTests.new().run(self, _check)
 	await PauseMenuTests.new().run(self, _check)
+	await CreditsScreenTests.new().run(self, _check)
 	await _test_shop_layout()
 	await _test_shop_scroll()
 	_remove_test_files()

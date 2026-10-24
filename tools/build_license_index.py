@@ -49,16 +49,31 @@ def render(entries: list) -> dict:
     md += ["", "Verificação: `python -I tools/check_licenses.py` (cobertura de todos os arquivos de `assets/`,",
            "hash das cópias, licenças permitidas, data de verificação). Snapshots das páginas de origem em",
            "`docs/licenses/` (fora do APK)."]
+    # Mesmas seções e mesma regra da tela Créditos (CreditsScreen.section_of): o que não é
+    # arte, áudio ou fonte vai para Tecnologia; áudio com "music" no id é Música.
+    def section(e: dict) -> str:
+        if e["category"] == "art":
+            return "art"
+        if e["category"] == "font":
+            return "fonts"
+        if e["category"] == "audio":
+            return "music" if "music" in e["id"].lower() else "sfx"
+        return "tech"
+
     credits = ["# Créditos", "", "**Hyakki — Até o Amanhecer**", "",
-               "Design, programação e direção: Clayton K. N. Passos", "", "## Arte, áudio e fontes", ""]
-    for e in entries:
-        if e["category"] in ("art", "audio", "font"):
+               "Design, programação e direção: Clayton K. N. Passos", "",
+               "Gerado por `tools/build_license_index.py` a partir de `licenses/registry.json`; a tela",
+               "Créditos do jogo mostra as mesmas entradas. Não editar à mão."]
+    for key, title in (("art", "Arte"), ("music", "Música"), ("sfx", "Efeitos sonoros"), ("fonts", "Fontes"),
+                       ("tech", "Tecnologia")):
+        rows = [e for e in entries if section(e) == key]
+        if not rows:
+            continue
+        credits += ["", f"## {title}", ""]
+        for e in rows:
             credits.append(f"- **{e['name']}** — {e['author']} ({e['license_id']}) — {e['source_url']}")
-    credits += ["", "## Software", ""]
-    for e in entries:
-        if e["category"] not in ("art", "audio", "font"):
-            credits.append(f"- **{e['name']}** — {e['author']} ({e['license_id']}) — {e['source_url']}")
-    credits += ["", "Agradecimento especial a pixel-boy & AAA pelo Ninja Adventure, liberado em CC0.", ""]
+    credits += ["", "## Agradecimentos", "",
+                "Agradecimento especial a pixel-boy & AAA pelo Ninja Adventure, liberado em CC0.", ""]
     return {
         "licenses/index.json": json.dumps(index, ensure_ascii=False, indent=2) + "\n",
         "ASSET_LICENSES.md": "\n".join(md) + "\n",

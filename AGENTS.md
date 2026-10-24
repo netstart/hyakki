@@ -50,10 +50,19 @@ Licenças que exigem "compartilha-alike" viral sobre todo o jogo (ex.: GPL, AGPL
 5. Inclua o asset no jogo/repositório, sempre junto com uma cópia da sua licença (`licenses/texts/<id>.<spdx>.txt` para o texto da licença e `licenses/notices/<id>_<nome>.txt` para o aviso/copyright do autor). Nenhum asset entra no jogo sem sua licença acompanhando.
 6. Atualize `tools/check_licenses.py` se houver novas categorias ou validações.
 7. Rode `python -I tools/check_licenses.py` antes de commitar.
+8. Regenere `licenses/index.json`, `ASSET_LICENSES.md` e `CREDITS.md` com `python -I tools/build_license_index.py` e confirme que o ativo aparece na tela de créditos (veja "Tela de créditos" abaixo).
 
 ## Referência: licenças já aprovadas no projeto
 
 Conforme `licenses/index.json`, o jogo já utiliza: MIT (Godot engine, Poing AdMob, GodotGooglePlayBilling), Apache-2.0 (AndroidX), CC0-1.0 (Ninja Adventure assets, Kenney áudio), OFL-1.1 (fontes Fusion Pixel, Ark Pixel, Cubic 11, Galmuri), CC-BY-4.0 (Helton Yan Pixel Combat), além de licenças específicas de terceiros (Google Mobile Ads SDK, Play Billing Library, Sound Effect Lab, Merakintsugi, Amacha) que permitem uso comercial com ou sem atribuição.
+
+## Tela de créditos (obrigatório em toda versão)
+
+A tela de créditos do jogo (`scripts/app/screens/credits_screen.gd`) e o `CREDITS.md` precisam listar **todo** autor, asset e software de `licenses/registry.json` / `licenses/index.json`, em **toda** versão. Nenhum autor fica de fora, nem os CC0.
+
+- Sempre que um asset ou dependência for adicionado, removido ou alterado: atualize `licenses/registry.json`, regenere o índice com `python -I tools/build_license_index.py` (gera também `ASSET_LICENSES.md` e `CREDITS.md`) e confirme que a entrada aparece na tela de créditos, na seção certa.
+- A tela lê `licenses/index.json` em tempo de execução: o que não é arte, áudio ou fonte (motor, Android, plugins, categorias novas) cai em Tecnologia. Não filtre entradas.
+- O teste dos créditos (`tests/credits_screen_tests.gd`, rodado por `tests/integration_tests.tscn` ou sozinho por `tests/credits_screen_tests.tscn`) precisa passar antes de qualquer commit: ele confere que todo nome e autor do índice está visível na tela e no `CREDITS.md`.
 
 ## Dúvidas?
 
