@@ -34,6 +34,8 @@ const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 const ChestBurstTests := preload("res://tests/chest_burst_tests.gd")
 ## Desbloqueios de conquistas reaplicados em saves antigos (Onikiri do Oni Vermelho).
 const AchievementRewardTests := preload("res://tests/achievement_reward_tests.gd")
+## Fundo dos menus (Hyakki Yagyō): camadas, procissão na crista, guardiã escolhida e tamanhos.
+const MenuBackdropTests := preload("res://tests/menu_backdrop_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -74,6 +76,7 @@ func _ready() -> void:
 	await ResultsLayoutTests.new().run(self, _check)
 	await TitleLayoutTests.new().run(self, _check)
 	await StageMapLayoutTests.new().run(self, _check)
+	await MenuBackdropTests.new().run(self, _check)
 	await _test_shop_layout()
 	await _test_shop_scroll()
 	_remove_test_files()

@@ -34,11 +34,11 @@ const HERO_CHECK_INTERVAL := 0.5
 
 const SKY_TOP := Color("0b0a1f")
 const SKY_HORIZON := Color("2a1636")
-const FAR_RIDGE := Color("1e1738")
-const FAR_RIM := Color("3a2e5c")
+const FAR_RIDGE := Color("251c44")
+const FAR_RIM := Color("43376a")
 const MID_RIDGE := Color("110d20")
 const MID_RIM := Color("332a58")
-const WALKER_TINT := Color(0.26, 0.23, 0.4)
+const WALKER_TINT := Color(0.2, 0.18, 0.32)
 const GRASS_TINT := Color(0.17, 0.23, 0.33)
 const TORII_TINT := Color(0.72, 0.5, 0.62)
 const TORO_TINT := Color(0.36, 0.34, 0.48)
@@ -95,8 +95,10 @@ var _shade: Control
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Névoa e brilhos passam da borda: corta no próprio retângulo.
+	clip_contents = true
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_floor = load("res://assets/art/tilesets/floor.png") as Texture2D
@@ -136,7 +138,7 @@ func _ready() -> void:
 
 func _layer(painter: Callable) -> Control:
 	var layer := Control.new()
-	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	layer.draw.connect(painter)
@@ -287,20 +289,20 @@ func _draw_lights() -> void:
 	for k: int in range(_walkers.size()):
 		if k % 3 == 1:
 			var flicker := 0.9 + 0.1 * sin(_time * 11.0 + k * 3.0)
-			_light_at(_walker_lamp(k), 18.0, Color(WARM, 0.55 * flicker), w)
+			_light_at(_walker_lamp(k), 26.0, Color(WARM, 0.8 * flicker), w)
 	for p: Vector2 in _wisps:
-		_light_at(p, 12.0, Color(WISP, 0.5), w)
+		_light_at(p, 16.0, Color(WISP, 0.7), w)
 	for k: int in range(_toro_fire.size()):
 		var fire := _toro_fire[k]
 		var flicker := 0.85 + 0.1 * sin(_time * 9.0 + k * 4.0) + 0.05 * sin(_time * 23.0)
-		_light_at(fire, 34.0, Color(WARM, 0.5 * flicker), w)
+		_light_at(fire, 44.0, Color(WARM, 0.75 * flicker), w)
 		_light.draw_texture_rect(_glow, Rect2(fire.x - 46.0, fire.y + 30.0, 92.0, 22.0), false,
-				Color(WARM, 0.3 * flicker))
+				Color(WARM, 0.45 * flicker))
 	var pulse := 1.0 + 0.05 * sin(_time * 4.0)
-	_light_at(_hero_lamp, 56.0 * pulse, Color(WARM, 0.42), w)
+	_light_at(_hero_lamp, 72.0 * pulse, Color(WARM, 0.6), w)
 	_light_at(_hero_lamp, 14.0, Color(1.0, 0.85, 0.55, 0.7), w)
 	_light.draw_texture_rect(_glow, Rect2(_hero_lamp.x - 84.0, _torii.end.y - 14.0, 168.0, 40.0), false,
-			Color(WARM, 0.38 * pulse))
+			Color(WARM, 0.55 * pulse))
 	for p: Vector3 in _flies:
 		_light_at(Vector2(p.x, p.y), 5.0, Color(0.7, 1.0, 0.45, 0.45 * p.z), w)
 
@@ -412,7 +414,7 @@ func _draw_ground(w: float, h: float) -> void:
 	var ground := Rect2(0, _ground_y, w, h - _ground_y)
 	draw_texture_rect(_grass, ground, true, GRASS_TINT)
 	draw_texture_rect(_ground_shade, ground, false)
-	_draw_fog_band(_ground_y - 14.0, 30.0, 5.0, Color(0.6, 0.5, 0.82, 0.16), w)
+	_draw_fog_band(_ground_y - 22.0, 48.0, 5.0, Color(0.6, 0.5, 0.82, 0.12), w)
 	# Caminho de lajes do pé da tela até o torii, estreitando com a distância.
 	var cx := roundf(w * 0.5)
 	var top_y := _torii.end.y

@@ -178,11 +178,11 @@ func _build_menu() -> void:
 	_shop_button = _rows[1]
 	_shop_badge = Dot.new()
 	_shop_badge.color = BADGE_RED
-	_shop_badge.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	_shop_badge.offset_left = -18
-	_shop_badge.offset_right = -10
-	_shop_badge.offset_top = -4
-	_shop_badge.offset_bottom = 4
+	# Logo depois do texto "Loja", à altura do topo das letras.
+	var shop_text := _shop_button.get_theme_font("font").get_string_size(_shop_button.text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, _shop_button.get_theme_font_size("font_size")).x
+	_shop_badge.position = Vector2(_row_box(0).content_margin_left + shop_text + 4, 7)
+	_shop_badge.size = Vector2(8, 8)
 	_shop_badge.pivot_offset = Vector2(4, 4)
 	_shop_button.add_child(_shop_badge)
 	for i: int in _rows.size():
@@ -326,7 +326,7 @@ func _build_cta() -> void:
 	_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cta.add_child(_glow)
 	_daily = button(tr("title.daily"), func() -> void: app.start_run(true), Vector2(CTA_WIDTH, CARD_HEIGHT))
-	_daily.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_daily.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_apply_card(_daily)
 	var daily_icon := icon_rect("res://assets/art/items/object/Hourglass.png", Vector2(16, 16))
 	daily_icon.position = Vector2(8, 7)
