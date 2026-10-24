@@ -15,6 +15,7 @@ func _initialize() -> void:
 	_test_hit_sounds()
 	_test_settings_defaults()
 	_test_journey_geo()
+	_test_gfx_quality()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -180,3 +181,55 @@ func _test_journey_geo() -> void:
 			"jornada: estrada passa pelas pontas")
 	var dash := JourneyGeo.dashes(PackedVector2Array([Vector2.ZERO, Vector2(20, 0)]), 4.0, 2.0)
 	_check(dash.size() == 8 and dash[1] == Vector2(4, 0) and dash[2] == Vector2(6, 0), "jornada: tracejado 4/2")
+
+
+## Qualidade gráfica (scripts/core/gfx_quality.gd): regra do nível, detecção, pick, todos os
+## orçamentos em todos os níveis, override e ciclo da pausa. Sem autoloads: a opção vale "auto".
+func _test_gfx_quality() -> void:
+	var q := GfxQuality
+	_check(q.LOW == 0 and q.MEDIUM == 1 and q.HIGH == 2, "gfx: constantes LOW/MEDIUM/HIGH")
+	_check(q.changed_signal_key() == "graphics_quality", "gfx: chave do sinal")
+	_check(q.resolve("low", q.HIGH) == q.LOW and q.resolve("medium", q.LOW) == q.MEDIUM
+			and q.resolve("high", q.LOW) == q.HIGH, "gfx: opção fixa ignora a detecção")
+	_check(q.resolve("auto", q.HIGH) == q.HIGH and q.resolve("auto", q.MEDIUM) == q.MEDIUM,
+			"gfx: auto usa o nível detectado")
+	_check(q.resolve("auto", q.HIGH, 1) == q.MEDIUM and q.resolve("auto", q.HIGH, 5) == q.LOW,
+			"gfx: rebaixamentos do auto descem até LOW")
+	_check(q.resolve("high", q.HIGH, 2) == q.HIGH, "gfx: rebaixamento não afeta opção fixa")
+	_check(q.resolve("???", q.MEDIUM) == q.MEDIUM, "gfx: valor inválido vale auto")
+	var gb := 1024 * 1024 * 1024
+	_check(q.classify(false, 2, gb, "") == q.HIGH, "gfx: desktop -> HIGH")
+	_check(q.classify(true, 8, 8 * gb, "Adreno (TM) 740") == q.HIGH, "gfx: celular 8 núcleos 8 GB -> HIGH")
+	_check(q.classify(true, 8, 4 * gb, "Mali-G57") == q.MEDIUM, "gfx: 8 núcleos com 4 GB -> MEDIUM")
+	_check(q.classify(true, 8, -1, "") == q.MEDIUM, "gfx: memória desconhecida não conta como 6 GB")
+	_check(q.classify(true, 6, 8 * gb, "") == q.MEDIUM, "gfx: 6 núcleos -> MEDIUM")
+	_check(q.classify(true, 4, 8 * gb, "") == q.LOW, "gfx: 4 núcleos -> LOW")
+	_check(q.classify(true, 8, 8 * gb, "Mali-T880") == q.LOW, "gfx: GPU antiga conhecida -> LOW")
+	_check(q.detected_level() in [q.LOW, q.MEDIUM, q.HIGH], "gfx: detected_level válido")
+	_check(q.mode() == "auto" and q.level() == q.detected_level(), "gfx: sem Settings vale auto")
+	var expected := {
+		"particles_max": [250, 600, 1400], "weather_drops": [60, 160, 420], "weather_layers": [1, 2, 3],
+		"ambient_motes": [8, 24, 60], "decor_density": [0.7, 1.0, 1.25], "grass_sway": [false, true, true],
+		"post_fx": [false, true, true], "glow": [false, false, true], "soft_shadows": [false, true, true],
+		"enemy_fx": [0, 1, 2], "weapon_fx": [0, 1, 2], "screen_shake": [0.6, 1.0, 1.0],
+		"trail_points": [0, 6, 14], "lights_max": [4, 10, 24], "splashes": [false, true, true],
+		"ui_fx": [0, 1, 2],
+	}
+	_check(expected.keys().size() == q.BUDGETS.size(), "gfx: todas as chaves de orçamento testadas")
+	for lv: int in [q.LOW, q.MEDIUM, q.HIGH]:
+		q.set_override(lv)
+		_check(q.level() == lv and q.is_low() == (lv == q.LOW) and q.is_high() == (lv == q.HIGH),
+				"gfx: override %d vale" % lv)
+		_check(q.pick("a", "b", "c") == ["a", "b", "c"][lv], "gfx: pick no nível %d" % lv)
+		for key: String in expected:
+			var want: Variant = (expected[key] as Array)[lv]
+			var got: Variant = q.budget(key)
+			_check(typeof(got) == typeof(want) and got == want,
+					"gfx: budget %s no nível %d = %s (veio %s)" % [key, lv, want, got])
+	q.set_override(9)
+	_check(q.level() == q.HIGH, "gfx: override fora da faixa é limitado")
+	q.clear_override()
+	_check(q.level() == q.detected_level(), "gfx: clear_override volta ao auto")
+	_check(q.budget_at("weather_drops", q.LOW) == 60, "gfx: budget_at")
+	_check(q.next_mode("auto") == "low" and q.next_mode("low") == "medium" and q.next_mode("medium") == "high"
+			and q.next_mode("high") == "auto", "gfx: ciclo Auto → Baixa → Média → Alta → Auto")

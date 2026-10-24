@@ -114,6 +114,8 @@ func _ready() -> void:
 	_root = _full_rect(Control.new())
 	_root.theme = ThemeFactory.build()
 	add_child(_root)
+	# Qualidade "auto": rebaixa os efeitos se o FPS da partida não aguentar (GfxQuality).
+	add_child(GfxMonitor.new())
 
 	joystick = TouchJoystick.new()
 	_root.add_child(_full_rect(joystick))

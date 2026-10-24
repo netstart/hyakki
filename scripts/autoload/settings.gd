@@ -28,6 +28,8 @@ const DEFAULTS := {
 	"speed": 1,
 	"notifications": false,
 	"show_fps": false,
+	## Qualidade gráfica (GfxQuality): "auto" | "low" | "medium" | "high".
+	"graphics_quality": "auto",
 }
 
 ## Arquivo em uso: PATH no jogo, TEST_PATH nos testes.

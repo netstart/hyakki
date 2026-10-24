@@ -63,6 +63,7 @@ func _ready() -> void:
 			[[30, "options.fps30"], [60, "options.fps60"], [120, "options.fps120"]]))
 
 	var display := _section(tr("options.section_display"))
+	display.add_child(_quality_cell())
 	for key: String in ["colorblind", "reduce_flashes", "damage_numbers", "hp_bar_below"]:
 		display.add_child(_toggle_cell(key))
 
@@ -175,6 +176,22 @@ func _choice_cell(key: String, options: Array) -> HBoxContainer:
 		option.add_item(tr(String(entry[1])))
 		option.set_item_metadata(option.item_count - 1, entry[0])
 		if str(entry[0]) == str(Settings.get_value(key)):
+			option.selected = option.item_count - 1
+	option.item_selected.connect(func(index: int) -> void: Settings.set_value(key, option.get_item_metadata(index)))
+	cell.add_child(option)
+	return cell
+
+
+## Qualidade gráfica (GfxQuality): Auto (com o nível detectado entre parênteses), Baixa,
+## Média e Alta. Vale na hora: os sistemas visuais ouvem Settings.changed.
+func _quality_cell() -> HBoxContainer:
+	var key := GfxQuality.changed_signal_key()
+	var cell := _cell(tr("options.graphics_quality"), LABEL_WIDTH)
+	var option := _option_button(key)
+	for mode: String in GfxQuality.MODES:
+		option.add_item(GfxQuality.mode_label(mode))
+		option.set_item_metadata(option.item_count - 1, mode)
+		if mode == GfxQuality.mode():
 			option.selected = option.item_count - 1
 	option.item_selected.connect(func(index: int) -> void: Settings.set_value(key, option.get_item_metadata(index)))
 	cell.add_child(option)

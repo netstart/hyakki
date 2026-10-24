@@ -384,6 +384,12 @@ options.fps,Quadros por segundo,Frame rate,Fotogramas por segundo,Bildrate,Image
 options.fps120,120 (usa mais bateria),120 (uses more battery),120 (más batería),120 (mehr Akku),120 (plus de batterie),120 (больше заряда),120 (lebih boros),120（電池消費大）,120 (배터리 많이 사용),120（較耗電）,120（较耗电）
 options.fps30,30 (economia),30 (saver),30 (ahorro),30 (Sparen),30 (économie),30 (экономия),30 (hemat),30（省電力）,30 (절약),30（省電）,30（省电）
 options.fps60,60 (padrão),60 (default),60 (predeterminado),60 (Standard),60 (par défaut),60 (по умолчанию),60 (standar),60（標準）,60 (기본),60（預設）,60（默认）
+options.gfx_auto,Auto,Auto,Auto,Auto,Auto,Авто,Otomatis,自動,자동,自動,自动
+options.gfx_auto_level,Auto (%s),Auto (%s),Auto (%s),Auto (%s),Auto (%s),Авто (%s),Otomatis (%s),自動（%s）,자동 (%s),自動（%s）,自动（%s）
+options.gfx_high,Alta,High,Alta,Hoch,Haute,Высокое,Tinggi,高,높음,高,高
+options.gfx_low,Baixa,Low,Baja,Niedrig,Basse,Низкое,Rendah,低,낮음,低,低
+options.gfx_medium,Média,Medium,Media,Mittel,Moyenne,Среднее,Sedang,中,중간,中,中
+options.graphics_quality,Qualidade gráfica,Graphics quality,Calidad gráfica,Grafikqualität,Qualité graphique,Качество графики,Kualitas grafis,画質,그래픽 품질,畫質,画质
 options.hp_bar_below,Vida abaixo da guardiã,Health bar below the guardian,Vida debajo de la guardiana,Lebensbalken unter der Wächterin,Vie sous la gardienne,Здоровье под стражем,Bar HP di bawah penjaga,体力バーを下に表示,체력바를 아래에 표시,生命條在下方,生命条在下方
 options.hurt_sounds,Sons de dano no herói,Hero hurt sounds,Sonidos de daño al héroe,Schadensgeräusche beim Helden,Sons des dégâts du héros,Звуки урона герою,Suara pahlawan terluka,主人公の被ダメージ音,영웅 피격음,英雄受傷音效,英雄受伤音效
 options.joystick_fixed,Fixo,Fixed,Fijo,Fest,Fixe,Фиксированный,Tetap,固定,고정,固定,固定
@@ -425,6 +431,7 @@ passive.sake.name,Saquê Sagrado,Sacred Sake,Sake Sagrado,Heiliger Sake,Saké sa
 passive.sandals.name,Sandálias de Palha,Straw Sandals,Sandalias de Paja,Strohsandalen,Sandales de paille,Соломенные сандалии,Sandal Jerami,草鞋,짚신,草鞋,草鞋
 passive.scroll.name,Pergaminho Antigo,Ancient Scroll,Pergamino Antiguo,Alte Schriftrolle,Parchemin ancien,Древний свиток,Gulungan Kuno,古の巻物,고대 두루마리,古卷軸,古卷轴
 passive.tengu_feather.name,Pena de Tengu,Tengu Feather,Pluma de Tengu,Tengu-Feder,Plume de tengu,Перо тэнгу,Bulu Tengu,天狗の羽,텐구의 깃털,天狗之羽,天狗之羽
+pause.graphics,Gráficos,Graphics,Gráficos,Grafik,Graphismes,Графика,Grafis,画質,그래픽,畫質,画质
 pause.items,Itens,Items,Objetos,Gegenstände,Objets,Предметы,Item,アイテム,아이템,道具,道具
 pause.max,MÁX,MAX,MÁX,MAX,MAX,МАКС,MAKS,MAX,MAX,滿級,满级
 pause.no_items,Nenhum item ainda,No items yet,Aún no hay objetos,Noch keine Gegenstände,Aucun objet pour l'instant,Пока нет предметов,Belum ada item,アイテムはまだない,아직 아이템이 없어요,尚無道具,尚无道具

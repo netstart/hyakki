@@ -86,6 +86,7 @@ func _suite_full() -> void:
 	await _shop_coin_item()
 	await _tap_text("title.options", true)
 	if await _expect_screen(&"options", "título → options (de novo)"):
+		await _options_quality()
 		_host("key BACK")
 		await _expect_screen(&"title", "voltar do Android em options volta ao título")
 
@@ -161,6 +162,7 @@ func _suite_full() -> void:
 	_host("key BACK")
 	_check(await _wait_for(func() -> bool: return game.hud.pause_open(), WAIT), "voltar do Android pausa a partida")
 	_shot("pausa")
+	await _pause_quality(game)
 	var frozen := GameClock.game_time
 	await _seconds(1.0)
 	_check(is_equal_approx(frozen, GameClock.game_time), "tempo parado na pausa")
@@ -249,6 +251,49 @@ func _suite_resume() -> void:
 
 ## Kaminari e Inazuma na partida de verdade: com inimigos por perto, as duas ferem dentro
 ## de alguns segundos (o raio do céu cai depois do aviso; o raio do corpo salta entre eles).
+## Qualidade gráfica nas Opções: toque real abre a lista; a escolha (Baixa) vai pelo próprio
+## menu da lista (id_pressed), como o toque no item faria. Volta ao valor de antes.
+func _options_quality() -> void:
+	var key := GfxQuality.changed_signal_key()
+	var before: Variant = Settings.get_value(key)
+	var option := get_tree().root.find_child("opt_%s" % key, true, false) as OptionButton
+	_check(option != null, "Opções têm a escolha de qualidade gráfica")
+	if option == null:
+		return
+	var scroll := option.get_parent()
+	while scroll != null and not scroll is ScrollContainer:
+		scroll = scroll.get_parent()
+	if scroll != null:
+		(scroll as ScrollContainer).ensure_control_visible(option)
+		await _seconds(0.3)
+	await _tap_control(option)
+	_check(await _wait_for(func() -> bool: return option.get_popup().visible, 3.0), "toque abre a lista de qualidade")
+	option.get_popup().id_pressed.emit(option.get_item_id(1))
+	_check(await _wait_for(func() -> bool: return Settings.get_value(key) == "low", 3.0)
+			and GfxQuality.level() == GfxQuality.LOW, "escolher Baixa nas Opções vale na hora")
+	option.get_popup().hide()
+	Settings.set_value(key, before)
+
+
+## Qualidade gráfica na pausa: cada toque real avança o ciclo Auto → Baixa → Média → Alta.
+func _pause_quality(game: HyakkiGame) -> void:
+	var key := GfxQuality.changed_signal_key()
+	var before: Variant = Settings.get_value(key)
+	var quality := game.hud.pause_menu().find_child("PauseQuality", true, false) as Button
+	_check(quality != null and quality.is_visible_in_tree(), "pausa mostra a qualidade gráfica")
+	if quality == null:
+		return
+	var mode := GfxQuality.mode()
+	for i: int in range(GfxQuality.MODES.size()):
+		var want := GfxQuality.next_mode(mode)
+		await _tap_control(quality)
+		_check(await _wait_for(func() -> bool: return GfxQuality.mode() == want, 3.0),
+				"toque na pausa troca a qualidade para %s" % want)
+		mode = GfxQuality.mode()
+	_check(GfxQuality.mode() == str(before), "quatro toques voltam à qualidade de antes")
+	Settings.set_value(key, before)
+
+
 func _thunder_weapons(game: HyakkiGame) -> void:
 	for id: StringName in [&"kaminari", &"inazuma"]:
 		if not game.has_weapon(id):

@@ -3,7 +3,8 @@ extends Control
 ## Tela de pausa (plano 7.3). A partida recua sob um véu de noite com vinheta e fogos-fátuos
 ## (hitodama) subindo devagar. À esquerda: fase, título com ornamento dourado, a trilha da
 ## noite até o amanhecer, tempo/nível/abates/ryō e as ações — "Continuar" em destaque,
-## velocidade e música em botões compactos que mostram o estado atual e "Desistir" discreto,
+## velocidade e música em botões compactos que mostram o estado atual, a qualidade gráfica
+## (ciclo Auto → Baixa → Média → Alta, com o nível efetivo em Auto) e "Desistir" discreto,
 ## com confirmação. À direita, o equipamento: armas e itens com ícone e nível em marcas, e os
 ## atributos numa grade alinhada (acima da base em verde-jade, abaixo em brasa).
 ## Se ajusta a 20:9 e 16:9 e às bordas seguras do aparelho; o painel rola se não couber.
@@ -37,6 +38,8 @@ const RESUME_HEIGHT := 40.0
 const BADGE := 11.0
 const TILE_HEIGHT := 34.0
 const QUIT_HEIGHT := 22.0
+## Barras do nível da qualidade gráfica no botão da pausa.
+const QUALITY_BARS := Vector2(11, 10)
 const RUN_TILE_HEIGHT := 20.0
 ## Linha de arma/item: caixa do ícone com 1 px de folga para ícones de até 24 px (escala inteira).
 const ROW_HEIGHT := 26.0
@@ -114,7 +117,14 @@ var _music: Button
 var _music_icon: TextureRect
 var _music_caption: Label
 var _music_value: Label
+var _quality: Button
+var _quality_bars: Control
+var _quality_caption: Label
+var _quality_value: Label
 var _quit: Button
+## Qualidade + Desistir: 1 coluna (um embaixo do outro) ou 2 (lado a lado, telas baixas).
+var _bottom: GridContainer
+var _compact: bool = false
 
 var _panel: Control
 var _scroll: ScrollContainer
@@ -162,6 +172,7 @@ func open(snapshot: Dictionary) -> void:
 	_fill(snapshot)
 	set_speed(int(snapshot.get("speed", GameClock.speed)))
 	_refresh_music()
+	_refresh_quality()
 	_confirm.visible = false
 	if not visible:
 		_intro = 0.0
@@ -229,6 +240,14 @@ func _on_music() -> void:
 	_refresh_music()
 
 
+## Qualidade gráfica em ciclo: Auto → Baixa → Média → Alta → Auto (vale na hora).
+func _on_quality() -> void:
+	if not _open or _confirm.visible:
+		return
+	Settings.set_value(GfxQuality.changed_signal_key(), GfxQuality.next_mode(GfxQuality.mode()))
+	_refresh_quality()
+
+
 func _on_quit() -> void:
 	if _open and not _confirm.visible:
 		_show_confirm()
@@ -244,6 +263,8 @@ func _on_confirm_quit() -> void:
 func _on_setting(key: String) -> void:
 	if key == "music_volume" and is_instance_valid(_music_value):
 		_refresh_music()
+	elif key == GfxQuality.changed_signal_key() and is_instance_valid(_quality_value):
+		_refresh_quality()
 
 
 func _refresh_music() -> void:
@@ -252,6 +273,23 @@ func _refresh_music() -> void:
 	_music_icon.modulate = ThemeFactory.ACCENT if on else DIM.darkened(0.2)
 	_music_value.text = tr("pause.on") if on else tr("pause.off")
 	_music_value.add_theme_color_override("font_color", ThemeFactory.TEXT if on else DIM)
+
+
+## Telas baixas (ex.: 16:9 com 270 de altura): Qualidade e Desistir dividem uma linha; a
+## qualidade perde a legenda e, em Auto, mostra só "Auto" (as barras dão o nível efetivo).
+func _set_compact(on: bool) -> void:
+	_compact = on
+	_bottom.columns = 2 if on else 1
+	_quality_caption.visible = not on
+	_refresh_quality()
+
+
+## Mostra a opção e, em Auto, o nível que vale ("Auto (Alta)"); as barras acendem até ele.
+func _refresh_quality() -> void:
+	var mode := GfxQuality.mode()
+	_quality_value.text = tr("options.gfx_auto") if _compact and mode == "auto" else GfxQuality.mode_label(mode)
+	_quality_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL if _compact else Control.SIZE_FILL
+	_quality_bars.queue_redraw()
 
 
 func _show_confirm() -> void:
@@ -338,6 +376,8 @@ func _layout() -> void:
 	var px := _left_rect.end.x + GAP
 	_panel_rect = Rect2(px, MARGIN, view.x - MARGIN - insets.y - px, view.y - MARGIN * 2.0)
 	_left.size = _left_rect.size
+	_set_compact(false)
+	_set_compact(_menu.get_combined_minimum_size().y > _left_rect.size.y)
 	_panel.size = _panel_rect.size
 	_set_intro(_intro)
 	var inner := _panel_rect.size.x - PANEL_PAD.x * 2.0 - 6.0
@@ -361,6 +401,8 @@ func _apply_texts() -> void:
 	_speed.tooltip_text = _speed_caption.text
 	_music_caption.text = tr("options.music_volume")
 	_music.tooltip_text = _music_caption.text
+	_quality_caption.text = tr("pause.graphics")
+	_quality.tooltip_text = tr("options.graphics_quality")
 	_quit.text = tr("pause.quit")
 	_weapons_head.text = tr("codex.weapons")
 	_items_head.text = tr("pause.items")
@@ -640,11 +682,61 @@ func _build_left() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_style_tile(b)
 	_menu.add_child(row)
+	_build_quality()
 	_quit = _button("", _on_quit, Vector2(0, QUIT_HEIGHT))
 	_quit.icon = UiIcons.get_icon("exit", 12)
 	_quit.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_style_quit()
-	_menu.add_child(_quit)
+	_quit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_bottom.add_child(_quit)
+
+
+## Botão compacto de largura inteira da qualidade gráfica: barras de nível, legenda e valor.
+func _build_quality() -> void:
+	_quality = _button("", _on_quality, Vector2(0, QUIT_HEIGHT))
+	_quality.name = "PauseQuality"
+	_style_tile(_quality)
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side: String in ["margin_left", "margin_right"]:
+		margin.add_theme_constant_override(side, 6)
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", 5)
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quality_bars = Control.new()
+	_quality_bars.custom_minimum_size = QUALITY_BARS
+	_quality_bars.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_quality_bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quality_bars.draw.connect(_draw_quality_bars)
+	line.add_child(_quality_bars)
+	_quality_caption = _label("", 12, DIM)
+	_quality_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_quality_caption.clip_text = true
+	_quality_caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	line.add_child(_quality_caption)
+	_quality_value = _label("", 12, ThemeFactory.ACCENT, HORIZONTAL_ALIGNMENT_RIGHT)
+	line.add_child(_quality_value)
+	margin.add_child(line)
+	_quality.add_child(margin)
+	_quality.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_bottom = GridContainer.new()
+	_bottom.columns = 1
+	_bottom.add_theme_constant_override("h_separation", 4)
+	_bottom.add_theme_constant_override("v_separation", 4)
+	_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bottom.add_child(_quality)
+	_menu.add_child(_bottom)
+
+
+## Três barras crescentes; acesas até o nível efetivo (douradas), as outras apagadas.
+func _draw_quality_bars() -> void:
+	var lit := GfxQuality.level()
+	var w := 3.0
+	for i: int in range(3):
+		var h := 4.0 + i * 3.0
+		var rect := Rect2(Vector2(i * (w + 1.0), QUALITY_BARS.y - h), Vector2(w, h))
+		_quality_bars.draw_rect(rect, ThemeFactory.ACCENT if i <= lit else Color(1, 1, 1, 0.16))
 
 
 func _run_tile(kind: String) -> Control:
