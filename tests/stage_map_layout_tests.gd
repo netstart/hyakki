@@ -87,7 +87,6 @@ func _check_layout(screen: Control, state: String) -> void:
 			"Jornada %s: título cabe no topo do mapa" % state)
 	_check.call(back != null and not back.get_global_rect().intersects(title.get_global_rect()),
 			"Jornada %s: título não encosta no voltar" % state)
-	var start := map.selected
 	var rects: Array[Rect2] = []
 	for id: StringName in map.nodes:
 		var node := map.nodes[id] as Control

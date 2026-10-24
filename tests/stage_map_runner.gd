@@ -3,7 +3,8 @@ extends Node
 ## opções próprios dos testes (o perfil do jogador não é tocado):
 ##   godot --headless --path . res://tests/stage_map_layout_tests.tscn
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas da Jornada do Guardião em PNG
-## (perfil novo; três fases vencidas com Lua II na primeira; idioma ja), em 2x.
+## (perfil novo; três fases vencidas com Lua II na primeira; idioma ja; fase bloqueada
+## escolhida), em 2x.
 
 const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 
@@ -48,7 +49,7 @@ func _screenshots(dir: String) -> void:
 	var tests := StageMapLayoutTests.new()
 	tests.set("_host", self)
 	tests.set("_check", _check)
-	var cases := [["new", "pt_BR"], ["progress", "pt_BR"], ["progress", "ja"]]
+	var cases := [["new", "pt_BR"], ["progress", "pt_BR"], ["progress", "ja"], ["locked", "pt_BR"]]
 	for extra: String in OS.get_cmdline_user_args():
 		if extra.begins_with("--langs="):
 			cases = []
@@ -56,12 +57,14 @@ func _screenshots(dir: String) -> void:
 				cases.append(["progress", lang])
 	for item: Array in cases:
 		Locale.set_language(String(item[1]), false)
-		if item[0] == "new":
+		if item[0] in ["new", "locked"]:
 			SaveManager.data = SaveManager.default_profile()
 		else:
 			SaveManager.data = StageMapLayoutTests.progress_profile(2, ["temple"])
 			SaveManager.data["defeat_streak"] = {}
-		var ctx: Array = await tests.open_screen("village" if item[0] == "new" else "")
+		var ctx: Array = await tests.open_screen("" if item[0] == "progress" else "village")
+		if item[0] == "locked":
+			(ctx[1].get("_map") as JourneyMap).select(&"bamboo")
 		await get_tree().create_timer(0.6).timeout
 		await RenderingServer.frame_post_draw
 		var image := get_viewport().get_texture().get_image()

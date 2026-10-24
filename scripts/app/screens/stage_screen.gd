@@ -93,7 +93,10 @@ func _build_card() -> void:
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_theme_constant_override("separation", 0)
 	_boss = _ink(label(""), INK)
-	_boss.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Uma linha só (nomes longos com reticências; o nome inteiro fica na dica).
+	_boss.clip_text = true
+	_boss.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_boss.mouse_filter = Control.MOUSE_FILTER_PASS
 	info.add_child(_boss)
 	_stats = _ink(label(""), INK_SOFT)
 	_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -109,6 +112,9 @@ func _build_card() -> void:
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Se a narrativa couber, fica centrada no espaço livre do pergaminho.
+	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	text.alignment = BoxContainer.ALIGNMENT_CENTER
 	text.add_theme_constant_override("separation", 4)
 	_scroll.add_child(text)
 	_journey = _ink(label(""), INK)
@@ -238,7 +244,8 @@ func _refresh() -> void:
 	if not unlocked:
 		lines.append(tr("stages.locked"))
 	else:
-		lines.append(tr("stages.best") % format_time(float(best["best_time"])))
+		if float(best["best_time"]) > 0.0:
+			lines.append(tr("stages.best") % format_time(float(best["best_time"])))
 		if int(best["max_moon"]) >= 0:
 			lines.append(tr("stages.moon_best") % _roman(int(best["max_moon"])))
 		var moon := int(app.selection.get("moon", 0))
@@ -274,13 +281,18 @@ func _refresh_bosses(id: StringName) -> void:
 		var boss := StringName(String((bosses[k] as Dictionary)["id"]))
 		var known := defeated.has(String(boss))
 		icon.set_meta("face", JourneyMap.face_texture(boss, 24))
+		icon.set_meta("shape", JourneyMap.silhouette_texture(boss, 18))
 		icon.tooltip_text = tr("boss.%s.name" % boss) if known else "???"
 		icon.set_meta("known", known)
 		icon.queue_redraw()
-	# O chefe final (o retrato do mapa) pelo nome, se já derrotado.
-	var final_boss := StringName(String((bosses[bosses.size() - 1] as Dictionary)["id"])) if not bosses.is_empty() else &""
-	var beaten := defeated.has(String(final_boss))
-	_boss.text = tr("stages.boss") % tr("boss.%s.name" % final_boss) if beaten else tr("stages.boss_unknown")
+	# Nomes dos chefes já derrotados ("???" para os outros); nenhum conhecido: "Chefe: ???".
+	var names: PackedStringArray = []
+	for boss_data: Dictionary in bosses:
+		var boss := String(boss_data["id"])
+		names.append(tr("boss.%s.name" % boss) if defeated.has(boss) else "???")
+	var known_count := names.size() - names.count("???")
+	_boss.text = tr("stages.boss") % ", ".join(names) if known_count > 0 else tr("stages.boss_unknown")
+	_boss.tooltip_text = _boss.text
 
 
 func boss_icon_known(index: int) -> bool:
@@ -292,15 +304,13 @@ func boss_icon_known(index: int) -> bool:
 func _draw_boss_rim(icon: TextureRect) -> void:
 	var c := icon.size * 0.5
 	var known := bool(icon.get_meta("known", false))
-	icon.draw_circle(c, 13.0, Color("f6ead0") if known else Color("3b2a4e"))
-	var face := icon.get_meta("face") as Texture2D if icon.has_meta("face") else null
-	if face:
-		icon.draw_texture_rect(face, Rect2(c - Vector2(12, 12), Vector2(24, 24)), false,
-				Color.WHITE if known else SILHOUETTE)
+	icon.draw_circle(c, 13.0, Color("3a2a12"))
+	icon.draw_circle(c, 12.0, Color("f6ead0") if known else Color("e9dcb8"))
+	var image := icon.get_meta("face" if known else "shape") as Texture2D if icon.has_meta("shape") else null
+	if image:
+		var side := image.get_size()
+		icon.draw_texture_rect(image, Rect2(c - side * 0.5, side), false, Color.WHITE if known else SILHOUETTE)
 	icon.draw_arc(c, 13.0, 0.0, TAU, 28, Color("b8862a") if known else Color("6a5a4a"), 1.5)
-	if not known:
-		icon.draw_string(get_theme_default_font(), c + Vector2(-3, 5), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
-				Color(0.95, 0.85, 0.6, 0.8))
 
 
 func _ink(l: Label, color: Color) -> Label:

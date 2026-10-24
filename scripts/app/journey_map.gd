@@ -37,6 +37,9 @@ const ROAD_RED := Color("c0392b")
 const ROAD_OPEN := Color("f6e7bf")
 const GOLD := Color("ffd166")
 const VERMILION := Color("b8322a")
+## Silhueta do chefe ainda não vencido (liberada) e a mais apagada (bloqueada).
+const SILHOUETTE := Color(0.06, 0.05, 0.1)
+const SILHOUETTE_LOCKED := Color(0.1, 0.09, 0.16, 0.55)
 
 static var _face_cache: Dictionary = {}
 
@@ -69,6 +72,7 @@ func _ready() -> void:
 		node.focus_mode = Control.FOCUS_ALL
 		node.seal_font = _seal_font
 		node.face = face_texture(_final_boss(id))
+		node.shape = silhouette_texture(_final_boss(id), 20)
 		node.pressed.connect(_on_node_pressed.bind(id))
 		node.focus_entered.connect(select.bind(id))
 		add_child(node)
@@ -177,6 +181,45 @@ static func face_texture(boss_id: StringName, side: int = 24) -> Texture2D:
 			if Vector2(x + 0.5 - r, y + 0.5 - r).length() > r:
 				image.set_pixel(x, y, Color(0, 0, 0, 0))
 	var tex := ImageTexture.create_from_image(image)
+	_face_cache[key] = tex
+	return tex
+
+
+## Silhueta do corpo do chefe: primeiro quadro do sprite (que tem fundo transparente),
+## recortado no que é desenhado, reduzido para caber em `side` e pintado de branco (a cor
+## vem do modulate). O retrato (Faceset) é opaco e viraria um disco liso.
+static func silhouette_texture(boss_id: StringName, side: int = 24) -> Texture2D:
+	var data: Dictionary = DB.bosses.get(boss_id, {})
+	if data.is_empty():
+		return null
+	var sprite: Dictionary = data["sprite"]
+	var path := String(sprite["path"])
+	var key := "shape|%s|%d" % [path, side]
+	if _face_cache.has(key):
+		return _face_cache[key]
+	if not ResourceLoader.exists(path):
+		return null
+	var image := (load(path) as Texture2D).get_image()
+	if image.is_compressed():
+		image.decompress()
+	image.convert(Image.FORMAT_RGBA8)
+	var frame: Array = sprite.get("frame", [16, 16])
+	image = image.get_region(Rect2i(0, 0, mini(int(frame[0]), image.get_width()), mini(int(frame[1]), image.get_height())))
+	var used := image.get_used_rect()
+	if used.size.x > 0 and used.size.y > 0:
+		image = image.get_region(used)
+	var factor := minf(float(side) / image.get_width(), float(side) / image.get_height())
+	if factor >= 2.0:
+		factor = floorf(factor)
+	var fit := Vector2i(maxi(1, roundi(image.get_width() * factor)), maxi(1, roundi(image.get_height() * factor)))
+	image.resize(fit.x, fit.y, Image.INTERPOLATE_NEAREST if factor >= 1.0 else Image.INTERPOLATE_BILINEAR)
+	var out := Image.create_empty(side, side, false, Image.FORMAT_RGBA8)
+	var origin := Vector2i((side - fit.x) / 2, side - fit.y - maxi(0, (side - fit.y) / 4))
+	for y: int in range(fit.y):
+		for x: int in range(fit.x):
+			if image.get_pixel(x, y).a > 0.35:
+				out.set_pixel(origin.x + x, origin.y + y, Color.WHITE)
+	var tex := ImageTexture.create_from_image(out)
 	_face_cache[key] = tex
 	return tex
 
@@ -416,15 +459,15 @@ func _draw_blob(at: Vector2, radius: Vector2, color: Color) -> void:
 	draw_colored_polygon(pts, color)
 
 
+## Nuvem de névoa (kasumi) suave: um só polígono translúcido, com bolhas em cima.
 func _draw_kasumi(c: Vector2, width: float) -> void:
-	var gold := Color("e2b85c", 0.5)
-	for band: Array in [[Vector2.ZERO, width], [Vector2(-width * 0.22, 6), width * 0.62]]:
-		var at: Vector2 = c + band[0]
-		var half: float = band[1] * 0.5
-		draw_rect(Rect2(at.x - half, at.y - 3.0, half * 2.0, 6.0), gold)
-		draw_circle(Vector2(at.x - half, at.y), 3.0, gold)
-		draw_circle(Vector2(at.x + half, at.y), 3.0, gold)
-		draw_line(Vector2(at.x - half, at.y - 3.0), Vector2(at.x + half, at.y - 3.0), Color("fbe3a0", 0.55), 1.0)
+	var pts := PackedVector2Array()
+	for k: int in range(32):
+		var a := TAU * k / 32.0
+		var up := sin(a) < 0.0
+		var puff := 1.0 + (0.9 * absf(sin(a * 3.0)) if up else 0.0)
+		pts.append(c + Vector2(cos(a) * width * 0.5, sin(a) * 4.0 * puff))
+	draw_colored_polygon(pts, Color(0.95, 0.88, 0.7, 0.16))
 
 
 func _draw_mountains() -> void:
@@ -511,16 +554,20 @@ func _draw_frame() -> void:
 
 # --- Ponto de luta --------------------------------------------------------------------
 
-## Medalhão de um ponto de luta: retrato do chefe final, estado e luas vencidas.
+## Medalhão de um ponto de luta: chefe final da fase sobre papel claro, estado e luas.
 class MapNode:
 	extends BaseButton
 
 	const RADIUS := 14.0
 	const FACE := 24.0
+	const PAPER := Color("e9dcb8")
+	const PAPER_LOCKED := Color("d3ccba")
 
 	var stage_id: StringName
 	var state: StringName = &"locked"
+	## Retrato colorido (vencida) e silhueta do corpo do chefe (liberada / bloqueada).
 	var face: Texture2D
+	var shape: Texture2D
 	var moons: int = 0
 	var selected: bool = false
 	var seal_font: Font
@@ -541,14 +588,14 @@ class MapNode:
 			_pulse.tween_property(self, "glow", 1.0, 0.8).set_trans(Tween.TRANS_SINE)
 			_pulse.tween_property(self, "glow", 0.0, 0.8).set_trans(Tween.TRANS_SINE)
 
-	## Cor aplicada ao retrato: natural (vencida) ou silhueta (liberada / bloqueada).
+	## Cor aplicada à imagem do chefe: natural (vencida) ou silhueta (liberada / bloqueada).
 	func face_modulate() -> Color:
 		match state:
 			&"cleared":
 				return Color.WHITE
 			&"open":
-				return Color(0.06, 0.05, 0.1)
-		return Color(0.12, 0.12, 0.17, 0.75)
+				return SILHOUETTE
+		return SILHOUETTE_LOCKED
 
 	func has_seal() -> bool:
 		return state == &"cleared"
@@ -562,29 +609,30 @@ class MapNode:
 			draw_circle(c, RADIUS + 4.5, Color(1.0, 0.95, 0.75, 0.35))
 			draw_arc(c, RADIUS + 3.5, 0.0, TAU, 32, Color.WHITE, 1.5)
 		draw_circle(c + Vector2(1, 2), RADIUS + 1.0, Color(0, 0, 0, 0.5))
-		var rim := {&"cleared": GOLD, &"open": Color("e0a050"), &"locked": Color("57566a")}
+		var rim := {&"cleared": GOLD, &"open": Color("e0a050"), &"locked": Color("6a6672")}
 		draw_circle(c, RADIUS + 1.0, rim.get(state, Color.GRAY))
-		var bg := {&"cleared": Color("f2e2b8"), &"open": Color("3b2a4e"), &"locked": Color("2b2b38")}
-		draw_circle(c, RADIUS - 1.0, bg.get(state, Color.BLACK))
-		if face:
-			draw_texture_rect(face, Rect2(c - Vector2(FACE, FACE) * 0.5, Vector2(FACE, FACE)), false, face_modulate())
-		var font := get_theme_default_font()
-		match state:
-			&"open":
-				draw_string(font, c + Vector2(-3, 5), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
-						Color(1.0, 0.85, 0.55, 0.55 + 0.35 * glow))
-			&"locked":
-				for k: int in range(5):
-					var at := c + Vector2(-10 + k * 5, 2 + sin(k * 2.3) * 4)
-					draw_circle(at, 5.0 + (k % 2) * 1.5, Color(0.7, 0.72, 0.82, 0.55))
-			&"cleared":
-				draw_arc(c, RADIUS - 0.5, 0.0, TAU, 32, Color("8a5a12"), 1.0)
-				var seal := Rect2(c + Vector2(4, 3), Vector2(13, 13))
-				draw_rect(seal.grow(1.0), Color("f2e2b8"))
-				draw_rect(seal, VERMILION)
-				if seal_font:
-					draw_string(seal_font, seal.position + Vector2(0.5, 11), seal_text, HORIZONTAL_ALIGNMENT_CENTER,
-							13, 12, Color("fff1d6"))
+		draw_circle(c, RADIUS - 0.5, INK)
+		draw_circle(c, RADIUS - 1.5, PAPER_LOCKED if state == &"locked" else PAPER)
+		if state == &"cleared":
+			if face:
+				draw_texture_rect(face, Rect2(c - Vector2(FACE, FACE) * 0.5, Vector2(FACE, FACE)), false)
+			draw_arc(c, RADIUS - 1.0, 0.0, TAU, 32, Color("8a5a12"), 1.0)
+			var seal := Rect2(c + Vector2(4, 3), Vector2(13, 13))
+			draw_rect(seal.grow(1.0), PAPER)
+			draw_rect(seal, VERMILION)
+			if seal_font:
+				draw_string(seal_font, seal.position + Vector2(0.5, 11), seal_text, HORIZONTAL_ALIGNMENT_CENTER,
+						13, 12, Color("fff1d6"))
+		else:
+			# Lanterna atrás da silhueta (pulsando quando liberada).
+			var lamp := Color(1.0, 0.82, 0.45, 0.35 + 0.25 * glow) if state == &"open" else Color(1, 1, 1, 0.12)
+			draw_circle(c + Vector2(0, -1), RADIUS - 5.0, lamp)
+			if shape:
+				var side := shape.get_size()
+				draw_texture_rect(shape, Rect2(c - side * 0.5 + Vector2(0, 1), side), false, face_modulate())
+		if state == &"locked":
+			_draw_mist(c)
+			_draw_shimenawa(c)
 		if moons > 0:
 			var start := c.x - (moons - 1) * 3.0
 			for k: int in range(moons):
@@ -593,6 +641,29 @@ class MapNode:
 				draw_circle(at, 2.0, Color("e8432f"))
 		if has_focus() and not selected:
 			draw_arc(c, RADIUS + 3.0, 0.0, TAU, 32, Color(GOLD, 0.8), 1.0)
+
+	## Fiapos de névoa translúcidos por cima da silhueta.
+	func _draw_mist(c: Vector2) -> void:
+		for wisp: Array in [[Vector2(-4, -4), 7.0], [Vector2(4, 2), 7.0]]:
+			var at: Vector2 = c + wisp[0]
+			var half: float = wisp[1]
+			draw_line(at - Vector2(half, 0), at + Vector2(half, 0), Color(0.95, 0.96, 1.0, 0.3), 2.0)
+			draw_line(at - Vector2(half - 3.0, -1), at + Vector2(half - 4.0, -1), Color(1, 1, 1, 0.18), 1.0)
+
+	## Corda sagrada (shimenawa) com tiras de papel (shide): o caminho está fechado.
+	func _draw_shimenawa(c: Vector2) -> void:
+		var rope := PackedVector2Array()
+		for k: int in range(9):
+			var t := k / 8.0
+			rope.append(c + Vector2(-RADIUS - 1.0 + t * (RADIUS * 2.0 + 2.0), 8.0 + sin(t * PI) * 3.0))
+		draw_polyline(rope, Color("3a2a12"), 4.0)
+		draw_polyline(rope, Color("d6b25e"), 2.0)
+		for k: int in range(1, 8, 2):
+			draw_line(rope[k] + Vector2(-1, -1), rope[k] + Vector2(1, 1), Color("7a5a22"), 1.0)
+		for k: int in [3, 5]:
+			var top := rope[k] + Vector2(0, 1)
+			draw_polyline(PackedVector2Array([top, top + Vector2(2, 2), top + Vector2(0, 4), top + Vector2(2, 6)]),
+					Color("fdfbf2"), 1.5)
 
 
 # --- Guardiã no mapa ------------------------------------------------------------------
