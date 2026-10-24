@@ -15,6 +15,8 @@ const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
 ## Mão, tamanho e pose de ataque dos heróis "side" (Yuki).
 const HeroHandTests := preload("res://tests/hero_hand_tests.gd")
+## Explosão atrás do baú da fase: abertura, centro, fim sozinho, pular e novo baú.
+const ChestBurstTests := preload("res://tests/chest_burst_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -45,6 +47,7 @@ func _ready() -> void:
 	await _test_sound_options()
 	await _test_options_layout()
 	await _test_kami_layout()
+	await ChestBurstTests.new().run(self, _check)
 	await _test_hero_screen_layout()
 	await _test_shop_layout()
 	await _test_shop_scroll()

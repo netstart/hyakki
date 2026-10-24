@@ -66,6 +66,8 @@ var _opened_at: int = 0
 var _chest_panel: Control
 var _chest_image: TextureRect
 var _chest_frame: AtlasTexture
+## Explosão atrás do baú na abertura (uma só, reaproveitada a cada baú).
+var _chest_burst: ChestBurst
 var _chest_list: VBoxContainer
 var _chest_close: Button
 var _chest_rewards: Array[Dictionary] = []
@@ -450,6 +452,11 @@ func chest_animating() -> bool:
 	return _chest_busy
 
 
+## A explosão atrás do baú está tocando (aparece na abertura e some sozinha, ao pular ou fechar).
+func chest_burst_active() -> bool:
+	return _chest_burst.active()
+
+
 ## Linhas com texto visível (o roteiro E2E confere depois de pular ou esperar a animação).
 func chest_lines_shown() -> int:
 	var shown := 0
@@ -502,6 +509,8 @@ func _chest_open() -> void:
 	_chest_frame.region = Rect2(16, 0, 16, 14)
 	_chest_image.rotation = 0.0
 	_chest_image.modulate = Color(2.2, 2.2, 1.8)
+	# Em paralelo ao pop: a explosão tem relógio próprio e não atrasa os itens.
+	_chest_burst.play()
 	AudioManager.play("k_wood_0", 1.0, 0.05)
 	AudioManager.play("chest_open")
 	AudioManager.play("magic1", 1.0, 0.0, -8.0)
@@ -550,6 +559,7 @@ func _chest_land(i: int) -> void:
 func _chest_settle() -> void:
 	_chest_busy = false
 	_chest_clear_flyers()
+	_chest_burst.stop()
 	_chest_frame.region = Rect2(16, 0, 16, 14)
 	_chest_image.rotation = 0.0
 	_chest_image.scale = Vector2.ONE
@@ -574,6 +584,7 @@ func _chest_cancel() -> void:
 	if _chest_tween != null and _chest_tween.is_valid():
 		_chest_tween.kill()
 	_chest_clear_flyers()
+	_chest_burst.stop()
 
 
 func _chest_clear_flyers() -> void:
@@ -597,7 +608,11 @@ func _build_chest_panel() -> void:
 	_chest_image.pivot_offset = Vector2(24, 24)
 	_chest_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_chest_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# Só 48 px de largura: o pivô (24, 24) fica no centro do baú para o pop e a explosão.
+	_chest_image.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(_chest_image)
+	_chest_burst = ChestBurst.new()
+	_chest_image.add_child(_chest_burst)
 	_chest_list = VBoxContainer.new()
 	box.add_child(_chest_list)
 	_chest_close = _menu_button(tr("chest.skip"), func() -> void:

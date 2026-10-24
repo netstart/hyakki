@@ -127,10 +127,12 @@ func _suite_full() -> void:
 	if await _wait_for(func() -> bool: return game.hud.chest_open(), 5.0):
 		_check(true, "baú abre")
 		_check(game.hud.chest_animating(), "animação do baú começa")
+		_check(not game.hud.chest_burst_active(), "sem explosão antes de o baú abrir")
 		await _tap_text("chest.skip", true)
 		_check(not game.hud.chest_animating() and game.hud.chest_lines_total() > 0
 				and game.hud.chest_lines_shown() == game.hud.chest_lines_total(),
 				"pular mostra todos os itens com texto")
+		_check(not game.hud.chest_burst_active(), "pular apaga a explosão")
 		await _seconds(0.6)
 		_shot("bau")
 		await _tap_text("chest.close", true)
@@ -138,9 +140,12 @@ func _suite_full() -> void:
 		# Sem pular: a animação termina sozinha e o botão vira "fechar".
 		game.apply_scenario("chest")
 		if await _wait_for(func() -> bool: return game.hud.chest_open(), 5.0):
+			_check(await _wait_for(func() -> bool: return game.hud.chest_burst_active(), 4.0),
+					"explosão atrás do baú ao abrir")
 			var finished := await _wait_for(func() -> bool: return not game.hud.chest_animating(), 8.0)
 			_check(finished and game.hud.chest_lines_shown() == game.hud.chest_lines_total(),
 					"sem pular, a animação termina com todos os itens")
+			_check(not game.hud.chest_burst_active(), "explosão some ao terminar")
 			_check(_button(tr("chest.close"), false) != null, "botão vira fechar ao terminar")
 			await _tap_text("chest.close", true)
 			_check(await _wait_for(func() -> bool: return not game.hud.chest_open(), 4.0), "baú fecha de novo")
