@@ -20,6 +20,8 @@ const MARGIN_LEFT := 26.0
 const MARGIN_RIGHT := 26.0
 const MARGIN_TOP := 52.0
 const MARGIN_BOTTOM := 30.0
+## Passes de Chaikin na costa das quatro ilhas grandes.
+const COAST_SMOOTHING := 2
 const SEAL_FONT := "res://assets/fonts/fusion_pixel_12_ja.woff2"
 const SEAL_FALLBACK := "祓"
 
@@ -39,7 +41,16 @@ const GOLD := Color("ffd166")
 const VERMILION := Color("b8322a")
 ## Silhueta do chefe ainda não vencido (liberada) e a mais apagada (bloqueada).
 const SILHOUETTE := Color(0.06, 0.05, 0.1)
-const SILHOUETTE_LOCKED := Color(0.1, 0.09, 0.16, 0.55)
+const SILHOUETTE_LOCKED := Color(0.1, 0.09, 0.16, 0.72)
+## Tinta aguada do interior da silhueta: as partes claras do desenho puxam para este tom,
+## e as linhas escuras (olhos, casco, listras) continuam quase pretas.
+const SILHOUETTE_WASH := Color(0.42, 0.36, 0.52)
+## Contorno de luz de 1 px da silhueta: creme (padrão e liberada) e apagado (bloqueada).
+const SILHOUETTE_RIM := Color(1.0, 0.95, 0.78, 0.9)
+const SILHOUETTE_RIM_OPEN := Color(1.0, 0.95, 0.78, 1.0)
+const SILHOUETTE_RIM_LOCKED := Color(1.0, 0.95, 0.78, 0.6)
+## Lado da silhueta no medalhão (contorno incluído): ~88% do papel de 25 px.
+const SILHOUETTE_SIDE := 22
 
 static var _face_cache: Dictionary = {}
 
@@ -72,7 +83,9 @@ func _ready() -> void:
 		node.focus_mode = Control.FOCUS_ALL
 		node.seal_font = _seal_font
 		node.face = face_texture(_final_boss(id))
-		node.shape = silhouette_texture(_final_boss(id), 20)
+		node.shape = silhouette_texture(_final_boss(id), SILHOUETTE_SIDE, SILHOUETTE, SILHOUETTE_RIM_OPEN)
+		node.shape_locked = silhouette_texture(_final_boss(id), SILHOUETTE_SIDE, SILHOUETTE_LOCKED,
+				SILHOUETTE_RIM_LOCKED)
 		node.pressed.connect(_on_node_pressed.bind(id))
 		node.focus_entered.connect(select.bind(id))
 		add_child(node)
@@ -185,43 +198,98 @@ static func face_texture(boss_id: StringName, side: int = 24) -> Texture2D:
 	return tex
 
 
-## Silhueta do corpo do chefe: primeiro quadro do sprite (que tem fundo transparente),
-## recortado no que é desenhado, reduzido para caber em `side` e pintado de branco (a cor
-## vem do modulate). O retrato (Faceset) é opaco e viraria um disco liso.
-static func silhouette_texture(boss_id: StringName, side: int = 24) -> Texture2D:
+## Silhueta do corpo do chefe, já pintada: interior escuro em `fill` (com um leve
+## sombreado do desenho original, para olhos, casco e listras não sumirem) e um contorno
+## de luz `rim` de 1 px gerado pela dilatação do alfa. Usa o quadro da animação com a
+## maior área desenhada, recortado no que é desenhado e no maior tamanho em que cabe,
+## com o contorno, no círculo de diâmetro `side` do medalhão. O retrato (Faceset) é opaco
+## e viraria um disco liso.
+static func silhouette_texture(boss_id: StringName, side: int = 24, fill: Color = SILHOUETTE,
+		rim: Color = SILHOUETTE_RIM) -> Texture2D:
 	var data: Dictionary = DB.bosses.get(boss_id, {})
 	if data.is_empty():
 		return null
 	var sprite: Dictionary = data["sprite"]
 	var path := String(sprite["path"])
-	var key := "shape|%s|%d" % [path, side]
+	var key := "shape|%s|%d|%s|%s" % [path, side, fill.to_html(), rim.to_html()]
 	if _face_cache.has(key):
 		return _face_cache[key]
 	if not ResourceLoader.exists(path):
 		return null
-	var image := (load(path) as Texture2D).get_image()
-	if image.is_compressed():
-		image.decompress()
-	image.convert(Image.FORMAT_RGBA8)
-	var frame: Array = sprite.get("frame", [16, 16])
-	image = image.get_region(Rect2i(0, 0, mini(int(frame[0]), image.get_width()), mini(int(frame[1]), image.get_height())))
+	var sheet := (load(path) as Texture2D).get_image()
+	if sheet.is_compressed():
+		sheet.decompress()
+	sheet.convert(Image.FORMAT_RGBA8)
+	var image := _fullest_frame(sheet, sprite)
 	var used := image.get_used_rect()
 	if used.size.x > 0 and used.size.y > 0:
 		image = image.get_region(used)
-	var factor := minf(float(side) / image.get_width(), float(side) / image.get_height())
-	if factor >= 2.0:
-		factor = floorf(factor)
-	var fit := Vector2i(maxi(1, roundi(image.get_width() * factor)), maxi(1, roundi(image.get_height() * factor)))
-	image.resize(fit.x, fit.y, Image.INTERPOLATE_NEAREST if factor >= 1.0 else Image.INTERPOLATE_BILINEAR)
-	var out := Image.create_empty(side, side, false, Image.FORMAT_RGBA8)
-	var origin := Vector2i((side - fit.x) / 2, side - fit.y - maxi(0, (side - fit.y) / 4))
-	for y: int in range(fit.y):
-		for x: int in range(fit.x):
-			if image.get_pixel(x, y).a > 0.35:
-				out.set_pixel(origin.x + x, origin.y + y, Color.WHITE)
-	var tex := ImageTexture.create_from_image(out)
+	# Maior tamanho em que o desenho (mais 1 px de contorno) cabe no medalhão redondo.
+	var center := Vector2(side, side) * 0.5
+	var reach := side * 0.5 - 1.0
+	var inside := {}
+	var shades := {}
+	for room: int in range(side - 2, maxi(side / 2, 4) - 1, -1):
+		inside.clear()
+		shades.clear()
+		var factor := minf(float(room) / image.get_width(), float(room) / image.get_height())
+		if factor >= 2.0:
+			factor = floorf(factor)
+		var fit := Vector2i(clampi(roundi(image.get_width() * factor), 1, room),
+				clampi(roundi(image.get_height() * factor), 1, room))
+		var scaled := image.duplicate() as Image
+		scaled.resize(fit.x, fit.y, Image.INTERPOLATE_NEAREST if factor >= 1.0 else Image.INTERPOLATE_BILINEAR)
+		var origin := Vector2i((side - fit.x) / 2, (side - fit.y + 1) / 2)
+		var fits := true
+		for y: int in range(fit.y):
+			for x: int in range(fit.x):
+				var px := scaled.get_pixel(x, y)
+				if px.a <= 0.35:
+					continue
+				var at := origin + Vector2i(x, y)
+				fits = fits and (Vector2(at) + Vector2(0.5, 0.5)).distance_to(center) <= reach
+				inside[at] = true
+				shades[at] = px.get_luminance()
+		if fits:
+			break
+	var mask := Image.create_empty(side, side, false, Image.FORMAT_RGBA8)
+	for at: Vector2i in inside:
+		var wash := smoothstep(0.1, 0.75, float(shades[at])) * 0.7
+		mask.set_pixelv(at, fill.lerp(Color(SILHOUETTE_WASH, fill.a), wash))
+	# Contorno de luz: pixels vazios encostados (4 vizinhos) no desenho.
+	for at: Vector2i in inside:
+		for step: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var n := at + step
+			if n.x >= 0 and n.y >= 0 and n.x < side and n.y < side and not inside.has(n):
+				mask.set_pixelv(n, rim)
+	var tex := ImageTexture.create_from_image(mask)
 	_face_cache[key] = tex
 	return tex
+
+
+## Quadro da animação com mais pixels desenhados (o primeiro às vezes é um quadro de
+## transição ou encolhido). "strip": quadros na linha; "dir4": a coluna de perfil (olhando
+## para a esquerda), em que focinho, chifres e cauda aparecem; de frente vira um bloco.
+static func _fullest_frame(sheet: Image, sprite: Dictionary) -> Image:
+	var frame: Array = sprite.get("frame", [16, 16])
+	var fw := mini(int(frame[0]), sheet.get_width())
+	var fh := mini(int(frame[1]), sheet.get_height())
+	var dir4 := String(sprite.get("layout", "strip")) == "dir4"
+	var count := maxi(1, (sheet.get_height() / fh) if dir4 else (sheet.get_width() / fw))
+	var best := sheet.get_region(Rect2i(0, 0, fw, fh))
+	var best_area := -1
+	for k: int in range(count):
+		var region := sheet.get_region(Rect2i(mini(2 * fw, sheet.get_width() - fw), k * fh, fw, fh) if dir4
+				else Rect2i(k * fw, 0, fw, fh))
+		var area := 0
+		for y: int in range(fh):
+			for x: int in range(fw):
+				if region.get_pixel(x, y).a > 0.35:
+					area += 1
+		if area > best_area:
+			best_area = area
+			best = region
+	return best
 
 
 func _seal_kanji() -> String:
@@ -257,11 +325,13 @@ func _layout() -> void:
 		node.position = (_centers[id] as Vector2) - node.size * 0.5
 	_set_focus_neighbors()
 	_land.clear()
+	# Costa suavizada (Chaikin): 2 passes nas ilhas grandes, 1 nas pequenas (que somem se
+	# forem arredondadas demais).
 	for poly: Array in [JourneyGeo.HOKKAIDO, JourneyGeo.HONSHU, JourneyGeo.SHIKOKU, JourneyGeo.KYUSHU]:
-		_land.append(JourneyGeo.project_all(poly, _xf))
+		_land.append(JourneyGeo.chaikin(JourneyGeo.project_all(poly, _xf), COAST_SMOOTHING))
 	for poly: Array in JourneyGeo.ISLETS:
-		_land.append(JourneyGeo.project_all(poly, _xf))
-	_korea = JourneyGeo.project_all(JourneyGeo.KOREA, _xf)
+		_land.append(JourneyGeo.chaikin(JourneyGeo.project_all(poly, _xf), 1))
+	_korea = JourneyGeo.chaikin(JourneyGeo.project_all(JourneyGeo.KOREA, _xf), 1)
 	# Neve: o norte de Honshu (acima de 39,7°) e Hokkaido inteiro.
 	var north := JourneyGeo.project_all([Vector2(137, 39.7), Vector2(144, 39.7), Vector2(144, 46),
 			Vector2(137, 46)], _xf)
@@ -565,9 +635,11 @@ class MapNode:
 
 	var stage_id: StringName
 	var state: StringName = &"locked"
-	## Retrato colorido (vencida) e silhueta do corpo do chefe (liberada / bloqueada).
+	## Retrato colorido (vencida) e silhueta já pintada do corpo do chefe (liberada, com
+	## contorno dourado; bloqueada, mais apagada).
 	var face: Texture2D
 	var shape: Texture2D
+	var shape_locked: Texture2D
 	var moons: int = 0
 	var selected: bool = false
 	var seal_font: Font
@@ -588,7 +660,8 @@ class MapNode:
 			_pulse.tween_property(self, "glow", 1.0, 0.8).set_trans(Tween.TRANS_SINE)
 			_pulse.tween_property(self, "glow", 0.0, 0.8).set_trans(Tween.TRANS_SINE)
 
-	## Cor aplicada à imagem do chefe: natural (vencida) ou silhueta (liberada / bloqueada).
+	## Tom da imagem do chefe: natural (vencida) ou o interior da silhueta (liberada /
+	## bloqueada), que já vem pintado em `shape` / `shape_locked`.
 	func face_modulate() -> Color:
 		match state:
 			&"cleared":
@@ -627,9 +700,10 @@ class MapNode:
 			# Lanterna atrás da silhueta (pulsando quando liberada).
 			var lamp := Color(1.0, 0.82, 0.45, 0.35 + 0.25 * glow) if state == &"open" else Color(1, 1, 1, 0.12)
 			draw_circle(c + Vector2(0, -1), RADIUS - 5.0, lamp)
-			if shape:
-				var side := shape.get_size()
-				draw_texture_rect(shape, Rect2(c - side * 0.5 + Vector2(0, 1), side), false, face_modulate())
+			var image := shape if state == &"open" else shape_locked
+			if image:
+				var side := image.get_size()
+				draw_texture_rect(image, Rect2((c - side * 0.5).floor(), side), false)
 		if state == &"locked":
 			_draw_mist(c)
 			_draw_shimenawa(c)

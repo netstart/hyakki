@@ -559,7 +559,7 @@ stage.yomi.region,Unzen · Kyūshū,Unzen · Kyūshū,Unzen · Kyūshū,Unzen ·
 stages.best,Melhor tempo: %s,Best time: %s,Mejor tiempo: %s,Bestzeit: %s,Meilleur temps : %s,Лучшее время: %s,Waktu terbaik: %s,最高記録: %s,최고 기록: %s,最佳時間：%s,最佳时间：%s
 stages.bonus,Bênçãos da Loja nesta partida: %s,Shop blessings this run: %s,Bendiciones de la tienda: %s,Laden-Segen in diesem Lauf: %s,Bénédictions de la boutique : %s,Дары лавки в этом забеге: %s,Berkah toko kali ini: %s,今回のショップの加護: %s,이번 판 상점 축복: %s,本局商店祝福：%s,本局商店祝福：%s
 stages.boss,Chefe: %s,Boss: %s,Jefe: %s,Boss: %s,Boss : %s,Босс: %s,Bos: %s,ボス: %s,보스: %s,首領：%s,首领：%s
-stages.boss_unknown,Chefe: ???,Boss: ???,Jefe: ???,Boss: ???,Boss : ???,Босс: ???,Bos: ???,ボス: ???,보스: ???,首領：???,首领：???
+stages.bosses,Chefes: %s,Bosses: %s,Jefes: %s,Bosse: %s,Boss : %s,Боссы: %s,Bos: %s,ボス: %s,보스: %s,首領：%s,首领：%s
 stages.chronicle,Crônica: %s,Chronicle: %s,Crónica: %s,Chronik: %s,Chronique : %s,Хроника: %s,Kronik: %s,年代記: %s,연대기: %s,紀事：%s,纪事：%s
 stages.cleared,Purificado,Purified,Purificado,Gereinigt,Purifié,Очищено,Disucikan,祓い済み,정화됨,已淨化,已净化
 stages.endless,Noite Sem Fim,Endless Night,Noche Sin Fin,Endlose Nacht,Nuit sans fin,Бесконечная ночь,Malam Tanpa Akhir,終わらぬ夜,끝없는 밤,無盡之夜,无尽之夜

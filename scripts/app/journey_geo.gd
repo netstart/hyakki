@@ -2,7 +2,8 @@ class_name JourneyGeo
 extends RefCounted
 ## Geografia do mapa da Jornada do Guardião (sem autoloads, testável em tests/run_tests.gd):
 ## contornos aproximados do arquipélago em graus (lon, lat), projeção equiretangular
-## girada, estrada em Catmull-Rom e afastamento mínimo entre os pontos de luta.
+## girada, costa suavizada (Chaikin), estrada em Catmull-Rom e afastamento mínimo entre
+## os pontos de luta.
 
 ## Latitude de referência da projeção equiretangular (centro de Honshu).
 const REF_LAT := 36.0
@@ -163,6 +164,23 @@ static func project_all(points: Array, xf: Transform2D) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for p: Vector2 in points:
 		out.append(xf * project(p))
+	return out
+
+
+## Suaviza um contorno fechado pelo corte de cantos de Chaikin (cada iteração troca cada
+## aresta pelos pontos a 1/4 e 3/4 dela): a costa perde as quinas sem sair do lugar.
+static func chaikin(poly: PackedVector2Array, iterations: int = 1) -> PackedVector2Array:
+	var out := poly
+	for _i: int in range(iterations):
+		if out.size() < 3:
+			return out
+		var next := PackedVector2Array()
+		for k: int in range(out.size()):
+			var a := out[k]
+			var b := out[(k + 1) % out.size()]
+			next.append(a.lerp(b, 0.25))
+			next.append(a.lerp(b, 0.75))
+		out = next
 	return out
 
 

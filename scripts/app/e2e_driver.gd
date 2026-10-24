@@ -90,7 +90,7 @@ func _suite_full() -> void:
 		await _expect_screen(&"title", "voltar do Android em options volta ao título")
 
 	_step("seleção")
-	await _start_run_from_title()
+	await _start_run_from_title(true)
 	if app.game == null:
 		return
 	var game := app.game
@@ -268,11 +268,7 @@ func _shop_coin_item() -> void:
 	await _tap_text("title.shop", true)
 	if not await _expect_screen(&"shop", "título → loja (reforços)"):
 		return
-	var screen: Control = null
-	for node: Node in get_tree().root.find_children("*", "Control", true, false):
-		var script := node.get_script() as Script
-		if script != null and script.resource_path.ends_with("shop_screen.gd") and (node as Control).is_visible_in_tree():
-			screen = node as Control
+	var screen := _visible_screen("shop_screen.gd")
 	if screen == null:
 		_check(false, "tela da loja encontrada")
 		return
@@ -306,9 +302,46 @@ func _shop_coin_item() -> void:
 	await _expect_screen(&"title", "loja → voltar ao título")
 
 
+## Mapa da jornada na tela de fases, com toques reais nos pontos. Na 1ª abertura (instalação
+## limpa): vila liberada, bambuzal bloqueado; tocar no bambuzal mostra o cartão mas não libera
+## o Começar nem muda a fase escolhida; tocar na vila liga de novo. Depois da derrota na vila
+## (suspensão) só confere que ela segue liberada e não vencida.
+func _journey_map(first: bool) -> void:
+	var screen := _visible_screen("stage_screen.gd")
+	var map := screen.get("_map") as JourneyMap if screen != null else null
+	if map == null:
+		_check(false, "mapa da jornada na tela de fases")
+		return
+	var go := screen.get("_go") as Button
+	# A guardiã anda até o ponto escolhido e o foco é posto no quadro seguinte.
+	await _seconds(0.6)
+	if not first:
+		_check(map.node_state(&"village") == &"open", "derrota não marca a vila como vencida")
+		return
+	_shot("mapa_jornada")
+	_check(map.node_state(&"village") == &"open", "vila liberada no mapa (instalação limpa)")
+	_check(map.node_state(&"bamboo") == &"locked", "bambuzal bloqueado no mapa (instalação limpa)")
+	_check(map.selected == &"village" and not go.disabled and String(app.selection["stage"]) == "village",
+			"mapa abre na vila com Começar liberado")
+	var area := map.get_global_rect()
+	for id: StringName in [&"bamboo", &"village"]:
+		_check(area.encloses((map.nodes[id] as Control).get_global_rect()), "ponto %s inteiro no mapa" % id)
+	await _tap_control(map.nodes[&"bamboo"] as Control)
+	_check(await _wait_for(func() -> bool: return map.selected == &"bamboo", 4.0),
+			"tocar no bambuzal o escolhe no mapa")
+	_check(go.disabled, "Começar desliga na fase bloqueada")
+	_check(String(app.selection["stage"]) == "village", "fase bloqueada não vira a escolhida")
+	await _tap_control(map.nodes[&"village"] as Control)
+	_check(await _wait_for(func() -> bool: return map.selected == &"village", 4.0),
+			"tocar na vila a escolhe de novo")
+	_check(not go.disabled, "Começar volta a ligar na vila")
+	_check(String(app.selection["stage"]) == "village", "vila segue a fase escolhida")
+
+
 # --- Ajudantes ----------------------------------------------------------------------
 
-func _start_run_from_title() -> void:
+## Da tela de título até a partida. Com check_map, confere o mapa da 1ª abertura das fases.
+func _start_run_from_title(check_map: bool = false) -> void:
 	await _tap_text("title.play", true)
 	if not await _expect_screen(&"heroes", "jogar → heróis"):
 		return
@@ -318,7 +351,7 @@ func _start_run_from_title() -> void:
 	await _tap_text("heroes.next", true)
 	if not await _expect_screen(&"stages", "heróis → fases"):
 		return
-	_shot("fases")
+	await _journey_map(check_map)
 	await _tap_text("stages.start", true)
 	var started := await _wait_for(func() -> bool: return app.game != null and app.game.running, WAIT)
 	_check(started, "começar abre a partida")
@@ -354,6 +387,15 @@ func _tap_control(control: Control) -> void:
 func _to_screen(point: Vector2) -> Vector2i:
 	var at := get_viewport().get_final_transform() * point + Vector2(DisplayServer.window_get_position())
 	return Vector2i(at.round())
+
+
+## Tela visível cujo script termina com o nome dado (ex. "shop_screen.gd").
+func _visible_screen(script_name: String) -> Control:
+	for node: Node in get_tree().root.find_children("*", "Control", true, false):
+		var script := node.get_script() as Script
+		if script != null and script.resource_path.ends_with(script_name) and (node as Control).is_visible_in_tree():
+			return node as Control
+	return null
 
 
 func _button(text: String, prefix: bool) -> Button:

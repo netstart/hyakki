@@ -5,8 +5,6 @@ extends Screen
 ## (Brisa / Normal), Lua Vermelha I–V (liberada vencendo a anterior) e Noite Sem Fim
 ## (depois de vencer a fase). Fases bloqueadas podem ser lidas, mas não começadas.
 
-## Silhueta dos chefes ainda não derrotados.
-const SILHOUETTE := Color(0.06, 0.05, 0.1)
 const MAP_RECT := Rect2(6, 6, 396, 293)
 const CARD_RECT := Rect2(406, 6, 266, 293)
 const PAPER := Color("eddcb4")
@@ -281,17 +279,18 @@ func _refresh_bosses(id: StringName) -> void:
 		var boss := StringName(String((bosses[k] as Dictionary)["id"]))
 		var known := defeated.has(String(boss))
 		icon.set_meta("face", JourneyMap.face_texture(boss, 24))
-		icon.set_meta("shape", JourneyMap.silhouette_texture(boss, 18))
+		icon.set_meta("shape", JourneyMap.silhouette_texture(boss, 21))
 		icon.tooltip_text = tr("boss.%s.name" % boss) if known else "???"
 		icon.set_meta("known", known)
 		icon.queue_redraw()
-	# Nomes dos chefes já derrotados ("???" para os outros); nenhum conhecido: "Chefe: ???".
+	# Nomes dos chefes já derrotados ("???" para os outros); nenhum conhecido: "Chefes: ???".
 	var names: PackedStringArray = []
 	for boss_data: Dictionary in bosses:
 		var boss := String(boss_data["id"])
 		names.append(tr("boss.%s.name" % boss) if defeated.has(boss) else "???")
 	var known_count := names.size() - names.count("???")
-	_boss.text = tr("stages.boss") % ", ".join(names) if known_count > 0 else tr("stages.boss_unknown")
+	var shown := ", ".join(names) if known_count > 0 else "???"
+	_boss.text = (tr("stages.bosses") if names.size() > 1 else tr("stages.boss")) % shown
 	_boss.tooltip_text = _boss.text
 
 
@@ -309,7 +308,7 @@ func _draw_boss_rim(icon: TextureRect) -> void:
 	var image := icon.get_meta("face" if known else "shape") as Texture2D if icon.has_meta("shape") else null
 	if image:
 		var side := image.get_size()
-		icon.draw_texture_rect(image, Rect2(c - side * 0.5, side), false, Color.WHITE if known else SILHOUETTE)
+		icon.draw_texture_rect(image, Rect2((c - side * 0.5).floor(), side), false)
 	icon.draw_arc(c, 13.0, 0.0, TAU, 28, Color("b8862a") if known else Color("6a5a4a"), 1.5)
 
 

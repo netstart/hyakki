@@ -152,6 +152,24 @@ func _test_journey_geo() -> void:
 		var projected := JourneyGeo.project_all(poly, xf)
 		_check(not Geometry2D.triangulate_polygon(projected).is_empty(),
 				"jornada: contorno de %d pontos é um polígono válido" % poly.size())
+		for passes: int in [1, 2]:
+			var smooth := JourneyGeo.chaikin(projected, passes)
+			_check(smooth.size() == projected.size() * (2 ** passes)
+					and not Geometry2D.triangulate_polygon(smooth).is_empty(),
+					"jornada: costa de %d pontos suavizada (%d passes) segue válida" % [poly.size(), passes])
+	var corners := PackedVector2Array([Vector2(0, 0), Vector2(8, 0), Vector2(8, 8), Vector2(0, 8)])
+	var square := JourneyGeo.chaikin(corners, 1)
+	_check(square.size() == 8 and square[0] == Vector2(2, 0) and square[1] == Vector2(6, 0),
+			"jornada: Chaikin corta os cantos a 1/4 e 3/4 de cada aresta")
+	var islands: Array[PackedVector2Array] = []
+	for poly: Array in [JourneyGeo.HONSHU, JourneyGeo.KYUSHU]:
+		islands.append(JourneyGeo.chaikin(JourneyGeo.project_all(poly, xf), 2))
+	for id: StringName in JourneyGeo.STAGES:
+		var at := xf * JourneyGeo.project(JourneyGeo.STAGES[id])
+		var on_land := false
+		for island: PackedVector2Array in islands:
+			on_land = on_land or Geometry2D.is_point_in_polygon(at, island)
+		_check(on_land, "jornada: ponto %s fica em terra depois da costa suavizada" % id)
 	var crowded := {&"a": Vector2(50, 50), &"b": Vector2(52, 51), &"c": Vector2(300, 100)}
 	var apart := JourneyGeo.separate(crowded, 30.0, Rect2(0, 0, 400, 200))
 	var gap: Vector2 = ((apart[&"b"] as Vector2) - (apart[&"a"] as Vector2)).abs()
