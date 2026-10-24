@@ -78,6 +78,17 @@ func load_profile() -> void:
 		loaded = _read(backup_path)
 		recovered_from_backup = not loaded.is_empty()
 	data = migrate(loaded) if not loaded.is_empty() else default_profile()
+	_reapply_achievement_unlocks()
+
+
+## Recompensas de conquista que ganharam desbloqueios novos chegam a saves antigos. Não
+## grava: a correção é refeita a cada carga (idempotente) e vai para o disco na próxima
+## gravação normal. No início do jogo o DB (autoload seguinte) ainda não leu os JSON.
+func _reapply_achievement_unlocks() -> void:
+	if DB.is_node_ready():
+		MetaProgress.reapply_achievement_unlocks()
+	elif not DB.ready.is_connected(MetaProgress.reapply_achievement_unlocks):
+		DB.ready.connect(MetaProgress.reapply_achievement_unlocks, CONNECT_ONE_SHOT)
 
 
 ## Leva saves antigos para a versão atual e completa campos que faltam.

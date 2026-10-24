@@ -32,6 +32,8 @@ const TitleLayoutTests := preload("res://tests/title_layout_tests.gd")
 const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 ## Explosão atrás do baú da fase: abertura, centro, fim sozinho, pular e novo baú.
 const ChestBurstTests := preload("res://tests/chest_burst_tests.gd")
+## Desbloqueios de conquistas reaplicados em saves antigos (Onikiri do Oni Vermelho).
+const AchievementRewardTests := preload("res://tests/achievement_reward_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -48,6 +50,7 @@ func _ready() -> void:
 	_test_stat_block()
 	_test_descriptions()
 	_test_save_migration()
+	AchievementRewardTests.new().run(_check)
 	_test_sanctuary()
 	_test_shop_clock()
 	_test_shop_coin_items()

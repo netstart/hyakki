@@ -6,6 +6,9 @@ extends RefCounted
 const CODEX_KILLS := 100
 const ENDLESS_GOLD := 1.5
 const TELEMETRY_HEADER := "date,hero,stage,mode,moon,time,level,kills,ryo,result,weapons,damage_taken,cause"
+## Tipos de recompensa que liberam conteúdo, com a lista de desbloqueados de cada um.
+const UNLOCK_KINDS := {"hero": "heroes", "weapon": "weapons", "passive": "passives",
+		"stage": "stages", "cosmetic": "cosmetics"}
 
 
 static func powerup_price(id: StringName) -> int:
@@ -210,27 +213,40 @@ static func _met(c: Dictionary, result: Dictionary, tracker: RunTracker) -> bool
 	return false
 
 
-## "ryo:100,hero:kenta" → aplica cada desbloqueio.
-static func grant(reward: String) -> void:
+## "ryo:100,hero:kenta" → aplica cada parte. Com include_currency = false só os desbloqueios
+## são aplicados (sem ryō). Devolve true se liberou algo que o perfil ainda não tinha.
+static func grant(reward: String, include_currency: bool = true) -> bool:
+	var changed := false
 	for part: String in reward.split(",", false):
 		var pieces := part.split(":")
 		if pieces.size() != 2:
 			continue
 		var kind := pieces[0]
 		var value := pieces[1]
-		match kind:
-			"ryo":
+		if kind == "ryo":
+			if include_currency:
 				SaveManager.add_ryo(value.to_int())
-			"hero":
-				SaveManager.unlock("heroes", StringName(value))
-			"weapon":
-				SaveManager.unlock("weapons", StringName(value))
-			"passive":
-				SaveManager.unlock("passives", StringName(value))
-			"stage":
-				SaveManager.unlock("stages", StringName(value))
-			"cosmetic":
-				SaveManager.unlock("cosmetics", StringName(value))
+		elif UNLOCK_KINDS.has(kind):
+			if SaveManager.unlock(String(UNLOCK_KINDS[kind]), StringName(value)):
+				changed = true
+	return changed
+
+
+## Reaplica os desbloqueios (nunca o ryō) das conquistas que o perfil já tem: uma recompensa
+## que ganhou conteúdo novo depois (ex.: ach_boss_red_oni passou a liberar a Onikiri) chega a
+## quem já tinha a conquista. Idempotente; ids que não existem mais no DB são ignorados.
+## Devolve true se liberou algo novo.
+static func reapply_achievement_unlocks() -> bool:
+	var changed := false
+	var done: Dictionary = SaveManager.data.get("achievements", {})
+	for key: String in done:
+		var id := StringName(key)
+		if not DB.achievements.has(id):
+			continue
+		var data: Dictionary = DB.achievements[id]
+		if grant(String(data.get("reward", "")), false):
+			changed = true
+	return changed
 
 
 ## Entradas do Diário liberadas: inimigos com 100 abates, chefes vencidos, heróis.
