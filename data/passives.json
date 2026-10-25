@@ -1,14 +1,14 @@
 [
-  {"id": "sake", "icon": "res://assets/art/ui/icons/spell/AttackUpgrade.png", "max": 5, "per_level": {"might": 0.10}, "unlock": ""},
-  {"id": "jade", "icon": "res://assets/art/items/resource/GemGreen.png", "max": 5, "per_level": {"area": 0.10}, "unlock": ""},
-  {"id": "scroll", "icon": "res://assets/art/ui/icons/items/Scroll.png", "max": 5, "per_level": {"cooldown": -0.08}, "unlock": ""},
-  {"id": "sandals", "icon": "res://assets/art/ui/icons/items/Boot.png", "max": 5, "per_level": {"speed": 0.10}, "unlock": ""},
-  {"id": "carp_heart", "icon": "res://assets/art/items/potion/Heart.png", "max": 5, "per_level": {"max_hp": 0.20}, "unlock": ""},
-  {"id": "gi", "icon": "res://assets/art/ui/icons/items/Armor.png", "max": 5, "per_level": {"armor": 1}, "unlock": ""},
-  {"id": "hourglass", "icon": "res://assets/art/items/object/Hourglass.png", "max": 5, "per_level": {"duration": 0.10}, "unlock": ""},
-  {"id": "tengu_feather", "icon": "res://assets/art/ui/icons/items/Arrow.png", "max": 5, "per_level": {"proj_speed": 0.10}, "unlock": ""},
-  {"id": "rosary", "icon": "res://assets/art/ui/icons/items/Amulet.png", "max": 3, "per_level": {"amount": 1}, "unlock": "ach_level_30"},
-  {"id": "kitsune_magnet", "icon": "res://assets/art/ui/icons/items/Ring.png", "max": 5, "per_level": {"magnet": 0.25}, "unlock": "ach_chests_10"},
-  {"id": "maneki", "icon": "res://assets/art/ui/icons/spell/LuckUpgrade.png", "max": 5, "per_level": {"luck": 0.10}, "unlock": "ach_ryo_2000"},
-  {"id": "noh_mask", "icon": "res://assets/art/ui/icons/spell/Camouflage.png", "max": 5, "per_level": {"curse": 0.10, "growth": 0.10}, "unlock": "ach_win_moon1"}
+  {"id": "sake", "icon": "res://assets/art/ui/skill_icons/passives/sake.png", "max": 5, "per_level": {"might": 0.10}, "unlock": ""},
+  {"id": "jade", "icon": "res://assets/art/ui/skill_icons/passives/jade.png", "max": 5, "per_level": {"area": 0.10}, "unlock": ""},
+  {"id": "scroll", "icon": "res://assets/art/ui/skill_icons/passives/scroll.png", "max": 5, "per_level": {"cooldown": -0.08}, "unlock": ""},
+  {"id": "sandals", "icon": "res://assets/art/ui/skill_icons/passives/sandals.png", "max": 5, "per_level": {"speed": 0.10}, "unlock": ""},
+  {"id": "carp_heart", "icon": "res://assets/art/ui/skill_icons/passives/carp_heart.png", "max": 5, "per_level": {"max_hp": 0.20}, "unlock": ""},
+  {"id": "gi", "icon": "res://assets/art/ui/skill_icons/passives/gi.png", "max": 5, "per_level": {"armor": 1}, "unlock": ""},
+  {"id": "hourglass", "icon": "res://assets/art/ui/skill_icons/passives/hourglass.png", "max": 5, "per_level": {"duration": 0.10}, "unlock": ""},
+  {"id": "tengu_feather", "icon": "res://assets/art/ui/skill_icons/passives/tengu_feather.png", "max": 5, "per_level": {"proj_speed": 0.10}, "unlock": ""},
+  {"id": "rosary", "icon": "res://assets/art/ui/skill_icons/passives/rosary.png", "max": 3, "per_level": {"amount": 1}, "unlock": "ach_level_30"},
+  {"id": "kitsune_magnet", "icon": "res://assets/art/ui/skill_icons/passives/kitsune_magnet.png", "max": 5, "per_level": {"magnet": 0.25}, "unlock": "ach_chests_10"},
+  {"id": "maneki", "icon": "res://assets/art/ui/skill_icons/passives/maneki.png", "max": 5, "per_level": {"luck": 0.10}, "unlock": "ach_ryo_2000"},
+  {"id": "noh_mask", "icon": "res://assets/art/ui/skill_icons/passives/noh_mask.png", "max": 5, "per_level": {"curse": 0.10, "growth": 0.10}, "unlock": "ach_win_moon1"}
 ]

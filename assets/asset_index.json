@@ -1416,6 +1416,42 @@
   "sha256": "170669561646d42f3500ec137b69fad91b1f3453aa9902bdb8aa90eae4f37593"
  },
  {
+  "file": "assets/art/bosses/dragon/Body1.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Body1.png",
+  "license_id": "ninja_adventure",
+  "sha256": "223d414c471f964d8b813968be3179015975fa294b20ae438de22daaef302f16"
+ },
+ {
+  "file": "assets/art/bosses/dragon/Body2.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Body2.png",
+  "license_id": "ninja_adventure",
+  "sha256": "0a1bbed69a9babfa30b8e759a2fa77c7b1c4ae7af38c4ff334cf7f42ad78fe6e"
+ },
+ {
+  "file": "assets/art/bosses/dragon/BodyEnd.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/BodyEnd.png",
+  "license_id": "ninja_adventure",
+  "sha256": "a69f4f956bd3fce40e017ec3d11ae2583f68cb00c73c8b0078a063411a03e3f5"
+ },
+ {
+  "file": "assets/art/bosses/dragon/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "b18f5483e074e5397f3cbc8a0d9b4c861603e05a8c1af8d59163dd49f397f6f7"
+ },
+ {
+  "file": "assets/art/bosses/dragon/Head.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Head.png",
+  "license_id": "ninja_adventure",
+  "sha256": "2a9a9d0537515a16ca2f7a77aa91c8f38db2557c198ad3d79555b3ea30ba8bb4"
+ },
+ {
+  "file": "assets/art/bosses/dragon/Wing.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Wing.png",
+  "license_id": "ninja_adventure",
+  "sha256": "6ec5982f328fbe1c4351a8fe3ac50f677e8a64e28cb0d18df8f0ed994c332687"
+ },
+ {
   "file": "assets/art/bosses/faceless_monk/Faceset.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSpirit/Faceset.png",
   "license_id": "ninja_adventure",
@@ -3192,6 +3228,18 @@
   "sha256": "81d6652ca12c40a851bc1ecbf151a9ba5e288350c0b6f4d777cfc4cd2e76dd9f"
  },
  {
+  "file": "assets/art/ui/icons/kenney/audio_on.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/audioOn.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "f6b0ce8d046e775cfeda2bc810d980ae4851185e44d1b0a89eaf8e5d482bfd47"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/contrast.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/contrast.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "162cb35775199d4b64fca232e914ed8311ee5b7ce6667e0d53e6e010f1419781"
+ },
+ {
   "file": "assets/art/ui/icons/kenney/exit.png",
   "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/exitLeft.png",
   "license_id": "kenney_game_icons",
@@ -3202,6 +3250,24 @@
   "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/fastForward.png",
   "license_id": "kenney_game_icons",
   "sha256": "bc23e4edc9804d2e6ee15e86e30f7c658f950ce41ab17c05742d931bc9ea021c"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/gamepad.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/gamepad.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "12199a560d9f4a94499b6d4eae0bb428ebb48c02c9d089348d591d0517951421"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/gear.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/gear.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "95b7231229fb620b331f0aea2ae7bc4a227ec0206ff599f662442d7dcbbdd58b"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/locked.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/locked.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "b5cbe9d0823b83c40a5d282b2ae26ba7c1ddad48fd02fdac47dacb025342eabd"
  },
  {
   "file": "assets/art/ui/icons/kenney/music_off.png",
@@ -3222,10 +3288,28 @@
   "sha256": "e2f5600a771c5da6e523ab1345ba9a4c5251c688933e0a6ff6c75e0982311e25"
  },
  {
+  "file": "assets/art/ui/icons/kenney/person.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/singleplayer.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "8bc49e8b3c3249562fd51bf2d29227990f2a9e0bc494fb5f359dff5441c3af8a"
+ },
+ {
   "file": "assets/art/ui/icons/kenney/play.png",
   "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/forward.png",
   "license_id": "kenney_game_icons",
   "sha256": "c6cb584576c5a4638ad6f883ff14700071b56f0bb83980b15ffc1baf6576f03b"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/star.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/star.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "e68ceed836f930b6b9e8fdc8e52a16dfc5f7f5aee5c9b28a286901bfcaff8c94"
+ },
+ {
+  "file": "assets/art/ui/icons/kenney/trophy.png",
+  "source": "C:/src/assets/kenney-free/game-icons/PNG/White/1x/trophy.png",
+  "license_id": "kenney_game_icons",
+  "sha256": "c6d3cbd36e3e38c6dbbfbab428fca6f69c69c9c92ae5dfbe73b858bc816bef9e"
  },
  {
   "file": "assets/art/ui/icons/kenney/warning.png",
@@ -4110,10 +4194,34 @@
   "sha256": "7ac4721bdc388874410a896a937c46962864faf9e9755500ca9f2aeab3809abb"
  },
  {
+  "file": "assets/audio/ambience/rain2.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Ambient/Rain2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "6ee27258c8f80da17d3205ee9b28876e2019b0f7d0228ce4240d84cc2d7c8dda"
+ },
+ {
+  "file": "assets/audio/ambience/rain3.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Ambient/Rain3.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "1c22cd7906f3eb709bfa268c40cae88d90e784270cfdf657beb43746d47cec8d"
+ },
+ {
+  "file": "assets/audio/ambience/storm.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Ambient/Storm.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "1622958a3904604ed69b67c447645d3f6e657c2ca860669f2f64ad9f506647b5"
+ },
+ {
   "file": "assets/audio/ambience/wind.wav",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Ambient/Wind.wav",
   "license_id": "ninja_adventure",
   "sha256": "e66e2fa95ab26c5ababf9ce5f62607535d10b9afba9cf4de52baf2b266ea36cd"
+ },
+ {
+  "file": "assets/audio/ambience/wind2.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Ambient/Wind2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "3bbf539d43c4b269285ee44d6546333344d31126f0e248c46349923e5f332c4a"
  },
  {
   "file": "assets/audio/music/boss_a.mp3",
@@ -4266,6 +4374,120 @@
   "sha256": "8fe129feb63baafc2a65ad7f19dc184d6ec9e7d9d3df4a8a143740ffe009dfa6"
  },
  {
+  "file": "assets/audio/sfx/e_boss_fall_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "b1dc8d2e4d1d04eab184ed27ace38e6b48ded59c0e4f4477a8a0caca1332cf83"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_ash_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "e2c0bd7269bd25eea7fc08c1182a4acb328031a6f42e1f056b270ba44366da7f"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_ash_1.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "8f0e09225f69bee4664655348db99d83feea0364a17f3f02ca1afb7a8a0a7b38"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_ash_2.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "d96854008ce8f81038614425bcce140ebafb48df0a9c8d6736660afdb6d1776c"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_bone_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "79775683bf536f035de5d4f90393bbd3bafc08d7c1e9127d1705da17a099c6be"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_bone_1.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "48444430f6a6f3a99c08a6872880ebea8c200bb8a33331549f3d8cbb8d0935f1"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_bone_2.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "5207bab36d40eb442190948bf07d847d807a338b70e743ace0d1c5f31e131525"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_ember_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "09e7883b6df40aaf85ea3cdf46c0245cdfa1ae8d40e8047284e6e47ed7da0d28"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_ember_1.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "ca1f15e0e67c6bbe266283e9955ca64944801c6da746b1d4b10e71d766e60dd0"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_ember_2.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "fc93a99936db5cf48e4a711fe1092f1271dc4c2d323aff4b5aa89288aa187f1b"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_mist_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "e7451c55a27f171506b97aa888198c41f17dfcd9b6dd3fd4b3526d6a5ed45067"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_mist_1.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "894948754c8121dc5fb1d0d3bbe9718fb7957ea2375c486adea6f6f3eab33aa4"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_mist_2.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "52e7a2f9394072a10aa4c718fc1e3064c296997f839ee060ed7d8d55549a17ea"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_splat_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "16a3ec0c63a37dc66211c615e6130c5ce04fda242fc7f5b327d16f262f8fbc84"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_splat_1.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "ecb361edeb2e3cb0cd529556d5223aa938fd1d3db804cd6efe9a53533572709d"
+ },
+ {
+  "file": "assets/audio/sfx/e_die_splat_2.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "90738061a4bf13bccaee4e88367bb8691e37ba5371dd5685c8cc53847dfd0043"
+ },
+ {
+  "file": "assets/audio/sfx/e_roar_0.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "a5cb6a68afe3a85d3c2c12d9c896bd03d6d590009c6ba1b345b2c7e71c795f81"
+ },
+ {
+  "file": "assets/audio/sfx/e_roar_1.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "5a872318f2c884b3f9d3149a187b430622296bf70bf9974175523f2f575adb8d"
+ },
+ {
+  "file": "assets/audio/sfx/e_roar_2.wav",
+  "source": "tools/gen_enemy_sfx.py",
+  "license_id": "hyakki_enemy_sfx",
+  "sha256": "10a70c56d0f27f939d66f27f9f50d073180e8dfc373b573119ed4d0511a38454"
+ },
+ {
   "file": "assets/audio/sfx/explosion.wav",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Explosion.wav",
   "license_id": "ninja_adventure",
@@ -4296,6 +4518,42 @@
   "sha256": "b5eae8e075103a3fca179817a410ba2bfd4829da0c2fad3d997517a78891f308"
  },
  {
+  "file": "assets/audio/sfx/g_bow_twang_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "47f0d5aafbf5e858f49a923752c00909df5a8183916d9c7c0c36b4d260e2025a"
+ },
+ {
+  "file": "assets/audio/sfx/g_bow_twang_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "7ef09b94a1d92183a7d2a03d6f4f0ceecafc73406b10ce32b41a8ed7f587df3e"
+ },
+ {
+  "file": "assets/audio/sfx/g_bow_twang_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "4b5b7e7d20b409fc71c66a0a2f907afb00538f078585e1d81ff3be54e734a97b"
+ },
+ {
+  "file": "assets/audio/sfx/g_chain_rattle_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "afecd9e6fc5547714280f039d8120c300674f12e56e0ec18c95a06b2217fae2b"
+ },
+ {
+  "file": "assets/audio/sfx/g_chain_rattle_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "0982808ef34e033e5ee2381b5fbb6f6b8069662ca93f85d68d81279548d7e332"
+ },
+ {
+  "file": "assets/audio/sfx/g_chain_rattle_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "b6b9228d8dc9eb42bb39144230f4d7e98af8ba4bbc67cbdb1c3f112c11dc09b0"
+ },
+ {
   "file": "assets/audio/sfx/g_chain_zap_0.wav",
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
@@ -4324,6 +4582,24 @@
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
   "sha256": "8f3029da4c6a8e393f63ac57103f01f7dd6d4990f8220d75baaf1522139cdc53"
+ },
+ {
+  "file": "assets/audio/sfx/g_heavy_blade_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "615033184edca687dd92924f32b4d2ae074049e1c7d4a3ad1fea5814753d3d0a"
+ },
+ {
+  "file": "assets/audio/sfx/g_heavy_blade_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "451fcff03b07c24438ecd973d7bd9ae181225aad596a101491c98a659a9aa2fd"
+ },
+ {
+  "file": "assets/audio/sfx/g_heavy_blade_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "650a1fded355872eced8daf2822b971f17d0eccf0e3c3a67dea284ec3d65ca09"
  },
  {
   "file": "assets/audio/sfx/g_hit_area_0.wav",
@@ -4488,6 +4764,24 @@
   "sha256": "316127e18a11bb8716c10d1d2dc35e0d5dab7a2342ed3c5885fd9a278068bdf2"
  },
  {
+  "file": "assets/audio/sfx/g_kunai_throw_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "2dc12990024dec868a1eba8c9f92371643142894e5b8fb3fc107f31573e5752c"
+ },
+ {
+  "file": "assets/audio/sfx/g_kunai_throw_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "b877ef3f6e2075a464fb9e89246c3aed81794e0865ac1ff4af5d0d4eaf2088e5"
+ },
+ {
+  "file": "assets/audio/sfx/g_kunai_throw_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "cdf6340de4908f937aa7cd211988a896e4785947aa7af66d133cd1dea2c16530"
+ },
+ {
   "file": "assets/audio/sfx/g_ofuda_cast_0.wav",
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
@@ -4506,6 +4800,78 @@
   "sha256": "45cf49c753c5dab3f2fa6db18aae06a017a1288d55f260e7e12de59a6039feb0"
  },
  {
+  "file": "assets/audio/sfx/g_shuriken_whirl_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "79f914c4a3aa7d4392a5cda52c084719a609b8269b74c25e1ff99b279880aab8"
+ },
+ {
+  "file": "assets/audio/sfx/g_shuriken_whirl_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "29b5148481e83da395e4218ac5a904306d2e99d34c247e0eec0f7bb9623ed834"
+ },
+ {
+  "file": "assets/audio/sfx/g_shuriken_whirl_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "9a9b2c64ed798e7e0efa240b9f3131dbb0b3d0eff70dccb01e45ca1e6f919a6e"
+ },
+ {
+  "file": "assets/audio/sfx/g_smoke_pop_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "6f4ef3f613d8d0f3d6040bb99ccbe945203c45fa01393c0be7ce82595593391d"
+ },
+ {
+  "file": "assets/audio/sfx/g_smoke_pop_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "4dd8eaf49d5b84c568356becbcca93e78b39e7ce499e195b4d685cb304792c9a"
+ },
+ {
+  "file": "assets/audio/sfx/g_smoke_pop_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "27a962fc2fb04699ec9528cfcd5108eafb0bd67b2be40a44bc5e2e07612a3c24"
+ },
+ {
+  "file": "assets/audio/sfx/g_spirit_flame_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "e9ae53f575f3a06117ecb84e7bdb174fa6e00610abbc655e38b96eae5f3f7795"
+ },
+ {
+  "file": "assets/audio/sfx/g_spirit_flame_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "f3017227cd01d234cf3714b0f4fcb21a975defd5cec08b928c1bc27bb8a9b197"
+ },
+ {
+  "file": "assets/audio/sfx/g_spirit_flame_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "9692b1b6d091b84f542a96161da72e18fe0d91f547639488f84f609c017ee08b"
+ },
+ {
+  "file": "assets/audio/sfx/g_suzu_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "eb9d0395706808b932424f0d6d5e4e4520336a95606436c84a35f560668113f6"
+ },
+ {
+  "file": "assets/audio/sfx/g_suzu_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "d2e35d9621005c52bba6f183b847bd75678ba3de78115996e6068bfc889cd8e4"
+ },
+ {
+  "file": "assets/audio/sfx/g_suzu_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "51ff1fd0d352d07cb575e284a3cb35c006f7f91523822bcdb5dd58e3129c9d9d"
+ },
+ {
   "file": "assets/audio/sfx/g_thunder_0.wav",
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
@@ -4522,6 +4888,36 @@
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
   "sha256": "6f0293c13c782f9ff323d63949d43511ce5753721ee7a8aaf18c826e600a7de2"
+ },
+ {
+  "file": "assets/audio/sfx/g_ult_burst_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "69eb74bfd9454f847aec4f21c7bfd5b3fdb29cf17bd7e88ad6925365c66423d3"
+ },
+ {
+  "file": "assets/audio/sfx/g_ult_burst_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "9a021defa78599c293447551f22b4a0991d7c79496b60dab285d9ca8273f2d50"
+ },
+ {
+  "file": "assets/audio/sfx/g_wind_gust_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "5b6933b6bfc5e01d9071e520bb98843cfa99194230ad48efbaad4ecdd8b08591"
+ },
+ {
+  "file": "assets/audio/sfx/g_wind_gust_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "16c832e8154650a214c978b2b0c3e0e6226b514a4c0a539be7aa4b4ef56c180d"
+ },
+ {
+  "file": "assets/audio/sfx/g_wind_gust_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "bd341ce5968049319caad69a0cf97dceca61c9382cb4ceba3ef6f54964c0cf79"
  },
  {
   "file": "assets/audio/sfx/g_zap_0.wav",
@@ -4854,6 +5250,24 @@
   "sha256": "6c2064d0ef988d1ec3d56868e823ea8823a5cac00f2742560052633529407def"
  },
  {
+  "file": "assets/audio/sfx/k_draw_knife_0.ogg",
+  "source": "C:/src/assets/kenney/rpg-audio/Audio/drawKnife1.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "276403e72c3b71c47bc24db3083970c23f8e5551ffa78f436f83483c56f3f0bb"
+ },
+ {
+  "file": "assets/audio/sfx/k_draw_knife_1.ogg",
+  "source": "C:/src/assets/kenney/rpg-audio/Audio/drawKnife2.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "d5df6a4130cbb016f97b4883769a418917b9629cb4c21717030b186e0c73281a"
+ },
+ {
+  "file": "assets/audio/sfx/k_draw_knife_2.ogg",
+  "source": "C:/src/assets/kenney/rpg-audio/Audio/drawKnife3.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "a11ae62fb1a628425769d11a9de394980ad8909c31f4c9a4316f226963e21caf"
+ },
+ {
   "file": "assets/audio/sfx/k_hit_punch_0.ogg",
   "source": "C:/src/assets/kenney/impact-sounds/Audio/impactPunch_medium_000.ogg",
   "license_id": "kenney_audio",
@@ -4968,6 +5382,24 @@
   "sha256": "099b192f120f7eb7c24613be277428628b9ec9c81e1f8420254abce336fbe7e5"
  },
  {
+  "file": "assets/audio/sfx/k_metal_light_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactMetal_light_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "33b5e6e37c6e9d54e07bf5a89b12c76e879f40c1ea83cdd82714df1d6f9fec6d"
+ },
+ {
+  "file": "assets/audio/sfx/k_metal_light_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactMetal_light_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "fba69c467ddd85da7b1d82e259f936b876d9ba6a3d6f1b24bdd10468e46bfe08"
+ },
+ {
+  "file": "assets/audio/sfx/k_metal_light_2.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/impactMetal_light_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "25a96f90a9a1f88a531e824e126f0519504625e5635e65a72e4f31611428db29"
+ },
+ {
   "file": "assets/audio/sfx/k_paper_fan_0.ogg",
   "source": "C:/src/assets/kenney/casino-audio/Audio/card-fan-1.ogg",
   "license_id": "kenney_audio",
@@ -5074,6 +5506,24 @@
   "source": "C:/src/assets/kenney/casino-audio/Audio/card-slide-8.ogg",
   "license_id": "kenney_audio",
   "sha256": "95d9aa26f8c63af9934f27a8e3b7e9b583f177640f0bbd6982f12dba52b9ae6b"
+ },
+ {
+  "file": "assets/audio/sfx/k_step_soft_0.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/footstep_snow_000.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "c05fa4a9dc9a7aabc04996466fb589537e49af76de9998d8f9e6270ec92dcef7"
+ },
+ {
+  "file": "assets/audio/sfx/k_step_soft_1.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/footstep_snow_001.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "980fb9a1c9227aed7995067b0357f373053337f2416316db8ea0438418542fb4"
+ },
+ {
+  "file": "assets/audio/sfx/k_step_soft_2.ogg",
+  "source": "C:/src/assets/kenney/impact-sounds/Audio/footstep_snow_002.ogg",
+  "license_id": "kenney_audio",
+  "sha256": "db52bafdc66304f3b999f2c29227826c65993916e630ac2ffbca17d07b263178"
  },
  {
   "file": "assets/audio/sfx/k_ui_back_0.ogg",
@@ -5206,6 +5656,42 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Magic & Skill/Strange.wav",
   "license_id": "ninja_adventure",
   "sha256": "9f0691117410272ce8d6894f3347e4e5764f46968539a8a61a339c741568cc9f"
+ },
+ {
+  "file": "assets/audio/sfx/surf_bubble_0.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Bubble.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "86a9278d2816e30a00ea8a682f5795f5fa104ff9fb9de589f89e78213617c7d3"
+ },
+ {
+  "file": "assets/audio/sfx/surf_bubble_1.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Bubble2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "078b0a6f9d82b0a1c5a1f9d8ec8293e77433da71e8af82b08dc0377d41556ad3"
+ },
+ {
+  "file": "assets/audio/sfx/surf_drop.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/WaterDrop.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "3c81d238c602cf0b8a357d9433ec024b7f459de0ada0884cc2d439f50b6f48c4"
+ },
+ {
+  "file": "assets/audio/sfx/surf_water_0.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Water2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "fd924bb65636322ee40126c376961a853d8629c456309dd9f92d39afef6350bc"
+ },
+ {
+  "file": "assets/audio/sfx/surf_water_1.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Water3.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "e2b1fb0b5b772a9b737198c34a785fa83447010963475034c42fea203b319ddb"
+ },
+ {
+  "file": "assets/audio/sfx/surf_water_2.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Water5.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "424936588a96e40b7407384d841be33db3d8bc58a68627c9187f7d786a0ae923"
  },
  {
   "file": "assets/audio/sfx/ui_accept.wav",

@@ -63,10 +63,13 @@ func step(dt: float) -> void:
 		_last_hit.clear()
 
 
-## Os selos aparecem (ou voltam depois da pausa): papel abrindo em leque e o selo mágico.
+## Os selos aparecem (ou voltam depois da pausa): papel abrindo em leque, o selo mágico e os
+## guizos do santuário (WeaponSfx "ofuda"/"amaterasu_barrier"), com um anel de luz.
 func _cast_sound() -> void:
-	AudioManager.play("ofuda_fan", 1.0, 0.06, -3.0)
-	AudioManager.play("ofuda_cast", 1.1 if is_evolved() else 1.0, 0.06, -8.0)
+	WeaponSfx.launch(self)
+	if game.fx:
+		game.fx.add_ring(game.player.sim_pos, orbit_radius(), Color(fx_color(), 0.8), 0.35)
+		game.fx.motes(game.player.sim_pos, fx_color(), 3 * FxLayer.wfx, orbit_radius(), 20.0)
 
 
 ## Farfalhar enquanto os selos giram: toca quando um selo cruza o ângulo de referência
@@ -99,15 +102,39 @@ func position_of(k: int, r: float) -> Vector2:
 	return game.player.sim_pos + Vector2.from_angle(angle) * r
 
 
+## Selos girando com fantasmas atrás (rastro, Média/Alta); a Barreira de Amaterasu tem um
+## círculo de luz fino na órbita e selos dourados.
 func draw(canvas: CanvasItem) -> void:
 	if not is_active():
 		return
 	var r := orbit_radius()
 	var center := game.player.position
-	var tint := Color(1.0, 0.95, 0.7) if is_evolved() else Color.WHITE
+	var evolved := is_evolved()
+	var tint := Color(1.0, 0.92, 0.65) if evolved else Color.WHITE
+	var ghosts := mini(4, FxLayer.trail_points / 3)
+	var dir := signf(raw("speed")) if raw("speed") != 0.0 else 1.0
+	if evolved and FxLayer.wfx > 0:
+		canvas.draw_arc(center, r, 0.0, TAU, 40, Color(fx_color(), 0.22), 1.0)
 	for k: int in range(amount()):
 		var angle := _angle + TAU * k / float(maxi(1, amount()))
+		for g: int in range(ghosts, 0, -1):
+			var ga := angle - dir * g * 0.14
+			canvas.draw_set_transform((center + Vector2.from_angle(ga) * r).round(), ga + PI * 0.5,
+					Vector2(0.8, 0.8))
+			canvas.draw_texture(_tex, -_tex.get_size() * 0.5, Color(fx_color(), 0.32 * (1.0 - g / float(ghosts + 1))))
 		var at := (center + Vector2.from_angle(angle) * r).round()
 		canvas.draw_set_transform(at, angle + PI * 0.5, Vector2(0.8, 0.8))
 		canvas.draw_texture(_tex, -_tex.get_size() * 0.5, tint)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func draw_glow(canvas: CanvasItem) -> void:
+	if not is_active():
+		return
+	var r := orbit_radius()
+	var center := game.player.position
+	var pulse := 0.8 + 0.2 * sin(GameClock.game_time * 6.0)
+	for k: int in range(amount()):
+		var angle := _angle + TAU * k / float(maxi(1, amount()))
+		FxLayer.draw_soft(canvas, center + Vector2.from_angle(angle) * r, (12.0 if is_evolved() else 8.0) * pulse,
+				Color(fx_color(), 0.5))

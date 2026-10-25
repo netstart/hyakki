@@ -6,6 +6,10 @@ extends RefCounted
 ## borda é endurecida, ficando um ícone pixel art nítido no tamanho exato em que aparece.
 
 const DIR := "res://assets/art/ui/icons/kenney/"
+## Ícones de habilidade 24x24 (moldura própria), gerados por tools/gen_skill_icons.gd.
+## Grupos: "weapons", "passives", "powerups", "kami". Caminho estável: <grupo>/<id>.png.
+const SKILL_DIR := "res://assets/art/ui/skill_icons/"
+const SKILL_SIZE := 24
 ## Abaixo disso o pixel some; acima, fica opaco (borda limpa, sem halo borrado).
 const ALPHA_FLOOR := 0.22
 const ALPHA_FULL := 0.62
@@ -46,3 +50,14 @@ static func _harden(image: Image) -> void:
 			elif a >= ALPHA_FLOOR:
 				out = 0.55
 			image.set_pixel(x, y, Color(1, 1, 1, out))
+
+
+## Caminho do ícone de habilidade `id` do grupo `group` ("weapons", "passives", "powerups", "kami").
+static func skill_path(group: String, id: String) -> String:
+	return "%s%s/%s.png" % [SKILL_DIR, group, id]
+
+
+## Textura do ícone de habilidade (24x24, desenhar em escala inteira); null se não existir.
+static func skill_icon(group: String, id: String) -> Texture2D:
+	var path := skill_path(group, id)
+	return load(path) as Texture2D if ResourceLoader.exists(path) else null

@@ -2,6 +2,8 @@ class_name EnemyShotManager
 extends Node2D
 ## Projéteis dos inimigos e chefes (plano 6.1 "atirador" e 6.3).
 ## Sempre em vermelho/magenta ou com contorno forte, para serem legíveis (plano 8.1 e 15.2).
+## Desenho em camadas: disco escuro por baixo (lê em chão claro e escuro), rastro de vultos
+## (Média: 1, Alta: 3), o sprite, miolo claro pulsando e halo aditivo na cor do tiro (Média/Alta).
 
 const CAPACITY := 400
 const HIT_RADIUS := 3.0
@@ -38,6 +40,10 @@ var _kind_names: Array[String] = []
 var _kind_sheets: Array[SpriteSheet] = []
 var _kind_tint: Array[Color] = []
 var _kind_rotate: PackedByteArray = []
+var _soft: Texture2D
+var _halo: Node2D
+var _trail: int = 3
+var _glow: bool = true
 
 
 func _ready() -> void:
@@ -58,7 +64,27 @@ func _ready() -> void:
 	kind.resize(CAPACITY)
 	alive.resize(CAPACITY)
 	source.resize(CAPACITY)
+	_soft = EnemyFx.soft_texture()
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_halo = Node2D.new()
+	_halo.material = additive
+	_halo.draw.connect(_draw_halo)
+	add_child(_halo)
+	_apply_quality()
+	var settings := get_node_or_null(^"/root/Settings")
+	if settings:
+		settings.connect("changed", func(k: String) -> void:
+			if k == GfxQuality.changed_signal_key():
+				_apply_quality())
 	reset()
+
+
+func _apply_quality() -> void:
+	_trail = int(GfxQuality.pick(0, 1, 3))
+	_glow = int(GfxQuality.budget("enemy_fx")) >= 1
+	if _halo:
+		_halo.visible = _glow
 
 
 func reset() -> void:
@@ -128,11 +154,21 @@ func _kill(i: int) -> void:
 
 func _process(_delta: float) -> void:
 	queue_redraw()
+	if _glow:
+		_halo.queue_redraw()
 
 
 func _draw() -> void:
 	var a := GameClock.alpha
-	var frame := int(GameClock.game_time * 12.0)
+	var time := GameClock.game_time
+	var frame := int(time * 12.0)
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var at := prev[i].lerp(pos[i], a).round()
+		var size := 4.0 if _kind_sheets[kind[i]].frame_size.x <= 16.0 else 6.0
+		draw_texture_rect(_soft, Rect2(at - Vector2(size, size) * 1.4, Vector2(size, size) * 2.8), false,
+				Color(0.08, 0.0, 0.06, 0.55))
 	for i: int in range(CAPACITY):
 		if alive[i] == 0:
 			continue
@@ -140,6 +176,28 @@ func _draw() -> void:
 		var sheet := _kind_sheets[k]
 		var src := sheet.region(frame, 0)
 		var angle := vel[i].angle() if _kind_rotate[k] == 1 else 0.0
-		draw_set_transform(prev[i].lerp(pos[i], a).round(), angle, Vector2.ONE)
-		draw_texture_rect_region(sheet.texture, Rect2(-src.size * 0.5, src.size), src, _kind_tint[k])
+		var at := prev[i].lerp(pos[i], a).round()
+		var tint := _kind_tint[k]
+		var back := -vel[i].normalized()
+		for t: int in range(_trail, 0, -1):
+			draw_set_transform(at + back * 3.5 * t, angle, Vector2.ONE * (1.0 - 0.12 * t))
+			draw_texture_rect_region(sheet.texture, Rect2(-src.size * 0.5, src.size), src,
+					Color(tint.r, tint.g, tint.b, 0.4 / (t + 0.5)))
+		draw_set_transform(at, angle, Vector2.ONE)
+		draw_texture_rect_region(sheet.texture, Rect2(-src.size * 0.5, src.size), src, tint)
+		var pulse := 0.6 + 0.4 * sin(time * 18.0 + i)
+		draw_rect(Rect2(Vector2(-1, -1), Vector2(2, 2)), Color(1.0, 0.97, 0.9, 0.8 * pulse))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_halo() -> void:
+	var a := GameClock.alpha
+	var time := GameClock.game_time
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var at := prev[i].lerp(pos[i], a)
+		var tint := _kind_tint[kind[i]]
+		var r := 7.0 + 1.5 * sin(time * 12.0 + i)
+		_halo.draw_texture_rect(_soft, Rect2(at - Vector2(r, r), Vector2(r, r) * 2.0), false,
+				Color(tint.r, tint.g, tint.b, 0.55))

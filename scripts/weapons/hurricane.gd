@@ -9,4 +9,4 @@ func fire(origin: Vector2) -> void:
 		var at := origin + Vector2.from_angle(game.rng.randf() * TAU) * 40.0
 		game.areas.hurricane(id, at, raw("radius") * area(), damage(), raw("tick"), duration(),
 				raw("speed"), raw("pull"))
-	AudioManager.play("whoosh", 0.6, 0.0, -4.0)
+	WeaponSfx.launch(self)

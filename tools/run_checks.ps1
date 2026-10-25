@@ -67,8 +67,13 @@ foreach ($speed in 1, 2, 3) {
     Write-Host "${speed}x: $line"
     $hashes += ($line -replace '^.*hash=', '')
 }
+# Qualidade gráfica não pode mudar a simulação (clima e superfícies lentas incluídos no hash).
+$low = Invoke-Godot @('--fixed-fps', '60', '--', '--bot', '--seed=7', '--speed=3', '--gfx=low', '--quit-at=90')
+$line = $low | Where-Object { $_ -match '^FIM ' } | Select-Object -Last 1
+Write-Host "3x Baixa: $line"
+$hashes += ($line -replace '^.*hash=', '')
 if (($hashes | Select-Object -Unique).Count -ne 1) {
-    Write-Host 'FALHOU: o estado mudou com a velocidade' -ForegroundColor Red
+    Write-Host 'FALHOU: o estado mudou com a velocidade ou com a qualidade gráfica' -ForegroundColor Red
     $failed = $true
 } else { Write-Host 'ok: mesmo estado nas três velocidades' }
 

@@ -37,16 +37,34 @@ func step(dt: float) -> void:
 	_slash_timer -= dt
 	if _slash_timer <= 0.0:
 		_slash_timer = 0.8
-		game.fx.play_anim("slash_circular", game.player.sim_pos, r / 14.0, _angle, Color(1, 0.95, 0.8, 0.8))
-		AudioManager.play("slash", 1.1, 0.1, -7.0)
+		game.fx.play_anim("slash_circular", game.player.sim_pos, r / 14.0, _angle, Color(fx_color(), 0.8), 16.0,
+				false, FxLayer.glow)
+		WeaponSfx.launch(self)
 
 
 func draw(canvas: CanvasItem) -> void:
 	var r := raw("radius") * area()
 	var count := amount()
 	var center := game.player.position
+	var ghosts := mini(5, FxLayer.trail_points / 3)
+	var dir := signf(raw("speed")) if raw("speed") != 0.0 else 1.0
 	for k: int in range(count):
 		var angle := _angle + TAU * k / float(count)
+		if ghosts > 0:
+			canvas.draw_arc(center, r, angle - dir * 0.18 * ghosts, angle, 8, Color(fx_color(), 0.35), 3.0)
+		for g: int in range(ghosts, 0, -1):
+			var ga := angle - dir * g * 0.16
+			canvas.draw_set_transform((center + Vector2.from_angle(ga) * r).round(), ga + PI * 0.5, Vector2.ONE)
+			canvas.draw_texture(_tex, -_tex.get_size() * 0.5, Color(fx_color(), 0.3 * (1.0 - g / float(ghosts + 1))))
 		canvas.draw_set_transform((center + Vector2.from_angle(angle) * r).round(), angle + PI * 0.5, Vector2.ONE)
 		canvas.draw_texture(_tex, -_tex.get_size() * 0.5, Color(1.0, 0.95, 0.85))
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func draw_glow(canvas: CanvasItem) -> void:
+	var r := raw("radius") * area()
+	var count := amount()
+	var center := game.player.position
+	for k: int in range(count):
+		var angle := _angle + TAU * k / float(count)
+		FxLayer.draw_soft(canvas, center + Vector2.from_angle(angle) * r, 9.0, Color(fx_color(), 0.45))

@@ -142,6 +142,8 @@ func _swing(origin: Vector2, dir: Vector2, combo_step: int) -> void:
 			var push := (at - origin).normalized() if at.distance_squared_to(origin) > 0.01 else d
 			game.deal_damage(id, i, dmg, push, force)
 		_add_trail(origin, d, r, half, combo_step)
+		if combo_step == FINISHER and game.fx:
+			game.fx.sparks(origin + d * r, d, ONI if is_evolved() else ICE, 3 * FxLayer.wfx, 120.0, 0.8, 0.2)
 		if combo_step == FINISHER and bool(flags.get("combo_wave", false)):
 			_add_wave(origin, d)
 
@@ -307,11 +309,28 @@ func _draw_wave(canvas: CanvasItem, wave: Dictionary) -> void:
 ## cortando dos dois lados, um swish extra discreto.
 func _slash_sound(combo_step: int) -> void:
 	if combo_step == FINISHER:
-		AudioManager.play("katana", 0.9, 0.04, -3.0)
-		AudioManager.play("slash", 0.92, 0.06, -4.0)
-		AudioManager.play("whoosh", 0.7, 0.04, -7.0)
+		WeaponSfx.play("dojigiri_final" if is_evolved() else "onikiri_final")
 	else:
-		AudioManager.play("katana", 1.12 if combo_step == 0 else 1.04, 0.05, -5.0)
-		AudioManager.play("slash", 1.1, 0.08, -6.0)
+		WeaponSfx.play("onikiri", 1.04 if combo_step == 0 else 0.97)
 	if amount() >= 2:
-		AudioManager.play("whoosh", 0.9, 0.05, -12.0)
+		WeaponSfx.play("blade_back")
+
+
+## Alta: brilho ao longo da meia-lua e na onda do Dōjigiri (camada aditiva).
+func draw_glow(canvas: CanvasItem) -> void:
+	var center := game.player.position
+	var tint := ONI if is_evolved() else ICE
+	for trail: Dictionary in trails:
+		var t := float(trail["t"])
+		var alpha := stepped_alpha((t - SWEEP_TIME) / FADE_TIME)
+		var r := float(trail["radius"])
+		var base := float(trail["angle"])
+		var half := float(trail["half"])
+		var at := center + (trail["offset"] as Vector2)
+		for k: int in range(5):
+			var a := base - half + 2.0 * half * k / 4.0
+			FxLayer.draw_soft(canvas, at + Vector2.from_angle(a) * (r - 2.0), r * 0.35, Color(tint, 0.22 * alpha))
+	for wave: Dictionary in waves:
+		var u := float(wave["t"]) / WAVE_TIME
+		var at: Vector2 = (wave["origin"] as Vector2) + (wave["dir"] as Vector2) * float(wave["dist"])
+		FxLayer.draw_soft(canvas, at, float(wave["size"]) * 1.2, Color(ONI, 0.4 * (1.0 - u)))

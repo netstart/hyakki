@@ -424,6 +424,178 @@ def chest_open(rng, v):
     return mix((out, 1.0), (shimmer, 0.05)), 0.6
 
 
+# --- Lançamento das armas (frente "armas e poderes") ---------------------------------
+
+def karplus(freq: float, seconds: float, rng, damp: float = 0.996, bright: float = 0.5) -> list:
+    """Corda dedilhada (Karplus-Strong): ruído num atraso com média e perda."""
+    period = max(2, int(SR / freq))
+    buf = [rng.uniform(-1.0, 1.0) for _ in range(period)]
+    # Ataque mais ou menos brilhante: suaviza o ruído inicial.
+    for _ in range(int((1.0 - bright) * 4)):
+        buf = [(buf[i] + buf[i - 1]) * 0.5 for i in range(period)]
+    out = []
+    for i in range(ns(seconds)):
+        j = i % period
+        v = buf[j]
+        out.append(v)
+        buf[j] = damp * 0.5 * (v + buf[j - 1])
+    return out
+
+
+def metal_clink(rng, base: float, seconds: float = 0.06) -> list:
+    """Tilintar curto de metal: parciais inarmônicos com queda rápida."""
+    n = ns(seconds)
+    out = [0.0] * n
+    for ratio, amp, dk in ((1.0, 1.0, 0.018), (2.32, 0.6, 0.012), (3.71, 0.45, 0.009), (5.12, 0.3, 0.006)):
+        ph = rng.uniform(0, TAU)
+        f = base * ratio
+        for i in range(n):
+            t = i / SR
+            out[i] += amp * math.sin(TAU * f * t + ph) * math.exp(-t / dk)
+    return out
+
+
+def shuriken_whirl(rng, v):
+    """Shuriken: assobio giratório (ruído em banda estreita pulsando na rotação) e um silvo."""
+    dur = 0.32 + 0.03 * v
+    n = ns(dur)
+    spin = 26.0 + 5.0 * v
+    am = [0.35 + 0.65 * max(0.0, math.sin(TAU * spin * i / SR)) ** 2 for i in range(n)]
+    band = bp(noise(rng, dur), sweep(4200.0 + 300 * v, 2600.0, n), 7.0)
+    whistle = mul(osc(sweep(2900.0 + 200 * v, 1900.0, n)), am)
+    env = tone_env(dur, lambda t: min(1.0, t / 0.012) * math.exp(-t / (0.11 + 0.02 * v)))
+    air = bp(noise(rng, dur), sweep(1400.0, 700.0, n), 1.2)
+    return mul(mix((mul(band, am), 2.2), (whistle, 0.18), (air, 0.35)), env), 0.62
+
+
+def kunai_throw(rng, v):
+    """Kunai: arremesso seco, um "tsk" de ar rasgado e um estalo de pulso."""
+    dur = 0.16
+    n = ns(dur)
+    rip = mul(bp(noise(rng, dur), sweep(7000.0 - 600 * v, 1800.0, n), 2.5), exp_env(dur, 0.035, 0.002))
+    click = mul(hp(noise(rng, dur), 2500.0), exp_env(dur, 0.004, 0.0002))
+    snap = mul(osc(sweep(900.0 + 80 * v, 300.0, n)), exp_env(dur, 0.01, 0.0005))
+    return mix((rip, 1.4), (click, 0.6), (snap, 0.25)), 0.6
+
+
+def bow_twang(rng, v):
+    """Yumi: a corda do arco solta (dedilhado grave) e o tapa da madeira."""
+    dur = 0.42
+    f = (104.0, 116.0, 98.0)[v]
+    string = karplus(f, dur, rng, 0.993, 0.8)
+    string = mul(lp(string, 2400.0), exp_env(dur, 0.12, 0.001))
+    thwack = mul(bp(noise(rng, dur), 1100.0 + 120 * v, 3.0), exp_env(dur, 0.012, 0.0004))
+    zing = mul(bp(noise(rng, dur), sweep(5200.0, 2200.0, ns(dur)), 4.0), exp_env(dur, 0.03, 0.002))
+    return mix((string, 1.6), (thwack, 0.9), (zing, 0.35)), 0.66
+
+
+def chain_rattle(rng, v):
+    """Kusarigama: corrente chacoalhando (elos tilintando) sobre o zunido do arremesso."""
+    dur = 0.42
+    out = zeros(dur)
+    for _ in range(12 + 3 * v):
+        at = (rng.random() ** 1.6) * (dur - 0.08)
+        place(out, metal_clink(rng, rng.uniform(1900.0, 3600.0)), at, rng.uniform(0.25, 0.8) * math.exp(-at / 0.25))
+    n = ns(dur)
+    swing = mul(bp(noise(rng, dur), sweep(500.0, 1500.0 + 200 * v, n), 1.5),
+                tone_env(dur, lambda t: math.sin(math.pi * min(t / dur, 1.0)) ** 1.5))
+    return mix((out, 1.0), (swing, 0.55)), 0.62
+
+
+def smoke_pop(rng, v):
+    """Bomba de fumaça: estouro abafado e o chiado da fumaça se espalhando."""
+    dur = 0.65
+    n = ns(dur)
+    thump = mul(osc(sweep(110.0 - 10 * v, 42.0, n)), exp_env(dur, 0.06, 0.002))
+    burst = mul(lp(noise(rng, dur), sweep(3500.0, 350.0, n), 0.9), exp_env(dur, 0.05, 0.001))
+    hiss = mul(hp(noise(rng, dur), 2200.0 + 300 * v),
+               tone_env(dur, lambda t: min(1.0, t / 0.05) * math.exp(-t / 0.22)))
+    return mix((thump, 1.0), (burst, 1.4), (hiss, 0.3)), 0.72
+
+
+def spirit_flame(rng, v):
+    """Hitodama: chama espiritual, um sopro suave e um gemido etéreo com vibrato."""
+    dur = 0.6
+    n = ns(dur)
+    whoomp = mul(lp(noise(rng, dur), sweep(500.0, 2200.0 + 300 * v, n), 1.0),
+                 tone_env(dur, lambda t: min(1.0, t / 0.05) * math.exp(-t / 0.16)))
+    f0 = (520.0, 587.0, 466.0)[v]
+    glide = [f0 * (1.0 + 0.35 * min(1.0, i / n * 2.0)) * (1.0 + 0.012 * math.sin(TAU * 6.0 * i / SR))
+             for i in range(n)]
+    ghost = mix((osc(glide), 1.0), (osc([g * 1.006 for g in glide]), 0.7), (osc([g * 2.0 for g in glide]), 0.15))
+    ghost = mul(ghost, tone_env(dur, lambda t: min(1.0, t / 0.08) * math.exp(-t / 0.2)))
+    ck = mul(hp(crackle(rng, dur, 220, 0.8), 2500.0), exp_env(dur, 0.2))
+    return mix((whoomp, 1.3), (ghost, 0.22), (ck, 0.5)), 0.6
+
+
+def wind_gust(rng, v):
+    """Fūjin: rajada de vento que cresce e passa (banda de ruído varrendo)."""
+    dur = 0.7 + 0.08 * v
+    n = ns(dur)
+    peak = 0.16 + 0.03 * v
+    center = [450.0 + 1500.0 * math.exp(-((i / SR - peak) / 0.14) ** 2) + 250.0 * math.sin(TAU * 3.0 * i / SR)
+              for i in range(n)]
+    gust = bp(noise(rng, dur), center, 1.6)
+    body = lp(noise(rng, dur), 500.0)
+    env = tone_env(dur, lambda t: (t / peak) ** 1.5 if t < peak else math.exp(-(t - peak) / 0.2))
+    whistle = bp(noise(rng, dur), [c * 2.4 for c in center], 12.0)
+    return mul(mix((gust, 1.5), (body, 0.5), (whistle, 0.6)), env), 0.66
+
+
+def heavy_blade(rng, v):
+    """Lâmina pesada (Onikiri final, Dança das Cem Lâminas): zunido grave e o anel do aço."""
+    dur = 0.5
+    n = ns(dur)
+    center = 0.11 + 0.01 * v
+    swoosh = mul(bp(noise(rng, dur), sweep(260.0, 1500.0 + 200 * v, n), 1.3),
+                 tone_env(dur, lambda t: math.exp(-((t - center) / 0.06) ** 2)))
+    ring = [0.0] * n
+    base = (780.0, 860.0, 720.0)[v]
+    for ratio, amp, dk in ((1.0, 1.0, 0.16), (2.41, 0.5, 0.1), (3.93, 0.35, 0.06), (5.6, 0.2, 0.04)):
+        ph = rng.uniform(0, TAU)
+        for i in range(n):
+            t = i / SR - center
+            if t > 0:
+                ring[i] += amp * math.sin(TAU * base * ratio * t + ph) * math.exp(-t / dk)
+    sub = mul(osc(sweep(90.0, 50.0, n)), tone_env(dur, lambda t: math.exp(-((t - center) / 0.05) ** 2)))
+    return mix((swoosh, 1.6), (ring, 0.22), (sub, 0.6)), 0.68
+
+
+def suzu(rng, v):
+    """Suzu: guizos do santuário chacoalhados (Ofuda, Barreira de Amaterasu)."""
+    dur = 0.7
+    out = zeros(dur)
+    notes = (2637.0, 3136.0, 3520.0, 3951.0, 4699.0)
+    for k in range(7 + 2 * v):
+        at = 0.02 + k * (0.045 + 0.01 * rng.random())
+        for _ in range(2):
+            place(out, bell(rng.choice(notes) * rng.uniform(0.99, 1.01), 0.3, 0.06, 0.5),
+                  at + rng.uniform(0, 0.01), rng.uniform(0.25, 0.5) * math.exp(-k / 6.0))
+    shake = mul(hp(noise(rng, dur), 6000.0), tone_env(dur, lambda t: math.exp(-t / 0.18)))
+    return mix((out, 1.0), (shake, 0.08)), 0.55
+
+
+def ult_burst(rng, v):
+    """Golpe da lanterna: impacto enorme, sopro que se abre e cauda de sinos que demora."""
+    dur = 2.2
+    n = ns(dur)
+    out = zeros(dur)
+    boom = mix((mul(osc(sweep(85.0, 28.0, n)), exp_env(dur, 0.35, 0.003)), 1.0),
+               (mul(lp(noise(rng, dur), sweep(4000.0, 200.0, n), 0.8), exp_env(dur, 0.18, 0.001)), 1.3))
+    place(out, boom, 0.0)
+    swell = mul(bp(noise(rng, dur), sweep(300.0, 5000.0, n), 1.0),
+                tone_env(dur, lambda t: math.sin(math.pi * min(t / 1.2, 1.0)) ** 2 * 0.6))
+    place(out, swell, 0.0, 0.5)
+    chord = (523.25, 659.25, 783.99, 1046.5) if v == 0 else (587.33, 739.99, 880.0, 1174.66)
+    for i, f in enumerate(chord):
+        place(out, bell(f, 1.6, 0.6, 0.4), 0.05 + 0.04 * i, 0.22)
+    for _ in range(18):
+        at = 0.2 + rng.uniform(0.0, 1.5)
+        place(out, bell(rng.choice((2093.0, 2637.0, 3136.0, 3520.0)), 0.3, 0.08, 0.4), at,
+              0.1 * math.exp(-(at - 0.2) / 0.8))
+    return out, 0.92
+
+
 RECIPES = {
     "thunder": thunder,
     "zap": zap,
@@ -439,8 +611,18 @@ RECIPES = {
     "ofuda_cast": ofuda_cast,
     "incense_pulse": incense_pulse,
     "chest_open": chest_open,
+    "shuriken_whirl": shuriken_whirl,
+    "kunai_throw": kunai_throw,
+    "bow_twang": bow_twang,
+    "chain_rattle": chain_rattle,
+    "smoke_pop": smoke_pop,
+    "spirit_flame": spirit_flame,
+    "wind_gust": wind_gust,
+    "heavy_blade": heavy_blade,
+    "suzu": suzu,
+    "ult_burst": ult_burst,
 }
-VARIATIONS = {"chest_open": 2}  # os outros grupos têm 3
+VARIATIONS = {"chest_open": 2, "ult_burst": 2}  # os outros grupos têm 3
 
 
 def seed_for(name: str, v: int) -> int:

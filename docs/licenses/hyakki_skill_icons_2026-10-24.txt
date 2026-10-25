@@ -1,0 +1,11 @@
+Registro de origem - hyakki_skill_icons (2026-10-24)
+
+Arquivos: assets/art/ui/skill_icons/{weapons,passives,powerups,kami}/<id>.png (77 ícones 24x24).
+Origem: gerados pelo próprio projeto com tools/gen_skill_icons.gd (Godot, determinístico:
+rodar de novo reproduz os mesmos pixels). Molduras, fundos e a maior parte das silhuetas
+são pixel art original escrita no script (ASCII e desenho por código). Algumas silhuetas
+reaproveitam sprites de itens do Ninja Adventure (CC0-1.0, entrada ninja_adventure).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhum modelo de IA de imagem foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: Godot --headless --path . --script res://tools/gen_skill_icons.gd

@@ -98,10 +98,14 @@ var _cast_color := Color(1.0, 0.92, 0.65)
 var _slash_len: float = 0.0
 var _slash_dir: float = 1.0
 var _slash_step: int = 0
+## Polimento só de desenho (sombra suave, aura, poeira, tremor, nível novo): guardian_fx.gd.
+var _fx: GuardianFx
 
 
 func _ready() -> void:
 	_shadow = load("res://assets/art/actors/shadow.png") as Texture2D
+	_fx = GuardianFx.new()
+	add_child(_fx)
 
 
 func setup(hero_data: Dictionary) -> void:
@@ -166,11 +170,12 @@ func step(dt: float) -> void:
 	if not is_alive:
 		return
 	var wish := move_input.limit_length(1.0)
-	var top_speed := stats.get_stat("speed")
+	# Superfícies lentas (SurfaceSystem): mais lento só sobre o solo; ao sair recupera até 1.0.
+	var top_speed := stats.get_stat("speed") * _surface_speed()
 	if slow_time > 0.0:
 		slow_time -= dt
 		top_speed *= slow_factor
-	var rate := top_speed / ACCEL_TIME
+	var rate := top_speed / ACCEL_TIME * _surface_accel()  # óleo: acelera e freia menos (escorrega)
 	if wish.length_squared() < 0.0001:
 		# Para mais rápido do que acelera, sem escorregar (plano 15.2).
 		rate *= 2.0
@@ -194,6 +199,22 @@ func step(dt: float) -> void:
 		heal(stats.get_stat("regen") * dt)
 	damage_taken_time += dt
 	_walk_time += dt * (velocity.length() / maxf(top_speed, 1.0))
+
+
+func _surface_speed() -> float:
+	var surfaces := SurfaceSystem.of(get_parent())
+	return 1.0 if surfaces == null else surfaces.player_factor(sim_pos)
+
+
+func _surface_accel() -> float:
+	var surfaces := SurfaceSystem.of(get_parent())
+	return 1.0 if surfaces == null else surfaces.player_accel()
+
+
+## Afundamento visual (0..2 px) sobre o solo lento; some quando a velocidade volta a 100%.
+func _surface_sink() -> float:
+	var surfaces := SurfaceSystem.of(get_parent())
+	return 0.0 if surfaces == null else surfaces.sink_px(surfaces.player_mult)
 
 
 func game() -> HyakkiGame:
@@ -397,6 +418,10 @@ func _draw() -> void:
 
 func _draw_body(offset: Vector2, tint: Color, main: bool) -> void:
 	var angle := fall_angle() if main else 0.0
+	if main:
+		offset.y += _surface_sink()
+	if main and _fx:
+		offset += _fx.jitter()
 	_draw_shadow(offset, angle)
 	var swing := angle == 0.0 and is_slashing()
 	# No golpe o corpo segura um quadro parado em vez de seguir o ciclo de passos.
@@ -475,6 +500,8 @@ func _draw_slash_trail(offset: Vector2) -> void:
 ## Sombra nos pés; deitada, ela se alarga e acompanha o corpo para o lado da queda.
 func _draw_shadow(offset: Vector2, angle: float) -> void:
 	var w := float(_shadow.get_width())
+	if angle == 0.0 and _fx and _fx.draws_shadow():
+		return
 	if angle == 0.0:
 		draw_texture(_shadow, offset + Vector2(-w * 0.5, 1.0))
 		return

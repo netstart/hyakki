@@ -17,6 +17,8 @@ func fire(origin: Vector2) -> void:
 				aim * proj_speed(), damage(), 3.0, int(raw("pierce")), duration(), knockback(),
 				ProjectileManager.Move.STRAIGHT, 0.0, float(flags.get("explode_radius", 0.0)) * area(),
 				golden)
-	# Flecha: swish agudo (o launch.wav, rms -38 dB, mal se ouvia) e o estalo curto da corda.
-	AudioManager.play("arrow", 1.45, 0.06, -7.0)
-	AudioManager.play("bow", 1.7, 0.08, -15.0)
+	# Corda do arco solta e o swish da flecha (WeaponSfx "yumi"/"hachiman_arrow").
+	game.fx.muzzle(id, origin, aim)
+	if golden and FxLayer.wfx > 0:
+		game.fx.motes(origin, Color(1.0, 0.85, 0.4), 2 * FxLayer.wfx, 4.0, 25.0)
+	WeaponSfx.launch(self)

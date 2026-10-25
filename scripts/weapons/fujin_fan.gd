@@ -23,6 +23,17 @@ func fire(origin: Vector2) -> void:
 			var to := game.enemies.pos[i] - origin
 			if to.length() < 1.0 or absf(dir.angle_to(to)) <= half_angle:
 				game.deal_damage(id, i, damage(), dir, knockback())
-		game.fx.play_anim("smoke", origin + dir * reach * 0.5, reach / 30.0, dir.angle(),
-				Color(0.85, 1.0, 0.9, 0.8), 18.0)
-	AudioManager.play("whoosh", 0.75, 0.1, -4.0)
+		_gust_fx(origin, dir, reach, half_angle)
+	WeaponSfx.launch(self)
+
+
+## Rajada: nuvem de vento no cone e riscos de ar (e folhas na Alta) varrendo para fora.
+func _gust_fx(origin: Vector2, dir: Vector2, reach: float, half_angle: float) -> void:
+	var fx := game.fx
+	fx.play_anim("smoke", origin + dir * reach * 0.5, minf(2.4, reach / 30.0), dir.angle(), Color(fx_color(), 0.75), 18.0)
+	if FxLayer.wfx == 0:
+		return
+	fx.sparks(origin + dir * 8.0, dir, Color(fx_hot(), 0.8), 5 * FxLayer.wfx, reach * 3.2, half_angle, 0.3)
+	if FxLayer.wfx >= 2:
+		for _k: int in range(3):
+			fx.dust(origin + dir * reach * randf_range(0.3, 0.8), 2.0, Color(0.55, 0.8, 0.4), 1, 60.0)

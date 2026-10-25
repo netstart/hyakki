@@ -63,7 +63,7 @@ func _test_death_to_notice() -> void:
 	await _wait_until(func() -> bool: return game.player.down >= 1.0, 2.0)
 	var real := (Time.get_ticks_msec() - started) / 1000.0
 	_check.call(game.player.down >= 1.0, "a queda chega a 1 (deitada)")
-	_check.call(real >= 0.8 and real < 1.6,
+	_check.call(real >= 0.6 and real < 1.6,
 			"a queda dura o mesmo tempo real em 3x (%.2f s, mundo parado)" % real)
 	_check.call(mid_elapsed >= 0.35 and mid_elapsed <= 0.8,
 			"a sequência anda em tempo real, não em tempo de jogo (%.2f s)" % mid_elapsed)

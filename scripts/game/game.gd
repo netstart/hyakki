@@ -714,7 +714,7 @@ func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2,
 	if prop:
 		return
 	tracker.on_damage(weapon_id, amount)
-	fx.add_number(at, amount, crit)
+	fx.on_hit(weapon_id, at, amount, crit, dir)
 	_play_hit_sound(weapon_id, crit)
 
 
@@ -727,7 +727,7 @@ func _play_hit_sound(weapon_id: StringName, crit: bool) -> void:
 	if not _hit_sound_cache.has(weapon_id):
 		_hit_sound_cache[weapon_id] = HitSounds.for_weapon(DB.weapon(weapon_id))
 	last_hit_sound = _hit_sound_cache[weapon_id]
-	AudioManager.play(last_hit_sound, 1.0, 0.08, -14.0)
+	HitSounds.play(last_hit_sound)
 	if crit:
 		AudioManager.play("crit", 1.0, 0.08, -10.0)
 
@@ -1109,7 +1109,7 @@ func _weapon_summary() -> String:
 	var parts: PackedStringArray = []
 	for weapon: Weapon in weapons:
 		parts.append("%s%d" % [weapon.id, weapon.level])
-	return ",".join(parts)
+	return ",".join(parts) + SurfaceSystem.hash_tag_of(self)  # + lentidão das superfícies (determinismo)
 
 
 # --- Câmera, amanhecer, velocidade ------------------------------------------------

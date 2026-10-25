@@ -1,0 +1,15 @@
+Hyakki - procedural enemy and boss sound effects (assets/audio/sfx/e_*.wav)
+
+Copyright (c) 2026 Clayton K. N. Passos and the Hyakki project contributors.
+
+These sound effects are original works of the Hyakki project. They were synthesized
+from scratch by tools/gen_enemy_sfx.py (Python standard library only: noise, filters,
+oscillators and envelopes with fixed random seeds). No third-party recordings,
+samples or AI audio models were used.
+
+To the extent possible under law, the authors have dedicated all copyright and
+related and neighboring rights to these files to the public domain worldwide,
+under the Creative Commons CC0 1.0 Universal Public Domain Dedication:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Full text: licenses/texts/CC0-1.0.txt

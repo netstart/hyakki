@@ -58,9 +58,14 @@ func button(text: String, on_press: Callable, min_size: Vector2 = Vector2(150, 3
 	return b
 
 
+## "Voltar" único das telas (MenuKit.BackButton): placa de laca com medalhão e seta, alvo de
+## toque de BACK_HEIGHT (≥ 48 dp), som de voltar e anel dourado ao tocar. Mesma ação do
+## botão "voltar" do Android e do Esc (on_back).
 func back_button() -> Button:
-	var b := button("< " + tr("menu.back"), on_back, Vector2(80, 28))
-	b.position = Vector2(8, 8)
+	var b := MenuKit.BackButton.new(tr("menu.back"))
+	b.pressed.connect(on_back)
+	b.position = Vector2(4, 2)
+	b.size = b.get_combined_minimum_size()
 	# Os painéis de tela cheia adicionados depois cobririam o botão e engoliriam o toque.
 	b.tree_entered.connect(b.move_to_front, CONNECT_DEFERRED | CONNECT_ONE_SHOT)
 	return b

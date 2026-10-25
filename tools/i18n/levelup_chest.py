@@ -1,0 +1,22 @@
+# Textos das telas de nova habilidade e baú (scripts/ui/level_up_panel.gd, level_card.gd,
+# chest_panel.gd). Ordem: pt_BR, en, es, de, fr, ru, id, ja, ko, zh_TW, zh_CN.
+STRINGS = {
+    "lvchest.level_title": ["Nível %d", "Level %d", "Nivel %d", "Stufe %d", "Niveau %d", "Уровень %d", "Level %d", "レベル %d", "레벨 %d", "等級 %d", "等级 %d"],
+    "lvchest.cat_new": ["Nova arma", "New weapon", "Arma nueva", "Neue Waffe", "Nouvelle arme", "Новое оружие", "Senjata baru", "新しい武器", "새 무기", "新武器", "新武器"],
+    "lvchest.cat_up": ["Melhoria", "Upgrade", "Mejora", "Verbesserung", "Amélioration", "Улучшение", "Peningkatan", "強化", "강화", "強化", "强化"],
+    "lvchest.cat_legend": ["Lendária", "Legendary", "Legendaria", "Legendär", "Légendaire", "Легенда", "Legendaris", "伝説", "전설", "傳說", "传说"],
+    "lvchest.cat_passive": ["Relíquia", "Relic", "Reliquia", "Relikt", "Relique", "Реликвия", "Relik", "秘宝", "유물", "秘寶", "秘宝"],
+    "lvchest.cat_heal": ["Cura", "Healing", "Curación", "Heilung", "Soin", "Лечение", "Pemulihan", "回復", "회복", "回復", "回复"],
+    "lvchest.cat_ryo": ["Ouro", "Gold", "Oro", "Gold", "Or", "Золото", "Emas", "金", "금", "金", "金"],
+    "lvchest.new": ["Novo!", "New!", "¡Nuevo!", "Neu!", "Nouveau !", "Новое!", "Baru!", "新登場！", "신규!", "新！", "新！"],
+    "lvchest.level_arrow": ["Nv %d → %d", "Lv %d → %d", "Nv %d → %d", "St. %d → %d", "Niv %d → %d", "Ур. %d → %d", "Lv %d → %d", "Lv %d → %d", "Lv %d → %d", "Lv %d → %d", "Lv %d → %d"],
+    "lvchest.level_short": ["Nv %d", "Lv %d", "Nv %d", "St. %d", "Niv %d", "Ур. %d", "Lv %d", "Lv %d", "Lv %d", "Lv %d", "Lv %d"],
+    "lvchest.evolves_with": ["Evolui com", "Evolves with", "Evoluciona con", "Entwickelt mit", "Évolue avec", "Эволюция с", "Evolusi dengan", "進化の鍵", "진화 재료", "進化需要", "进化需要"],
+    "lvchest.evolves": ["Evolui", "Evolves", "Evoluciona", "Entwickelt", "Fait évoluer", "Развивает", "Evolusi", "進化させる", "진화시킴", "可進化", "可进化"],
+    "lvchest.reroll": ["Rerrolar", "Reroll", "Volver a tirar", "Neu würfeln", "Relancer", "Перебросить", "Acak ulang", "引き直し", "다시 뽑기", "重抽", "重抽"],
+    "lvchest.skip": ["Pular", "Skip", "Saltar", "Überspringen", "Passer", "Пропустить", "Lewati", "スキップ", "건너뛰기", "跳過", "跳过"],
+    "lvchest.banish": ["Banir", "Banish", "Desterrar", "Verbannen", "Bannir", "Изгнать", "Buang", "封印", "추방", "放逐", "放逐"],
+    "lvchest.rarity_common": ["Comum", "Common", "Común", "Gewöhnlich", "Commun", "Обычный", "Biasa", "並", "일반", "普通", "普通"],
+    "lvchest.rarity_rare": ["Raro", "Rare", "Raro", "Selten", "Rare", "Редкий", "Langka", "珍品", "희귀", "稀有", "稀有"],
+    "lvchest.rarity_legendary": ["Lendário", "Legendary", "Legendario", "Legendär", "Légendaire", "Легендарный", "Legendaris", "伝説", "전설", "傳說", "传说"],
+}

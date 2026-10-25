@@ -148,9 +148,9 @@ func _check_card(screen: Control, state: String) -> void:
 
 
 func _back_button(screen: Control) -> Button:
-	var text := "< " + TranslationServer.translate("menu.back")
+	var text := TranslationServer.translate("menu.back")
 	for b: Node in screen.find_children("*", "Button", false, false):
-		if (b as Button).text == text:
+		if (b as Button).text.trim_prefix("< ") == text:
 			return b
 	return null
 

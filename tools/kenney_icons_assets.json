@@ -11,6 +11,14 @@
     "PNG/White/1x/musicOff.png": "art/ui/icons/kenney/music_off.png",
     "PNG/White/1x/exitLeft.png": "art/ui/icons/kenney/exit.png",
     "PNG/White/1x/warning.png": "art/ui/icons/kenney/warning.png",
+    "PNG/White/1x/audioOn.png": "art/ui/icons/kenney/audio_on.png",
+    "PNG/White/1x/gamepad.png": "art/ui/icons/kenney/gamepad.png",
+    "PNG/White/1x/contrast.png": "art/ui/icons/kenney/contrast.png",
+    "PNG/White/1x/singleplayer.png": "art/ui/icons/kenney/person.png",
+    "PNG/White/1x/gear.png": "art/ui/icons/kenney/gear.png",
+    "PNG/White/1x/trophy.png": "art/ui/icons/kenney/trophy.png",
+    "PNG/White/1x/star.png": "art/ui/icons/kenney/star.png",
+    "PNG/White/1x/locked.png": "art/ui/icons/kenney/locked.png",
     "license.txt": "licenses_src/kenney_game-icons_License.txt"
   }
 }

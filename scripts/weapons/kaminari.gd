@@ -29,11 +29,12 @@ func fire(origin: Vector2) -> void:
 	for _k: int in range(amount()):
 		var at := densest_point(origin, r, taken)
 		if at == Vector2.INF:
-			return
+			break
 		taken.append(at)
 		strikes.append({"pos": at, "left": raw("delay"), "delay": maxf(raw("delay"), 0.01),
 				"radius": r, "damage": damage()})
-	AudioManager.play("magic1", 0.7, 0.05, -12.0)
+	if not taken.is_empty():
+		WeaponSfx.launch(self)
 
 
 ## Centro do maior grupo perto da guardiã: testa alguns inimigos sorteados e fica com o
@@ -81,13 +82,32 @@ func _impact(s: Dictionary) -> void:
 	if field > 0.0:
 		game.areas.pool(id, at, r * 0.8, float(s["damage"]) * 0.2, 0.4, field, 1.0, 0.0,
 				Color(0.6, 0.85, 1.0, 0.7))
-	game.fx.play_anim("thunder", at - Vector2(0, 14), 2.0 + r / 30.0, 0.0, Color(0.85, 0.95, 1.0), 20.0)
-	game.fx.play_anim("circle_spark", at, r / 14.0)
-	game.fx.add_ring(at, r * 1.15, Color(0.7, 0.9, 1.0))
+	var fx := game.fx
+	var tint := fx_color()
+	var bright := tint.lerp(Color.WHITE, 0.6)
+	fx.play_anim("thunder", at - Vector2(0, 14), minf(2.4, 1.6 + r / 60.0), 0.0, bright, 20.0, false, true)
+	fx.play_anim("circle_spark", at, minf(2.6, r / 16.0), 0.0, bright, 16.0, false, true)
+	fx.shockwave(at, r * 1.15, tint, 1.2, 0.4)
+	fx.flash(at, r * 1.4, Color(tint, 0.9), 0.16)
+	fx.sparks(at, Vector2(0, -1), fx_hot(), [3, 8, 14][FxLayer.wfx], 170.0, 1.3, 0.25)
+	fx.dust(at, r * 0.4, Color(0.6, 0.55, 0.5), [2, 5, 9][FxLayer.wfx], 60.0)
 	bolts.append({"points": _bolt_points(at), "life": BOLT_LIFE})
 	_flash = FLASH_LIFE
-	game.shake(2.5)
-	AudioManager.play("thunder", 1.0, 0.08, -4.0)
+	game.shake(2.5 * FxLayer.shake_mult)
+	WeaponSfx.play("takemikazuchi_strike" if is_evolved() else "kaminari_strike")
+
+
+## Alta: halo do raio e da marca no chão (camada aditiva).
+func draw_glow(canvas: CanvasItem) -> void:
+	var tint := fx_color()
+	for s: Dictionary in strikes:
+		var t := 1.0 - clampf(float(s["left"]) / float(s["delay"]), 0.0, 1.0)
+		FxLayer.draw_soft(canvas, s["pos"], float(s["radius"]) * (0.5 + 0.4 * t), Color(tint, 0.06 + 0.1 * t))
+	for b: Dictionary in bolts:
+		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0)
+		var points: PackedVector2Array = b["points"]
+		for k: int in range(0, points.size(), 2):
+			FxLayer.draw_soft(canvas, points[k], 14.0, Color(tint, 0.35 * a))
 
 
 ## Linha quebrada do topo da tela até o alvo.
@@ -117,11 +137,12 @@ func draw(canvas: CanvasItem) -> void:
 		canvas.draw_arc(at, r * (1.0 - t), 0.0, TAU, 32, Color(1.0, 1.0, 0.85, 0.6), 1.0)
 		canvas.draw_line(at - Vector2(5, 0), at + Vector2(5, 0), Color(1, 1, 1, 0.7), 1.0)
 		canvas.draw_line(at - Vector2(0, 5), at + Vector2(0, 5), Color(1, 1, 1, 0.7), 1.0)
+	var tint := fx_color()
 	for b: Dictionary in bolts:
 		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0)
 		var points: PackedVector2Array = b["points"]
-		canvas.draw_polyline(points, Color(0.5, 0.75, 1.0, 0.55 * a), 7.0)
-		canvas.draw_polyline(points, Color(0.85, 0.95, 1.0, 0.9 * a), 3.0)
+		canvas.draw_polyline(points, Color(tint, 0.55 * a), 7.0)
+		canvas.draw_polyline(points, Color(tint.lerp(Color.WHITE, 0.6), 0.9 * a), 3.0)
 		canvas.draw_polyline(points, Color(1.0, 1.0, 1.0, a), 1.0)
 	if _flash > 0.0 and game.player:
 		var view := game.view_size()

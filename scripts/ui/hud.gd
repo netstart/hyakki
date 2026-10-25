@@ -17,7 +17,7 @@ signal chest_closed
 signal revive_answered(accept: bool)
 
 ## Bloqueio após abrir o level-up, para não escolher sem querer (plano 7.4).
-const CARD_LOCK_MS := 350
+const CARD_LOCK_MS := LevelUpPanel.CARD_LOCK_MS
 const CORNER_BUTTON := Vector2(38.0, 28.0)
 ## Ícone de pausa (Kenney) no botão do canto e ícone + multiplicador no vizinho.
 const PAUSE_ICON := 14
@@ -25,15 +25,8 @@ const SPEED_ICON := 12
 ## Cor do botão de velocidade em cada multiplicador: 1x calmo, 2x dourado, 3x vermelhão.
 const SPEED_TINT := {1: Color("fff4e0"), 2: Color("ffd166"), 3: Color("ff8a5c")}
 const ULT_SIZE := 54.0
-const CARD_SIZE := Vector2(150.0, 150.0)
 const REVIVE_SECONDS := 8.0
 const COUNTDOWN := 1.5
-## Baú: duração de cada etapa (segundos), arco e brilho do ícone que voa para a lista.
-const CHEST_SHAKE := 0.9
-const CHEST_FLY := 0.4
-const CHEST_FADE := 0.25
-const CHEST_ARC := 36.0
-const CHEST_GLOW := Color(1.8, 1.8, 1.5)
 ## Kami: o ícone fica no topo do cartão, numa caixa de 32 px; o texto começa abaixo dela.
 const KAMI_ICON_TOP := 8.0
 const KAMI_ICON_BOX := 32.0
@@ -69,28 +62,9 @@ var _countdown_left: float = 0.0
 var _hint: Label
 var _hint_step: int = 0
 
-var _level_panel: Control
-var _cards: Array[Button] = []
-var _card_icons: Array[TextureRect] = []
-var _reroll: Button
-var _skip: Button
-var _banish: Button
-var _banish_mode: bool = false
-var _opened_at: int = 0
-var _chest_panel: Control
-var _chest_image: TextureRect
-var _chest_frame: AtlasTexture
-## Explosão atrás do baú na abertura (uma só, reaproveitada a cada baú).
-var _chest_burst: ChestBurst
-var _chest_list: VBoxContainer
-var _chest_close: Button
-var _chest_rewards: Array[Dictionary] = []
-var _chest_icons: Array[TextureRect] = []
-var _chest_labels: Array[Label] = []
-var _chest_flyers: Array[TextureRect] = []
-var _chest_tween: Tween
-var _chest_busy: bool = false
-var _chest_run: int = 0
+## Telas de nova habilidade e de baú (scripts/ui/level_up_panel.gd e chest_panel.gd).
+var _level_panel: LevelUpPanel
+var _chest_panel: ChestPanel
 var _kami_panel: Control
 var _kami_row: HBoxContainer
 var _kami_ids: Array[StringName] = []
@@ -107,6 +81,7 @@ var _revive_bar: Control
 var _gameplay: Array[Control] = []
 var _gameplay_alpha: float = 1.0
 var _icons: Dictionary = {}
+var _skill_icons := SkillIconPainter.new()
 
 
 func _ready() -> void:
@@ -214,15 +189,13 @@ func _ready() -> void:
 
 
 func start_run() -> void:
-	_level_panel.visible = false
-	_chest_cancel()
-	_chest_panel.visible = false
+	_level_panel.close_now()
+	_chest_panel.cancel()
 	_kami_panel.visible = false
 	_pause.close(false)
 	_show_play_hud(true)
 	_revive_panel.visible = false
 	set_gameplay_alpha(1.0)
-	_banish_mode = false
 	_countdown_left = 0.0
 	_countdown_label.visible = false
 	hide_boss()
@@ -233,7 +206,7 @@ func start_run() -> void:
 
 
 func overlay_open() -> bool:
-	return _level_panel.visible or _chest_panel.visible or _kami_panel.visible \
+	return _level_panel.is_open() or _chest_panel.is_open() or _kami_panel.visible \
 			or _pause.is_open() or _revive_panel.visible
 
 
@@ -252,11 +225,20 @@ func pause_back() -> bool:
 
 
 func level_up_open() -> bool:
-	return _level_panel.visible
+	return _level_panel.is_open()
 
 
 func chest_open() -> bool:
-	return _chest_panel.visible
+	return _chest_panel.is_open()
+
+
+## As telas (testes e capturas).
+func level_up_panel() -> LevelUpPanel:
+	return _level_panel
+
+
+func chest_panel() -> ChestPanel:
+	return _chest_panel
 
 
 func revive_open() -> bool:
@@ -265,7 +247,7 @@ func revive_open() -> bool:
 
 ## Cartas visíveis do nível novo (o roteiro E2E toca nelas).
 func level_cards() -> Array[Button]:
-	return _cards.filter(func(b: Button) -> bool: return b.visible)
+	return _level_panel.cards()
 
 
 # --- Topo: XP, tempo, abates, ícones -------------------------------------------------
@@ -287,33 +269,26 @@ func _draw_top() -> void:
 	var right := width - 2.0 * (CORNER_BUTTON.x + 4.0) - 12.0
 	_text(Vector2(right - 170.0, 24.0), "%s %s   %s %s" % [tr("hud.kills"), Locale.format_number(game.tracker.kills),
 			tr("hud.ryo"), Locale.format_number(game.tracker.ryo)], HORIZONTAL_ALIGNMENT_RIGHT, 170.0)
-	var x := 6.0
+	# Armas na 1ª fileira, passivas na 2ª: ícones 24x24 sem escala (pixel perfeito).
+	var now := Time.get_ticks_msec() / 1000.0
+	var x := 5.0
 	for weapon: Weapon in game.weapons:
-		_draw_icon(Vector2(x, 30.0), String(weapon.data.get("icon", "")), weapon.level, weapon.is_evolved())
-		x += 15.0
-	x += 6.0
+		_draw_icon(Vector2(x, 28.0), String(weapon.data.get("icon", "")), weapon.level, weapon.is_evolved(),
+				"w:%s" % weapon.id, weapon.max_level, now)
+		x += SkillIconPainter.ICON + 3.0
+	x = 5.0
 	for id: StringName in game.level_up.passive_levels:
-		_draw_icon(Vector2(x, 30.0), String(DB.passives[id]["icon"]), int(game.level_up.passive_levels[id]), false)
-		x += 15.0
-	if _boss_fraction >= 0.0:
-		var boss_bar := Rect2(width * 0.5 - 120.0, 34.0, 240.0, 5.0)
-		_top.draw_rect(boss_bar, Color(0.1, 0.02, 0.05, 0.85))
-		_top.draw_rect(Rect2(boss_bar.position, Vector2(boss_bar.size.x * _boss_fraction, boss_bar.size.y)), Color("e63946"))
-		_top.draw_rect(boss_bar, Color(1, 1, 1, 0.4), false, 1.0)
+		_draw_icon(Vector2(x, 28.0 + SkillIconPainter.ICON + 3.0), String(DB.passives[id]["icon"]),
+				int(game.level_up.passive_levels[id]), false, "p:%s" % id, int(DB.passives[id].get("max", 5)), now)
+		x += SkillIconPainter.ICON + 3.0
 	_draw_offscreen_arrows()
 
 
-func _draw_icon(at: Vector2, path: String, lvl: int, evolved: bool) -> void:
-	var tex := _icon(path)
-	if tex:
-		var size := tex.get_size()
-		var s := 12.0 / maxf(size.x, size.y)
-		_top.draw_rect(Rect2(at - Vector2(1, 1), Vector2(14, 14)), Color(0, 0, 0, 0.45))
-		_top.draw_texture_rect(tex, Rect2(at + (Vector2(12, 12) - size * s) * 0.5, size * s), false)
-		if evolved:
-			_top.draw_rect(Rect2(at - Vector2(1, 1), Vector2(14, 14)), Color("ffd166"), false, 1.0)
-	_top.draw_string_outline(Locale.font, at + Vector2(8, 14), str(lvl), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 2, Color.BLACK)
-	_top.draw_string(Locale.font, at + Vector2(8, 14), str(lvl), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+## Ícone de habilidade com moldura, selo de nível e (Média/Alta) brilho das evoluídas e
+## lampejo ao subir de nível: scripts/ui/skill_icon_painter.gd.
+func _draw_icon(at: Vector2, path: String, lvl: int, evolved: bool, key: String, max_level: int,
+		now: float) -> void:
+	_skill_icons.draw(_top, at, _icon(path), key, lvl, max_level, evolved, now)
 
 
 ## Seta na borda para santuários e baús fora da tela (plano 7.2).
@@ -372,302 +347,80 @@ func _draw_ultimate() -> void:
 				Color.WHITE if ready else Color(0.6, 0.6, 0.6, 0.8))
 
 
-# --- Level-up ---------------------------------------------------------------------
+# --- Nova habilidade e baú (as telas ficam em level_up_panel.gd e chest_panel.gd) ------
 
 func show_level_up(cards: Array[Dictionary], rerolls: int, skips: int, banishes: int) -> void:
-	_level_panel.visible = true
-	_opened_at = Time.get_ticks_msec()
-	_banish_mode = false
 	joystick.release()
-	for i: int in range(_cards.size()):
-		var button := _cards[i]
-		button.visible = i < cards.size()
-		if not button.visible:
-			continue
-		var card := cards[i]
-		button.text = "\n\n%s\n%s\n\n%s" % [card["tag"], card["title"], card["text"]]
-		_card_icons[i].texture = _icon(String(card.get("icon", "")))
-	_reroll.text = tr("levelup.reroll") % rerolls
-	_reroll.visible = rerolls > 0
-	_skip.text = tr("levelup.skip") % skips
-	_skip.visible = skips > 0
-	_banish.text = tr("levelup.banish") % banishes
-	_banish.visible = banishes > 0
+	_level_panel.show_cards(cards, rerolls, skips, banishes, game.level if game else 0, game)
 
 
 func hide_level_up() -> void:
-	_level_panel.visible = false
+	_level_panel.hide_panel()
 
 
-func _on_card(index: int) -> void:
-	if Time.get_ticks_msec() - _opened_at < CARD_LOCK_MS:
-		return
-	if _banish_mode:
-		_banish_mode = false
-		banish_pressed.emit(index)
-		return
-	card_chosen.emit(index)
+## Onde o ícone da carta escolhida pousa na barra do topo (mesma grade do _draw_top).
+func skill_slot(card: Dictionary) -> Vector2:
+	var step := SkillIconPainter.ICON + 3.0
+	var half := SkillIconPainter.ICON * 0.5
+	if game == null:
+		return Vector2(5.0 + half, 28.0 + half)
+	var id := StringName(card.get("id", &""))
+	match String(card.get("kind", "")):
+		"weapon_new", "weapon_up":
+			for i: int in range(game.weapons.size()):
+				if game.weapons[i].id == id:
+					return Vector2(5.0 + i * step + half, 28.0 + half)
+		"passive":
+			var i := game.level_up.passive_levels.keys().find(id)
+			return Vector2(5.0 + maxi(i, 0) * step + half, 28.0 + step + half)
+		"ryo":
+			return Vector2(_top.size.x - 2.0 * (CORNER_BUTTON.x + 4.0) - 40.0, 20.0)
+	return game.player.get_global_transform_with_canvas().origin if game.player else Vector2(339, 152)
 
 
-func _build_level_panel() -> void:
-	var box := _overlay_box()
-	_level_panel = box.get_parent().get_parent() as Control
-	box.add_child(_label(tr("levelup.title"), HORIZONTAL_ALIGNMENT_CENTER))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	for i: int in range(4):
-		var button := Button.new()
-		button.custom_minimum_size = CARD_SIZE * Vector2(0.82, 1.0)
-		button.focus_mode = Control.FOCUS_NONE
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.add_theme_stylebox_override("normal", ThemeFactory.card_box())
-		button.add_theme_stylebox_override("hover", ThemeFactory.card_box_hover())
-		button.add_theme_stylebox_override("pressed", ThemeFactory.card_box_hover())
-		button.pressed.connect(_on_card.bind(i))
-		var icon := TextureRect.new()
-		icon.set_anchors_preset(Control.PRESET_CENTER_TOP)
-		icon.offset_left = -10
-		icon.offset_right = 10
-		icon.offset_top = 8
-		icon.offset_bottom = 28
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.add_child(icon)
-		row.add_child(button)
-		_cards.append(button)
-		_card_icons.append(icon)
-	box.add_child(row)
-	var actions := HBoxContainer.new()
-	actions.alignment = BoxContainer.ALIGNMENT_CENTER
-	actions.add_theme_constant_override("separation", 8)
-	_reroll = _menu_button("", func() -> void: reroll_pressed.emit(), Vector2(110, 26))
-	_skip = _menu_button("", func() -> void: skip_pressed.emit(), Vector2(110, 26))
-	_banish = _menu_button("", func() -> void:
-		_banish_mode = not _banish_mode
-		toast(tr("levelup.banish_hint") if _banish_mode else ""), Vector2(110, 26))
-	actions.add_child(_reroll)
-	actions.add_child(_skip)
-	actions.add_child(_banish)
-	box.add_child(actions)
-
-
-# --- Baú -------------------------------------------------------------------------------
-
-## Tremor, abertura, itens voando um a um (cada um com som) e texto ao lado de cada ícone.
+## Tremor, abertura, itens voando um a um (cada um com som) e o cartão de cada item.
 func show_chest(rewards: Array[Dictionary]) -> void:
-	_chest_cancel()
-	_chest_rewards = rewards
-	_chest_panel.visible = true
 	joystick.release()
-	for child: Node in _chest_list.get_children():
-		_chest_list.remove_child(child)
-		child.queue_free()
-	_chest_icons.clear()
-	_chest_labels.clear()
-	# As linhas já ocupam o espaço, com ícone e texto transparentes até o item pousar.
-	for reward: Dictionary in rewards:
-		var line := HBoxContainer.new()
-		line.add_theme_constant_override("separation", 6)
-		var icon := TextureRect.new()
-		icon.texture = _icon(String(reward.get("icon", "")))
-		icon.custom_minimum_size = Vector2(16, 16)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.modulate.a = 0.0
-		line.add_child(icon)
-		var text := String(reward.get("title", ""))
-		if reward.has("text") and String(reward["kind"]) in ["evolution", "union"]:
-			text += " — " + String(reward["text"])
-		elif reward.has("tag"):
-			text = "%s (%s)" % [text, reward["tag"]]
-		var label := _label(text, HORIZONTAL_ALIGNMENT_LEFT)
-		label.modulate.a = 0.0
-		line.add_child(label)
-		_chest_list.add_child(line)
-		_chest_icons.append(icon)
-		_chest_labels.append(label)
-	_chest_busy = true
-	_chest_close.text = tr("chest.skip")
-	_chest_run += 1
-	_chest_begin(_chest_run)
+	_chest_panel.show_chest(rewards)
 
 
 func chest_animating() -> bool:
-	return _chest_busy
+	return _chest_panel.animating()
 
 
 ## A explosão atrás do baú está tocando (aparece na abertura e some sozinha, ao pular ou fechar).
 func chest_burst_active() -> bool:
-	return _chest_burst.active()
+	return _chest_panel.burst_active()
 
 
-## Linhas com texto visível (o roteiro E2E confere depois de pular ou esperar a animação).
+## Cartões com o item pousado (o roteiro E2E confere depois de pular ou esperar a animação).
 func chest_lines_shown() -> int:
-	var shown := 0
-	for label: Label in _chest_labels:
-		if label.modulate.a >= 1.0:
-			shown += 1
-	return shown
+	return _chest_panel.lines_shown()
 
 
 func chest_lines_total() -> int:
-	return _chest_labels.size()
+	return _chest_panel.lines_total()
 
 
-func _chest_begin(run: int) -> void:
-	# Duas esperas de quadro: o VBox precisa calcular as posições das linhas (alvos dos ícones).
-	await get_tree().process_frame
-	await get_tree().process_frame
-	if run != _chest_run or not _chest_busy:
-		return
-	var from := _chest_image.get_global_rect().get_center()
-	var tween := create_tween()
-	_chest_tween = tween
-	tween.tween_method(_chest_shake, 0.0, 1.0, CHEST_SHAKE)
-	tween.tween_callback(_chest_open)
-	tween.tween_property(_chest_image, "scale", Vector2.ONE * 1.35, 0.1) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(_chest_image, "modulate", Color.WHITE, 0.2)
-	tween.tween_property(_chest_image, "scale", Vector2.ONE, 0.15) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	for i: int in _chest_icons.size():
-		var to := _chest_icons[i].get_global_rect().get_center()
-		tween.tween_callback(_chest_spawn.bind(i))
-		tween.parallel().tween_method(_chest_fly.bind(i, from, to), 0.0, 1.0, CHEST_FLY)
-		tween.parallel().tween_callback(_chest_land.bind(i)).set_delay(CHEST_FLY)
-		# O texto do item anterior surge enquanto o próximo sai do baú.
-		if i > 0:
-			tween.parallel().tween_property(_chest_labels[i - 1], "modulate:a", 1.0, CHEST_FADE)
-	if not _chest_labels.is_empty():
-		tween.tween_property(_chest_labels[-1], "modulate:a", 1.0, CHEST_FADE)
-	tween.tween_callback(_chest_settle)
-
-
-## Balança cada vez mais forte até abrir.
-func _chest_shake(t: float) -> void:
-	_chest_image.rotation = sin(t * 60.0) * 0.16 * t
-
-
-## Abertura: quadro aberto, pop de escala, brilho e som.
-func _chest_open() -> void:
-	_chest_frame.region = Rect2(16, 0, 16, 14)
-	_chest_image.rotation = 0.0
-	_chest_image.modulate = Color(2.2, 2.2, 1.8)
-	# Em paralelo ao pop: a explosão tem relógio próprio e não atrasa os itens.
-	_chest_burst.play()
-	AudioManager.play("k_wood_0", 1.0, 0.05)
-	AudioManager.play("chest_open")
-	AudioManager.play("magic1", 1.0, 0.0, -8.0)
-
-
-## O item sai do baú: ícone pequeno e um ding com tom subindo (especiais têm fanfarra).
-func _chest_spawn(i: int) -> void:
-	var flyer := TextureRect.new()
-	flyer.texture = _chest_icons[i].texture
-	flyer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	flyer.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	flyer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	flyer.size = Vector2(16, 16)
-	flyer.pivot_offset = Vector2(8, 8)
-	flyer.scale = Vector2.ONE * 0.4
-	flyer.modulate = CHEST_GLOW
-	_root.add_child(flyer)
-	_chest_flyers.append(flyer)
-	var kind := String(_chest_rewards[i].get("kind", ""))
-	if kind in ["evolution", "union"]:
-		AudioManager.play("powerup")
-		AudioManager.play("j_temple_bell", 1.0, 0.0, -2.0)
-	else:
-		AudioManager.play("coin", pow(1.12, i))
-
-
-## Trajeto em arco do baú até a linha; cresce e perde o brilho no caminho.
-func _chest_fly(t: float, i: int, from: Vector2, to: Vector2) -> void:
-	var flyer := _chest_flyers[i]
-	if not is_instance_valid(flyer):
-		return
-	var at := from.lerp(to, t) - Vector2(0.0, sin(t * PI) * CHEST_ARC)
-	flyer.global_position = at - Vector2(8.0, 8.0)
-	flyer.scale = Vector2.ONE * lerpf(0.4, 1.0, t)
-	flyer.modulate = Color.WHITE.lerp(CHEST_GLOW, 1.0 - t)
-
-
-## O ícone pousou na linha: some o voador e mostra o ícone da linha.
-func _chest_land(i: int) -> void:
-	if is_instance_valid(_chest_flyers[i]):
-		_chest_flyers[i].queue_free()
-	_chest_icons[i].modulate.a = 1.0
-
-
-## Estado final: baú aberto, todas as linhas com texto. Usado no fim natural e ao pular.
-func _chest_settle() -> void:
-	_chest_busy = false
-	_chest_clear_flyers()
-	_chest_burst.stop()
-	_chest_frame.region = Rect2(16, 0, 16, 14)
-	_chest_image.rotation = 0.0
-	_chest_image.scale = Vector2.ONE
-	_chest_image.modulate = Color.WHITE
-	for i: int in _chest_icons.size():
-		_chest_icons[i].modulate = Color.WHITE
-		_chest_labels[i].modulate = Color.WHITE
-	_chest_close.text = tr("chest.close")
-	AudioManager.play("jingle_chest_big" if _chest_rewards.size() >= 4 else "jingle_success")
-
-
-## Pular: mata a animação e mostra o estado final de uma vez.
+## Pular: mostra o estado final de uma vez.
 func _chest_skip() -> void:
-	if _chest_tween != null and _chest_tween.is_valid():
-		_chest_tween.kill()
-	_chest_settle()
+	_chest_panel.skip()
 
 
-## Para tudo quando o painel fecha no meio da animação (bot, troca de tela, nova partida).
-func _chest_cancel() -> void:
-	_chest_busy = false
-	if _chest_tween != null and _chest_tween.is_valid():
-		_chest_tween.kill()
-	_chest_clear_flyers()
-	_chest_burst.stop()
-
-
-func _chest_clear_flyers() -> void:
-	for flyer: TextureRect in _chest_flyers:
-		if is_instance_valid(flyer):
-			flyer.queue_free()
-	_chest_flyers.clear()
+func _build_level_panel() -> void:
+	_level_panel = LevelUpPanel.new()
+	_root.add_child(_level_panel)
+	_level_panel.slot_target = skill_slot
+	_level_panel.card_chosen.connect(func(i: int) -> void: card_chosen.emit(i))
+	_level_panel.reroll_pressed.connect(func() -> void: reroll_pressed.emit())
+	_level_panel.skip_pressed.connect(func() -> void: skip_pressed.emit())
+	_level_panel.banish_pressed.connect(func(i: int) -> void: banish_pressed.emit(i))
 
 
 func _build_chest_panel() -> void:
-	var box := _overlay_box()
-	_chest_panel = box.get_parent().get_parent() as Control
-	box.add_child(_label(tr("chest.title"), HORIZONTAL_ALIGNMENT_CENTER))
-	_chest_image = TextureRect.new()
-	# A imagem tem dois quadros (fechado | aberto): começa com o baú fechado.
-	_chest_frame = AtlasTexture.new()
-	_chest_frame.atlas = _icon("res://assets/art/items/treasure/BigTreasureChest.png")
-	_chest_frame.region = Rect2(0, 0, 16, 14)
-	_chest_image.texture = _chest_frame
-	_chest_image.custom_minimum_size = Vector2(48, 48)
-	_chest_image.pivot_offset = Vector2(24, 24)
-	_chest_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_chest_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	# Só 48 px de largura: o pivô (24, 24) fica no centro do baú para o pop e a explosão.
-	_chest_image.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	box.add_child(_chest_image)
-	_chest_burst = ChestBurst.new()
-	_chest_image.add_child(_chest_burst)
-	_chest_list = VBoxContainer.new()
-	box.add_child(_chest_list)
-	_chest_close = _menu_button(tr("chest.skip"), func() -> void:
-		if _chest_busy:
-			_chest_skip()
-		else:
-			_chest_panel.visible = false
-			chest_closed.emit())
-	box.add_child(_chest_close)
+	_chest_panel = ChestPanel.new()
+	_root.add_child(_chest_panel)
+	_chest_panel.closed.connect(func() -> void: chest_closed.emit())
 
 
 # --- Kami ----------------------------------------------------------------------------
@@ -912,17 +665,35 @@ func gameplay_alpha() -> float:
 
 # --- Chefe ----------------------------------------------------------------------------
 
-func show_boss(name_text: String, line: String) -> void:
+## Painel do chefe (scripts/ui/boss_panel.gd): faixa com o kanji e barra de vida. Os rótulos
+## antigos ficam só com o texto (testes e leitores de tela), escondidos.
+func show_boss(name_text: String, line: String, info: Dictionary = {}) -> void:
 	_boss_label.text = name_text
-	_boss_label.visible = true
 	_boss_line.text = "“%s”" % line
-	_boss_line.visible = true
-	_boss_line_left = 2.5
 	_boss_fraction = 1.0
+	boss_panel().open(name_text, line, info)
 
 
-func update_boss(fraction: float) -> void:
+func boss_panel() -> BossPanel:
+	var panel := _root.get_node_or_null(^"BossPanel") as BossPanel
+	if panel == null:
+		panel = BossPanel.new()
+		panel.name = "BossPanel"
+		panel.hud = self
+		panel.visible = false
+		_root.add_child(panel)
+		_root.move_child(panel, _flash.get_index())
+	return panel
+
+
+func boss_flash(strength: float) -> void:
+	boss_panel().flash(strength)
+
+
+func update_boss(fraction: float, enraged: bool = false) -> void:
 	_boss_fraction = fraction
+	if fraction >= 0.0:
+		boss_panel().set_fraction(fraction, enraged)
 	if fraction < 0.0:
 		_boss_label.visible = false
 
@@ -931,6 +702,8 @@ func hide_boss() -> void:
 	_boss_fraction = -1.0
 	_boss_label.visible = false
 	_boss_line.visible = false
+	if _root.get_node_or_null(^"BossPanel"):
+		boss_panel().close()
 
 
 # --- Utilidades -----------------------------------------------------------------------
@@ -1018,12 +791,11 @@ func toggle_debug() -> void:
 
 ## Respostas automáticas do bot de testes.
 func bot_answer() -> void:
-	if _level_panel.visible:
-		_level_panel.visible = false
+	if _level_panel.is_open():
+		_level_panel.close_now()
 		card_chosen.emit(0)
-	elif _chest_panel.visible:
-		_chest_cancel()
-		_chest_panel.visible = false
+	elif _chest_panel.is_open():
+		_chest_panel.cancel()
 		chest_closed.emit()
 	elif _kami_panel.visible and not _kami_ids.is_empty():
 		_kami_panel.visible = false

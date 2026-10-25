@@ -8,6 +8,19 @@ const FONT_SIZE := 12
 const TEXT := Color("fff4e0")
 const TEXT_DARK := Color("3b2416")
 const ACCENT := Color("ffd166")
+## Laca e ouro das telas reformuladas (Guardiões, Opções, Diário, "voltar").
+const LACQUER := Color("1d110c")
+const LACQUER_LIGHT := Color("3a2317")
+const LACQUER_INK := Color(0.05, 0.035, 0.07, 0.86)
+const GOLD := Color("d9a441")
+const GOLD_DIM := Color(0.85, 0.64, 0.25, 0.45)
+const VERMILION := Color("b8322a")
+const MUTED := Color("d9c3a0")
+const PAPER := Color("eddcb4")
+const PAPER_DARK := Color("d8c193")
+const PAPER_INK := Color("2a1a10")
+const PAPER_INK_SOFT := Color("5a4030")
+const RED_INK := Color("9e2a1e")
 
 static var _cache: Theme
 static var _cache_lang: String = ""
@@ -110,3 +123,110 @@ static func _box(file: String, margin: int, content: int) -> StyleBoxTexture:
 	box.content_margin_top = margin + maxi(0, content - 2)
 	box.content_margin_bottom = margin + maxi(0, content - 2)
 	return box
+
+
+# --- Laca e ouro (Guardiões, Opções, Diário e botão "voltar") ---------------------------
+# Estilos acrescentados para as telas reformuladas; não mudam o tema base acima.
+
+
+## Caixa lisa com borda, cantos e margens (base de todos os estilos de laca).
+static func flat_box(bg: Color, border: Color, width: int = 1, radius: int = 3, pad: Vector2 = Vector2(6, 2)
+		) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.border_color = border
+	box.set_border_width_all(width)
+	box.set_corner_radius_all(radius)
+	box.content_margin_left = pad.x
+	box.content_margin_right = pad.x
+	box.content_margin_top = pad.y
+	box.content_margin_bottom = pad.y
+	box.anti_aliasing = false
+	return box
+
+
+## Painel de laca escura com filete dourado e sombra curta.
+static func lacquer_panel(alpha: float = 0.9) -> StyleBoxFlat:
+	var box := flat_box(Color(LACQUER_INK, alpha), Color(GOLD, 0.55), 1, 4, Vector2(8, 6))
+	box.shadow_color = Color(0, 0, 0, 0.45)
+	box.shadow_size = 2
+	box.shadow_offset = Vector2(0, 2)
+	return box
+
+
+## Página de pergaminho (Diário): papel claro, borda de madeira.
+static func paper_panel() -> StyleBoxFlat:
+	var box := flat_box(PAPER, Color("6b4a2a"), 1, 2, Vector2(8, 6))
+	box.shadow_color = Color(0, 0, 0, 0.5)
+	box.shadow_size = 3
+	box.shadow_offset = Vector2(0, 2)
+	return box
+
+
+## Botão secundário de laca: [normal, hover, pressed, disabled].
+static func lacquer_button_boxes() -> Array[StyleBoxFlat]:
+	var normal := flat_box(Color(0.09, 0.05, 0.06, 0.88), Color(GOLD, 0.6), 1, 3, Vector2(8, 2))
+	var hover := flat_box(Color(0.22, 0.08, 0.07, 0.92), Color(ACCENT, 0.95), 1, 3, Vector2(8, 2))
+	var pressed := flat_box(Color(0.05, 0.02, 0.03, 0.95), Color(ACCENT, 0.8), 1, 3, Vector2(8, 2))
+	pressed.content_margin_top = 3
+	pressed.content_margin_bottom = 1
+	var disabled := flat_box(Color(0.08, 0.06, 0.07, 0.6), Color(GOLD, 0.22), 1, 3, Vector2(8, 2))
+	for box: StyleBoxFlat in [normal, hover]:
+		box.shadow_color = Color(0, 0, 0, 0.4)
+		box.shadow_size = 1
+		box.shadow_offset = Vector2(0, 2)
+	return [normal, hover, pressed, disabled]
+
+
+## Botão principal vermelhão com borda de ouro: [normal, hover, pressed, disabled].
+static func primary_button_boxes() -> Array[StyleBoxFlat]:
+	var normal := flat_box(Color("c0392b"), ACCENT, 2, 3, Vector2(10, 1))
+	var hover := flat_box(Color("c0392b").lightened(0.14), ACCENT.lightened(0.3), 2, 3, Vector2(10, 1))
+	var pressed := flat_box(Color("c0392b").darkened(0.25), ACCENT.darkened(0.15), 2, 3, Vector2(10, 1))
+	pressed.content_margin_top = 2
+	pressed.content_margin_bottom = 0
+	var disabled := flat_box(Color(0.25, 0.16, 0.15, 0.9), Color(GOLD, 0.35), 2, 3, Vector2(10, 1))
+	for box: StyleBoxFlat in [normal, hover, disabled]:
+		box.shadow_color = Color(0, 0, 0, 0.5)
+		box.shadow_size = 1
+		box.shadow_offset = Vector2(0, 2)
+	return [normal, hover, pressed, disabled]
+
+
+## Aplica [normal, hover, pressed, disabled] e o anel de foco num botão.
+static func apply_button_boxes(b: Button, boxes: Array[StyleBoxFlat]) -> void:
+	b.add_theme_stylebox_override("normal", boxes[0])
+	b.add_theme_stylebox_override("hover", boxes[1])
+	b.add_theme_stylebox_override("pressed", boxes[2])
+	b.add_theme_stylebox_override("hover_pressed", boxes[2])
+	b.add_theme_stylebox_override("disabled", boxes[3])
+	b.add_theme_stylebox_override("focus", focus_ring())
+
+
+static func focus_ring() -> StyleBoxFlat:
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.border_color = Color(1.0, 0.93, 0.75, 0.85)
+	ring.set_border_width_all(1)
+	ring.set_corner_radius_all(4)
+	ring.set_expand_margin_all(2)
+	return ring
+
+
+## Trilho de laca e preenchimento vermelhão→ouro das barras de volume.
+static func slider_boxes() -> Array[StyleBoxFlat]:
+	var track := flat_box(Color(0.03, 0.02, 0.03, 0.95), Color(GOLD, 0.45), 1, 3, Vector2(0, 3))
+	var fill := flat_box(Color("c0392b"), Color(ACCENT, 0.9), 1, 3, Vector2(0, 3))
+	var fill_hot := flat_box(Color("d9452f"), ACCENT, 1, 3, Vector2(0, 3))
+	return [track, fill, fill_hot]
+
+
+## Barra de rolagem fina dourada.
+static func style_scrollbar(bar: ScrollBar) -> void:
+	bar.add_theme_stylebox_override("scroll", flat_box(Color(0, 0, 0, 0.35), Color(0, 0, 0, 0), 0, 2, Vector2(2, 2)))
+	var grab := flat_box(Color(GOLD, 0.55), Color(0, 0, 0, 0), 0, 2, Vector2(2, 8))
+	bar.add_theme_stylebox_override("grabber", grab)
+	bar.add_theme_stylebox_override("grabber_highlight", flat_box(Color(ACCENT, 0.8), Color(0, 0, 0, 0), 0, 2,
+			Vector2(2, 8)))
+	bar.add_theme_stylebox_override("grabber_pressed", flat_box(ACCENT, Color(0, 0, 0, 0), 0, 2, Vector2(2, 8)))
+	bar.custom_minimum_size.x = 4

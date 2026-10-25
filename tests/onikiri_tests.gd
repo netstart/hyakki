@@ -52,6 +52,11 @@ func _check_data(check: Callable) -> void:
 	check.call(String(DB.achievements[&"ach_boss_red_oni"]["reward"]).contains("weapon:onikiri"),
 			"vencer o Oni Vermelho libera o Onikiri para as outras guardiãs")
 	check.call(HitSounds.for_weapon(base) == "hit_blade", "Onikiri acerta com som de lâmina")
+	for cue: String in ["onikiri", "onikiri_final", "dojigiri_final", "blade_back"]:
+		check.call(WeaponSfx.CUES.has(cue), "som %s do combo existe" % cue)
+	check.call(WeaponSfx.layers("dojigiri_final").size() > WeaponSfx.layers("onikiri_final").size(),
+			"golpe final do Dōjigiri soa mais encorpado que o do Onikiri")
+	check.call(WeaponStyle.of(evo)["color"] != WeaponStyle.of(base)["color"], "Dōjigiri tem cor própria (rubra)")
 	check.call(ResourceLoader.exists(String(base["icon"])) and ResourceLoader.exists(String(evo["icon"])),
 			"ícones do Onikiri e do Dōjigiri existem")
 	for key: String in ["weapon.onikiri.name", "weapon.onikiri.desc", "weapon.dojigiri.name",

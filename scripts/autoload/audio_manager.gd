@@ -7,6 +7,8 @@ extends Node
 ## - Acertos ("hit", "crit", "hit_*") são de baixa prioridade: ocupam no máximo 2/3 do pool,
 ##   nunca roubam canal, e qualquer outro som rouba o acerto mais antigo com o pool cheio.
 ##   Assim o golpe das armas (1 por recarga) não some no meio de dezenas de acertos.
+## - Sons importantes ("ult_*", o golpe da lanterna) nunca ficam sem canal: roubam o acerto
+##   mais antigo ou, sem acertos, o som comum mais antigo (sem abaixar a música).
 
 const MUSIC_DIR := "res://assets/audio/music/"
 const SFX_DIR := "res://assets/audio/sfx/"
@@ -68,6 +70,19 @@ const VARIANTS := {
 	"arrow": ["hy_swish_0", "hy_swish_1", "hy_swish_2", "hy_swish_3", "hy_swish_4", "hy_swish_5"],
 	# Estalo curto de madeira (Kenney Impact), agudo: a corda do arco.
 	"bow": ["k_wood_0", "k_wood_1"],
+	# Lançamento das armas (g_*, tools/gen_sfx.py; Kenney RPG/Impact): ver WeaponSfx.
+	"shuriken_whirl": ["g_shuriken_whirl_0", "g_shuriken_whirl_1", "g_shuriken_whirl_2"],
+	"kunai_throw": ["g_kunai_throw_0", "g_kunai_throw_1", "g_kunai_throw_2"],
+	"bow_twang": ["g_bow_twang_0", "g_bow_twang_1", "g_bow_twang_2"],
+	"chain_rattle": ["g_chain_rattle_0", "g_chain_rattle_1", "g_chain_rattle_2"],
+	"smoke_pop": ["g_smoke_pop_0", "g_smoke_pop_1", "g_smoke_pop_2"],
+	"spirit_flame": ["g_spirit_flame_0", "g_spirit_flame_1", "g_spirit_flame_2"],
+	"wind_gust": ["g_wind_gust_0", "g_wind_gust_1", "g_wind_gust_2"],
+	"heavy_blade": ["g_heavy_blade_0", "g_heavy_blade_1", "g_heavy_blade_2"],
+	"suzu": ["g_suzu_0", "g_suzu_1", "g_suzu_2"],
+	"draw_knife": ["k_draw_knife_0", "k_draw_knife_1", "k_draw_knife_2"],
+	"metal_light": ["k_metal_light_0", "k_metal_light_1", "k_metal_light_2"],
+	"ult_burst": ["g_ult_burst_0", "g_ult_burst_1"],
 }
 
 ## Último som pedido e quantos pedidos por id (inclusive os descartados), para os testes,
@@ -211,6 +226,7 @@ func music_id() -> String:
 func play(id: String, pitch: float = 1.0, pitch_jitter: float = 0.0, volume_db: float = 0.0,
 		bus: String = "SFX") -> void:
 	var priority := PRIORITY.has(id)
+	var important := is_important(id)
 	var hit := is_hit(id)
 	last_requested = id
 	request_count[id] = int(request_count.get(id, 0)) + 1
@@ -226,7 +242,7 @@ func play(id: String, pitch: float = 1.0, pitch_jitter: float = 0.0, volume_db: 
 	var stream := _sfx(file)
 	if stream == null:
 		return
-	var player := _free_player(priority, hit)
+	var player := _free_player(priority or important, hit)
 	if player == null:
 		return
 	_last_play_ms[id] = now
@@ -284,6 +300,16 @@ func _beat_again() -> void:
 		_heartbeat.play()
 
 
+## Sons que sempre acham canal: perigo (PRIORITY) e o golpe da lanterna ("ult_*").
+static func is_important(id: String) -> bool:
+	return PRIORITY.has(id) or id.begins_with("ult_")
+
+
+## Quantas instâncias de `id` estão contadas como tocando (testes do limite de vozes).
+func playing_count(id: String) -> int:
+	return int(_playing_ids.get(id, 0))
+
+
 ## Acertos ("hit", "crit", "hit_*"): baixa prioridade no pool. "player_hurt" não é acerto.
 static func is_hit(id: String) -> bool:
 	return id == "hit" or id == "crit" or id.begins_with("hit_")
@@ -316,7 +342,7 @@ func _hits_playing() -> int:
 
 
 ## Canal livre; com o pool cheio, um som que não é acerto rouba o acerto mais antigo, e o
-## som de perigo, sem acertos tocando, rouba o primeiro canal. Acerto nunca rouba.
+## som importante, sem acertos tocando, rouba o som comum mais antigo. Acerto nunca rouba.
 func _free_player(priority: bool, hit: bool) -> AudioStreamPlayer:
 	for player: AudioStreamPlayer in _pool:
 		if not player.playing:
@@ -331,7 +357,12 @@ func _free_player(priority: bool, hit: bool) -> AudioStreamPlayer:
 				or int(player.get_meta("seq", 0)) < int(stolen.get_meta("seq", 0))):
 			stolen = player
 	if stolen == null and priority:
-		stolen = _pool[0]
+		for player: AudioStreamPlayer in _pool:
+			if not is_important(String(player.get_meta("sound_id", ""))) and (stolen == null
+					or int(player.get_meta("seq", 0)) < int(stolen.get_meta("seq", 0))):
+				stolen = player
+		if stolen == null:
+			stolen = _pool[0]
 	if stolen == null:
 		return null
 	# Toma o lugar do som interrompido e ajusta a contagem dele.

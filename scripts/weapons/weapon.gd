@@ -128,5 +128,19 @@ func draw(_canvas: CanvasItem) -> void:
 	pass
 
 
+## Brilho aditivo opcional (só na Alta, FxLayer.glow), chamado pela camada de brilho.
+func draw_glow(_canvas: CanvasItem) -> void:
+	pass
+
+
+## Cor do poder e cor quente do núcleo (data/weapons.json "fx").
+func fx_color() -> Color:
+	return game.fx.style(id)["color"] if game and game.fx else Color.WHITE
+
+
+func fx_hot() -> Color:
+	return game.fx.style(id)["hot"] if game and game.fx else Color.WHITE
+
+
 func on_removed() -> void:
 	pass

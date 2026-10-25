@@ -1,11 +1,14 @@
 class_name WorldMap
 extends Node2D
-## Mapa infinito por chunks (plano 5.1): chão com os tilesets do Ninja Adventure,
-## cenário com colisão só na base (plano 8.7.2), lanternas destrutíveis, perigos por
-## fase (5.3) e limites (corredor do Templo, arena do Yomi).
+## Mapa infinito por chunks (plano 5.1) com os biomas de data/biomes.json: chão procedural com
+## os tiles do Ninja Adventure (shaders/terrain_ground.gdshader), decoração em MultiMesh com
+## vento, copas que deixam ver o herói e sombras (chunk_view.gd), estruturas coerentes por fase
+## (terrain_layout.gd: ruas e quarteirões, bambuzal, templo, ruínas, Yomi, ladeira), lanternas
+## destrutíveis, perigos por fase (5.3) e limites (corredor do Templo, arena do Yomi).
 ##
-## Determinismo (plano 15.1): obstáculos e lanternas são função pura da semente e do
-## chunk, calculados no passo fixo. Só a montagem dos tiles na tela acontece por frame.
+## Determinismo (plano 15.1): obstáculos, lanternas, estátuas e lava são função pura da semente
+## e do chunk, calculados no passo fixo, iguais em qualquer nível gráfico. Só a montagem visual
+## (um chunk por quadro) e a densidade da decoração SEM colisão dependem do nível.
 
 const TILE := 16
 const CHUNK_TILES := 16
@@ -16,17 +19,13 @@ const SAFE_RADIUS := 90.0
 ## Grade dos obstáculos para resolve(): célula de 32 px e folga para o maior raio móvel.
 const SOLID_CELL := 32.0
 const SOLID_PAD := 24.0
-const TILESETS := {
-	"floor": "res://assets/art/tilesets/floor.png",
-	"floor_detail": "res://assets/art/tilesets/floor_detail.png",
-	"nature": "res://assets/art/tilesets/nature.png",
-	"house": "res://assets/art/tilesets/house.png",
-	"village_abandoned": "res://assets/art/tilesets/village_abandoned.png",
-	"desert": "res://assets/art/tilesets/desert.png",
-	"element": "res://assets/art/tilesets/element.png",
-	"interior_floor": "res://assets/art/tilesets/interior_floor.png",
-	"dungeon": "res://assets/art/tilesets/dungeon.png",
-}
+## Densidade máxima de decoração (GfxQuality "decor_density" na Alta): scatter() gera para ela.
+const MAX_DENSITY := 1.25
+const LAVA_LIGHT := Color(1.0, 0.45, 0.15)
+const LANTERN_LIGHT := Color(1.0, 0.7, 0.36)
+const STATUE_SPRITE := "buddha_orb"
+## Chunks preparados em paralelo no máximo.
+const MAX_JOBS := 3
 
 var game: HyakkiGame
 var stage: Dictionary = {}
@@ -35,22 +34,17 @@ var seed_value: int = 0
 var bounds := Vector2.ZERO
 ## Perigo ativo: tempestade de cinza.
 var storm_active: bool = false
+var biome: Dictionary = {}
+var layout := TerrainLayout.new()
+var art := TerrainArt.new()
 
-var _ground: TileMapLayer
-var _details: TileMapLayer
-var _decor_layer: Node2D
-var _canopy_layer: Node2D
-var _hazard_layer: Node2D
-var _tile_set: TileSet
-var _source_ids: Dictionary = {}
-var _textures: Dictionary = {}
-var _decor_defs: Array[Dictionary] = []
-var _decor_weights: PackedFloat32Array = []
-var _ground_tiles: Array = []
-var _ground_weights: PackedFloat32Array = []
+var _overlay: Node2D
+var _views: Node2D
+var _materials: Dictionary = {}
+var _art_ready: bool = false
 
-## Dados determinísticos por chunk: {"decor": [...], "solids": [[pos, r]], "lanterns": [...],
-## "statues": [...], "lava": [...]}
+## Dados determinísticos por chunk: {"items", "solids", "paint", "keepout", "lanterns",
+## "statues", "lava"}.
 var _chunks: Dictionary = {}
 ## Obstáculos indexados por célula (Vector2i -> [[pos, r], ...]) e chunks já indexados com
 ## os vizinhos. resolve() roda para cada inimigo a cada passo: assim olha uma célula só.
@@ -59,6 +53,8 @@ var _solid_ready: Dictionary = {}
 var _sim_active: Dictionary = {}
 var _built: Dictionary = {}
 var _build_queue: Array[Vector2i] = []
+## Preparação em segundo plano (máscara e decoração espalhada): Vector2i -> job.
+var _jobs: Dictionary = {}
 var _destroyed_lanterns: Dictionary = {}
 var _lantern_enemy: Dictionary = {}
 var _statue_timer: float = 0.0
@@ -66,28 +62,18 @@ var _storm_timer: float = 0.0
 
 
 func _ready() -> void:
-	_ground = TileMapLayer.new()
-	_ground.z_index = -20
-	add_child(_ground)
-	_details = TileMapLayer.new()
-	_details.z_index = -19
-	add_child(_details)
-	_hazard_layer = Node2D.new()
-	_hazard_layer.z_index = -18
-	_hazard_layer.draw.connect(_draw_hazards)
-	add_child(_hazard_layer)
-	_decor_layer = Node2D.new()
-	_decor_layer.z_index = -10
-	_decor_layer.draw.connect(_draw_decor.bind(false))
-	add_child(_decor_layer)
-	_canopy_layer = Node2D.new()
-	_canopy_layer.z_index = 20
-	_canopy_layer.draw.connect(_draw_decor.bind(true))
-	add_child(_canopy_layer)
-	_tile_set = TileSet.new()
-	_tile_set.tile_size = Vector2i(TILE, TILE)
-	_ground.tile_set = _tile_set
-	_details.tile_set = _tile_set
+	_views = Node2D.new()
+	_views.name = "Chunks"
+	add_child(_views)
+	_overlay = Node2D.new()
+	_overlay.z_index = 21
+	_overlay.draw.connect(_draw_bounds)
+	add_child(_overlay)
+	var settings := get_node_or_null(^"/root/Settings")
+	if settings != null:
+		settings.connect("changed", func(k: String) -> void:
+				if k == GfxQuality.changed_signal_key():
+					apply_quality())
 
 
 func setup(stage_data: Dictionary, run_seed: int) -> void:
@@ -97,33 +83,91 @@ func setup(stage_data: Dictionary, run_seed: int) -> void:
 	_solid_cells.clear()
 	_solid_ready.clear()
 	_sim_active.clear()
-	_built.clear()
-	_build_queue.clear()
+	_clear_views()
 	_destroyed_lanterns.clear()
 	_lantern_enemy.clear()
-	_ground.clear()
-	_details.clear()
 	storm_active = false
 	_storm_timer = 0.0
 	_statue_timer = 0.0
 	var b: Array = stage.get("bounds", [])
 	bounds = Vector2(float(b[0]), float(b[1])) if b.size() == 2 else Vector2.ZERO
-	_decor_defs.clear()
-	_decor_weights.clear()
-	for def: Variant in stage.get("decor", []):
-		var d: Dictionary = (def as Dictionary).duplicate()
-		var tex := _texture(String(d["tileset"]))
-		var r: Array = d["rect"]
-		d["src"] = _tight_rect(tex, Rect2(r[0] * TILE, r[1] * TILE, r[2] * TILE, r[3] * TILE))
-		d["tex"] = tex
-		_decor_defs.append(d)
-		_decor_weights.append(float(d.get("weight", 1)))
-	var ground: Dictionary = stage.get("ground", {})
-	_ground_tiles = ground.get("tiles", [])
-	_ground_weights.clear()
-	for t: Variant in _ground_tiles:
-		_ground_weights.append(float((t as Array)[2]))
-	queue_redraw()
+	biome = TerrainArt.biome(String(stage.get("biome", stage.get("id", "village"))))
+	layout.setup(run_seed, String(stage.get("id", "")), biome, bounds)
+	_art_ready = false
+	# Monta a tela inicial já aqui (início da partida), não no primeiro quadro: o custo cai no
+	# carregamento e não num quadro do jogo.
+	if is_inside_tree() and game != null and game.player != null and _views != null:
+		_ensure_art()
+		var view := game.view_size()
+		var screen := Rect2(game.player.sim_pos - view * 0.5, view)
+		var lo := chunk_of(screen.position)
+		var hi := chunk_of(screen.end)
+		for cy: int in range(lo.y, hi.y + 1):
+			for cx: int in range(lo.x, hi.x + 1):
+				_build_queue.append(Vector2i(cx, cy))
+		_build_screen(screen)
+
+
+## Arte e materiais (só quando há desenho; os testes de simulação não precisam).
+func _ensure_art() -> void:
+	if _art_ready:
+		return
+	_art_ready = true
+	art.build(biome)
+	var ground := ShaderMaterial.new()
+	ground.shader = load("res://shaders/terrain_ground.gdshader") as Shader
+	ground.set_shader_parameter("materials", art.materials_texture)
+	ground.set_shader_parameter("materials_px", Vector2(art.materials_texture.get_size()))
+	ground.set_shader_parameter("mat_info", art.mat_info)
+	ground.set_shader_parameter("mat_tint", art.mat_tint)
+	var bands := PackedVector4Array([Vector4(-1, 1, 0, -1)])
+	var rims := PackedVector4Array([Vector4.ZERO])
+	var b_list: Array = biome.get("bands", [])
+	var r_list: Array = biome.get("rims", [])
+	for k: int in range(5):
+		var b: Array = b_list[k] if k < b_list.size() else [-1, 1, 0]
+		# Canal da máscara de cada camada: 3 = caminhos (R), 4 = calçamento (G), 5 = especial (B).
+		var channel: int = [-1, -1, 0, 1, 2][k]
+		bands.append(Vector4(float(b[0]), float(b[1]), float(b[2]), float(channel)))
+		var r: Array = r_list[k] if k < r_list.size() else ["#000000", 0.0]
+		var rc := Color(String(r[0]))
+		rims.append(Vector4(rc.r, rc.g, rc.b, float(r[1])))
+	ground.set_shader_parameter("bands", bands)
+	ground.set_shader_parameter("rims", rims)
+	ground.set_shader_parameter("scales", layout.scales)
+	ground.set_shader_parameter("noise_offset", layout.noise_offset)
+	ground.set_shader_parameter("shade", float(biome.get("shade", 0.07)))
+	ground.set_shader_parameter("ripple", float(biome.get("ripple", 0.0)))
+	ground.set_shader_parameter("cracks", float(biome.get("cracks", 0.0)))
+	ground.set_shader_parameter("crack_color", Color(String(biome.get("crack_color", "#ff5a1e"))))
+	ground.set_shader_parameter("lava_slot", float(art.lava_slot))
+	var decor_shader := load("res://shaders/terrain_decor.gdshader") as Shader
+	_materials = {"ground": ground}
+	for key: String in ["flat", "decor", "canopy"]:
+		var m := ShaderMaterial.new()
+		m.shader = decor_shader
+		m.set_shader_parameter("fade_on", 0.0)
+		_materials[key] = m
+	_apply_material_quality()
+
+
+## Troca do nível gráfico ao vivo: uniforms novos e todos os chunks remontados agora.
+func apply_quality() -> void:
+	if not _art_ready:
+		return
+	_apply_material_quality()
+	var built: Array = _built.keys()
+	_clear_views()
+	for c: Vector2i in built:
+		_build(c)
+
+
+func _apply_material_quality() -> void:
+	var sway := 1.0 if bool(GfxQuality.budget("grass_sway")) else 0.0
+	(_materials["ground"] as ShaderMaterial).set_shader_parameter("detail", float(GfxQuality.level()))
+	for key: String in ["decor", "canopy"]:
+		(_materials[key] as ShaderMaterial).set_shader_parameter("sway_on", sway)
+	(_materials["flat"] as ShaderMaterial).set_shader_parameter("sway_on", 0.0)
 
 
 # --- Simulação (passo fixo) -----------------------------------------------------
@@ -292,43 +336,25 @@ func chunk_of(p: Vector2) -> Vector2i:
 	return Vector2i(floori(p.x / CHUNK), floori(p.y / CHUNK))
 
 
-## Conteúdo determinístico de um chunk (cacheado).
+## Conteúdo determinístico de um chunk (cacheado): primeiro a jogabilidade (lanternas,
+## estátuas, lava), depois a estrutura do bioma, que evita esses pontos.
 func chunk_data(c: Vector2i) -> Dictionary:
 	if _chunks.has(c):
 		return _chunks[c]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, c.x, c.y, String(stage.get("id", ""))])
 	var origin := Vector2(c.x * CHUNK, c.y * CHUNK)
-	var data := {"decor": [], "solids": [], "lanterns": [], "statues": [], "lava": []}
-	var placed: Array[Vector2] = []
-	var per_chunk := float(stage.get("decor_per_chunk", 8)) * (CHUNK / 512.0) * (CHUNK / 512.0)
-	var count := int(per_chunk) + (1 if rng.randf() < fmod(per_chunk, 1.0) else 0)
-	for _k: int in range(count):
-		if _decor_defs.is_empty():
-			break
-		var at := origin + Vector2(rng.randf_range(8, CHUNK - 8), rng.randf_range(8, CHUNK - 8))
-		if at.length() < SAFE_RADIUS or not _inside_bounds(at, 20.0):
-			continue
-		var def := _decor_defs[_weighted(rng, _decor_weights)]
-		var solid := float(def.get("solid", 0))
-		var too_close := false
-		for other: Vector2 in placed:
-			if other.distance_to(at) < solid + 20.0:
-				too_close = true
-				break
-		if too_close:
-			continue
-		placed.append(at)
-		(data["decor"] as Array).append({"def": def, "pos": at.round()})
-		if solid > 0.0:
-			(data["solids"] as Array).append([at + Vector2(0, -solid * 0.3), solid])
+	var data := {"solids": [], "lanterns": [], "statues": [], "lava": []}
+	var reserved: Array = []
 	var lanterns := float(stage.get("lanterns_per_chunk", 2)) * (CHUNK / 512.0) * (CHUNK / 512.0)
 	var lantern_count := int(lanterns) + (1 if rng.randf() < fmod(lanterns, 1.0) else 0)
 	for _k: int in range(lantern_count):
 		var at := origin + Vector2(rng.randf_range(16, CHUNK - 16), rng.randf_range(16, CHUNK - 16))
 		if at.length() > SAFE_RADIUS * 0.6 and _inside_bounds(at, 16.0):
 			(data["lanterns"] as Array).append(at.round())
+			reserved.append([at.round(), 12.0])
 	var hazard: Dictionary = stage.get("hazard", {})
+	var statue_items: Array = []
 	match String(hazard.get("type", "")):
 		"statues":
 			if rng.randf() < 0.5 * float(hazard.get("per_chunk", 1)):
@@ -336,11 +362,27 @@ func chunk_data(c: Vector2i) -> Dictionary:
 				if at.length() > 200.0 and _inside_bounds(at, 30.0):
 					(data["statues"] as Array).append(at.round())
 					(data["solids"] as Array).append([at, 8.0])
+					reserved.append([at, 22.0])
+					statue_items.append({"s": STATUE_SPRITE, "p": at.round() + Vector2(0, 8), "solid": 8.0,
+							"sway": 0.0, "layer": "auto", "shadow": 28.0, "rank": -1.0, "tone": 0.5,
+							"light": ["#9fd0ff", 30.0, 0.5, -20.0]})
 		"lava":
 			if rng.randf() < 0.45:
 				var at := origin + Vector2(rng.randf_range(30, CHUNK - 30), rng.randf_range(30, CHUNK - 30))
 				if at.length() > 150.0:
-					(data["lava"] as Array).append([at.round(), rng.randf_range(18.0, 30.0)])
+					var r := rng.randf_range(18.0, 30.0)
+					(data["lava"] as Array).append([at.round(), r])
+					reserved.append([at.round(), r + 8.0])
+	var structure := layout.generate(c, reserved)
+	(data["solids"] as Array).append_array(structure["solids"])
+	var items: Array = structure["items"]
+	items.append_array(statue_items)
+	data["items"] = items
+	var paint: Array = structure["paint"]
+	for spot: Array in data["lava"]:
+		paint.append(["circle", 2, spot[0], float(spot[1])])
+	data["paint"] = paint
+	data["keepout"] = structure["keepout"]
 	_chunks[c] = data
 	return data
 
@@ -353,7 +395,7 @@ func _inside_bounds(p: Vector2, margin: float) -> bool:
 	return true
 
 
-static func _weighted(rng: RandomNumberGenerator, weights: PackedFloat32Array) -> int:
+static func weighted(rng: RandomNumberGenerator, weights: PackedFloat32Array) -> int:
 	var total := 0.0
 	for w: float in weights:
 		total += w
@@ -368,6 +410,9 @@ static func _weighted(rng: RandomNumberGenerator, weights: PackedFloat32Array) -
 # --- Desenho (por frame) --------------------------------------------------------
 
 func _process(_delta: float) -> void:
+	if game == null or game.player == null:
+		return
+	_ensure_art()
 	var cam := game.player.position
 	var view := game.view_size()
 	var min_c := chunk_of(cam - view * 0.5 - Vector2(CHUNK, CHUNK) * 0.5)
@@ -377,148 +422,197 @@ func _process(_delta: float) -> void:
 			var c := Vector2i(cx, cy)
 			if not _built.has(c) and not _build_queue.has(c):
 				_build_queue.append(c)
-	# Constrói primeiro o chunk mais perto, um por frame, para não travar.
-	if not _build_queue.is_empty():
+	# Sem nada montado (início, troca de fase) monta toda a tela de uma vez. Depois, a máscara e
+	# a decoração espalhada de cada chunk novo são preparadas numa thread do WorkerThreadPool
+	# (o mais perto primeiro) e o chunk pronto é montado aqui, um por quadro, sem travar.
+	# Com o jogo parado (pausa, sequência de morte) a câmera não sai do lugar: nada a montar.
+	var idle := GameClock.paused and not _built.is_empty()
+	if not _build_queue.is_empty() and not idle:
 		var center := chunk_of(cam)
 		_build_queue.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
 				return (a - center).length_squared() < (b - center).length_squared())
-		for _k: int in range(BUILDS_PER_FRAME):
-			if _build_queue.is_empty():
-				break
-			_build(_build_queue.pop_front())
+		if _built.is_empty():
+			_build_screen(Rect2(cam - view * 0.5, view))
+		else:
+			for c: Vector2i in _build_queue:
+				if _jobs.size() >= MAX_JOBS:
+					break
+				if not _jobs.has(c):
+					_start_job(c)
+	if not idle:
+		_finish_jobs()
 	# Remove chunks muito longe da câmera.
 	for c: Vector2i in _built.keys():
 		if c.x < min_c.x - 2 or c.x > max_c.x + 2 or c.y < min_c.y - 2 or c.y > max_c.y + 2:
 			_unbuild(c)
-	_decor_layer.queue_redraw()
-	_canopy_layer.queue_redraw()
-	_hazard_layer.queue_redraw()
+	var dt := get_process_delta_time()
+	var screen := Rect2(cam - view * 0.5, view)
+	for v: ChunkView in _built.values():
+		v.update_fade(cam, game.enemies, dt, screen)
+	if bounds != Vector2.ZERO:
+		_overlay.queue_redraw()
+
+
+## Fração de decoração sem colisão que entra no nível atual (Baixa ⊂ Média ⊂ Alta).
+static func density_fraction() -> float:
+	return clampf(float(GfxQuality.budget("decor_density")) / MAX_DENSITY, 0.0, 1.0)
+
+
+## Itens que o chunk desenha no nível atual: estrutura inteira + espalhados com rank abaixo da
+## densidade.
+func visual_items(c: Vector2i, mask: Image = null) -> Array:
+	var data := chunk_data(c)
+	var items: Array = (data["items"] as Array).duplicate()
+	var frac := density_fraction()
+	for it: Dictionary in layout.scatter(c, data, mask):
+		if float(it["rank"]) < frac:
+			items.append(it)
+	return items
 
 
 func _build(c: Vector2i) -> void:
-	_built[c] = true
-	var ground: Dictionary = stage.get("ground", {})
-	var ground_source := _source(String(ground.get("tileset", "floor")))
-	var block: Array = ground.get("block", [])
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([seed_value, c.x, c.y, "ground"])
-	var details: Dictionary = stage.get("details", {})
-	var detail_tiles: Array = details.get("tiles", [])
-	var detail_source := _source(String(details.get("tileset", "floor_detail"))) if not detail_tiles.is_empty() else -1
-	var density := float(details.get("density", 0.0))
-	for ty: int in range(CHUNK_TILES):
-		for tx: int in range(CHUNK_TILES):
-			var cell := Vector2i(c.x * CHUNK_TILES + tx, c.y * CHUNK_TILES + ty)
-			var atlas: Vector2i
-			if block.size() == 4:
-				atlas = Vector2i(int(block[0]) + posmod(cell.x, int(block[2])),
-						int(block[1]) + posmod(cell.y, int(block[3])))
-			else:
-				var t: Array = _ground_tiles[_weighted(rng, _ground_weights)]
-				atlas = Vector2i(int(t[0]), int(t[1]))
-			_ensure_tile(ground_source, atlas)
-			_ground.set_cell(cell, ground_source, atlas)
-			if detail_source >= 0 and rng.randf() < density:
-				var d: Array = detail_tiles[rng.randi_range(0, detail_tiles.size() - 1)]
-				var datlas := Vector2i(int(d[0]), int(d[1]))
-				_ensure_tile(detail_source, datlas)
-				_details.set_cell(cell, detail_source, datlas)
+	var paint: Array = chunk_data(c)["paint"]
+	var mask := ChunkView.paint_mask(Vector2(c) * float(CHUNK), paint)
+	_mount(c, visual_items(c, mask), mask)
+
+
+func _mount(c: Vector2i, items: Array, mask: Image) -> void:
+	_ensure_art()
+	_build_queue.erase(c)
+	var view := ChunkView.new()
+	view.name = "C_%d_%d" % [c.x, c.y]
+	_views.add_child(view)
+	view.build(c, items, mask, art, _materials, bool(GfxQuality.budget("soft_shadows")))
+	_built[c] = view
+
+
+## Primeiro quadro: monta já só os chunks que aparecem na tela, preparados em paralelo; os da
+## margem seguem pelo caminho normal (threads, um por quadro).
+func _build_screen(screen: Rect2) -> void:
+	var lo := chunk_of(screen.position)
+	var hi := chunk_of(screen.end)
+	var now: Array[Vector2i] = []
+	for c: Vector2i in _build_queue:
+		if c.x >= lo.x and c.x <= hi.x and c.y >= lo.y and c.y <= hi.y:
+			now.append(c)
+			if not _jobs.has(c):
+				_start_job(c)
+	for c: Vector2i in now:
+		var job: Dictionary = _jobs[c]
+		WorkerThreadPool.wait_for_task_completion(job["task"])
+		_jobs.erase(c)
+		_mount(c, job["items"], job["mask"])
+
+
+## Prepara um chunk numa thread: a estrutura (jogabilidade) já está pronta aqui na principal.
+func _start_job(c: Vector2i) -> void:
+	var job := {"c": c, "data": chunk_data(c), "frac": density_fraction(), "layout": layout}
+	job["task"] = WorkerThreadPool.add_task(_prepare.bind(job), false, "chunk")
+	_jobs[c] = job
+
+
+## Roda na thread: só lê a estrutura do chunk e o bioma; não toca na árvore nem em caches.
+static func _prepare(job: Dictionary) -> void:
+	var c: Vector2i = job["c"]
+	var data: Dictionary = job["data"]
+	var mask := ChunkView.paint_mask(Vector2(c) * float(CHUNK), data["paint"])
+	var items: Array = (data["items"] as Array).duplicate()
+	var frac := float(job["frac"])
+	for it: Dictionary in (job["layout"] as TerrainLayout).scatter(c, data, mask):
+		if float(it["rank"]) < frac:
+			items.append(it)
+	job["mask"] = mask
+	job["items"] = items
+
+
+## Monta um chunk já preparado por quadro (o que ainda está na fila e na tela).
+func _finish_jobs() -> void:
+	var mounted := 0
+	for c: Vector2i in _jobs.keys():
+		var job: Dictionary = _jobs[c]
+		if mounted >= BUILDS_PER_FRAME or not WorkerThreadPool.is_task_completed(job["task"]):
+			continue
+		WorkerThreadPool.wait_for_task_completion(job["task"])
+		_jobs.erase(c)
+		if not _build_queue.has(c) or not job.has("mask"):
+			continue
+		_mount(c, job["items"], job["mask"])
+		mounted += 1
+
+
+func _exit_tree() -> void:
+	_drop_jobs()
+
+
+func _drop_jobs() -> void:
+	for c: Vector2i in _jobs:
+		WorkerThreadPool.wait_for_task_completion(_jobs[c]["task"])
+	_jobs.clear()
 
 
 func _unbuild(c: Vector2i) -> void:
+	var view: Node = _built.get(c)
 	_built.erase(c)
-	for ty: int in range(CHUNK_TILES):
-		for tx: int in range(CHUNK_TILES):
-			var cell := Vector2i(c.x * CHUNK_TILES + tx, c.y * CHUNK_TILES + ty)
-			_ground.erase_cell(cell)
-			_details.erase_cell(cell)
+	if view != null:
+		view.queue_free()
 
 
-func _draw_decor(canopy: bool) -> void:
-	var layer := _canopy_layer if canopy else _decor_layer
-	var player_pos := game.player.position
+func _clear_views() -> void:
 	for c: Vector2i in _built:
-		var data := chunk_data(c)
-		for item: Dictionary in data["decor"]:
-			var def: Dictionary = item["def"]
-			var src: Rect2 = def["src"]
-			var at: Vector2 = item["pos"]
-			var dst := Rect2(at - Vector2(src.size.x * 0.5, src.size.y), src.size)
-			if not canopy:
-				layer.draw_texture_rect_region(def["tex"], dst, src)
-			elif src.size.y > 24.0:
-				# Copa: a parte de cima dos objetos altos fica na frente dos personagens.
-				var cut := src.size.y - 14.0
-				var top_src := Rect2(src.position, Vector2(src.size.x, cut))
-				var top_dst := Rect2(dst.position, Vector2(dst.size.x, cut))
-				var alpha := 0.55 if top_dst.grow(4.0).has_point(player_pos) else 1.0
-				layer.draw_texture_rect_region(def["tex"], top_dst, top_src, Color(1, 1, 1, alpha))
-		if not canopy:
-			for at: Vector2 in data["statues"]:
-				var tex := _texture("house")
-				var src := Rect2(3 * TILE, 15 * TILE, 2 * TILE, 2 * TILE)
-				layer.draw_texture_rect_region(tex, Rect2(at - Vector2(16, 28), src.size), src)
-	if canopy and bounds != Vector2.ZERO:
-		_draw_bounds(layer)
+		var view: Node = _built[c]
+		if view != null:
+			view.queue_free()
+	_built.clear()
+	_build_queue.clear()
+	_drop_jobs()
 
 
-func _draw_hazards() -> void:
-	var time := GameClock.game_time
+## Chunks montados (testes e luzes).
+func built_views() -> Dictionary:
+	return _built
+
+
+## Luzes do cenário perto de `center` (lanternas de pedra, tochas, lava, estátuas, lanternas
+## destrutíveis ainda de pé): [posição, cor, raio, força].
+func collect_lights(center: Vector2, half: Vector2) -> Array:
+	var out: Array = []
+	var area := Rect2(center - half, half * 2.0)
 	for c: Vector2i in _built:
+		var view: ChunkView = _built[c]
+		for l: Array in view.lights:
+			if area.grow(float(l[2])).has_point(l[0]):
+				out.append(l)
 		for spot: Array in chunk_data(c)["lava"]:
-			var pulse := 0.5 + 0.5 * sin(time * 2.0 + float(spot[1]))
-			_hazard_layer.draw_circle(spot[0], float(spot[1]), Color(1.0, 0.35, 0.1, 0.45 + 0.15 * pulse))
-			_hazard_layer.draw_circle(spot[0], float(spot[1]) * 0.6, Color(1.0, 0.75, 0.25, 0.4 + 0.2 * pulse))
+			if area.grow(float(spot[1]) * 2.5).has_point(spot[0]):
+				out.append([spot[0], LAVA_LIGHT, float(spot[1]) * 2.6, 0.95])
+	for c: Vector2i in _lantern_enemy:
+		for i: int in _lantern_enemy[c]:
+			if i >= 0 and game.enemies.alive[i] == 1 and game.enemies.is_prop(i):
+				var at: Vector2 = game.enemies.pos[i] + Vector2(0, -18)
+				if area.grow(60.0).has_point(at):
+					out.append([at, LANTERN_LIGHT, 60.0, 0.9])
+	return out
 
 
-## Fora dos limites: escurece (Templo e Yomi).
-func _draw_bounds(layer: Node2D) -> void:
+## Fora dos limites: escurece em degradê (Templo e Yomi).
+func _draw_bounds() -> void:
+	if game == null or game.player == null:
+		return
 	var cam := game.player.position
 	var view := game.view_size() + Vector2(64, 64)
-	var shade := Color(0.02, 0.01, 0.05, 0.85)
 	var rect := Rect2(cam - view * 0.5, view)
-	if bounds.y > 0.0:
-		if rect.position.y < -bounds.y:
-			layer.draw_rect(Rect2(rect.position, Vector2(rect.size.x, -bounds.y - rect.position.y)), shade)
-		if rect.end.y > bounds.y:
-			layer.draw_rect(Rect2(Vector2(rect.position.x, bounds.y), Vector2(rect.size.x, rect.end.y - bounds.y)), shade)
-	if bounds.x > 0.0:
-		if rect.position.x < -bounds.x:
-			layer.draw_rect(Rect2(rect.position, Vector2(-bounds.x - rect.position.x, rect.size.y)), shade)
-		if rect.end.x > bounds.x:
-			layer.draw_rect(Rect2(Vector2(bounds.x, rect.position.y), Vector2(rect.end.x - bounds.x, rect.size.y)), shade)
-
-
-func _texture(name: String) -> Texture2D:
-	if not _textures.has(name):
-		_textures[name] = load(TILESETS[name]) as Texture2D
-	return _textures[name]
-
-
-func _source(name: String) -> int:
-	if _source_ids.has(name):
-		return _source_ids[name]
-	var src := TileSetAtlasSource.new()
-	src.texture = _texture(name)
-	src.texture_region_size = Vector2i(TILE, TILE)
-	var id := _tile_set.add_source(src)
-	_source_ids[name] = id
-	return id
-
-
-func _ensure_tile(source_id: int, atlas: Vector2i) -> void:
-	var src := _tile_set.get_source(source_id) as TileSetAtlasSource
-	if not src.has_tile(atlas):
-		src.create_tile(atlas)
-
-
-## Aperta o retângulo ao redor dos pixels opacos (os retângulos dos dados são aproximados).
-func _tight_rect(tex: Texture2D, rect: Rect2) -> Rect2:
-	var image := tex.get_image()
-	if image.is_compressed():
-		image.decompress()
-	var region := image.get_region(Rect2i(rect))
-	var used := region.get_used_rect()
-	if used.size.x <= 0 or used.size.y <= 0:
-		return rect
-	return Rect2(rect.position + Vector2(used.position), Vector2(used.size))
+	for step: int in range(4):
+		var inset := float(step) * 10.0
+		var shade := Color(0.02, 0.01, 0.05, 0.3 + 0.18 * step)
+		var bx := bounds.x + inset
+		var by := bounds.y + inset
+		if bounds.y > 0.0:
+			if rect.position.y < -by:
+				_overlay.draw_rect(Rect2(rect.position, Vector2(rect.size.x, -by - rect.position.y)), shade)
+			if rect.end.y > by:
+				_overlay.draw_rect(Rect2(Vector2(rect.position.x, by), Vector2(rect.size.x, rect.end.y - by)), shade)
+		if bounds.x > 0.0:
+			if rect.position.x < -bx:
+				_overlay.draw_rect(Rect2(rect.position, Vector2(-bx - rect.position.x, rect.size.y)), shade)
+			if rect.end.x > bx:
+				_overlay.draw_rect(Rect2(Vector2(bx, rect.position.y), Vector2(rect.end.x - bx, rect.size.y)), shade)

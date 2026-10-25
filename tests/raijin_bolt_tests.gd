@@ -35,6 +35,10 @@ func run(host: Node, check: Callable) -> void:
 				game.enemies.spatial.insert(i, game.enemies.pos[i])
 		weapon.fire(origin)
 		check.call(not areas.bolts.is_empty(), "%s cria um raio visual" % id)
+		var tint := Color(String((DB.weapon(id)["fx"] as Dictionary)["color"]))
+		check.call((areas.bolts[0].get("tint", Color.BLACK) as Color).is_equal_approx(tint),
+				"%s: raio na cor da arma (Fúria roxa, mais forte)" % id)
+		check.call(game.fx.particles_alive() > 0, "%s: impacto do raio solta faíscas" % id)
 		var sky := 0
 		var chain := 0
 		var variants_ok := true

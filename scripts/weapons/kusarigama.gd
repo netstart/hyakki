@@ -15,11 +15,13 @@ func fire(origin: Vector2) -> void:
 	var spiral := bool(flags.get("spiral", false))
 	for k: int in range(count):
 		var dir := aim.rotated(TAU * k / float(count)) if count > 1 else aim
-		var p := game.projectiles.spawn(id, "hook", origin, dir * spd, damage(), 6.0 * area(), -1,
+		var p := game.projectiles.spawn(id, "reaper_hook" if spiral else "hook", origin, dir * spd, damage(),
+				6.0 * area(), -1,
 				life, knockback(),
 				ProjectileManager.Move.SPIRAL if spiral else ProjectileManager.Move.BOOMERANG,
 				2.4 if spiral else 0.0)
 		if spiral and p >= 0:
 			# Em espiral: vira continuamente e também retorna na segunda metade.
 			game.projectiles.move[p] = ProjectileManager.Move.SPIRAL
-	AudioManager.play("whoosh", 0.8, 0.1, -8.0)
+	game.fx.muzzle(id, origin, aim)
+	WeaponSfx.launch(self)

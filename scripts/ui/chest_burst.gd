@@ -21,6 +21,10 @@ const RING_WIDTH := 3.0
 const RING_COLOR := Color(1.0, 0.86, 0.52)
 const RING_SEGMENTS := 40
 
+## Cor da raridade do baú (anel e clarão) e tamanho relativo (1 = 144 px).
+var color: Color = RING_COLOR
+var zoom: float = 1.0
+
 var _texture: Texture2D
 var _frames: int = 1
 var _region_height: float = FRAME
@@ -43,10 +47,12 @@ func _init() -> void:
 		_region_height = float(_texture.get_height())
 
 
-## Começa do primeiro quadro, centrada no pai (recomeça se já estava tocando).
-func play() -> void:
+## Começa do primeiro quadro, centrada no pai, ou em `at` (coordenadas do pai) se dado.
+func play(at: Vector2 = Vector2(-1, -1)) -> void:
 	var holder := get_parent() as Control
-	if holder != null:
+	if at.x >= 0.0:
+		position = at
+	elif holder != null:
 		position = holder.size * 0.5
 	_t = 0.0
 	visible = true
@@ -79,14 +85,17 @@ func _draw() -> void:
 	var k := clampf(_t / DURATION, 0.0, 1.0)
 	# Anel e clarão saem rápido e desaceleram; perdem a força até o fim.
 	var grow := 1.0 - pow(1.0 - k, 3.0)
-	var radius := lerpf(RING_FROM, RING_TO, grow)
+	var radius := lerpf(RING_FROM, RING_TO, grow) * zoom
 	var power := 1.0 - k
-	draw_circle(Vector2.ZERO, radius * 0.7, Color(RING_COLOR, 0.22 * power))
-	draw_arc(Vector2.ZERO, radius, 0.0, TAU, RING_SEGMENTS, Color(RING_COLOR, 0.85 * power), RING_WIDTH)
+	draw_circle(Vector2.ZERO, radius * 0.7, Color(color, 0.22 * power))
+	draw_arc(Vector2.ZERO, radius, 0.0, TAU, RING_SEGMENTS, Color(color, 0.85 * power), RING_WIDTH)
 	if _texture == null:
 		return
 	var frame := mini(_frames - 1, floori(k * _frames))
-	var half := DRAWN * 0.5
+	var drawn := DRAWN * zoom
+	var half := drawn * 0.5
 	var fade := 1.0 - smoothstep(FADE_FROM, 1.0, k)
-	draw_texture_rect_region(_texture, Rect2(-half, -half, DRAWN, DRAWN),
-			Rect2(frame * FRAME, 0.0, FRAME, _region_height), Color(TINT, fade))
+	var tint := Color(TINT.r * lerpf(1.0, color.r * 1.3, 0.5), TINT.g * lerpf(1.0, color.g * 1.3, 0.5),
+			TINT.b * lerpf(1.0, color.b * 1.3, 0.5), fade * 0.7)
+	draw_texture_rect_region(_texture, Rect2(-half, -half, drawn, drawn),
+			Rect2(frame * FRAME, 0.0, FRAME, _region_height), tint)

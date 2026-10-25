@@ -16,7 +16,7 @@ general/android/enable_r8_optimization=true
 
 config/name="Hyakki"
 config/description="Hyakki — Até o Amanhecer"
-config/version="1.5.0"
+config/version="1.6.0"
 run/main_scene="res://scenes/app/App.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -66,3 +66,22 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 2d/snap/snap_2d_transforms_to_pixel=true
+
+[shader_globals]
+
+wind_dir={
+"type": "vec2",
+"value": Vector2(1, 0)
+}
+wind_strength={
+"type": "float",
+"value": 0.0
+}
+wetness={
+"type": "float",
+"value": 0.0
+}
+weather_time={
+"type": "float",
+"value": 0.0
+}

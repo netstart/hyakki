@@ -80,6 +80,10 @@ func _suite_full() -> void:
 		await _tap_text(String(item[0]), true)
 		if await _expect_screen(item[1] as StringName, "título → %s" % item[1]):
 			_shot(String(item[1]))
+			if item[1] == &"options":
+				await _options_tabs()
+			elif item[1] == &"codex":
+				await _codex_pages()
 			await _tap_text("menu.back", true)
 			await _expect_screen(&"title", "%s → voltar ao título" % item[1])
 	_step("loja: reforço por ryō")
@@ -115,6 +119,8 @@ func _suite_full() -> void:
 		_check(true, "carta de nível novo aparece")
 		_shot("nivel")
 		await _seconds(0.5)
+		_check(game.hud.level_cards().all(func(b: Button) -> bool: return b is LevelCard and (b as LevelCard).settled),
+				"cartas pousadas em leque, prontas para o toque")
 		await _tap_control(game.hud.level_cards()[0])
 		_check(await _wait_for(func() -> bool: return not game.hud.level_up_open(), 4.0), "tocar a carta escolhe")
 		var gained := game.weapons.size() + game.level_up.passive_levels.size() > weapons_before
@@ -134,6 +140,7 @@ func _suite_full() -> void:
 				and game.hud.chest_lines_shown() == game.hud.chest_lines_total(),
 				"pular mostra todos os itens com texto")
 		_check(not game.hud.chest_burst_active(), "pular apaga a explosão")
+		_check(game.hud.chest_panel().ryo_shown() == game.hud.chest_panel().ryo_total(), "pular mostra o ryō completo")
 		await _seconds(0.6)
 		_shot("bau")
 		await _tap_text("chest.close", true)
@@ -156,6 +163,9 @@ func _suite_full() -> void:
 	_step("armas de trovão")
 	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
 	await _thunder_weapons(game)
+
+	_step("chefe")
+	await _boss_entrance(game)
 
 	_step("pausa")
 	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
@@ -251,6 +261,57 @@ func _suite_resume() -> void:
 
 ## Kaminari e Inazuma na partida de verdade: com inimigos por perto, as duas ferem dentro
 ## de alguns segundos (o raio do céu cai depois do aviso; o raio do corpo salta entre eles).
+## Escolha do guardião: toque real no retrato da Hana troca o guardião (palco e painel);
+## toque no da Aki volta, e é com ela que a partida segue.
+func _hero_pick() -> void:
+	var screen := _visible_screen("hero_screen.gd")
+	if screen == null:
+		_check(false, "tela dos guardiões encontrada")
+		return
+	var portraits: Dictionary = screen.get("_portraits")
+	for id: StringName in [&"hana", &"aki"]:
+		await _tap_control(portraits[id] as Control)
+		_check(await _wait_for(func() -> bool: return screen.call("selected_hero") == id, 4.0)
+				and String(app.selection["hero"]) == String(id), "tocar no retrato escolhe %s" % id)
+		if id == &"hana":
+			await _seconds(0.5)
+			_shot("herois_hana")
+
+
+## Opções: toque real na aba Gráficos rola até a seção e a acende; Áudio volta ao topo.
+func _options_tabs() -> void:
+	var screen := _visible_screen("options_screen.gd")
+	if screen == null:
+		_check(false, "tela de opções encontrada")
+		return
+	var tabs: Array = screen.get("_tabs")
+	await _tap_control(tabs[2] as Control)
+	_check(await _wait_for(func() -> bool: return screen.call("current_section") == 2, 4.0)
+			and (screen.get("_scroll") as ScrollContainer).scroll_vertical > 0, "aba Gráficos rola até a seção")
+	_shot("opcoes_graficos")
+	await _tap_control(tabs[0] as Control)
+	_check(await _wait_for(func() -> bool: return screen.call("current_section") == 0, 4.0), "aba Áudio volta ao topo")
+
+
+## Diário: toque real no marcador Chefes vira a página; toque num cartão abre a entrada.
+func _codex_pages() -> void:
+	var screen := _visible_screen("codex_screen.gd")
+	if screen == null:
+		_check(false, "tela do diário encontrada")
+		return
+	var tabs: Array = screen.get("_tabs")
+	await _tap_control(tabs[1] as Control)
+	_check(await _wait_for(func() -> bool: return screen.call("category") == &"bosses", 4.0),
+			"marcador Chefes vira a página")
+	await _seconds(0.5)
+	var cards: Array = screen.call("cards")
+	if cards.size() > 1:
+		await _tap_control(cards[1] as Control)
+		_check(await _wait_for(func() -> bool: return (cards[1] as Control).call("is_selected"), 4.0),
+				"tocar no cartão abre a entrada")
+	_shot("diario_chefes")
+
+
 ## Qualidade gráfica nas Opções: toque real abre a lista; a escolha (Baixa) vai pelo próprio
 ## menu da lista (id_pressed), como o toque no item faria. Volta ao valor de antes.
 func _options_quality() -> void:
@@ -292,6 +353,23 @@ func _pause_quality(game: HyakkiGame) -> void:
 		mode = GfxQuality.mode()
 	_check(GfxQuality.mode() == str(before), "quatro toques voltam à qualidade de antes")
 	Settings.set_value(key, before)
+
+
+## Chefe: entrada com a faixa em kanji, barra no topo e o chefe em campo (despachado depois).
+func _boss_entrance(game: HyakkiGame) -> void:
+	game.bosses.spawn(&"tanuki")
+	var panel := game.hud.boss_panel()
+	_check(panel.intro_active() and panel.kanji != "", "chefe entra com a faixa do nome em kanji")
+	await _seconds(0.8)
+	_shot("chefe_entrada")
+	_check(await _wait_for(func() -> bool: return not panel.intro_active(), 6.0) and panel.fraction > 0.0,
+			"barra de vida do chefe fica no topo")
+	for boss: Dictionary in game.bosses.bosses.duplicate():
+		game.enemies.damage(int(boss["index"]), 1e9, Vector2.ZERO, 0.0)
+	_check(await _wait_for(func() -> bool: return game.bosses.active_count() == 0, 4.0), "chefe vencido sai de cena")
+	await _seconds(0.6)
+	_shot("chefe_morte")
+	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
 
 
 func _thunder_weapons(game: HyakkiGame) -> void:
@@ -396,6 +474,8 @@ func _start_run_from_title(check_map: bool = false) -> void:
 	for id: StringName in DB.ids("heroes"):
 		_check(MetaProgress.is_hero_unlocked(id), "build de debug libera o guardião %s" % id)
 	_shot("herois")
+	if check_map:
+		await _hero_pick()
 	await _tap_text("heroes.next", true)
 	if not await _expect_screen(&"stages", "heróis → fases"):
 		return

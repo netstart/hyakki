@@ -17,5 +17,4 @@ func step(dt: float) -> void:
 		var at := game.player.sim_pos + Vector2.from_angle(game.rng.randf() * TAU) * 60.0
 		game.areas.hurricane(id, at, raw("radius") * area(), damage(), raw("cooldown"), LIFETIME,
 				raw("speed"), 110.0, true)
-	AudioManager.play("magic4", 0.8, 0.0, -4.0)
-	AudioManager.play("zap", 0.8, 0.05, -8.0)
+	WeaponSfx.launch(self)

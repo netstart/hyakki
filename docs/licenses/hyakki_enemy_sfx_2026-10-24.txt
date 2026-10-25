@@ -1,0 +1,10 @@
+Registro de origem - hyakki_enemy_sfx (2026-10-24)
+
+Arquivos: assets/audio/sfx/e_*.wav (19 arquivos: rugido de chefe x 3, queda de chefe x 1 e
+mortes de inimigos por estilo - cinza, brasa, névoa, respingo, osso - x 3).
+Origem: gerados pelo próprio projeto com tools/gen_enemy_sfx.py (síntese procedural, só
+biblioteca padrão do Python, sementes fixas; rodar de novo reproduz os mesmos bytes).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma gravação, sample de terceiros ou modelo de IA de áudio foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_enemy_sfx.py

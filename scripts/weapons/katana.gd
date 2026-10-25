@@ -36,18 +36,30 @@ func fire(origin: Vector2) -> void:
 					if _hit_counter >= heal_every:
 						_hit_counter = 0
 						player.heal(1.0)
-		game.fx.play_anim("slash_double" if is_evolved() else "slash", center, width / 30.0, 0.0,
-				Color(1.0, 0.95, 0.8) if is_evolved() else Color.WHITE, 22.0, side < 0.0)
+		_slash_fx(center, side, width)
 	_slash_sound(sides.size())
 
 
-## Corte em camadas: o "shing" metálico (Kenney knifeSlice) e o swish de ar (hy_slash),
-## acima dos acertos (-14 dB). Cortando dos dois lados, só um swish extra mais grave, sem
-## dobrar o volume. A Lâmina do Amanhecer soma um brilho agudo e baixo de sino.
+## Corte: a animação do pacote, um brilho em meia-lua (Alta) e faíscas na ponta. A Lâmina do
+## Amanhecer é dourada, dupla, mais larga e solta pétalas de luz.
+func _slash_fx(center: Vector2, side: float, width: float) -> void:
+	var fx := game.fx
+	var dawn := is_evolved()
+	fx.play_anim("slash_double" if dawn else "slash", center, width / 30.0, 0.0,
+			Color(1.0, 0.9, 0.6) if dawn else Color.WHITE, 22.0, side < 0.0)
+	if FxLayer.wfx == 0:
+		return
+	var tip := center + Vector2(side * width * 0.45, 0.0)
+	fx.sparks(tip, Vector2(side, -0.4), fx_hot(), 2 + 2 * FxLayer.wfx, 120.0, 0.6, 0.16)
+	fx.flash(center, width * 0.5, Color(fx_color(), 0.55), 0.1)
+	if dawn:
+		fx.play_anim("slash_circular", center, width / 34.0, 0.0, Color(1.0, 0.8, 0.4, 0.8), 24.0, side < 0.0, true)
+		fx.motes(center, Color(1.0, 0.82, 0.4), 2 * FxLayer.wfx, width * 0.4, 30.0)
+
+
+## Corte em camadas (WeaponSfx "katana"/"dawn_blade"): o "shing" metálico e o swish de ar,
+## acima dos acertos. Cortando dos dois lados, só um swish extra mais grave, sem dobrar.
 func _slash_sound(sides: int) -> void:
-	AudioManager.play("katana", 1.0, 0.06, -3.0)
-	AudioManager.play("slash", 1.0, 0.08, -4.0)
+	WeaponSfx.launch(self)
 	if sides >= 2:
-		AudioManager.play("whoosh", 0.88, 0.05, -10.0)
-	if is_evolved():
-		AudioManager.play("bell", 2.2, 0.04, -16.0)
+		WeaponSfx.play("katana_back")

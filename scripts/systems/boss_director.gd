@@ -3,6 +3,12 @@ extends Node2D
 ## Chefes (plano 6.3): barra de vida no topo, nome em letreiro, 2–3 padrões avisados
 ## no chão (≥ 0,7 s), fases por vida (Kuroe, Izanami) e fúria (Oni Vermelho).
 ## O chefe fica no array do EnemyManager (as armas acertam nele), mas é movido aqui.
+## A apresentação (portal, aura, fúria, avisos animados, morte épica) fica em BossFx; a faixa
+## com o nome em kanji e a barra de vida, no painel do chefe da HUD (scripts/ui/boss_panel.gd).
+##
+## Depuração (depois de "--"): --force-boss=ID chama o chefe aos --force-at=S segundos (padrão 3)
+## e --force-elite=ID põe uma elite perto da guardiã no mesmo instante. Mudam a partida: só
+## para capturas e testes manuais.
 
 const MOVE_TIME := 1.7
 const ENTRY_DISTANCE := 1.15
@@ -10,11 +16,31 @@ const ENTRY_DISTANCE := 1.15
 var game: HyakkiGame
 var bosses: Array[Dictionary] = []
 
+var fx: BossFx
+
 var _near: Array[int] = []
+var _force: Dictionary = {}
+
+
+func _ready() -> void:
+	fx = BossFx.new()
+	fx.director = self
+	add_child(fx)
+	for arg: String in OS.get_cmdline_user_args():
+		var value := arg.get_slice("=", 1)
+		if arg.begins_with("--force-boss="):
+			_force["boss"] = StringName(value)
+		elif arg.begins_with("--force-elite="):
+			_force["elite"] = StringName(value)
+		elif arg.begins_with("--force-at="):
+			_force["at"] = value.to_float()
 
 
 func reset() -> void:
 	bosses.clear()
+	if fx:
+		fx.reset()
+	_force.erase("done")
 
 
 func active_count() -> int:
@@ -42,14 +68,41 @@ func spawn(id: StringName) -> void:
 			"pattern": 0, "phase": -1, "sub": 0.0, "dir": Vector2.ZERO, "line": [],
 			"spiral_angle": 0.0, "decoys": [], "enraged": false}
 	bosses.append(boss)
-	game.hud.show_boss(tr("boss.%s.name" % id), tr("boss.%s.line" % id))
+	game.hud.show_boss(tr("boss.%s.name" % id), tr("boss.%s.line" % id), panel_info(data))
+	fx.on_spawn(boss)
 	AudioManager.play_music(String(data.get("music", "boss_a")))
 	AudioManager.play("alert3")
 	AudioManager.play("taiko")
 	Events.boss_spawned.emit(id)
 
 
+## Dados do painel do chefe: kanji, cor e marcas das fases/fúria na barra.
+static func panel_info(data: Dictionary) -> Dictionary:
+	var marks: Array[float] = []
+	for phase: Variant in data.get("phases", []):
+		var below := float((phase as Dictionary)["below"])
+		if below < 1.0:
+			marks.append(below)
+	var enrage: Dictionary = data.get("enrage", {})
+	if not enrage.is_empty():
+		marks.append(float(enrage["below"]))
+	return {"kanji": String(data.get("kanji", "")), "color": BossFx.aura_color(data), "marks": marks,
+			"invincible": bool(data.get("invincible", false))}
+
+
+func _step_force() -> void:
+	if _force.is_empty() or _force.has("done") or GameClock.game_time < float(_force.get("at", 3.0)):
+		return
+	_force["done"] = true
+	if _force.has("elite"):
+		var at := game.player.sim_pos + Vector2(70.0, -20.0)
+		game.enemies.spawn(_force["elite"], at, game.enemy_hp_mult() * 20.0, game.enemy_damage_mult(), true)
+	if _force.has("boss"):
+		spawn(_force["boss"])
+
+
 func step(dt: float) -> void:
+	_step_force()
 	for k: int in range(bosses.size() - 1, -1, -1):
 		var boss := bosses[k]
 		var i := int(boss["index"])
@@ -57,11 +110,15 @@ func step(dt: float) -> void:
 		if enemies.alive[i] == 0 or enemies.type_ids[enemies.kind[i]] != StringName(boss["id"]):
 			# Sai da lista antes: on_boss_defeated volta à música da fase se não restar chefe.
 			bosses.remove_at(k)
+			if enemies.type_ids[enemies.kind[i]] == StringName(boss["id"]) and enemies.decoy[i] == 0:
+				fx.on_dead(boss)
 			_on_dead(boss)
 			continue
 		_update_phase(boss)
 		_step_boss(boss, dt)
-	game.hud.update_boss(_bar_fraction())
+		# Pose só de desenho: prepara com a folha de ataque.
+		enemies.pose[i] = 1 if String(boss["state"]) == "windup" else 0
+	game.hud.update_boss(_bar_fraction(), not bosses.is_empty() and bool(bosses[0]["enraged"]))
 
 
 func _bar_fraction() -> float:
@@ -98,18 +155,21 @@ func _update_phase(boss: Dictionary) -> void:
 				game.hud.toast(tr("boss.%s.phase%d" % [boss["id"], phase]))
 				game.fx.add_ring(game.enemies.pos[i], 140.0, Color(0.7, 0.6, 1.0))
 				game.shake(3.0)
+				fx.on_phase(boss)
 	var enrage: Dictionary = data.get("enrage", {})
 	if not enrage.is_empty() and not bool(boss["enraged"]) and fraction <= float(enrage["below"]):
 		boss["enraged"] = true
 		game.hud.toast(tr("boss.enraged"))
 		AudioManager.play("alert")
+		fx.on_enrage(boss)
 
 
 func _speed(boss: Dictionary) -> float:
 	var s := float(boss["data"].get("speed", 30))
 	if bool(boss["enraged"]):
 		s *= float(boss["data"]["enrage"].get("speed", 1.5))
-	return s * game.enemies.speed_mult
+	# Chefes também atolam nas superfícies lentas (grandes resistem um pouco).
+	return s * game.enemies.speed_mult * SurfaceSystem.boss_mult(game, int(boss["index"]))
 
 
 func _step_boss(boss: Dictionary, dt: float) -> void:
@@ -352,16 +412,3 @@ func _on_dead(boss: Dictionary) -> void:
 		if game.enemies.alive[int(entry[0])] == 1:
 			game.enemies.despawn(int(entry[0]))
 	game.on_boss_defeated(id, at)
-
-
-func _process(_delta: float) -> void:
-	queue_redraw()
-
-
-func _draw() -> void:
-	for boss: Dictionary in bosses:
-		var line: Array = boss["line"]
-		if line.size() == 2:
-			var pulse := 0.5 + 0.5 * sin(GameClock.game_time * 20.0)
-			draw_line(line[0], line[1], Color(1.0, 0.2, 0.2, 0.35 + 0.3 * pulse), 10.0)
-			draw_line(line[0], line[1], Color(1.0, 0.6, 0.6, 0.6), 1.0)

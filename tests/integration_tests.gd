@@ -7,10 +7,10 @@ extends Node
 ## mexe no perfil ou no settings.cfg do jogador.
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
-## Altura do conteúdo das Opções na grade antiga (1 opção por linha, tema do jogo, 678x305).
-const OLD_OPTIONS_HEIGHT := 618.0
 ## Layout e rolagem da Loja (separado para o arquivo caber no limite de linhas do gdlint).
 const ShopLayoutTests := preload("res://tests/shop_layout_tests.gd")
+## Guardiões, Opções, Diário e o "voltar" em 678x305 e 480x270 nos 11 idiomas.
+const MenusLayoutTests := preload("res://tests/menus_layout_tests.gd")
 const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 ## Raios do céu do Raijin (separado para o arquivo caber no limite de linhas do gdlint).
 const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
@@ -22,6 +22,8 @@ const HeroHandTests := preload("res://tests/hero_hand_tests.gd")
 const SanctuaryLayoutTests := preload("res://tests/sanctuary_layout_tests.gd")
 ## Som das armas: prioridade de canais, Katana em camadas e farfalhar da Ofuda.
 const WeaponAudioTests := preload("res://tests/weapon_audio_tests.gd")
+## Efeitos das armas: cotas por nível, troca ao vivo, rastros, brilho, golpe e determinismo.
+const WeaponFxTests := preload("res://tests/weapon_fx_tests.gd")
 ## Sequência de morte: queda, aviso, reviver, bot, desistir e restauração.
 const DeathSequenceTests := preload("res://tests/death_sequence_tests.gd")
 ## Resultados: colunas, armas, conquistas, dobrar ryō e recorde em cada idioma.
@@ -32,6 +34,8 @@ const TitleLayoutTests := preload("res://tests/title_layout_tests.gd")
 const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 ## Explosão atrás do baú da fase: abertura, centro, fim sozinho, pular e novo baú.
 const ChestBurstTests := preload("res://tests/chest_burst_tests.gd")
+## Telas de nova habilidade e do baú: fluxo, qualidade gráfica e layout em cada idioma.
+const LevelChestTests := preload("res://tests/level_chest_tests.gd")
 ## Desbloqueios de conquistas reaplicados em saves antigos (Onikiri do Oni Vermelho).
 const AchievementRewardTests := preload("res://tests/achievement_reward_tests.gd")
 ## Fundo dos menus (Hyakki Yagyō): camadas, procissão na crista, guardiã escolhida e tamanhos.
@@ -42,6 +46,14 @@ const PauseMenuTests := preload("res://tests/pause_menu_tests.gd")
 const CreditsScreenTests := preload("res://tests/credits_screen_tests.gd")
 ## Qualidade gráfica: opção, troca ao vivo, rebaixamento adaptativo, Opções e pausa.
 const GfxQualityTests := preload("res://tests/gfx_quality_tests.gd")
+## Inimigos, onis, chefes e guardiã (efeitos, painel do chefe, determinismo por nível).
+const EnemyFxTests := preload("res://tests/enemy_fx_tests.gd")
+## Clima dinâmico: ciclo determinístico, lama (lentidão), relâmpagos, orçamentos e troca ao vivo.
+const WeatherTests := preload("res://tests/weather_tests.gd")
+## Superfícies lentas: todos os tipos × guardiã, inimigo, elite e chefe; recuperação até 1.0.
+const SurfaceTests := preload("res://tests/surface_tests.gd")
+## Ícones de habilidade (arquivos, pintor da HUD, 3 níveis): tests/skill_icon_tests.gd.
+const SkillIconTests := preload("res://tests/skill_icon_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -73,11 +85,12 @@ func _ready() -> void:
 	await OnikiriTests.new().run(self, _check)
 	await _test_hero_hand()
 	await WeaponAudioTests.new().run(self, _check)
+	await WeaponFxTests.new().run(self, _check)
 	await _test_sound_options()
-	await _test_options_layout()
 	await _test_kami_layout()
 	await ChestBurstTests.new().run(self, _check)
-	await _test_hero_screen_layout()
+	await LevelChestTests.new().run(self, _check)
+	await MenusLayoutTests.new().run(self, _check)
 	await SanctuaryLayoutTests.new().run(self, _check)
 	await ResultsLayoutTests.new().run(self, _check)
 	await TitleLayoutTests.new().run(self, _check)
@@ -85,6 +98,11 @@ func _ready() -> void:
 	await MenuBackdropTests.new().run(self, _check)
 	await PauseMenuTests.new().run(self, _check)
 	await GfxQualityTests.new().run(self, _check)
+	await (load("res://tests/terrain_tests.gd") as GDScript).new().run(self, _check)
+	await EnemyFxTests.new().run(self, _check)
+	await WeatherTests.new().run(self, _check)
+	await SurfaceTests.new().run(self, _check)
+	await SkillIconTests.new().run(self, _check)
 	await CreditsScreenTests.new().run(self, _check)
 	await _test_shop_layout()
 	await _test_shop_scroll()
@@ -197,55 +215,7 @@ func _kami_controls_in(node: Node, out: Array[Control]) -> void:
 		_kami_controls_in(child, out)
 
 
-# --- Tela de guardiões ------------------------------------------------------------
-
-## Cada guardião (bloqueado e desbloqueado) em cada idioma: a grade, o painel de texto,
-## "Escolher fase" e "voltar" ficam inteiramente dentro de 678x305 (o viewport do jogo).
-func _test_hero_screen_layout() -> void:
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305))
-	var all_heroes: Array = []
-	for id: StringName in DB.ids("heroes"):
-		all_heroes.append(String(id))
-	var original_unlocked: Array = (SaveManager.data["unlocked"]["heroes"] as Array).duplicate()
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		for unlock_all: bool in [false, true]:
-			SaveManager.data["unlocked"]["heroes"] = all_heroes.duplicate() if unlock_all else original_unlocked.duplicate()
-			var app := App.new()
-			add_child(app)
-			await get_tree().process_frame
-			app.go(&"heroes")
-			await get_tree().process_frame
-			await get_tree().process_frame
-			var screen := (app.get("_screens") as Dictionary)[&"heroes"] as Control
-			var grid := screen.get("_grid") as Control
-			_check(grid.get_child_count() == DB.ids("heroes").size(),
-					"%s: a grade mostra todos os guardiões" % lang)
-			for id: StringName in DB.ids("heroes"):
-				screen.call("_select", id)
-				await get_tree().process_frame
-				var state := "%s, %s, %s" % [lang, id, "desbloqueado" if MetaProgress.is_hero_unlocked(id) else "bloqueado"]
-				var controls: Array[Control] = [screen.get("_go") as Control, screen.get("_cosmetic") as Control]
-				_buttons_in(screen, controls)
-				for control: Control in controls:
-					_check(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
-							"%s: %s dentro da tela (%s)" % [state, control.get_class(), control.get_path()])
-				var info := screen.get("_info") as Control
-				_check(view.encloses(info.get_parent().get_global_rect()),
-						"%s: o painel de texto dentro da tela" % state)
-			app.queue_free()
-			await get_tree().process_frame
-	SaveManager.data["unlocked"]["heroes"] = original_unlocked
-	Locale.set_language("pt_BR", false)
-
-
-## Coleta os botões (BaseButton) de uma árvore de controles.
-func _buttons_in(node: Node, out: Array[Control]) -> void:
-	for child: Node in node.get_children():
-		if child is BaseButton and not out.has(child):
-			out.append(child as Control)
-		_buttons_in(child, out)
-
+# --- Guardiões, Opções e Diário: tests/menus_layout_tests.gd ------------------------
 
 # --- Loja -------------------------------------------------------------------------
 
@@ -657,100 +627,6 @@ func _test_sound_options() -> void:
 		Settings.set_value(key, true)
 
 
-## Opções compactas em cada idioma, no viewport 678x305 com o tema do jogo: todas as opções
-## e botões existem ("opt_<chave>"), nenhum controle passa da largura nem encosta em outro,
-## cada um tem altura de toque e é alcançável pela rolagem, os rótulos quebram linha sem
-## cortar texto e o conteúdo é bem mais baixo que o da grade antiga de 1 opção por linha.
-func _test_options_layout() -> void:
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305))
-	var names := ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds", "hurt_sounds",
-			"joystick_mode", "joystick_side", "vibration", "fps", "colorblind", "reduce_flashes",
-			"damage_numbers", "hp_bar_below", "notifications", "privacy", "restore", "credits",
-			"licenses", "reset", "version"]
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		var host := Control.new()
-		host.size = view.size
-		host.theme = ThemeFactory.build()
-		add_child(host)
-		var screen := (load(OPTIONS_SCREEN) as GDScript).new() as Control
-		host.add_child(screen)
-		await get_tree().process_frame
-		await get_tree().process_frame
-		var scroll := screen.get("_scroll") as ScrollContainer
-		var content := scroll.get_child(0) as Control
-		_check(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
-				and scroll.scroll_deadzone > 0, "%s: Opções rolam só na vertical, com zona morta" % lang)
-		_check(content.size.y < OLD_OPTIONS_HEIGHT * 0.75,
-				"%s: conteúdo das Opções (%.0f px) bem abaixo dos %.0f px antigos" % [lang, content.size.y, OLD_OPTIONS_HEIGHT])
-		_check(content.size.y > scroll.size.y and scroll.get_v_scroll_bar().visible,
-				"%s: o que não cabe rola" % lang)
-		var controls: Array[Control] = []
-		for key: String in names:
-			var control := screen.find_child("opt_%s" % key, true, false) as Control
-			_check(control != null, "%s: Opções têm opt_%s" % [lang, key])
-			if control != null:
-				controls.append(control)
-		var interactive: Array[Control] = []
-		for control: Control in controls:
-			if control is BaseButton or control is Range:
-				interactive.append(control)
-		# Sem rolar: largura, altura de toque e sobreposição.
-		var area := scroll.get_global_rect()
-		for i: int in interactive.size():
-			var a := interactive[i]
-			var rect := a.get_global_rect()
-			_check(rect.position.x >= area.position.x - 0.5 and rect.end.x <= area.end.x + 0.5,
-					"%s: %s não passa da largura" % [lang, a.name])
-			_check(rect.size.y >= 24.0, "%s: %s tem altura de toque (%.0f px)" % [lang, a.name, rect.size.y])
-			for j: int in range(i + 1, interactive.size()):
-				var b := interactive[j]
-				_check(not rect.grow(-0.5).intersects(b.get_global_rect().grow(-0.5)),
-						"%s: %s não encosta em %s" % [lang, a.name, b.name])
-		# Rótulos: quebram linha sem cortar, cabem na largura e não ficam sob um controle.
-		var labels: Array[Label] = []
-		_labels_in(content, labels)
-		for l: Label in labels:
-			var rect := l.get_global_rect()
-			_check(l.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING
-					and (l.autowrap_mode == TextServer.AUTOWRAP_OFF or l.get_line_count() <= l.get_visible_line_count()),
-					"%s: rótulo \"%s\" inteiro, sem cortar" % [lang, l.text])
-			_check(rect.position.x >= area.position.x - 0.5 and rect.end.x <= area.end.x + 0.5,
-					"%s: rótulo \"%s\" dentro da largura" % [lang, l.text])
-			for control: Control in interactive:
-				_check(not rect.grow(-0.5).intersects(control.get_global_rect().grow(-0.5)),
-						"%s: rótulo \"%s\" não fica sob %s" % [lang, l.text, control.name])
-		# Cada controle aparece inteiro rolando até ele.
-		for control: Control in controls:
-			scroll.ensure_control_visible(control)
-			await get_tree().process_frame
-			_check(view.encloses(control.get_global_rect())
-					and scroll.get_global_rect().grow(0.5).encloses(control.get_global_rect()),
-					"%s: %s alcançável pela rolagem" % [lang, control.name])
-		host.queue_free()
-		await get_tree().process_frame
-
-	# Apagar o progresso pede dois toques (no save dos testes).
-	Locale.set_language("pt_BR", false)
-	var host2 := Control.new()
-	host2.size = view.size
-	add_child(host2)
-	var screen2 := (load(OPTIONS_SCREEN) as GDScript).new() as Control
-	host2.add_child(screen2)
-	await get_tree().process_frame
-	var reset := screen2.find_child("opt_reset", true, false) as Button
-	SaveManager.data["ryo"] = 77
-	reset.pressed.emit()
-	_check(reset.text == tr("options.reset_confirm") and SaveManager.ryo() == 77,
-			"Opções: o primeiro toque em apagar só pede confirmação")
-	reset.pressed.emit()
-	_check(reset.text == tr("options.reset_done") and SaveManager.ryo() == 0,
-			"Opções: o segundo toque apaga o progresso")
-	host2.queue_free()
-	await get_tree().process_frame
-
-
-## Espera em tempo real até `condition` valer (ou o tempo acabar).
 func _wait_until(condition: Callable, timeout: float) -> void:
 	var waited := 0.0
 	while not bool(condition.call()) and waited < timeout:
@@ -758,15 +634,6 @@ func _wait_until(condition: Callable, timeout: float) -> void:
 		waited += 0.05
 
 
-func _labels_in(node: Node, out: Array[Label]) -> void:
-	for child: Node in node.get_children():
-		if child is Label and (child as Label).is_visible_in_tree():
-			out.append(child as Label)
-		_labels_in(child, out)
-
-## Reviver por anúncio (17.6): em qualquer modo, inclusive o Desafio Diário, o anúncio
-## recompensado devolve o herói no mesmo instante, sem reiniciar: mesmo tempo, abates, nível
-## e armas. Um segundo reviver não é oferecido. Partida salva durante a morte volta com a oferta.
 func _test_revive_by_ad() -> void:
 	var scene := load(GAME_SCENE) as PackedScene
 	var modes := [

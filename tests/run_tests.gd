@@ -16,6 +16,8 @@ func _initialize() -> void:
 	_test_settings_defaults()
 	_test_journey_geo()
 	_test_gfx_quality()
+	load("res://tests/enemy_fx_tests.gd").run_unit(_check)
+	(load("res://tests/terrain_tests.gd") as GDScript).new().run_unit(_check)
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 

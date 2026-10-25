@@ -15,6 +15,7 @@ func fire(origin: Vector2) -> void:
 	var count := amount()
 	for k: int in range(count):
 		var angle := (k - (count - 1) * 0.5) * SPREAD
-		game.projectiles.spawn(id, "shuriken", origin, aim.rotated(angle) * proj_speed(), damage(),
-				4.0, int(raw("pierce")), duration(), knockback())
-	AudioManager.play("whoosh", 1.3, 0.1, -10.0)
+		game.projectiles.spawn(id, "steel_shuriken" if is_evolved() else "shuriken", origin,
+				aim.rotated(angle) * proj_speed(), damage(), 4.0, int(raw("pierce")), duration(), knockback())
+	game.fx.muzzle(id, origin, aim)
+	WeaponSfx.launch(self)

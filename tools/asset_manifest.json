@@ -67,6 +67,7 @@
     "Actor/Boss/GiantBlueSamurai": "art/bosses/kuroe",
     "Actor/Boss/GiantRedSamurai": "art/bosses/red_samurai",
     "Actor/Boss/SquidRed": "art/bosses/izanami",
+    "Actor/Boss/DragonBlue": "art/bosses/dragon",
     "FX/Attack/SlashCurved": "art/fx/slash_curved",
     "FX/Attack/SlashDoubleCurved": "art/fx/slash_double",
     "FX/Attack/CircularSlash": "art/fx/slash_circular",
@@ -107,6 +108,12 @@
     "Ui/Emote": "art/ui/emote"
   },
   "files": {
+    "Audio/Sounds/Elemental/WaterDrop.wav": "audio/sfx/surf_drop.wav",
+    "Audio/Sounds/Elemental/Bubble2.wav": "audio/sfx/surf_bubble_1.wav",
+    "Audio/Sounds/Elemental/Bubble.wav": "audio/sfx/surf_bubble_0.wav",
+    "Audio/Sounds/Elemental/Water5.wav": "audio/sfx/surf_water_2.wav",
+    "Audio/Sounds/Elemental/Water3.wav": "audio/sfx/surf_water_1.wav",
+    "Audio/Sounds/Elemental/Water2.wav": "audio/sfx/surf_water_0.wav",
     "Ui/Arrow.png": "art/ui/arrow.png",
     "Items/Weapons/Katana/Sprite.png": "art/items/weapons/katana.png",
     "Items/Weapons/Bow/Sprite.png": "art/items/weapons/bow.png",
@@ -184,6 +191,10 @@
     "Audio/Sounds/Voice/Voice5.wav": "audio/sfx/voice5.wav",
     "Audio/Sounds/Ambient/Wind.wav": "audio/ambience/wind.wav",
     "Audio/Sounds/Ambient/Rain.wav": "audio/ambience/rain.wav",
+    "Audio/Sounds/Ambient/Storm.wav": "audio/ambience/storm.wav",
+    "Audio/Sounds/Ambient/Rain2.wav": "audio/ambience/rain2.wav",
+    "Audio/Sounds/Ambient/Rain3.wav": "audio/ambience/rain3.wav",
+    "Audio/Sounds/Ambient/Wind2.wav": "audio/ambience/wind2.wav",
     "LICENSE.txt": "licenses_src/ninja_adventure_LICENSE.txt",
     "README.md": "licenses_src/ninja_adventure_README.md"
   }

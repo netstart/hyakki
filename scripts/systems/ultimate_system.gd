@@ -5,6 +5,13 @@ extends RefCounted
 
 const FULL := 100.0
 const CHARGE_PER_XP := 0.45
+## Cor do golpe por guardiã (clarão, ondas, linhas de velocidade).
+const ULT_COLORS := {
+	"dawn_flash": Color(1.0, 0.9, 0.55), "shadow_clone": Color(0.62, 0.55, 0.95),
+	"kagura": Color(0.6, 1.0, 0.75), "temple_bell": Color(1.0, 0.8, 0.4),
+	"arrow_rain": Color(1.0, 0.85, 0.45), "oni_awakening": Color(1.0, 0.32, 0.28),
+	"living_forge": Color(1.0, 0.55, 0.25),
+}
 
 var game: HyakkiGame
 var charge: float = 0.0
@@ -63,6 +70,7 @@ func step(dt: float) -> void:
 					_rain_sound = 0.16
 					AudioManager.play("whoosh2", 1.5, 0.12, -14.0)
 				game.fx.play_anim("spark", at, 0.8)
+				game.fx.sparks(at - Vector2(12, 48), Vector2(0.25, 1.0), Color(1.0, 0.9, 0.55), 1, 520.0, 0.02, 0.09)
 
 
 func activate() -> bool:
@@ -80,27 +88,20 @@ func activate() -> bool:
 			game.areas.blast(&"ultimate", at, 420.0,
 					float(ult.get("base_damage", 30)) * float(ult.get("damage_mult", 3.0)) * might, 120.0)
 			game.hud.flash_screen(Color(1.0, 0.95, 0.7))
-			AudioManager.play("explosion", 0.8, 0.0, -6.0)
 		"shadow_clone":
 			player.clone_time = float(ult.get("duration", 8.0))
 			game.fx.play_anim("smoke", player.clone_position(), 1.2)
-			AudioManager.play("whoosh2", 0.7, 0.0, -6.0)
 		"kagura":
 			player.heal(player.max_hp() * float(ult.get("heal_pct", 0.5)))
 			game.enemies.push_from(at, float(ult.get("radius", 160)), float(ult.get("force", 420)))
 			game.fx.add_ring(at, float(ult.get("radius", 160)), Color(0.7, 1.0, 0.8))
-			AudioManager.play("heal", 1.0, 0.0, -4.0)
-			AudioManager.play("wings", 0.9, 0.0, -8.0)
 		"temple_bell":
 			game.enemies.push_from(at, float(ult.get("radius", 220)), float(ult.get("force", 600)))
 			game.areas.blast(&"ultimate", at, float(ult.get("radius", 220)),
 					float(ult.get("base_damage", 40)) * might, 0.0)
 			game.fx.add_ring(at, float(ult.get("radius", 220)), Color(1.0, 0.85, 0.4))
-			game.shake(4.0)
-			AudioManager.play("j_temple_bell")
 		"arrow_rain":
 			rain_time = float(ult.get("duration", 6.0))
-			AudioManager.play("launch", 0.9, 0.0, -4.0)
 		"oni_awakening":
 			# Despertar Oni: onda vermelha que empurra e fere, e poder extra por alguns segundos.
 			game.enemies.push_from(at, float(ult.get("radius", 150)), float(ult.get("force", 260)))
@@ -109,19 +110,32 @@ func activate() -> bool:
 			game.fx.add_ring(at, float(ult.get("radius", 150)), Color(1.0, 0.3, 0.25))
 			game.fx.play_anim("boost", at, 1.2, 0.0, Color(1.0, 0.35, 0.3))
 			forge_time = float(ult.get("duration", 6.0))
-			game.shake(3.0)
-			AudioManager.play("taiko")
 		"living_forge":
 			forge_time = float(ult.get("duration", 10.0))
 			game.fx.play_anim("boost", at, 1.2, 0.0, Color(1.0, 0.6, 0.3))
-			AudioManager.play("fire", 0.8, 0.0, -4.0)
-	game.fx.play_anim("circle_spark", at, 3.0)
-	AudioManager.play("magic4", 1.0, 0.0, 0.0)
+	_cinematic(String(ult.get("type", "")), at)
 	Settings.vibrate(120)
 	# Reacende a lanterna apagada por Kuroe.
 	game.lantern.extinguished = false
 	Events.ultimate_used.emit()
 	return true
+
+
+## Momento cinematográfico (só desenho e som; a simulação não espera nem desacelera):
+## clarão, faixas de cinema, ondas com distorção (Alta), câmera lenta só dos efeitos, tremor,
+## o impacto comum "ult" e a assinatura sonora de cada guardiã; a música abaixa um pouco.
+func _cinematic(type: String, at: Vector2) -> void:
+	var color: Color = ULT_COLORS.get(type, Color(1.0, 0.9, 0.6))
+	# Círculos de luz em modo aditivo só na Alta; sem brilho, um só e menor (não vira um disco chapado).
+	if FxLayer.glow:
+		game.fx.play_anim("circle_spark", at, 3.0, 0.0, color.lerp(Color.WHITE, 0.4), 16.0, false, true)
+		game.fx.play_anim("circle_spark2", at, 4.0, 0.0, color, 14.0, false, true)
+	else:
+		game.fx.play_anim("circle_spark", at, 2.0, 0.0, color.lerp(Color.WHITE, 0.6), 16.0)
+	game.fx.cinematic(at, color)
+	WeaponSfx.play("ult")
+	WeaponSfx.play("ult_" + type)
+	AudioManager.duck(5.0, 1.2)
 
 
 func damage_bonus() -> float:

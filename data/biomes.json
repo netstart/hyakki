@@ -1,0 +1,2916 @@
+{
+ "_doc": "Biomas das fases (scripts/game/terrain_layout.gd, terrain_art.gd, shaders/terrain_ground.gdshader). sprites: nome -> [tileset, x, y, w, h] em tiles de 16 px. materials: 0 = base; 1 = faixa alta do ruído n1; 2 = faixa baixa do n1; 3 = faixa do n2 + caminhos (canal R da máscara); 4 = calçamento (canal G); 5 = especial (canal B: lava/água). band: [campo (0 = n1, 1 = n2, -1 = só máscara), de, até]. rim: contorno da borda (cor, força). tint: multiplica a cor do tile. scatter: decoração SEM colisão por chunk (na densidade máxima; escala com decor_density).",
+ "sprites": {
+  "tree_round": [
+   "nature",
+   0,
+   0,
+   2,
+   2
+  ],
+  "pine": [
+   "nature",
+   2,
+   0,
+   2,
+   2
+  ],
+  "dead_tree": [
+   "nature",
+   4,
+   0,
+   2,
+   2
+  ],
+  "oak_roots": [
+   "nature",
+   6,
+   0,
+   2,
+   2
+  ],
+  "pine_cluster": [
+   "nature",
+   0,
+   2,
+   4,
+   3
+  ],
+  "round_cluster": [
+   "nature",
+   4,
+   2,
+   4,
+   3
+  ],
+  "dead_cluster": [
+   "nature",
+   0,
+   5,
+   4,
+   3
+  ],
+  "stump_big": [
+   "nature",
+   0,
+   8,
+   2,
+   2
+  ],
+  "stump_big2": [
+   "nature",
+   2,
+   8,
+   2,
+   2
+  ],
+  "stump": [
+   "nature",
+   4,
+   8,
+   1,
+   1
+  ],
+  "log_small": [
+   "nature",
+   5,
+   8,
+   1,
+   1
+  ],
+  "twig_a": [
+   "nature",
+   4,
+   9,
+   1,
+   1
+  ],
+  "twig_b": [
+   "nature",
+   5,
+   9,
+   1,
+   1
+  ],
+  "small_tree": [
+   "nature",
+   6,
+   8,
+   2,
+   2
+  ],
+  "hay_round": [
+   "nature",
+   9,
+   8,
+   1,
+   1
+  ],
+  "pumpkin": [
+   "nature",
+   9,
+   9,
+   1,
+   1
+  ],
+  "bush_sq": [
+   "nature",
+   10,
+   8,
+   1,
+   1
+  ],
+  "bush_ball": [
+   "nature",
+   10,
+   9,
+   1,
+   1
+  ],
+  "bamboo": [
+   "nature",
+   11,
+   8,
+   1,
+   2
+  ],
+  "sakura": [
+   "nature",
+   14,
+   0,
+   2,
+   2
+  ],
+  "tree_green": [
+   "nature",
+   16,
+   0,
+   2,
+   2
+  ],
+  "tree_yellow": [
+   "nature",
+   18,
+   0,
+   2,
+   2
+  ],
+  "sakura_cluster": [
+   "nature",
+   12,
+   2,
+   4,
+   3
+  ],
+  "green_cluster": [
+   "nature",
+   16,
+   2,
+   4,
+   3
+  ],
+  "green_cluster2": [
+   "nature",
+   20,
+   2,
+   4,
+   3
+  ],
+  "rocks_brown": [
+   "nature",
+   12,
+   5,
+   4,
+   3
+  ],
+  "rocks_gray": [
+   "nature",
+   16,
+   5,
+   4,
+   3
+  ],
+  "bamboo_shoot": [
+   "nature",
+   12,
+   9,
+   1,
+   1
+  ],
+  "rock_brown": [
+   "nature",
+   13,
+   8,
+   2,
+   2
+  ],
+  "rock_brown_s": [
+   "nature",
+   15,
+   9,
+   1,
+   1
+  ],
+  "rock_gray": [
+   "nature",
+   16,
+   8,
+   2,
+   2
+  ],
+  "rock_gray_s": [
+   "nature",
+   18,
+   9,
+   1,
+   1
+  ],
+  "bush_a": [
+   "nature",
+   0,
+   10,
+   1,
+   1
+  ],
+  "bush_b": [
+   "nature",
+   1,
+   10,
+   1,
+   1
+  ],
+  "bush_c": [
+   "nature",
+   2,
+   10,
+   1,
+   1
+  ],
+  "grass_a": [
+   "nature",
+   3,
+   10,
+   1,
+   1
+  ],
+  "grass_b": [
+   "nature",
+   4,
+   10,
+   1,
+   1
+  ],
+  "grass_c": [
+   "nature",
+   5,
+   10,
+   1,
+   1
+  ],
+  "bush_d": [
+   "nature",
+   6,
+   10,
+   1,
+   1
+  ],
+  "grass_d": [
+   "nature",
+   7,
+   10,
+   1,
+   1
+  ],
+  "fern_a": [
+   "nature",
+   8,
+   10,
+   1,
+   1
+  ],
+  "grass_e": [
+   "nature",
+   9,
+   10,
+   1,
+   1
+  ],
+  "bush_e": [
+   "nature",
+   10,
+   10,
+   1,
+   1
+  ],
+  "sunflower": [
+   "nature",
+   0,
+   11,
+   1,
+   1
+  ],
+  "sunflower2": [
+   "nature",
+   1,
+   11,
+   1,
+   1
+  ],
+  "clover": [
+   "nature",
+   2,
+   11,
+   1,
+   1
+  ],
+  "red_flower": [
+   "nature",
+   3,
+   11,
+   1,
+   1
+  ],
+  "fern_b": [
+   "nature",
+   4,
+   11,
+   1,
+   1
+  ],
+  "fern_c": [
+   "nature",
+   5,
+   11,
+   1,
+   1
+  ],
+  "white_flower": [
+   "nature",
+   6,
+   11,
+   1,
+   1
+  ],
+  "tall_grass": [
+   "nature",
+   7,
+   11,
+   1,
+   1
+  ],
+  "fern_d": [
+   "nature",
+   8,
+   11,
+   1,
+   1
+  ],
+  "fern_e": [
+   "nature",
+   9,
+   11,
+   1,
+   1
+  ],
+  "boulder_blue": [
+   "nature",
+   0,
+   12,
+   2,
+   2
+  ],
+  "crystal_teal": [
+   "nature",
+   6,
+   12,
+   1,
+   1
+  ],
+  "stone_blue": [
+   "nature",
+   7,
+   12,
+   1,
+   1
+  ],
+  "pebbles_gray": [
+   "nature",
+   11,
+   12,
+   1,
+   1
+  ],
+  "grass_gray": [
+   "nature",
+   8,
+   13,
+   1,
+   1
+  ],
+  "grass_gray_s": [
+   "nature",
+   9,
+   13,
+   1,
+   1
+  ],
+  "stone_gray": [
+   "nature",
+   11,
+   13,
+   1,
+   1
+  ],
+  "plant_orange": [
+   "nature",
+   0,
+   14,
+   1,
+   1
+  ],
+  "plant_teal": [
+   "nature",
+   1,
+   14,
+   1,
+   1
+  ],
+  "plant_purple": [
+   "nature",
+   2,
+   14,
+   1,
+   1
+  ],
+  "plant_green": [
+   "nature",
+   3,
+   14,
+   1,
+   1
+  ],
+  "big_sakura": [
+   "nature",
+   0,
+   18,
+   3,
+   3
+  ],
+  "big_green": [
+   "nature",
+   3,
+   18,
+   3,
+   3
+  ],
+  "big_white": [
+   "nature",
+   6,
+   18,
+   3,
+   3
+  ],
+  "big_autumn": [
+   "nature",
+   9,
+   18,
+   3,
+   3
+  ],
+  "twig_c": [
+   "nature",
+   12,
+   11,
+   1,
+   1
+  ],
+  "twig_d": [
+   "nature",
+   13,
+   11,
+   1,
+   1
+  ],
+  "twig_e": [
+   "nature",
+   12,
+   12,
+   1,
+   1
+  ],
+  "twig_f": [
+   "nature",
+   13,
+   12,
+   1,
+   1
+  ],
+  "log_end": [
+   "nature",
+   12,
+   13,
+   1,
+   1
+  ],
+  "log_end_moss": [
+   "nature",
+   13,
+   13,
+   1,
+   1
+  ],
+  "log_fallen": [
+   "nature",
+   12,
+   14,
+   1,
+   2
+  ],
+  "log_fallen_moss": [
+   "nature",
+   13,
+   14,
+   1,
+   2
+  ],
+  "boulder_brown": [
+   "nature",
+   15,
+   10,
+   2,
+   2
+  ],
+  "rockwall_brown": [
+   "nature",
+   17,
+   10,
+   4,
+   3
+  ],
+  "rockpillar_brown": [
+   "nature",
+   21,
+   10,
+   2,
+   3
+  ],
+  "rocklet_b1": [
+   "nature",
+   17,
+   13,
+   1,
+   1
+  ],
+  "rocklet_b2": [
+   "nature",
+   18,
+   13,
+   1,
+   1
+  ],
+  "rocklet_b3": [
+   "nature",
+   19,
+   13,
+   1,
+   1
+  ],
+  "boulder_gray": [
+   "nature",
+   15,
+   14,
+   2,
+   2
+  ],
+  "rockwall_gray": [
+   "nature",
+   17,
+   14,
+   4,
+   3
+  ],
+  "rockpillar_gray": [
+   "nature",
+   21,
+   14,
+   2,
+   3
+  ],
+  "boulder_gray2": [
+   "nature",
+   15,
+   16,
+   2,
+   2
+  ],
+  "rocklet_g1": [
+   "nature",
+   17,
+   17,
+   1,
+   1
+  ],
+  "rocklet_g2": [
+   "nature",
+   18,
+   17,
+   1,
+   1
+  ],
+  "rocklet_g3": [
+   "nature",
+   19,
+   17,
+   1,
+   1
+  ],
+  "sand_pebbles": [
+   "nature",
+   15,
+   18,
+   1,
+   1
+  ],
+  "sand_pebbles2": [
+   "nature",
+   16,
+   18,
+   1,
+   1
+  ],
+  "sand_pebbles3": [
+   "nature",
+   17,
+   18,
+   1,
+   1
+  ],
+  "sand_pebbles4": [
+   "nature",
+   18,
+   18,
+   1,
+   1
+  ],
+  "house_orange": [
+   "house",
+   0,
+   0,
+   4,
+   3
+  ],
+  "house_beige": [
+   "house",
+   4,
+   0,
+   4,
+   3
+  ],
+  "house_orange2": [
+   "house",
+   8,
+   0,
+   4,
+   3
+  ],
+  "house_redtile": [
+   "house",
+   12,
+   0,
+   4,
+   3
+  ],
+  "shop_blue": [
+   "house",
+   16,
+   0,
+   3,
+   3
+  ],
+  "izakaya": [
+   "house",
+   19,
+   0,
+   4,
+   3
+  ],
+  "house_round": [
+   "house",
+   23,
+   0,
+   3,
+   3
+  ],
+  "house_wood": [
+   "house",
+   26,
+   0,
+   3,
+   3
+  ],
+  "torii": [
+   "house",
+   0,
+   5,
+   3,
+   2
+  ],
+  "dome_hut": [
+   "house",
+   0,
+   8,
+   3,
+   3
+  ],
+  "straw_hut": [
+   "house",
+   3,
+   8,
+   3,
+   3
+  ],
+  "pillar": [
+   "house",
+   0,
+   15,
+   1,
+   3
+  ],
+  "statue_eye": [
+   "house",
+   1,
+   15,
+   2,
+   3
+  ],
+  "buddha_orb": [
+   "house",
+   3,
+   15,
+   2,
+   2
+  ],
+  "buddha": [
+   "house",
+   5,
+   15,
+   2,
+   2
+  ],
+  "fox_statue": [
+   "house",
+   7,
+   15,
+   1,
+   2
+  ],
+  "frog_statue": [
+   "house",
+   3,
+   17,
+   2,
+   2
+  ],
+  "ninja_statue": [
+   "house",
+   5,
+   17,
+   2,
+   2
+  ],
+  "pillar_block": [
+   "house",
+   7,
+   17,
+   1,
+   2
+  ],
+  "pillar_moss": [
+   "house",
+   0,
+   19,
+   1,
+   3
+  ],
+  "statue_eye_moss": [
+   "house",
+   1,
+   19,
+   2,
+   3
+  ],
+  "buddha_moss": [
+   "house",
+   5,
+   19,
+   2,
+   2
+  ],
+  "fox_moss": [
+   "house",
+   7,
+   19,
+   1,
+   2
+  ],
+  "frog_moss": [
+   "house",
+   3,
+   21,
+   2,
+   2
+  ],
+  "basket_fish": [
+   "house",
+   16,
+   13,
+   1,
+   1
+  ],
+  "basket_veg": [
+   "house",
+   17,
+   13,
+   1,
+   1
+  ],
+  "basket_fruit": [
+   "house",
+   18,
+   13,
+   1,
+   1
+  ],
+  "barrel": [
+   "house",
+   16,
+   15,
+   1,
+   1
+  ],
+  "barrel_open": [
+   "house",
+   17,
+   15,
+   1,
+   1
+  ],
+  "barrel_b": [
+   "house",
+   18,
+   15,
+   1,
+   1
+  ],
+  "stall_a": [
+   "house",
+   16,
+   16,
+   3,
+   2
+  ],
+  "stall_b": [
+   "house",
+   19,
+   16,
+   3,
+   2
+  ],
+  "banner_red": [
+   "house",
+   23,
+   20,
+   1,
+   2
+  ],
+  "banner_green": [
+   "house",
+   24,
+   20,
+   1,
+   2
+  ],
+  "banner_gold": [
+   "house",
+   25,
+   20,
+   1,
+   2
+  ],
+  "stone_arch": [
+   "house",
+   29,
+   20,
+   4,
+   3
+  ],
+  "toro": [
+   "element",
+   0,
+   5,
+   1,
+   2
+  ],
+  "cart": [
+   "element",
+   0,
+   3,
+   2,
+   2
+  ],
+  "cart_loaded": [
+   "element",
+   2,
+   3,
+   2,
+   2
+  ],
+  "laundry": [
+   "element",
+   11,
+   2,
+   4,
+   2
+  ],
+  "hay_bale": [
+   "element",
+   12,
+   4,
+   1,
+   2
+  ],
+  "grave_a": [
+   "element",
+   4,
+   2,
+   1,
+   1
+  ],
+  "grave_b": [
+   "element",
+   5,
+   2,
+   1,
+   1
+  ],
+  "grave_cross": [
+   "element",
+   3,
+   2,
+   1,
+   1
+  ],
+  "pot": [
+   "element",
+   4,
+   0,
+   1,
+   1
+  ],
+  "bucket": [
+   "element",
+   4,
+   1,
+   1,
+   1
+  ],
+  "notice_board": [
+   "element",
+   11,
+   1,
+   4,
+   1
+  ],
+  "wood_sign": [
+   "element",
+   1,
+   5,
+   1,
+   2
+  ],
+  "well": [
+   "desert",
+   0,
+   3,
+   2,
+   2
+  ],
+  "skull_horn": [
+   "desert",
+   16,
+   11,
+   1,
+   1
+  ],
+  "bones_a": [
+   "desert",
+   17,
+   11,
+   1,
+   1
+  ],
+  "bones_b": [
+   "desert",
+   18,
+   11,
+   1,
+   1
+  ],
+  "bone": [
+   "desert",
+   19,
+   11,
+   1,
+   1
+  ],
+  "lion_statue": [
+   "desert",
+   0,
+   6,
+   2,
+   3
+  ],
+  "ruin_house": [
+   "village_abandoned",
+   0,
+   0,
+   4,
+   3
+  ],
+  "ruin_grave": [
+   "village_abandoned",
+   8,
+   0,
+   3,
+   3
+  ],
+  "ruin_statue": [
+   "village_abandoned",
+   0,
+   3,
+   2,
+   3
+  ],
+  "ruin_pillar": [
+   "village_abandoned",
+   2,
+   3,
+   1,
+   3
+  ],
+  "ruin_rock": [
+   "village_abandoned",
+   3,
+   4,
+   1,
+   2
+  ],
+  "moss_frog": [
+   "village_abandoned",
+   9,
+   5,
+   2,
+   2
+  ],
+  "moss_cluster": [
+   "village_abandoned",
+   0,
+   6,
+   4,
+   3
+  ],
+  "moss_tree": [
+   "village_abandoned",
+   4,
+   6,
+   2,
+   2
+  ],
+  "fd_twigs": [
+   "floor_detail",
+   0,
+   0,
+   1,
+   1
+  ],
+  "fd_pebbles": [
+   "floor_detail",
+   1,
+   0,
+   1,
+   1
+  ],
+  "fd_dots": [
+   "floor_detail",
+   3,
+   0,
+   1,
+   1
+  ],
+  "fd_stones": [
+   "floor_detail",
+   4,
+   0,
+   1,
+   1
+  ],
+  "fd_crack": [
+   "floor_detail",
+   5,
+   0,
+   1,
+   1
+  ],
+  "fd_twig": [
+   "floor_detail",
+   6,
+   0,
+   1,
+   1
+  ],
+  "fd_branch": [
+   "floor_detail",
+   7,
+   0,
+   1,
+   1
+  ],
+  "fd_lines": [
+   "floor_detail",
+   8,
+   0,
+   1,
+   1
+  ],
+  "fd_sandrock": [
+   "floor_detail",
+   9,
+   0,
+   1,
+   1
+  ],
+  "fd_skull": [
+   "floor_detail",
+   13,
+   0,
+   1,
+   1
+  ],
+  "fd_bone": [
+   "floor_detail",
+   14,
+   0,
+   1,
+   1
+  ],
+  "fd_sprout": [
+   "floor_detail",
+   0,
+   2,
+   1,
+   1
+  ],
+  "fd_leaves": [
+   "floor_detail",
+   1,
+   2,
+   1,
+   1
+  ],
+  "fd_sprout2": [
+   "floor_detail",
+   2,
+   2,
+   1,
+   1
+  ],
+  "fd_grass": [
+   "floor_detail",
+   3,
+   2,
+   1,
+   1
+  ],
+  "fd_leaf": [
+   "floor_detail",
+   4,
+   2,
+   1,
+   1
+  ],
+  "fd_redflowers": [
+   "floor_detail",
+   5,
+   2,
+   1,
+   1
+  ],
+  "fd_sprout3": [
+   "floor_detail",
+   6,
+   2,
+   1,
+   1
+  ],
+  "fd_clover": [
+   "floor_detail",
+   7,
+   2,
+   1,
+   1
+  ],
+  "fd_pale_sprout": [
+   "floor_detail",
+   0,
+   3,
+   1,
+   1
+  ],
+  "fd_pale_leaves": [
+   "floor_detail",
+   1,
+   3,
+   1,
+   1
+  ],
+  "fd_pale_grass": [
+   "floor_detail",
+   3,
+   3,
+   1,
+   1
+  ],
+  "fd_pale_flowers": [
+   "floor_detail",
+   5,
+   3,
+   1,
+   1
+  ]
+ },
+ "biomes": {
+  "village": {
+   "layout": "village",
+   "materials": [
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       0,
+       12,
+       6
+      ],
+      [
+       1,
+       12,
+       1
+      ],
+      [
+       2,
+       12,
+       1
+      ],
+      [
+       3,
+       12,
+       1
+      ],
+      [
+       4,
+       12,
+       1
+      ]
+     ],
+     "flip": true
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       6
+      ],
+      [
+       12,
+       12,
+       1
+      ],
+      [
+       13,
+       12,
+       1
+      ],
+      [
+       14,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#d8f0c8"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       0,
+       12,
+       4
+      ],
+      [
+       3,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#e8dc9a"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       1,
+       8,
+       6
+      ],
+      [
+       0,
+       11,
+       1
+      ],
+      [
+       1,
+       11,
+       1
+      ]
+     ],
+     "flip": true
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       5,
+       13,
+       2
+      ],
+      [
+       6,
+       13,
+       2
+      ],
+      [
+       6,
+       14,
+       1
+      ],
+      [
+       7,
+       14,
+       1
+      ]
+     ],
+     "tint": "#cfc4b4"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       1,
+       8,
+       1
+      ]
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.64,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.24
+    ],
+    [
+     1,
+     0.74,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#40622c",
+     0.8
+    ],
+    [
+     "#7a8a40",
+     0.45
+    ],
+    [
+     "#5d7a2a",
+     0.9
+    ],
+    [
+     "#3d2c24",
+     0.85
+    ],
+    [
+     "#000000",
+     0.0
+    ]
+   ],
+   "scales": [
+    0.011,
+    0.017
+   ],
+   "shade": 0.07,
+   "grade": {
+    "night": "#0a0f2e",
+    "warm": "#ffb35c",
+    "vignette": 0.42,
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#3d6b2c",
+    "#5f9a38",
+    "#9cc94c"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       4
+      ],
+      [
+       "gen_tuft_b",
+       4
+      ],
+      [
+       "gen_tuft_c",
+       3
+      ],
+      [
+       "grass_a",
+       1
+      ],
+      [
+       "grass_d",
+       1
+      ]
+     ],
+     "count": 150,
+     "zone": "lush",
+     "sway": 1.0
+    },
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       3
+      ],
+      [
+       "gen_tuft_c",
+       2
+      ],
+      [
+       "grass_b",
+       1
+      ],
+      [
+       "grass_e",
+       1
+      ]
+     ],
+     "count": 60,
+     "zone": "grass",
+     "sway": 0.9
+    },
+    {
+     "sprites": [
+      [
+       "white_flower",
+       2
+      ],
+      [
+       "red_flower",
+       2
+      ],
+      [
+       "clover",
+       2
+      ],
+      [
+       "sunflower",
+       1
+      ],
+      [
+       "fd_redflowers",
+       3
+      ]
+     ],
+     "count": 26,
+     "zone": "grass",
+     "sway": 0.5,
+     "cluster": 4
+    },
+    {
+     "sprites": [
+      [
+       "fd_sprout",
+       2
+      ],
+      [
+       "fd_leaves",
+       2
+      ],
+      [
+       "fd_clover",
+       2
+      ],
+      [
+       "fd_grass",
+       2
+      ],
+      [
+       "fd_leaf",
+       1
+      ]
+     ],
+     "count": 40,
+     "zone": "grass",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "fd_pebbles",
+       2
+      ],
+      [
+       "fd_twigs",
+       1
+      ],
+      [
+       "fd_stones",
+       2
+      ],
+      [
+       "fd_twig",
+       1
+      ]
+     ],
+     "count": 16,
+     "zone": "dirt",
+     "flat": true
+    }
+   ],
+   "step": "#b8b0a0"
+  },
+  "bamboo": {
+   "layout": "bamboo",
+   "materials": [
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       6
+      ],
+      [
+       12,
+       12,
+       1
+      ],
+      [
+       13,
+       12,
+       1
+      ],
+      [
+       14,
+       12,
+       1
+      ],
+      [
+       15,
+       12,
+       1
+      ]
+     ],
+     "flip": true
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       4
+      ],
+      [
+       12,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#a9c8a0"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       8,
+       5
+      ],
+      [
+       11,
+       11,
+       1
+      ],
+      [
+       12,
+       11,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#c8b090"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       8,
+       6
+      ],
+      [
+       11,
+       11,
+       1
+      ],
+      [
+       12,
+       11,
+       1
+      ]
+     ],
+     "flip": true
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       16,
+       13,
+       2
+      ],
+      [
+       17,
+       13,
+       2
+      ],
+      [
+       16,
+       14,
+       1
+      ],
+      [
+       18,
+       14,
+       1
+      ]
+     ],
+     "tint": "#b8c4b0"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       8,
+       1
+      ]
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.6,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.3
+    ],
+    [
+     1,
+     0.8,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#1e3a26",
+     0.7
+    ],
+    [
+     "#4a3a22",
+     0.6
+    ],
+    [
+     "#2a3a1c",
+     0.8
+    ],
+    [
+     "#2e2a20",
+     0.85
+    ],
+    [
+     "#000000",
+     0.0
+    ]
+   ],
+   "scales": [
+    0.014,
+    0.02
+   ],
+   "shade": 0.08,
+   "grade": {
+    "night": "#04161a",
+    "warm": "#ffc070",
+    "vignette": 0.5,
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#1f4a2e",
+    "#3b7044",
+    "#78a85a"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       3
+      ],
+      [
+       "gen_tuft_b",
+       3
+      ],
+      [
+       "gen_tuft_c",
+       2
+      ],
+      [
+       "fern_a",
+       2
+      ],
+      [
+       "fern_b",
+       1
+      ]
+     ],
+     "count": 120,
+     "zone": "lush",
+     "sway": 1.0
+    },
+    {
+     "sprites": [
+      [
+       "fern_a",
+       2
+      ],
+      [
+       "fern_b",
+       2
+      ],
+      [
+       "fern_c",
+       2
+      ],
+      [
+       "fern_d",
+       1
+      ],
+      [
+       "fern_e",
+       1
+      ],
+      [
+       "bamboo_shoot",
+       2
+      ]
+     ],
+     "count": 40,
+     "zone": "grass",
+     "sway": 0.8,
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "fd_leaves",
+       3
+      ],
+      [
+       "fd_leaf",
+       3
+      ],
+      [
+       "fd_sprout",
+       1
+      ],
+      [
+       "fd_twig",
+       1
+      ],
+      [
+       "fd_branch",
+       1
+      ]
+     ],
+     "count": 60,
+     "zone": "any",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "gen_tuft_b",
+       2
+      ],
+      [
+       "grass_c",
+       1
+      ]
+     ],
+     "count": 30,
+     "zone": "grass",
+     "sway": 1.0
+    }
+   ]
+  },
+  "temple": {
+   "layout": "temple",
+   "materials": [
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       6
+      ],
+      [
+       12,
+       12,
+       1
+      ],
+      [
+       13,
+       12,
+       1
+      ],
+      [
+       14,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#c8d0b8"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       0,
+       12,
+       4
+      ],
+      [
+       1,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#a8c890"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       1,
+       1,
+       6
+      ],
+      [
+       0,
+       4,
+       1
+      ],
+      [
+       1,
+       4,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#d8d0c0"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       1,
+       1,
+       6
+      ],
+      [
+       0,
+       4,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#e0d8c8"
+    },
+    {
+     "tileset": "interior_floor",
+     "block": [
+      15,
+      0,
+      5,
+      4
+     ],
+     "tint": "#d8d0c4"
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       16,
+       13,
+       2
+      ],
+      [
+       17,
+       13,
+       2
+      ],
+      [
+       16,
+       14,
+       1
+      ]
+     ],
+     "tint": "#c0c4b8"
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.62,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     1,
+     0.8,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#3c5a30",
+     0.7
+    ],
+    [
+     "#000000",
+     0.0
+    ],
+    [
+     "#4a5236",
+     0.8
+    ],
+    [
+     "#5a5448",
+     0.9
+    ],
+    [
+     "#3a3a36",
+     0.9
+    ]
+   ],
+   "scales": [
+    0.012,
+    0.018
+   ],
+   "shade": 0.06,
+   "grade": {
+    "night": "#110b2a",
+    "warm": "#ffad66",
+    "vignette": 0.45,
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#33523a",
+    "#56804a",
+    "#93b46a"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       3
+      ],
+      [
+       "gen_tuft_b",
+       2
+      ],
+      [
+       "gen_tuft_c",
+       2
+      ],
+      [
+       "grass_a",
+       1
+      ]
+     ],
+     "count": 90,
+     "zone": "lush",
+     "sway": 1.0
+    },
+    {
+     "sprites": [
+      [
+       "gen_tuft_c",
+       2
+      ],
+      [
+       "fd_grass",
+       2
+      ]
+     ],
+     "count": 30,
+     "zone": "grass",
+     "sway": 0.8
+    },
+    {
+     "sprites": [
+      [
+       "fd_leaves",
+       2
+      ],
+      [
+       "fd_leaf",
+       2
+      ],
+      [
+       "fd_redflowers",
+       1
+      ],
+      [
+       "fd_sprout",
+       1
+      ]
+     ],
+     "count": 26,
+     "zone": "grass",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "fd_pebbles",
+       2
+      ],
+      [
+       "fd_stones",
+       1
+      ]
+     ],
+     "count": 12,
+     "zone": "dirt",
+     "flat": true
+    }
+   ],
+   "step": "#b4b0a4"
+  },
+  "dunes": {
+   "layout": "dunes",
+   "materials": [
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       1,
+       15,
+       6
+      ],
+      [
+       0,
+       18,
+       1
+      ],
+      [
+       1,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#7c7268"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       1,
+       15,
+       6
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#5e5550"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       5
+      ],
+      [
+       11,
+       18,
+       1
+      ],
+      [
+       12,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#6e625c"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       5
+      ],
+      [
+       11,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#5e544e"
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       5,
+       13,
+       2
+      ],
+      [
+       6,
+       13,
+       2
+      ],
+      [
+       6,
+       14,
+       1
+      ]
+     ],
+     "mono": true,
+     "tint": "#8e8478"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       1
+      ]
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.66,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.22
+    ],
+    [
+     1,
+     0.76,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#6e6460",
+     0.5
+    ],
+    [
+     "#cfc6be",
+     0.45
+    ],
+    [
+     "#5a504a",
+     0.5
+    ],
+    [
+     "#3a302e",
+     0.8
+    ],
+    [
+     "#000000",
+     0.0
+    ]
+   ],
+   "scales": [
+    0.008,
+    0.016
+   ],
+   "shade": 0.08,
+   "ripple": 1.0,
+   "grade": {
+    "night": "#1a1020",
+    "warm": "#ff9c55",
+    "vignette": 0.45,
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#4e4440",
+    "#7a6c62",
+    "#a89a8a"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       2
+      ],
+      [
+       "gen_tuft_c",
+       2
+      ],
+      [
+       "grass_gray",
+       2
+      ],
+      [
+       "grass_gray_s",
+       2
+      ]
+     ],
+     "count": 40,
+     "zone": "lush",
+     "sway": 0.8,
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "fd_pale_grass",
+       2
+      ],
+      [
+       "fd_pale_sprout",
+       1
+      ],
+      [
+       "pebbles_gray",
+       2
+      ],
+      [
+       "stone_gray",
+       1
+      ],
+      [
+       "rocklet_g3",
+       1
+      ]
+     ],
+     "count": 22,
+     "zone": "any",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "fd_bone",
+       2
+      ],
+      [
+       "fd_skull",
+       1
+      ],
+      [
+       "bone",
+       1
+      ],
+      [
+       "fd_crack",
+       2
+      ]
+     ],
+     "count": 8,
+     "zone": "dirt",
+     "flat": true
+    }
+   ]
+  },
+  "yomi": {
+   "layout": "yomi",
+   "materials": [
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       16,
+       13,
+       3
+      ],
+      [
+       17,
+       13,
+       3
+      ],
+      [
+       16,
+       14,
+       2
+      ],
+      [
+       18,
+       14,
+       2
+      ],
+      [
+       17,
+       14,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#5c4450"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       5
+      ],
+      [
+       11,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#3a262c"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       4
+      ],
+      [
+       12,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#5a3a38"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       4
+      ],
+      [
+       11,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#2e1e22"
+    },
+    {
+     "tileset": "interior_floor",
+     "block": [
+      15,
+      6,
+      5,
+      5
+     ],
+     "tint": "#7c6a78"
+    },
+    {
+     "lava": true
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.6,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.25
+    ],
+    [
+     1,
+     0.74,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#2a1a20",
+     0.8
+    ],
+    [
+     "#6a4a44",
+     0.5
+    ],
+    [
+     "#22141a",
+     0.9
+    ],
+    [
+     "#1c1418",
+     0.9
+    ],
+    [
+     "#2a0a04",
+     1.0
+    ]
+   ],
+   "scales": [
+    0.012,
+    0.018
+   ],
+   "shade": 0.09,
+   "cracks": 1.0,
+   "crack_color": "#ff5a1e",
+   "grade": {
+    "night": "#1a040e",
+    "warm": "#ff7a3a",
+    "vignette": 0.5,
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#3a1c24",
+    "#6a2a2a",
+    "#a0402c"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "fd_bone",
+       3
+      ],
+      [
+       "fd_skull",
+       2
+      ],
+      [
+       "bone",
+       1
+      ],
+      [
+       "bones_a",
+       1
+      ],
+      [
+       "fd_crack",
+       3
+      ]
+     ],
+     "count": 16,
+     "zone": "any",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "rocklet_g1",
+       2
+      ],
+      [
+       "rocklet_g2",
+       2
+      ],
+      [
+       "rocklet_g3",
+       1
+      ],
+      [
+       "pebbles_gray",
+       1
+      ]
+     ],
+     "count": 9,
+     "zone": "any"
+    },
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       2
+      ],
+      [
+       "gen_tuft_b",
+       1
+      ],
+      [
+       "grass_gray",
+       1
+      ]
+     ],
+     "count": 26,
+     "zone": "lush",
+     "sway": 0.7,
+     "cluster": 3
+    }
+   ]
+  },
+  "secret": {
+   "layout": "secret",
+   "materials": [
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       6
+      ],
+      [
+       12,
+       12,
+       1
+      ],
+      [
+       13,
+       12,
+       1
+      ],
+      [
+       14,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#6c5c9a"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       4
+      ],
+      [
+       14,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#4e4282"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       4
+      ],
+      [
+       11,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#7a6680"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       5
+      ],
+      [
+       12,
+       18,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#5a4660"
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       16,
+       13,
+       2
+      ],
+      [
+       17,
+       13,
+       2
+      ],
+      [
+       16,
+       14,
+       1
+      ]
+     ],
+     "mono": true,
+     "tint": "#8a84a0"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       12,
+       15,
+       1
+      ]
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.6,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.24
+    ],
+    [
+     1,
+     0.72,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#3a2c52",
+     0.7
+    ],
+    [
+     "#6a5a7a",
+     0.5
+    ],
+    [
+     "#3c2c40",
+     0.8
+    ],
+    [
+     "#2c2030",
+     0.85
+    ],
+    [
+     "#000000",
+     0.0
+    ]
+   ],
+   "scales": [
+    0.012,
+    0.017
+   ],
+   "shade": 0.08,
+   "grade": {
+    "night": "#0e0826",
+    "warm": "#ffb070",
+    "vignette": 0.5,
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#352a52",
+    "#5a4a82",
+    "#9a86c0"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       3
+      ],
+      [
+       "gen_tuft_b",
+       3
+      ],
+      [
+       "gen_tuft_c",
+       2
+      ]
+     ],
+     "count": 110,
+     "zone": "lush",
+     "sway": 1.0
+    },
+    {
+     "sprites": [
+      [
+       "fd_pale_flowers",
+       2
+      ],
+      [
+       "fd_pale_leaves",
+       2
+      ],
+      [
+       "fd_pale_sprout",
+       2
+      ],
+      [
+       "fd_bone",
+       1
+      ]
+     ],
+     "count": 14,
+     "zone": "grass",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "plant_purple",
+       2
+      ],
+      [
+       "plant_teal",
+       1
+      ],
+      [
+       "white_flower",
+       1
+      ]
+     ],
+     "count": 18,
+     "zone": "grass",
+     "sway": 0.6,
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "fd_skull",
+       1
+      ],
+      [
+       "fd_bone",
+       2
+      ],
+      [
+       "fd_crack",
+       2
+      ]
+     ],
+     "count": 5,
+     "zone": "dirt",
+     "flat": true
+    }
+   ],
+   "step": "#8e88a4"
+  }
+ }
+}

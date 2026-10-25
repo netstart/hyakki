@@ -116,6 +116,10 @@ static func changed_signal_key() -> String:
 
 ## Opção escolhida ("auto", "low", "medium" ou "high").
 static func mode() -> String:
+	# Capturas e testes manuais: --gfx=low|medium|high (depois de "--") força o modo.
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--gfx=") and arg.substr(6) in MODES:
+			return arg.substr(6)
 	var settings := _settings()
 	var value := "auto" if settings == null else str(settings.call("get_value", KEY))
 	return value if value in MODES else "auto"

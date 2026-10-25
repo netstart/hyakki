@@ -14,5 +14,16 @@ func fire(origin: Vector2) -> void:
 			at = game.enemies.pos[target]
 		game.areas.pool(id, at, r, damage(), raw("tick"), duration(), float(flags.get("grow", 1.0)),
 				float(flags.get("follow", 0.0)), tint)
-		game.fx.play_anim("smoke_circular", at, r / 14.0)
-	AudioManager.play("explosion3", 1.4, 0.1, -12.0)
+		_pop_fx(at, r)
+	WeaponSfx.launch(self)
+
+
+## Estouro da bomba: nuvem circular, anel de poeira e (Média/Alta) fumaça espalhando.
+func _pop_fx(at: Vector2, r: float) -> void:
+	var fx := game.fx
+	fx.play_anim("smoke_circular", at, minf(1.6, r / 16.0), 0.0, Color(fx_color(), 0.9))
+	fx.add_ring(at, r * 1.1, Color(fx_color(), 0.7), 0.3)
+	if FxLayer.wfx > 0:
+		fx.play_anim("smoke", at, minf(2.0, r / 18.0), 0.0, Color(fx_color(), 0.75), 14.0)
+		fx.dust(at, r * 0.3, Color(fx_color(), 0.8), 4 * FxLayer.wfx, 50.0)
+		fx.flash(at, r, Color(fx_hot(), 0.4), 0.1)

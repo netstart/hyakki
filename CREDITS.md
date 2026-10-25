@@ -11,6 +11,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 
 - **Ninja Adventure - Asset Pack** — pixel-boy & AAA (CC0-1.0) — https://pixel-boy.itch.io/ninja-adventure-asset-pack
 - **Kenney - Game Icons** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/game-icons
+- **Hyakki - skill icons** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_skill_icons.gd
 - **Platformer character pack (free sample)** — Merakintsugi (LicenseRef-Merakintsugi) — https://merakintsugi.itch.io/platformer-character-pack
 - **Lightning (OpenGameArt)** — oglsdl (CC0-1.0) — https://opengameart.org/content/lightning-1
 
@@ -22,6 +23,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 
 - **Kenney - Impact Sounds, Interface Sounds, Music Jingles, RPG Audio and Casino Audio** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/music-jingles
 - **Hyakki - procedural sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_sfx.py
+- **Hyakki - procedural enemy and boss sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_enemy_sfx.py
 - **効果音ラボ (Sound Effect Lab) - Japanese sound effects** — 効果音ラボ (LicenseRef-SoundEffectLab) — https://soundeffect-lab.info/
 - **Helton Yan's Pixel Combat** — Helton Yan and Beto Bezerra (CC-BY-4.0) — https://heltonyan.itch.io/pixelcombat
 

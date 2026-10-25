@@ -76,25 +76,62 @@ var decoy := PackedByteArray()
 var submerged := PackedByteArray()
 ## Marchando em linha reta (procissão e enxames), seja qual for o arquétipo.
 var marching := PackedByteArray()
+## Só de desenho (fora do hash): quando nasceu e quando levou o último golpe (tempo de jogo),
+## e a pose do chefe que o BossDirector informa (0 = andar/parado, 1 = preparando o golpe).
+var born := PackedFloat32Array()
+var hit_at := PackedFloat32Array()
+var pose := PackedByteArray()
+## Efeitos (entrada, morte, poeira, vapor) e desenho em lote (scripts/systems/enemy_look.gd).
+var fx: EnemyFx
+var look: EnemyLook
+## Retângulo visível no mundo (com folga), atualizado a cada quadro; só para efeitos.
+var view_rect := Rect2(-1e6, -1e6, 2e6, 2e6)
 
 var _free: Array[int] = []
 var _order: Array[int] = []
 var _order_dirty: bool = true
 var _near: Array[int] = []
-var _shadow: Texture2D
+var _under: Node2D
+var _over: Node2D
 
 
 func _ready() -> void:
-	_shadow = load("res://assets/art/actors/shadow.png") as Texture2D
 	for packed: StringName in [&"pos", &"prev", &"vel", &"push", &"ai_dir", &"hp", &"max_hp",
 			&"dmg", &"speed", &"radius", &"flash", &"phase", &"contact_cd", &"ai_timer", &"stun",
 			&"slow", &"stuck", &"resist", &"kind", &"xp_value", &"state", &"facing", &"alive",
-			&"elite", &"controlled", &"decoy", &"submerged", &"marching"]:
+			&"elite", &"controlled", &"decoy", &"submerged", &"marching", &"born", &"hit_at", &"pose"]:
 		var array: Variant = get(packed)
 		array.resize(CAPACITY)
 		set(packed, array)
 	_build_types()
+	_build_visuals()
 	reset()
+
+
+## Camadas de desenho: aditiva por baixo (auras), aditiva por cima (brasas, avisos) e efeitos.
+func _build_visuals() -> void:
+	look = EnemyLook.new(self)
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_under = Node2D.new()
+	_under.show_behind_parent = true
+	_under.material = additive
+	_under.draw.connect(func() -> void: look.draw_under(_under))
+	add_child(_under)
+	_over = Node2D.new()
+	_over.material = additive
+	_over.draw.connect(func() -> void: look.draw_over(_over))
+	add_child(_over)
+	fx = EnemyFx.new()
+	fx.game = game
+	fx.z_as_relative = false
+	fx.z_index = 9
+	add_child(fx)
+	var settings := get_node_or_null(^"/root/Settings")
+	if settings:
+		settings.connect("changed", func(k: String) -> void:
+			if k == GfxQuality.changed_signal_key():
+				look.apply_quality())
 
 
 func _build_types() -> void:
@@ -143,6 +180,8 @@ func reset() -> void:
 	speed_mult = 1.0
 	_order.clear()
 	_order_dirty = true
+	if fx:
+		fx.reset()
 	queue_redraw()
 
 
@@ -188,6 +227,11 @@ func spawn(id: StringName, at: Vector2, hp_mult: float, damage_mult: float,
 	decoy[i] = 0
 	submerged[i] = 0
 	marching[i] = 0
+	born[i] = GameClock.game_time
+	hit_at[i] = -100.0
+	pose[i] = 0
+	if look and view_rect.has_point(at) and ai != AI.PROP:
+		fx.spawn_in(at, look.spawn_styles[t], type_scale[t] * (ELITE_SCALE if is_elite else 1.0))
 	count_alive += 1
 	if ai != AI.PROP and ai != AI.BOSS:
 		count_common += 1
@@ -221,6 +265,8 @@ func step(dt: float) -> void:
 	var world := game.world
 	var bounds := world.bounds
 	var contact_reach := Player.RADIUS
+	# Superfícies lentas (lama, piche...): só sobre o solo, recuperação suave. Voadores passam por cima.
+	var surf := SurfaceSystem.of(game)
 	for i: int in range(CAPACITY):
 		if alive[i] == 0:
 			continue
@@ -251,7 +297,7 @@ func step(dt: float) -> void:
 			prev[i] = p
 			continue
 		var dir := to_player / maxf(dist, 0.001)
-		var spd: float = speed[i] * speed_mult
+		var spd: float = speed[i] * speed_mult * (1.0 if surf == null or type_flying[t] == 1 else surf.enemy_factor(i, p, r))
 		if slow[i] > 0.0:
 			slow[i] -= dt
 			spd *= 0.5
@@ -271,7 +317,7 @@ func step(dt: float) -> void:
 			AI.SHADE:
 				if dist > light_r:
 					desired *= SHADE_DARK_SPEED
-		var steer_amount := 1.0 if state[i] == State.DASH else STEER
+		var steer_amount := 1.0 if state[i] == State.DASH else STEER * (1.0 if surf == null else surf.enemy_accel(i))
 		var v: Vector2 = vel[i].lerp(desired + push[i] * SEPARATION_FORCE, steer_amount)
 		vel[i] = v
 		var next := p + v * dt
@@ -433,6 +479,9 @@ func damage(i: int, amount: float, dir: Vector2, force: float) -> bool:
 		return false
 	hp[i] -= amount
 	flash[i] = 0.08
+	hit_at[i] = GameClock.game_time
+	if fx and force >= 40.0 and not is_boss(i) and view_rect.has_point(pos[i]):
+		fx.dust(pos[i] + Vector2(0, radius[i] * 0.6), dir, 1)
 	if not is_prop(i):
 		vel[i] = vel[i] + dir * force * (1.0 - resist[i]) * (0.15 if is_boss(i) else 1.0)
 	if hp[i] > 0.0:
@@ -453,7 +502,11 @@ func _kill(i: int) -> void:
 		return
 	if was_decoy:
 		game.fx.burst(at, Color.WHITE)
+		if fx:
+			fx.death(at, "mist", Color.WHITE, 2.0, false, false)
 		return
+	if fx and type_ai[t] != AI.BOSS and view_rect.has_point(at):
+		fx.death(at, look.death_styles[t], type_tint[t], type_scale[t], was_elite)
 	if type_ai[t] == AI.SPLITTER:
 		var params: Dictionary = data.get("ai", {})
 		for k: int in range(int(params.get("count", 2))):
@@ -468,6 +521,8 @@ func _remove(i: int) -> void:
 		return
 	alive[i] = 0
 	_free.append(i)
+	if look:
+		look.forget(i)
 	count_alive -= 1
 	var ai := type_ai[kind[i]]
 	if ai != AI.PROP and ai != AI.BOSS:
@@ -496,10 +551,25 @@ func stun_all(seconds: float, center: Vector2 = Vector2.ZERO, r: float = INF) ->
 			stun[i] = maxf(stun[i], seconds)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _order_dirty or Engine.get_process_frames() % 6 == 0:
 		_rebuild_order()
+	view_rect = _visible_world_rect(28.0)
+	look.collect(view_rect)
+	look.process(delta)
 	queue_redraw()
+	_under.queue_redraw()
+	_over.queue_redraw()
+
+
+## Parte do mundo na tela, com `margin` px de folga (inimigos fora dela não são desenhados).
+func _visible_world_rect(margin: float) -> Rect2:
+	var viewport := get_viewport()
+	if viewport == null:
+		return view_rect
+	var inverse := get_canvas_transform().affine_inverse()
+	var rect := inverse * viewport.get_visible_rect()
+	return rect.grow(margin)
 
 
 func _rebuild_order() -> void:
@@ -526,51 +596,9 @@ static func frozen_tint(base: Color, frozen: bool) -> Color:
 
 
 func _draw() -> void:
-	var a := GameClock.alpha
-	var time := GameClock.game_time
-	var light_r := game.lantern.radius
-	var player_pos := game.player.position
-	var reduce_flash := bool(Settings.get_value("reduce_flashes"))
-	for i: int in _order:
-		if alive[i] == 0 or submerged[i] == 1:
-			continue
-		var t := kind[i]
-		var sheet := type_sheets[t]
-		var s := type_scale[t] * (ELITE_SCALE if elite[i] == 1 else 1.0)
-		var foot: Vector2 = (prev[i].lerp(pos[i], a) + Vector2(0.0, radius[i] * 0.6)).round()
-		var color := type_tint[t]
-		if type_ai[t] == AI.SHADE and foot.distance_to(player_pos) > light_r:
-			color.a = SHADE_DARK_ALPHA
-		if decoy[i] == 1:
-			color.a = 0.85
-		color = frozen_tint(color, freeze_time > 0.0)
-		var src: Rect2
-		var flip := false
-		if sheet.layout == "region":
-			src = sheet.get_meta("region")
-		else:
-			var moving := vel[i].length() > 3.0 or controlled[i] == 1
-			var frame := int((time * 8.0 + phase[i]) if moving else 0.0)
-			src = sheet.region(frame, facing[i])
-			flip = sheet.needs_flip(facing[i])
-		var size := src.size
-		draw_set_transform(foot, 0.0, Vector2(s, s))
-		draw_texture(_shadow, Vector2(-_shadow.get_width() * 0.5, -_shadow.get_height() * 0.5))
-		var bob := 0.0
-		if type_flying[t] == 1:
-			bob = roundf(sin(time * 6.0 + phase[i]) * 1.5) - 4.0
-		draw_set_transform(foot + Vector2(0.0, bob * s), 0.0, Vector2(-s if flip else s, s))
-		var tex: Texture2D = sheet.texture
-		if flash[i] > 0.0 and not reduce_flash:
-			tex = sheet.flash_texture
-		elif elite[i] == 1:
-			tex = sheet.outline_texture
-		draw_texture_rect_region(tex, Rect2(Vector2(-size.x * 0.5, -size.y + 2.0), size), src, color)
-		if stun[i] > 0.0:
-			draw_set_transform(foot, 0.0, Vector2.ONE)
-			draw_circle(Vector2(0, -size.y * s - 2), 1.5, Color(0.6, 0.85, 1.0, 0.9))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	look.draw(self)
 	if game.show_hitboxes:
+		var a := GameClock.alpha
 		for i: int in _order:
 			if alive[i] == 1:
 				draw_arc(prev[i].lerp(pos[i], a), radius[i], 0.0, TAU, 12, Color.RED, 1.0)

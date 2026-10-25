@@ -1,0 +1,55 @@
+{
+  "_doc": "Clima dinâmico por fase (scripts/core/weather_model.gd e scripts/systems/weather_system.gd). Chave = id da fase em data/stages.json. O ciclo calm → breeze → gale → drizzle → storm → clearing se repete com durações sorteadas pela semente (faixas em 'durations', segundos de simulação). 'precip': o que cai (rain, snow, sand, ash, spirit); 'extra': o que o vento carrega (leaves, petals, embers, dust); 'rain_scale' 0 = nunca molha o chão; 'mud_from'/'mud_full': umidade em que a lama de data/surfaces.json começa e fica cheia; 'sync_hazard' segue o ash_storm da fase; 'fog' névoa base; cores em hex.",
+  "defaults": {
+    "puddles_per_chunk": 1.5,
+    "wet_rate": 0.045,
+    "dry_rate": 0.011,
+    "mud_from": 0.3,
+    "mud_full": 0.85,
+    "transition": 9.0,
+    "first_calm": [18, 30],
+    "durations": {
+      "calm": [30, 55],
+      "breeze": [22, 40],
+      "gale": [18, 32],
+      "drizzle": [24, 40],
+      "storm": [32, 52],
+      "clearing": [24, 40]
+    },
+    "wind_scale": 1.0,
+    "rain_scale": 1.0,
+    "fog": 0.0,
+    "lightning": false,
+    "lightning_color": "#dfe6ff",
+    "storm_grade": "#9aa8cc",
+    "rain_color": "#c8d6ff",
+    "puddle_color": "#34445e",
+    "swirl": 0.0
+  },
+  "stages": {
+    "village": {
+      "precip": "rain", "extra": "leaves", "puddles": true, "lightning": true
+    },
+    "bamboo": {
+      "precip": "rain", "extra": "leaves", "puddles": true, "lightning": false,
+      "wind_scale": 1.25, "rain_scale": 0.8, "fog": 0.38, "storm_grade": "#aecbcf"
+    },
+    "temple": {
+      "precip": "snow", "extra": "petals", "puddles": false, "rain_scale": 0.0,
+      "wind_scale": 0.8, "storm_grade": "#c8cde8"
+    },
+    "dunes": {
+      "precip": "sand", "extra": "dust", "puddles": false, "rain_scale": 0.0,
+      "sync_hazard": true, "wind_scale": 1.1, "storm_grade": "#e8c49a", "fog": 0.05
+    },
+    "yomi": {
+      "precip": "ash", "extra": "embers", "puddles": false, "rain_scale": 0.0,
+      "lightning": true, "lightning_color": "#ff8a7a", "storm_grade": "#d9a6b0", "swirl": 1.0
+    },
+    "secret": {
+      "precip": "spirit", "extra": "petals", "puddles": true, "rain_scale": 0.7,
+      "lightning": true, "lightning_color": "#c9a2ff", "storm_grade": "#b6a6e0", "rain_color": "#c8a8ff",
+      "puddle_color": "#3a2458", "swirl": 0.5
+    }
+  }
+}

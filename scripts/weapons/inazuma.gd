@@ -34,15 +34,17 @@ func fire(origin: Vector2) -> void:
 			hit.append(current)
 			var at := game.enemies.pos[current]
 			bolts.append({"points": _jagged(from, at), "life": BOLT_LIFE})
-			game.fx.play_anim("spark", at, 0.6, 0.0, Color(0.75, 0.9, 1.0))
+			game.fx.play_anim("spark", at, 0.6, 0.0, fx_color().lerp(Color.WHITE, 0.4), 16.0, false, true)
 			game.deal_damage(id, current, dmg, (at - from).normalized(), knockback())
 			if link > 0:
-				AudioManager.play("chain_zap", 1.0 + 0.06 * link, 0.05, -10.0)
+				WeaponSfx.play("chain_link", 1.0 + 0.06 * link)
 			from = at
 			dmg *= falloff
 			current = game.enemies.nearest(at, chain_range, hit)
 	if launched:
-		AudioManager.play("zap", 1.0, 0.08, -6.0)
+		game.fx.flash(origin, 14.0, Color(fx_color(), 0.8), 0.1)
+		game.fx.sparks(origin, Vector2.ZERO, fx_hot(), 2 * FxLayer.wfx, 90.0, PI, 0.15)
+		WeaponSfx.launch(self)
 
 
 func step(dt: float) -> void:
@@ -69,9 +71,19 @@ func _jagged(from: Vector2, to: Vector2) -> PackedVector2Array:
 
 
 func draw(canvas: CanvasItem) -> void:
-	var tint := Color(1.0, 0.9, 0.55) if is_evolved() else Color(0.6, 0.85, 1.0)
+	var tint := fx_color()
+	var wide := 5.0 if is_evolved() else 4.0
 	for b: Dictionary in bolts:
 		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0)
 		var points: PackedVector2Array = b["points"]
-		canvas.draw_polyline(points, Color(tint.r, tint.g, tint.b, 0.5 * a), 4.0)
+		canvas.draw_polyline(points, Color(tint.r, tint.g, tint.b, 0.5 * a), wide)
 		canvas.draw_polyline(points, Color(1.0, 1.0, 1.0, a), 1.0)
+
+
+func draw_glow(canvas: CanvasItem) -> void:
+	var tint := fx_color()
+	for b: Dictionary in bolts:
+		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0)
+		var points: PackedVector2Array = b["points"]
+		for k: int in range(0, points.size(), 2):
+			FxLayer.draw_soft(canvas, points[k], 10.0, Color(tint, 0.3 * a))

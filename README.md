@@ -79,7 +79,8 @@ modo simulado (o AdMob abre outra tela do Android).
 
 Opções de teste (depois de `--`): `--bot`, `--seed=N`, `--speed=1|2|3`, `--hero=ID`, `--stage=ID`,
 `--moon=0..5`, `--mode=normal|brisa`, `--endless`, `--god`, `--quit-at=S`, `--hash-at=S`,
-`--log-every=S`, `--stress=N`, `--screenshot-at=S`, `--screenshot=arquivo.png`. Detalhes em
+`--log-every=S`, `--stress=N`, `--screenshot-at=S`, `--screenshot=arquivo.png`. Vitrine de armas: `--weapons=id1,id2`,
+`--weapon-level=N` e `--ult-at=S` (scripts/systems/weapon_showcase.gd); nível gráfico: `--gfx=low|medium|high`. Detalhes em
 [scripts/game/game.gd](scripts/game/game.gd). Anúncios simulados: `--ads-no-fill`, `--ads-auto`,
 `--purchase-pending`.
 

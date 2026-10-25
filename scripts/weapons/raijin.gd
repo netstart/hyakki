@@ -20,8 +20,9 @@ func fire(origin: Vector2) -> void:
 		var target := game.enemies.random_alive(origin, RANGE)
 		if target < 0:
 			return
-		game.areas.lightning(id, target, damage(), r, chain, chain_range, source)
+		game.areas.lightning(id, target, damage(), r, chain, chain_range, source, fx_color())
+		WeaponSfx.launch(self)
 		var now := GameClock.game_time
 		if now - _last_thunder >= THUNDER_GAP:
 			_last_thunder = now
-			AudioManager.play("thunder", 1.35, 0.08, -11.0)
+			WeaponSfx.play("raijin_thunder", 0.92 if is_evolved() else 1.0)

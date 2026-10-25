@@ -1,0 +1,35 @@
+{
+  "_doc": "Superfícies lentas (scripts/core/surface_field.gd e scripts/systems/surface_system.gd). Valem para guardiões, inimigos comuns, elites e chefes. 'slow': multiplicador de velocidade enquanto o personagem está sobre o solo; 'ease_in': segundos até a lentidão total ao entrar; 'ease_out': segundos da recuperação ao sair (termina em exatamente 1.0); 'accel': aceleração/frenagem relativa sobre o solo (óleo < 1: escorrega); 'resist_by_size': chefes grandes perdem um pouco menos (sempre perdem algo). 'stages': o que aparece em cada fase (id de data/stages.json): 'per_chunk' manchas por chunk de 256 px, 'size' raio base em px, 'rain' = cresce com a chuva (some no seco). Posição: semente + chunk + tempo de simulação; nada perto do nascimento (safe_radius).",
+  "safe_radius": 90.0,
+  "types": {
+    "mud": {"slow": 0.8, "ease_in": 0.25, "ease_out": 0.4, "accel": 1.0, "resist_by_size": true, "sound": "mud"},
+    "clay": {"slow": 0.85, "ease_in": 0.3, "ease_out": 0.35, "accel": 1.0, "resist_by_size": true, "sound": "mud"},
+    "swamp": {"slow": 0.7, "ease_in": 0.3, "ease_out": 0.5, "accel": 0.8, "resist_by_size": true, "sound": "water"},
+    "oil": {"slow": 0.9, "ease_in": 0.15, "ease_out": 0.45, "accel": 0.3, "resist_by_size": false, "sound": "oil"},
+    "tar": {"slow": 0.6, "ease_in": 0.2, "ease_out": 0.8, "accel": 0.9, "resist_by_size": true, "sound": "tar"},
+    "quicksand": {"slow": 0.65, "ease_in": 0.45, "ease_out": 0.6, "accel": 0.85, "resist_by_size": true, "sound": "sand"}
+  },
+  "stages": {
+    "village": [
+      {"type": "mud", "per_chunk": 1.5, "size": [16, 30], "rain": true},
+      {"type": "clay", "per_chunk": 0.45, "size": [14, 24]}
+    ],
+    "bamboo": [
+      {"type": "swamp", "per_chunk": 0.8, "size": [18, 32]},
+      {"type": "mud", "per_chunk": 0.6, "size": [14, 24], "rain": true}
+    ],
+    "temple": [
+      {"type": "oil", "per_chunk": 0.6, "size": [14, 22]}
+    ],
+    "dunes": [
+      {"type": "quicksand", "per_chunk": 0.55, "size": [18, 30]}
+    ],
+    "yomi": [
+      {"type": "tar", "per_chunk": 0.75, "size": [14, 24]}
+    ],
+    "secret": [
+      {"type": "tar", "per_chunk": 0.5, "size": [14, 22]},
+      {"type": "swamp", "per_chunk": 0.4, "size": [16, 26]}
+    ]
+  }
+}
