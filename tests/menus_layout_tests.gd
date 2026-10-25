@@ -44,6 +44,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_options_behaviour()
 	await _test_codex_behaviour()
 	await _test_back_everywhere()
+	await _test_real_app()
 
 
 func _ok(condition: bool, label: String) -> void:
@@ -147,7 +148,9 @@ func _test_heroes(view: Vector2, state: String) -> void:
 			var panel := screen.get("_panel") as Control
 			var go := screen.get("_go") as Button
 			_ok(Rect2(Vector2.ZERO, view).encloses(panel.get_global_rect()), "%s: painel inteiro" % sub)
-			_ok(panel.get_global_rect().encloses(go.get_global_rect()), "%s: Escolher fase no painel" % sub)
+			_ok(Rect2(Vector2.ZERO, view).encloses(go.get_global_rect())
+					and panel.get_global_rect().end.y <= go.get_global_rect().position.y,
+					"%s: Escolher fase na base, abaixo do painel" % sub)
 			_ok(go.disabled != unlocked, "%s: Escolher fase só liberado" % sub)
 			_ok((screen.get("_lock_box") as Control).visible != unlocked, "%s: condição só no bloqueado" % sub)
 			var stage := screen.get("_stage") as Control
@@ -485,3 +488,45 @@ static func rich_profile() -> void:
 	d["story"]["ending_seen"] = true
 	(d["stats"]["evolved"] as Array).append_array(["dawn_blade", "steel_storm"])
 	d["unlocked"]["heroes"] = ["aki", "kenta", "hana", "goro", "rin"]
+
+
+## Pelo caminho real do jogo (App → go), num viewport do tamanho do aparelho: Redmi Note 14
+## Pro+ 2712x1220 com stretch "viewport" dá 678x305 (4 px por ponto); 480x270 cobre telas 16:9.
+## Pega o que o host de tamanho fixo não pega: o App cria a tela escondida e o painel media
+## alto antes da 1ª largura (o "Escolher fase" ficava fora da tela no aparelho).
+func _test_real_app() -> void:
+	for lang: String in ["en", "pt_BR", "ru", "ja"]:
+		Locale.set_language(lang, false)
+		for view: Vector2 in [Vector2(678, 305), Vector2(480, 270)]:
+			SaveManager.data = SaveManager.default_profile()
+			var vp := SubViewport.new()
+			vp.size = Vector2i(view)
+			vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			_host.add_child(vp)
+			var app := App.new()
+			vp.add_child(app)
+			await _host.get_tree().process_frame
+			var st := "App %s %dx%d" % [lang, view.x, view.y]
+			var area := Rect2(Vector2.ZERO, view)
+			for name: StringName in [&"heroes", &"options", &"codex"]:
+				app.go(name)
+				for i: int in 3:
+					await _host.get_tree().process_frame
+				var screen := (app.get("_screens") as Dictionary)[name] as Control
+				_ok(screen.size.is_equal_approx(view), "%s %s: tela do tamanho do viewport" % [st, name])
+				if name == &"heroes":
+					for id: StringName in DB.ids("heroes"):
+						screen.call("_select", id)
+						await _host.get_tree().process_frame
+						var go := screen.get("_go") as Button
+						var panel := screen.get("_panel") as Control
+						_ok(go.is_visible_in_tree() and area.encloses(go.get_global_rect()) and go.size.y >= 28.0,
+								"%s %s: Escolher fase visível (%s)" % [st, id, go.get_global_rect()])
+						_ok(area.encloses(panel.get_global_rect())
+								and panel.get_global_rect().end.y <= go.get_global_rect().position.y,
+								"%s %s: painel acima do botão (%s)" % [st, id, panel.get_global_rect()])
+				check_common(screen, view, "%s %s" % [st, name])
+			app.queue_free()
+			vp.queue_free()
+			await _host.get_tree().process_frame
+	Locale.set_language("pt_BR", false)

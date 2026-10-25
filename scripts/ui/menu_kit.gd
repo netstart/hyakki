@@ -31,6 +31,19 @@ static func ui_fx() -> int:
 	return int(GfxQuality.budget("ui_fx"))
 
 
+## Área segura do Android (recorte da câmera, bordas curvas), em pontos da tela:
+## (esquerda, direita). Zero no desktop.
+static func safe_insets(node: Control) -> Vector2:
+	if not OS.has_feature("mobile") or not node.is_inside_tree():
+		return Vector2.ZERO
+	var safe := Rect2(DisplayServer.get_display_safe_area())
+	var screen := Vector2(DisplayServer.screen_get_size())
+	var scale_x := node.get_viewport().get_final_transform().x.x
+	if safe.size.x <= 0.0 or scale_x <= 0.0:
+		return Vector2.ZERO
+	return Vector2(maxf(safe.position.x, 0.0), maxf(screen.x - safe.end.x, 0.0)) / scale_x
+
+
 ## Liga `on_change` à troca de qualidade gráfica (ao vivo); desliga sozinho com o nó.
 static func on_quality_change(node: Node, on_change: Callable) -> void:
 	var settings := node.get_tree().root.get_node_or_null(^"Settings") if node.is_inside_tree() else null

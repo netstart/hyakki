@@ -118,8 +118,9 @@ func _suite_full() -> void:
 	if await _wait_for(func() -> bool: return game.hud.level_up_open(), 5.0):
 		_check(true, "carta de nível novo aparece")
 		_shot("nivel")
-		await _seconds(0.5)
-		_check(game.hud.level_cards().all(func(b: Button) -> bool: return b is LevelCard and (b as LevelCard).settled),
+		# O emulador é lento: espera a animação de entrada pousar as cartas (até 4 s).
+		_check(await _wait_for(func() -> bool: return game.hud.level_cards().all(
+				func(b: Button) -> bool: return b is LevelCard and (b as LevelCard).settled), 4.0),
 				"cartas pousadas em leque, prontas para o toque")
 		await _tap_control(game.hud.level_cards()[0])
 		_check(await _wait_for(func() -> bool: return not game.hud.level_up_open(), 4.0), "tocar a carta escolhe")
@@ -329,7 +330,18 @@ func _options_quality() -> void:
 		await _seconds(0.3)
 	await _tap_control(option)
 	_check(await _wait_for(func() -> bool: return option.get_popup().visible, 3.0), "toque abre a lista de qualidade")
-	option.get_popup().id_pressed.emit(option.get_item_id(1))
+	# Toque real no item "Baixa" (índice 1): as linhas da lista têm a mesma altura entre as
+	# margens do painel; a lista é uma janela embutida na tela do jogo.
+	var popup := option.get_popup()
+	await _seconds(0.3)
+	var panel := popup.get_theme_stylebox("panel")
+	var top := panel.get_margin(SIDE_TOP) if panel != null else 0.0
+	var bottom := panel.get_margin(SIDE_BOTTOM) if panel != null else 0.0
+	var row := (popup.size.y - top - bottom) / maxf(1.0, popup.item_count)
+	var at := Vector2(popup.position) + Vector2(popup.size.x * 0.5, top + row * 1.5)
+	var tap := _to_screen(at)
+	_host("tap %d %d" % [tap.x, tap.y])
+	await _seconds(HOST_DELAY)
 	_check(await _wait_for(func() -> bool: return Settings.get_value(key) == "low", 3.0)
 			and GfxQuality.level() == GfxQuality.LOW, "escolher Baixa nas Opções vale na hora")
 	option.get_popup().hide()

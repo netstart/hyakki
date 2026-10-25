@@ -352,6 +352,7 @@ func _build_chip() -> void:
 	chip.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	chip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	chip.offset_right = -MARGIN
+	chip.ready.connect(func() -> void: chip.offset_right = -MARGIN - MenuKit.safe_insets(chip).y)
 	chip.offset_top = HEADER_H + 5
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var row := HBoxContainer.new()
@@ -542,13 +543,14 @@ func _style_ink_scrollbar(bar: ScrollBar) -> void:
 func _layout() -> void:
 	if _book == null:
 		return
-	var w := size.x
+	var inset := MenuKit.safe_insets(self)
+	var w := size.x - inset.x - inset.y
 	var h := size.y
 	_layout_tabs()
 	var total := discovered_total()
 	_chip.text = tr("codex.discovered") % total if w >= 600.0 else "%d/%d" % total
 	var top := HEADER_H + TAB_H
-	_book.position = Vector2(MARGIN - 2, top)
+	_book.position = Vector2(inset.x + MARGIN - 2, top)
 	_book.size = Vector2(w - MARGIN * 2.0 + 4, h - top - 4)
 	var inner := Rect2(Vector2(8, 6), _book.size - Vector2(16, 12))
 	var left_w := roundf(inner.size.x * (0.46 if w >= 600.0 else 0.47))
@@ -563,7 +565,7 @@ func _layout() -> void:
 
 
 func _layout_tabs() -> void:
-	var x := MARGIN + 4
+	var x := MenuKit.safe_insets(self).x + MARGIN + 4
 	for b: Button in _tabs:
 		b.custom_minimum_size = Vector2(28, TAB_H)
 		b.size = Vector2(maxf(28.0, b.get_combined_minimum_size().x), TAB_H)

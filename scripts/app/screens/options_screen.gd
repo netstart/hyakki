@@ -491,14 +491,18 @@ func _icon(index: int, px: int) -> Control:
 func _layout() -> void:
 	if _scroll == null:
 		return
-	var w := size.x
-	var h := size.y
+	var inset := MenuKit.safe_insets(self)
+	var w := size.x - inset.x - inset.y
 	var rail_w := 132.0 if w >= 600.0 else 112.0
-	_rail.position = Vector2(MARGIN, CONTENT_TOP + 2)
+	_rail.position = Vector2(inset.x + MARGIN, CONTENT_TOP + 2)
 	_rail.size = Vector2(rail_w, 0)
-	_scroll.position = Vector2(MARGIN + rail_w + 8, CONTENT_TOP)
-	_scroll.size = Vector2(w - _scroll.position.x - MARGIN, h - CONTENT_TOP - 4)
-	var pane := _scroll.size.x - 8.0
+	# Âncoras e margens: a rolagem acompanha a tela mesmo se o mínimo mudar depois.
+	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_scroll.offset_left = inset.x + MARGIN + rail_w + 8
+	_scroll.offset_top = CONTENT_TOP
+	_scroll.offset_right = -(inset.y + MARGIN)
+	_scroll.offset_bottom = -4
+	var pane := size.x - _scroll.offset_left - inset.y - MARGIN - 8.0
 	var control_w := roundf(clampf(pane * 0.5, 140.0, 240.0))
 	for c: Control in _sized:
 		c.custom_minimum_size.x = control_w

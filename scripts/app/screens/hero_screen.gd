@@ -289,7 +289,8 @@ func _build_panel() -> void:
 	_bottom = HBoxContainer.new()
 	_bottom.name = "Bottom"
 	_bottom.add_theme_constant_override("separation", 6)
-	col.add_child(_bottom)
+	# Fora do painel e ancorado na base: "Escolher fase" fica sempre na tela, o texto rola acima.
+	add_child(_bottom)
 	var lantern := HBoxContainer.new()
 	lantern.add_theme_constant_override("separation", 4)
 	lantern.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -353,24 +354,38 @@ func _rule() -> Control:
 func _layout() -> void:
 	if _stage == null:
 		return
-	var w := size.x
+	var inset := MenuKit.safe_insets(self)
+	var w := size.x - inset.x - inset.y
 	var h := size.y
 	var left_w := roundf(clampf(w * 0.44, 200.0, 320.0))
 	var count := maxi(1, _grid.get_child_count())
 	var frame := floorf((left_w - MARGIN * 2.0 - PORTRAIT_GAP * (count - 1)) / count)
 	frame = clampf(frame, 26.0, 36.0)
 	var roster_w := frame * count + PORTRAIT_GAP * (count - 1)
-	_grid.position = Vector2(roundf((left_w - roster_w) * 0.5), h - MARGIN - frame)
+	_grid.position = Vector2(inset.x + roundf((left_w - roster_w) * 0.5), h - MARGIN - frame)
 	_grid.size = Vector2(roster_w, frame)
 	for child: Node in _grid.get_children():
 		(child as Control).custom_minimum_size = Vector2(frame, frame)
-	_stage.position = Vector2(0, HEADER_H - 4)
+	_stage.position = Vector2(inset.x, HEADER_H - 4)
 	_stage.size = Vector2(left_w, _grid.position.y - _stage.position.y - 2)
 	_motes.position = Vector2.ZERO
 	_motes.size = _stage.size
-	_panel.position = Vector2(left_w + 2, HEADER_H + 2)
-	_panel.size = Vector2(w - left_w - 2 - MARGIN, h - HEADER_H - 2 - MARGIN)
-	var narrow := _panel.size.x < 300.0
+	# Âncoras e margens (não size): o painel acompanha a tela mesmo se o mínimo dele mudar
+	# depois (rótulos que quebram linha medem alto antes da 1ª largura).
+	var right := inset.y + MARGIN
+	var go_h := 32.0
+	for c: Control in [_panel, _bottom]:
+		c.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bottom.offset_left = inset.x + left_w + 2
+	_bottom.offset_right = -right
+	_bottom.offset_top = -(MARGIN + go_h)
+	_bottom.offset_bottom = -MARGIN
+	_bottom.anchor_top = 1.0
+	_panel.offset_left = inset.x + left_w + 2
+	_panel.offset_right = -right
+	_panel.offset_top = HEADER_H + 2
+	_panel.offset_bottom = -(MARGIN + go_h + 4)
+	var narrow := w - left_w - 2 - MARGIN < 300.0
 	_name.add_theme_font_size_override("font_size", 16 if narrow else 24)
 	_go.add_theme_font_size_override("font_size", 12 if narrow else 16)
 	_stage.queue_redraw()
@@ -467,7 +482,7 @@ class HeroStage extends Control:
 		var aura := 70.0 + 6.0 * pulse
 		draw_texture_rect(glow, Rect2(feet.x - aura, feet.y - aura * 1.15, aura * 2.0, aura * 1.8), false,
 				Color(light, 0.28 + 0.1 * pulse))
-		if fx >= 2 and _unlocked:
+		if fx >= 2 and _unlocked and h > 80.0:
 			for i: int in 7:
 				var ang := -PI * 0.5 + (i - 3) * 0.24 + sin(_time * 0.4 + i) * 0.03
 				var tip := feet + Vector2(cos(ang), sin(ang)) * (h * 0.85)
