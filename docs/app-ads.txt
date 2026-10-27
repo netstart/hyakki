@@ -1,4 +1,8 @@
-# Modelo de app-ads.txt (plano 17.5). Publicar na raiz do site do desenvolvedor informado na
-# Play Console (ex.: https://SEU-DOMINIO/app-ads.txt). Trocar pub-0000000000000000 pelo ID de
-# editor real do AdMob (AdMob > Configurações > Informações da conta). Linhas com # são ignoradas.
-google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+# Modelo de app-ads.txt (plano 17.5). SÓ É NECESSÁRIO QUANDO O ADMOB FOR LIGADO.
+# O AdMob procura o arquivo na RAIZ do domínio do site informado na Play Console:
+# O site atual é https://netstart.github.io/; o AdMob busca
+# https://netstart.github.io/app-ads.txt na raiz do host, não no caminho do projeto.
+# Este arquivo precisa ser publicado como /app-ads.txt na raiz do site netstart.github.io. Ver o guia, seção 12.3.
+# ID de editor derivado do ID do app ca-app-pub-6552169828297838~1237111269.
+# Linhas com # são ignoradas.
+google.com, pub-6552169828297838, DIRECT, f08c47fec0942fa0

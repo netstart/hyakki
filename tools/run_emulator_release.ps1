@@ -27,7 +27,7 @@ $ErrorActionPreference = 'Continue'
 $project = Split-Path -Parent $PSScriptRoot
 $apk = Join-Path $project 'build\release\hyakki-release.apk'
 $adb = Join-Path $AndroidSdk 'platform-tools\adb.exe'
-$package = 'dev.hyakki.prototype'
+$package = 'io.github.netstart.hyakki'
 
 function Step([string]$text) { Write-Host "== $text" -ForegroundColor Cyan }
 function Fail([string]$text) { Write-Host "FALHOU: $text" -ForegroundColor Red; exit 1 }

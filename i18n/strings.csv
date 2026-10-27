@@ -452,6 +452,8 @@ options.music_volume,Música,Music,Música,Musik,Musique,Музыка,Musik,音�
 options.notifications,Avisar quando a Loja estiver pronta,Notify when the Shop is ready,Avisar cuando la tienda esté lista,"Benachrichtigen, wenn der Laden bereit ist",Prévenir quand la boutique est prête,"Сообщать, когда лавка готова",Beri tahu saat Toko siap,ショップ準備時に通知,상점이 준비되면 알림,商店就緒時通知,商店就绪时通知
 options.privacy,Privacidade e anúncios,Privacy and ads,Privacidad y anuncios,Datenschutz und Werbung,Confidentialité et pubs,Конфиденциальность и реклама,Privasi dan iklan,プライバシーと広告,개인정보와 광고,隱私與廣告,隐私与广告
 options.privacy_open,Rever consentimento,Review consent,Revisar consentimiento,Einwilligung prüfen,Revoir le consentement,Изменить согласие,Tinjau persetujuan,同意を見直す,동의 다시 보기,檢視同意設定,查看同意设置
+options.privacy_policy,Política de privacidade,Privacy policy,Política de privacidad,Datenschutzerklärung,Politique de confidentialité,Политика конфиденциальности,Kebijakan privasi,プライバシーポリシー,개인정보 처리방침,隱私權政策,隐私政策
+options.privacy_policy_open,Ler,Read,Leer,Lesen,Lire,Читать,Baca,読む,읽기,閱讀,阅读
 options.purchases,Compras,Purchases,Compras,Käufe,Achats,Покупки,Pembelian,購入,구매,購買,购买
 options.reduce_flashes,Reduzir flashes e tremor,Reduce flashes and shake,Reducir destellos y temblor,Blitze und Wackeln reduzieren,Réduire flashs et secousses,Меньше вспышек и тряски,Kurangi kilatan dan guncangan,点滅と揺れを抑える,번쩍임과 흔들림 줄이기,減少閃光與震動,减少闪光与震动
 options.reset,Apagar progresso,Erase progress,Borrar progreso,Fortschritt löschen,Effacer la progression,Стереть прогресс,Hapus progres,進行データ削除,진행 삭제,清除進度,清除进度
@@ -518,6 +520,7 @@ results.again,Jogar de novo,Play again,Jugar de nuevo,Nochmal,Rejouer,Ещё р�
 results.damage,Dano,Damage,Daño,Schaden,Dégâts,Урон,Damage,ダメージ,피해,傷害,伤害
 results.defeat,A chama se apagou...,The flame went out...,La llama se apagó...,Die Flamme ist erloschen...,La flamme s'est éteinte...,Пламя погасло...,Api telah padam...,炎は消えた…,불꽃이 꺼졌다...,火焰熄滅了……,火焰熄灭了……
 results.double,Dobrar ryō (anúncio),Double ryō (ad),Duplicar ryō (anuncio),Ryō verdoppeln (Werbung),Doubler les ryō (pub),Удвоить рё (реклама),Gandakan ryō (iklan),両を2倍（広告）,료 2배 (광고),兩翻倍（廣告）,两翻倍（广告）
+results.double_free,Dobrar ryō (presente),Double ryō (gift),Duplicar ryō (regalo),Ryō verdoppeln (Geschenk),Doubler les ryō (cadeau),Удвоить рё (подарок),Gandakan ryō (hadiah),両を2倍（贈り物）,료 2배 (선물),兩翻倍（禮物）,两翻倍（礼物）
 results.dps,Dano/s,DPS,Daño/s,DPS,Dégâts/s,Урон/с,DPS,DPS,초당 피해,每秒傷害,每秒伤害
 results.final_blow,Golpe final: %s,Final blow: %s,Golpe final: %s,Letzter Treffer: %s,Coup final : %s,Последний удар: %s,Serangan terakhir: %s,最後の一撃: %s,마지막 일격: %s,最後一擊：%s,最后一击：%s
 results.gave_up,Vigília interrompida,Vigil abandoned,Vigilia interrumpida,Wache abgebrochen,Veille interrompue,Дозор прерван,Jaga malam dihentikan,見張りを中断した,파수를 중단했다,守夜中斷,守夜中断
@@ -548,6 +551,7 @@ results.tip.5,"Contra chefes, não pare: circule, deixe o ataque passar e volte 
 results.victory,Amanheceu!,Dawn has come!,¡Amaneció!,Der Morgen graut!,L'aube est là !,Рассвет настал!,Fajar tiba!,夜が明けた！,새벽이 왔다!,天亮了！,天亮了！
 results.weapon,Arma,Weapon,Arma,Waffe,Arme,Оружие,Senjata,武器,무기,武器,武器
 revive.countdown,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d
+revive.free,Reviver (presente),Revive (gift),Revivir (regalo),Wiederbeleben (Geschenk),Revivre (cadeau),Возродиться (подарок),Hidup lagi (hadiah),復活（贈り物）,부활 (선물),復活（禮物）,复活（礼物）
 revive.results,Ver resultados,See results,Ver resultados,Ergebnisse,Voir les résultats,Итоги,Lihat hasil,結果を見る,결과 보기,查看結果,查看结果
 revive.title,A chama ainda tremula...,The flame still flickers...,La llama aún titila...,Die Flamme flackert noch...,La flamme vacille encore...,Пламя ещё мерцает...,Api masih berkedip...,炎はまだ揺らめいている…,불꽃이 아직 흔들립니다...,火焰仍在搖曳……,火焰仍在摇曳……
 revive.watch,Reviver (anúncio),Revive (ad),Revivir (anuncio),Wiederbeleben (Werbung),Revivre (pub),Возродиться (реклама),Hidup lagi (iklan),復活（広告）,부활 (광고),復活（廣告）,复活（广告）
@@ -558,6 +562,7 @@ sanctuary.per_level,por nível,per level,por nivel,pro Stufe,par niveau,за у�
 sanctuary.refund,Reembolsar tudo,Refund all,Reembolsar todo,Alles erstatten,Tout rembourser,Вернуть всё,Kembalikan semua,すべて返金,전부 환불,全部退還,全部退还
 sanctuary.refunded,%s ryō devolvidos,%s ryō returned,%s ryō devueltos,%s Ryō erstattet,%s ryō rendus,Возвращено %s рё,%s ryō dikembalikan,%s両を返却,%s료 반환,已退還%s兩,已退还%s两
 sanctuary.title,Santuário,Sanctuary,Santuario,Heiligtum,Sanctuaire,Святилище,Kuil,神社,신사,神社,神社
+shop.claim_free,Receber grátis,Claim free,Recibir gratis,Gratis holen,Récupérer,Забрать,Ambil gratis,無料で受け取る,무료로 받기,免費領取,免费领取
 shop.coin.queued,Guardado,Queued,Guardado,Vorgemerkt,Réservé,Отложено,Disimpan,次回に使用,다음 판 사용,下一局使用,下一局使用
 shop.coin.start_chest,+1 baú no início,+1 chest at start,+1 cofre al inicio,+1 Truhe zu Beginn,+1 coffre au départ,+1 сундук на старте,+1 peti di awal,開始時に宝箱+1,시작 시 상자 +1,開局寶箱+1,开局宝箱+1
 shop.coin_bag.name,Bolsa do Peregrino,Pilgrim's Pouch,Bolsa del peregrino,Pilgerbeutel,Besace du pèlerin,Сума паломника,Kantong Peziarah,巡礼者の袋,순례자의 주머니,巡禮者布袋,巡礼者布袋
@@ -569,6 +574,7 @@ shop.coin_row,Comprar com moedas · reforços para a próxima partida,Buy with c
 shop.coin_scroll.name,Pergaminho do Sábio,Sage's Scroll,Pergamino del sabio,Schriftrolle des Weisen,Parchemin du sage,Свиток мудреца,Gulungan Orang Bijak,賢者の巻物,현자의 두루마리,賢者卷軸,贤者卷轴
 shop.failed,A compra não foi concluída,Purchase not completed,La compra no se completó,Kauf nicht abgeschlossen,Achat non finalisé,Покупка не завершена,Pembelian tidak selesai,購入は完了しませんでした,구매가 완료되지 않았습니다,購買未完成,购买未完成
 shop.hint,Assista a um anúncio até o fim para receber a recompensa. Cada uma volta em 6 h.,Watch an ad to the end to get the reward. Each one returns in 6 h.,Mira un anuncio completo para recibir la recompensa. Cada una vuelve en 6 h.,Sieh eine Werbung bis zum Ende für die Belohnung. Jede kehrt nach 6 h zurück.,Regarde une pub jusqu'au bout pour la récompense. Chacune revient en 6 h.,"Досмотри рекламу до конца, чтобы получить награду. Каждая возвращается через 6 ч.",Tonton iklan sampai habis untuk hadiahnya. Tiap hadiah kembali dalam 6 jam.,広告を最後まで見ると報酬。それぞれ6時間後に復活。,광고를 끝까지 보면 보상을 받습니다. 각각 6시간 후 돌아옵니다.,完整觀看廣告即可獲得獎勵。每項6小時後恢復。,完整观看广告即可获得奖励。每项6小时后恢复。
+shop.hint_free,Presentes do Santuário: toque para receber a recompensa. Cada um volta em 6 h.,Shrine gifts: tap to receive the reward. Each one returns in 6 h.,Regalos del santuario: toca para recibir la recompensa. Cada uno vuelve en 6 h.,"Geschenke des Schreins: Tippe, um die Belohnung zu erhalten. Jedes kehrt nach 6 h zurück.",Cadeaux du sanctuaire : touche pour recevoir la récompense. Chacun revient en 6 h.,"Дары святилища: коснись, чтобы получить награду. Каждый возвращается через 6 ч.",Hadiah kuil: ketuk untuk menerima hadiahnya. Tiap hadiah kembali dalam 6 jam.,社の贈り物：タップで報酬を受け取れます。それぞれ6時間後に復活。,신사의 선물: 터치하면 보상을 받습니다. 각각 6시간 후 돌아옵니다.,神社的禮物：點擊即可領取獎勵。每項6小時後恢復。,神社的礼物：点击即可领取奖励。每项6小时后恢复。
 shop.no_ads,Sem anúncios agora,No ads right now,Sin anuncios ahora,Gerade keine Werbung,Pas de pub pour l'instant,Сейчас нет рекламы,Tidak ada iklan,現在広告なし,지금은 광고 없음,目前沒有廣告,目前没有广告
 shop.owned,Anúncio de abertura removido. Obrigado!,Opening ad removed. Thank you!,Anuncio de apertura quitado. ¡Gracias!,Start-Werbung entfernt. Danke!,Pub d'ouverture retirée. Merci !,Реклама при запуске убрана. Спасибо!,Iklan pembuka dihapus. Terima kasih!,起動時広告は削除済み。ありがとう！,시작 광고가 제거되었습니다. 감사합니다!,已移除開場廣告，謝謝！,已移除开场广告，谢谢！
 shop.pending,Pagamento pendente. Liberamos assim que for confirmado.,Payment pending. We'll unlock it once confirmed.,Pago pendiente. Se activará al confirmarse.,Zahlung ausstehend. Freischaltung nach Bestätigung.,Paiement en attente. Activation dès confirmation.,Платёж ожидает подтверждения.,Pembayaran tertunda. Dibuka setelah dikonfirmasi.,支払い保留中。確認後に解放します。,결제 대기 중. 확인되면 해제됩니다.,付款處理中，確認後解鎖。,付款处理中，确认后解锁。

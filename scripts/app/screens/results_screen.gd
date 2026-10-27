@@ -734,7 +734,7 @@ func _build_right() -> Control:
 	_again = button(tr("results.again"), _on_again, Vector2(0, 30))
 	_again.name = "Again"
 	col.add_child(_again)
-	_double = button(tr("results.double"), _on_double, Vector2(0, 22))
+	_double = button(double_text(), _on_double, Vector2(0, 22))
 	_double.name = "Double"
 	_double.icon = _small_coin()
 	_double.expand_icon = false
@@ -812,6 +812,7 @@ func _refresh() -> void:
 			tile["to"] = earned
 			tile["start"] = _t
 	_doubled_pill.visible = bool(_result.get("doubled", false))
+	_double.text = double_text()
 	_double.visible = int(_result.get("ryo_earned", 0)) > 0 and not bool(_result.get("doubled", false)) \
 			and AdsManager.rewarded_available()
 	_double.set_meta("busy", false)
@@ -826,6 +827,11 @@ func _on_again() -> void:
 
 func _on_menu() -> void:
 	app.go(&"title")
+
+
+## "Dobrar ryō (anúncio)" ou, sem anúncios (AdsManager.ads_enabled = false), "(presente)".
+func double_text() -> String:
+	return tr("results.double") if AdsManager.ads_enabled else tr("results.double_free")
 
 
 ## Dobra só o ryō desta partida, uma vez (plano 17.6).

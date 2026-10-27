@@ -18,6 +18,9 @@ extends Screen
 ##
 ## Os cartões usam MOUSE_FILTER_PASS para o arrasto chegar ao ScrollContainer, e um toque
 ## que virou arrasto não compra nem resgata nada.
+##
+## Sem anúncios (AdsManager.ads_enabled = false): as vagas viram presentes ("Receber grátis",
+## com a mesma espera de 6 h) e a seção "Apoie o jogo" (compra e restauração) some.
 
 const CARD_W := 103.0
 const GAP := 6.0
@@ -74,6 +77,9 @@ var _balance_coin: TextureRect
 var _coin_time: float = 0.0
 var _buy: Button
 var _restore: Button
+## Subtítulo das Oferendas (texto de anúncio ou de presente) e os nós da seção de compra.
+var _offer_hint: Label
+var _support: Array[Control] = []
 ## id -> {"button": Button, "name": Label, "state": Label, "pill": PanelContainer, "dim": Array}
 var _cards: Dictionary = {}
 ## id -> {"button": Button, "price": Label, "coin": TextureRect, "pill": PanelContainer, "dim": Array}
@@ -126,7 +132,9 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 4)
 	col.mouse_filter = Control.MOUSE_FILTER_PASS
 	_scroll.add_child(col)
-	col.add_child(_section(tr("shop.section.offerings"), tr("shop.hint")))
+	var offerings := _section(tr("shop.section.offerings"), tr("shop.hint"))
+	_offer_hint = offerings.get_child(1) as Label
+	col.add_child(offerings)
 	_row = _card_row()
 	col.add_child(_row)
 	col.add_child(_spacer(6))
@@ -134,8 +142,10 @@ func _ready() -> void:
 	_coin_row = _card_row()
 	col.add_child(_coin_row)
 	col.add_child(_spacer(6))
-	col.add_child(_section(tr("shop.section.support"), tr("shop.support_hint")))
-	col.add_child(_purchase_row())
+	_support.append(_section(tr("shop.section.support"), tr("shop.support_hint")))
+	_support.append(_purchase_row())
+	for node: Control in _support:
+		col.add_child(node)
 	col.add_child(_spacer(10))
 
 	_build_toast()
@@ -152,6 +162,9 @@ func on_show() -> void:
 		child.queue_free()
 	_cards.clear()
 	_coin_cards.clear()
+	_offer_hint.text = tr("shop.hint") if AdsManager.ads_enabled else tr("shop.hint_free")
+	for node: Control in _support:
+		node.visible = PurchaseManager.available()
 	var text_w := CARD_W - 2 * PAD
 	var chip_w := text_w - 2 * CHIP_MARGIN_X
 	# Vagas por anúncio: a caixa do nome cabe o nome mais longo da linha; a do estado, o
@@ -162,7 +175,7 @@ func on_show() -> void:
 		slot_names[id] = _slot_name(id)
 		name_lines = maxi(name_lines, _lines(slot_names[id], text_w))
 	var state_lines := 1
-	for text: String in ["> %s" % tr("shop.watch"), tr("shop.no_ads"), "00:00:00"]:
+	for text: String in ["> %s" % claim_text(), tr("shop.no_ads"), "00:00:00"]:
 		state_lines = maxi(state_lines, _lines(text, chip_w))
 	var slot_h := _card_height([_text_height(name_lines), _text_height(state_lines) + 2 * CHIP_MARGIN_Y])
 	for id: StringName in ShopManager.ad_slots():
@@ -251,7 +264,7 @@ func _update_cards() -> void:
 			b.disabled = true
 		if is_ready and not b.disabled:
 			# Chamada para ação: pílula dourada com texto escuro.
-			state.text = "> %s" % tr("shop.watch")
+			state.text = "> %s" % claim_text()
 			state.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
 			state.add_theme_constant_override("outline_size", 0)
 			pill.add_theme_stylebox_override("panel", _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 3))
@@ -294,6 +307,11 @@ func _update_coin_cards() -> void:
 			price.remove_theme_constant_override("outline_size")
 			pill.add_theme_stylebox_override("panel",
 					_flat(Color(0.05, 0.02, 0.03, 0.7), Color(SHORT if short else ThemeFactory.ACCENT, 0.5), 1, 6))
+
+
+## Chamada da vaga pronta: "Ver anúncio" ou, sem anúncios, "Receber grátis".
+func claim_text() -> String:
+	return tr("shop.watch") if AdsManager.ads_enabled else tr("shop.claim_free")
 
 
 func _claim(id: StringName) -> void:

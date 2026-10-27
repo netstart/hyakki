@@ -17,6 +17,7 @@ Licenças do jogo, lidos do motor exportado (`Engine.get_copyright_info()`).
 | Kenney - Game Icons | Kenney Vleugels (Kenney.nl) | CC0-1.0 | kenney_game-icons.zip (PNG/White/1x, 50x50), downloaded 2026-10-24 | sim | não | `licenses/texts/CC0-1.0.txt` | https://kenney.nl/assets/game-icons |
 | Hyakki - procedural sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_sfx.py (2026-10-23) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_sfx.py |
 | Hyakki - skill icons | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_skill_icons.gd (2026-10-24) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_skill_icons.gd |
+| Hyakki - app icon | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/make_store_art.gd (2026-10-25) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/make_store_art.gd |
 | Hyakki - procedural enemy and boss sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_enemy_sfx.py (2026-10-24) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_enemy_sfx.py |
 | Poing Studios AdMob Plugin for Godot | Poing Studios | MIT | 5.1.0 (android-template-v4.7.2) | sim | sim | `licenses/texts/MIT-PoingAdMob.txt` | https://github.com/poingstudios/godot-admob-plugin |
 | Google Mobile Ads SDK and UMP SDK | Google LLC | LicenseRef-Google-Mobile-Ads-SDK | ads-mobile-sdk 1.4.0 (via Poing AdMob 5.1.0) | sim | não | `licenses/texts/LicenseRef-Google-Mobile-Ads-SDK.txt` | https://developers.google.com/admob/android/quick-start |

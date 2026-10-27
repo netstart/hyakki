@@ -1,0 +1,13 @@
+Registro de origem - hyakki_app_icon (2026-10-25)
+
+Arquivos: assets/art/ui/app_icon/{icon_192,adaptive_foreground_432,adaptive_background_432,adaptive_monochrome_432}.png
+Origem: gerados pelo próprio projeto com tools/make_store_art.gd (Godot, determinístico:
+rodar de novo reproduz os mesmos pixels). Céu, estrelas, lua, colinas, brilho e a lanterna
+de papel são pixel art original escrita no script. O rosto é o Faceset da Aki do Ninja
+Adventure (CC0-1.0, entrada ninja_adventure), sem o fundo chapado, com contorno de 1 px e
+ampliado por vizinho mais próximo em escala inteira. As mesmas imagens ficam também em
+docs/store/graphics/launcher/ (arte da loja, fora do jogo).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhum modelo de IA de imagem foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: Godot --path . res://tools/make_store_art.tscn -- --only=icons

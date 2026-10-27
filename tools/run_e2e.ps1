@@ -25,7 +25,7 @@ param(
 $ErrorActionPreference = 'Continue'
 $project = Split-Path -Parent $PSScriptRoot
 $adb = Join-Path $AndroidSdk 'platform-tools\adb.exe'
-$package = 'dev.hyakki.prototype'
+$package = 'io.github.netstart.hyakki'
 $stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
 $out = Join-Path $project "build\e2e-report\$stamp"
 New-Item -ItemType Directory -Force $out | Out-Null

@@ -54,6 +54,8 @@ const WeatherTests := preload("res://tests/weather_tests.gd")
 const SurfaceTests := preload("res://tests/surface_tests.gd")
 ## Ícones de habilidade (arquivos, pintor da HUD, 3 níveis): tests/skill_icon_tests.gd.
 const SkillIconTests := preload("res://tests/skill_icon_tests.gd")
+## Modo "sem anúncios" (release sem IDs do AdMob ou --ads-off): presentes, sem abertura nem compra.
+const AdsOffTests := preload("res://tests/ads_off_tests.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -80,6 +82,7 @@ func _ready() -> void:
 	await _test_suspended_run()
 	await _test_revive_by_ad()
 	await DeathSequenceTests.new().run(self, _check)
+	await AdsOffTests.new().run(self, _check)
 	await _test_thunder_weapons()
 	await _test_raijin_bolts()
 	await OnikiriTests.new().run(self, _check)

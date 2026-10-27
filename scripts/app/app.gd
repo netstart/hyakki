@@ -121,6 +121,10 @@ func _scenario_from_args(args: PackedStringArray) -> bool:
 
 ## Sequência da abertura a frio.
 func _boot() -> void:
+	if not AdsManager.ads_enabled:
+		# Sem anúncios: nada a consentir (nenhum ID de publicidade é usado) e sem abertura.
+		AdsManager.start(after_consent)
+		return
 	if AdsManager.uses_google_consent():
 		# AdMob: o formulário de consentimento é o UMP do Google (aparece só onde é exigido).
 		_show_blank()
@@ -150,7 +154,7 @@ func _after_open_ad() -> void:
 	go(&"title")
 	# Oferta discreta de remover o anúncio de abertura, uma única vez (17.7).
 	if int(SaveManager.data["open_ads_seen"]) >= 5 and not bool(SaveManager.data["remove_ad_offer_shown"]) \
-			and not PurchaseManager.owns():
+			and PurchaseManager.available() and not PurchaseManager.owns():
 		SaveManager.data["remove_ad_offer_shown"] = true
 		SaveManager.save_profile()
 		go(&"shop")

@@ -96,10 +96,14 @@ C:\android-sdk\platform-tools\adb.exe install -r C:\src\hyakki\build\hyakki-debu
 
 O APK inclui arm64-v8a (celulares) e x86_64 (emulador). Validado no emulador `Redmi_Note_14_Pro_Plus_5G`.
 
-> O pacote `dev.hyakki.prototype` (em `export_presets.cfg`) é provisório: escolha o definitivo antes de
-> publicar, porque **ele não pode mudar depois que o app sai na Play Store**.
+> O pacote definitivo é `io.github.netstart.hyakki` (em `export_presets.cfg`). **Não mude:** depois que o
+> app sai na Play Store, o ID não pode mais ser trocado.
 
 ## Publicação (build de release)
+
+Passo a passo da Play Console, com as respostas prontas: [docs/store/play-console-guia.md](docs/store/play-console-guia.md).
+Arte da loja: [docs/store/graphics/](docs/store/graphics/README.md) · ficha: [docs/store/listing.md](docs/store/listing.md) ·
+política de privacidade: https://netstart.github.io/privacy-policy.html.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
@@ -117,8 +121,9 @@ emulador, abre o jogo e falha se houver erro do Godot no logcat. Opções: `-Ver
   `C:\src\keys\hyakki-release.env`. **Fora do repositório; faça backup dos dois arquivos.** Na Play Console,
   ative a "Assinatura de apps do Google Play": o Google guarda a chave final e esta vira só a chave de envio
   (se perder, dá para pedir a troca).
-- **Anúncios:** o build usa o AdMob real (plugin Poing, com UMP), mas com os IDs de **teste** do Google até
-  `AdMobProvider.RELEASE_UNITS` e `admob/general/android/app_id` receberem os IDs da sua conta AdMob.
+- **Anúncios:** enquanto `AdMobProvider.RELEASE_UNITS` e `admob/general/android/app_id` não tiverem os IDs
+  da sua conta AdMob, a build de release fica **sem anúncios**: o SDK não é iniciado, as recompensas viram
+  presente e a compra "remover anúncio" some. Preenchidos os IDs, tudo volta sozinho.
 - **Compras:** Google Play Billing real; só funciona com o app publicado na Play Console (teste interno) e
   um aparelho com Play Store. No emulador sem Play Store a compra responde "não concluída".
 
@@ -141,7 +146,7 @@ Para jogar a **build de produção** (APK de release otimizado e assinado), dois
 Cenários que levam direto a telas difíceis de alcançar jogando (só funcionam em build de debug):
 
 ```bash
-adb shell "run-as dev.hyakki.prototype sh -c 'echo chest > files/scenario.txt'"
+adb shell "run-as io.github.netstart.hyakki sh -c 'echo chest > files/scenario.txt'"
 ```
 
 Depois abra o jogo: ele lê e apaga o arquivo. Cenários: `chest`, `kami`, `revive` (anúncio premiado de teste do AdMob), `dawn` (vitória),

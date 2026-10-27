@@ -4,6 +4,8 @@ extends Node
 ## - "mock": compra simulada, no PC e nos testes.
 ## Regras: confirmação (acknowledge) após a entrega, restauração ao abrir, estado pendente
 ## não libera, reembolso faz o anúncio de abertura voltar.
+## No modo "sem anúncios" (AdsManager.ads_enabled = false) a compra não faz sentido: fica
+## indisponível (available() = false), as telas a escondem e o Play Billing nem é conectado.
 
 signal purchase_finished(product: String, ok: bool)
 
@@ -21,6 +23,9 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg == "--purchase-pending":
 			mock_pending = true
+	if not AdsManager.ads_enabled:
+		provider = "off"
+		return
 	if PlayBillingProvider.is_supported():
 		provider = "play"
 		_play = PlayBillingProvider.new()
@@ -28,6 +33,11 @@ func _ready() -> void:
 		_play.purchase_state.connect(_on_play_state)
 		_play.setup(PRODUCT)
 	restore()
+
+
+## A compra "Remover anúncio de abertura" existe só enquanto há anúncios.
+func available() -> bool:
+	return AdsManager.ads_enabled
 
 
 func owns(product: String = PRODUCT) -> bool:
@@ -43,6 +53,9 @@ func price_text() -> String:
 func purchase(product: String = PRODUCT) -> void:
 	if owns(product):
 		purchase_finished.emit(product, true)
+		return
+	if not available():
+		purchase_finished.emit(product, false)
 		return
 	if provider == "play":
 		_play.purchase()
@@ -67,6 +80,8 @@ func _deliver(product: String) -> void:
 
 ## Ao abrir: consulta as compras do usuário (no Play real: queryPurchases).
 func restore() -> void:
+	if not available():
+		return
 	if provider == "play":
 		_play.restore()
 		return

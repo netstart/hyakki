@@ -16,6 +16,7 @@ func _initialize() -> void:
 	_test_settings_defaults()
 	_test_journey_geo()
 	_test_gfx_quality()
+	_test_ads_config()
 	load("res://tests/enemy_fx_tests.gd").run_unit(_check)
 	(load("res://tests/terrain_tests.gd") as GDScript).new().run_unit(_check)
 	print("%d verificações, %d falhas" % [_count, _failures])
@@ -29,6 +30,30 @@ func _check(condition: bool, label: String) -> void:
 		printerr("FALHOU: " + label)
 	elif "--verbose" in OS.get_cmdline_user_args():
 		print("ok: " + label)
+
+
+## Modo "sem anúncios": só liga os anúncios de release com todos os IDs reais preenchidos.
+func _test_ads_config() -> void:
+	var app_id := "ca-app-pub-1234567890123456~1234567890"
+	var real := {"app_open": "ca-app-pub-1234567890123456/1111111111",
+			"rewarded": "ca-app-pub-1234567890123456/2222222222"}
+	_check(AdMobProvider.ids_configured(real, app_id), "IDs reais + ID do app: anúncios de release ligados")
+	_check(not AdMobProvider.ids_configured({"app_open": "", "rewarded": ""}, app_id),
+			"blocos vazios: sem anúncios")
+	_check(not AdMobProvider.ids_configured({"app_open": real["app_open"], "rewarded": ""}, app_id),
+			"um bloco vazio basta para ficar sem anúncios")
+	_check(not AdMobProvider.ids_configured(real, ""), "sem o ID do app: sem anúncios")
+	_check(not AdMobProvider.ids_configured(real, "ca-app-pub-3940256099942544~3347511713"),
+			"ID de app de teste do Google não conta como real")
+	_check(not AdMobProvider.ids_configured(AdMobProvider.TEST_UNITS, app_id),
+			"blocos de teste do Google não contam como reais")
+	_check(not AdMobProvider.ids_configured(real, "ca-app-pub-1234567890123456/1"),
+			"ID do app precisa do formato com ~")
+	_check(not AdMobProvider.ids_configured({}, app_id), "sem blocos: sem anúncios")
+	_check(AdMobProvider.has_release_ids() == AdMobProvider.ids_configured(AdMobProvider.RELEASE_UNITS,
+			String(ProjectSettings.get_setting(AdMobProvider.APP_ID_SETTING, ""))), "has_release_ids lê o projeto")
+	_check(AdMobProvider.ads_allowed() == (OS.is_debug_build() or AdMobProvider.has_release_ids()),
+			"anúncios ligados = debug ou IDs reais")
 
 
 func _test_xp_curve() -> void:

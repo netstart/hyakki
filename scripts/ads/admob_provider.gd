@@ -4,8 +4,14 @@ extends Node
 ## (addons/admob, MIT). Só é usado no Android quando o singleton nativo existe; no PC e nos
 ## testes o AdsManager usa o provedor simulado.
 ##
-## IDs: enquanto `RELEASE_UNITS` estiver vazio (ou em build de debug), usa os IDs de TESTE
-## oficiais do Google, que nunca geram receita nem infringem a política de cliques.
+## IDs: em build de debug usa os IDs de TESTE oficiais do Google, que nunca geram receita
+## nem infringem a política de cliques. Em build de release sem IDs reais o jogo fica no modo
+## "sem anúncios" (AdsManager.ads_enabled = false): o SDK e o UMP nunca são iniciados, não há
+## anúncio de abertura e as recompensas são entregues de presente, sem anúncio.
+##
+## A conta de produção está configurada em `RELEASE_UNITS` e em
+## `admob/general/android/app_id` no project.godot. Para mudar de conta, atualize os três IDs;
+## o exportador do Poing grava o ID do app no AndroidManifest.
 
 signal ready_changed
 
@@ -15,12 +21,16 @@ const TEST_UNITS := {
 	"app_open": "ca-app-pub-3940256099942544/9257395921",
 	"rewarded": "ca-app-pub-3940256099942544/5224354917",
 }
-## Preencher com os blocos reais do AdMob antes da publicação (plano 17.1).
+## IDs de produção dos blocos AdMob (plano 17.1).
 const RELEASE_UNITS := {
-	"app_open": "",
-	"rewarded": "",
+	"app_open": "ca-app-pub-6552169828297838/9118848597",
+	"rewarded": "ca-app-pub-6552169828297838/5734137356",
 }
 const RETRY_SECONDS := 20.0
+## Configuração do Poing com o ID do app AdMob (vai para o AndroidManifest na exportação).
+const APP_ID_SETTING := "admob/general/android/app_id"
+## Conta de publisher dos IDs de teste do Google (blocos e app): nunca valem como "reais".
+const TEST_PUBLISHER := "ca-app-pub-3940256099942544"
 
 var initialized: bool = false
 var _rewarded: RewardedAd
@@ -32,6 +42,31 @@ var _loading_rewarded: bool = false
 
 static func is_supported() -> bool:
 	return OS.get_name() == "Android" and Engine.has_singleton(SINGLETON)
+
+
+## Os IDs reais do AdMob estão preenchidos (blocos em RELEASE_UNITS e ID do app no projeto).
+static func has_release_ids() -> bool:
+	return ids_configured(RELEASE_UNITS, String(ProjectSettings.get_setting(APP_ID_SETTING, "")))
+
+
+## Regra pura (testável): todo bloco preenchido e o ID do app preenchido, nenhum de teste.
+static func ids_configured(units: Dictionary, app_id: String) -> bool:
+	if units.is_empty() or not _is_real_id(app_id, "~"):
+		return false
+	for kind: String in units:
+		if not _is_real_id(String(units[kind]), "/"):
+			return false
+	return true
+
+
+static func _is_real_id(id: String, separator: String) -> bool:
+	id = id.strip_edges()
+	return id.begins_with("ca-app-pub-") and id.contains(separator) and not id.begins_with(TEST_PUBLISHER)
+
+
+## Anúncios ligados: build de debug (IDs de teste/simulado, como sempre) ou release com IDs reais.
+static func ads_allowed() -> bool:
+	return OS.is_debug_build() or has_release_ids()
 
 
 static func unit(kind: String) -> String:

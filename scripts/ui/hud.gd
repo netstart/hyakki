@@ -75,6 +75,7 @@ var _speed_shown: int = 1
 var _speed_tween: Tween
 var _revive_panel: Control
 var _revive_label: Label
+var _revive_watch: Button
 var _revive_left: float = 0.0
 var _revive_bar: Control
 ## HUD de jogo que some na morte (joystick, topo, botões, chefe, avisos).
@@ -543,11 +544,18 @@ func _build_pause_panel() -> void:
 
 func show_revive_offer() -> void:
 	_revive_panel.visible = true
+	_revive_watch.text = revive_text()
+	_fit_revive_font(_revive_watch)
 	_revive_left = REVIVE_SECONDS
 	joystick.release()
 	# Surge devagar sobre a cena da morte.
 	_revive_panel.modulate.a = 0.0
 	create_tween().tween_property(_revive_panel, "modulate:a", 1.0, REVIVE_FADE)
+
+
+## "Reviver (anúncio)" ou, sem anúncios (AdsManager.ads_enabled = false), "(presente)".
+func revive_text() -> String:
+	return tr("revive.watch") if AdsManager.ads_enabled else tr("revive.free")
 
 
 ## Sem a tela escura das outras: a cena da morte já vem cinza e escura, e o corpo da guardiã
@@ -589,16 +597,17 @@ func _build_revive_panel() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 6)
 	bottom.add_child(box)
-	var watch := _menu_button(tr("revive.watch"), func() -> void:
+	_revive_watch = _menu_button(revive_text(), func() -> void:
 		_revive_panel.visible = false
 		revive_answered.emit(true), REVIVE_WATCH)
-	box.add_child(watch)
+	_revive_watch.name = "ReviveWatch"
+	box.add_child(_revive_watch)
 	var results := _menu_button(tr("revive.results"), func() -> void:
 		_revive_panel.visible = false
 		revive_answered.emit(false), Vector2(200, 26))
 	box.add_child(results)
 	_root.add_child(_revive_panel)
-	_style_revive_buttons(watch, results)
+	_style_revive_buttons(_revive_watch, results)
 
 
 func _style_revive_buttons(watch: Button, results: Button) -> void:
@@ -608,14 +617,18 @@ func _style_revive_buttons(watch: Button, results: Button) -> void:
 	_button_styles(watch, main, _flat(VERMILION.lightened(0.12), Color.WHITE, 2, 6),
 			_flat(VERMILION.darkened(0.25), ThemeFactory.ACCENT, 2, 6))
 	watch.add_theme_color_override("font_color", ThemeFactory.TEXT)
-	# Fonte 24 (2× da pixel) quando o texto cabe; senão a de 12, para não cortar em idioma longo.
-	var font := _root.theme.default_font
-	var fits := font.get_string_size(watch.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x <= REVIVE_WATCH.x - 16.0
-	watch.add_theme_font_size_override("font_size", 24 if fits else 12)
+	_fit_revive_font(watch)
 	_button_styles(results, _flat(Color(0, 0, 0, 0.3), Color(REVIVE_DIM, 0.45), 1, 4),
 			_flat(Color(0, 0, 0, 0.45), ThemeFactory.ACCENT.darkened(0.2), 1, 4),
 			_flat(Color(0, 0, 0, 0.55), ThemeFactory.ACCENT, 1, 4))
 	results.add_theme_color_override("font_color", REVIVE_DIM)
+
+
+## Fonte 24 (2× da pixel) quando o texto cabe; senão a de 12, para não cortar em idioma longo.
+func _fit_revive_font(watch: Button) -> void:
+	var font := _root.theme.default_font
+	var fits := font.get_string_size(watch.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x <= REVIVE_WATCH.x - 16.0
+	watch.add_theme_font_size_override("font_size", 24 if fits else 12)
 
 
 func _button_styles(button: Button, normal: StyleBoxFlat, hover: StyleBoxFlat, pressed: StyleBoxFlat) -> void:

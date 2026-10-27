@@ -12,6 +12,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Ninja Adventure - Asset Pack** — pixel-boy & AAA (CC0-1.0) — https://pixel-boy.itch.io/ninja-adventure-asset-pack
 - **Kenney - Game Icons** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/game-icons
 - **Hyakki - skill icons** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_skill_icons.gd
+- **Hyakki - app icon** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/make_store_art.gd
 - **Platformer character pack (free sample)** — Merakintsugi (LicenseRef-Merakintsugi) — https://merakintsugi.itch.io/platformer-character-pack
 - **Lightning (OpenGameArt)** — oglsdl (CC0-1.0) — https://opengameart.org/content/lightning-1
 

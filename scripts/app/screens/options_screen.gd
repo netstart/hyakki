@@ -18,6 +18,9 @@ const SECTION_GAP := 8
 const PERCENT_WIDTH := 34.0
 const SCROLL_DEADZONE := 8
 const SCROLL_TIME := 0.32
+## Política de privacidade publicada (exigida pela política de Dados do Usuário do Google Play
+## acessível dentro do app). Aberta no navegador pela linha "Política de privacidade".
+const PRIVACY_POLICY_URL := "https://netstart.github.io/privacy-policy.html"
 ## Seções: [id, ícone Kenney (ou glifo), chave do texto].
 const SECTIONS := [
 	["audio", "audio_on"], ["controls", "gamepad"], ["display", "contrast"],
@@ -26,6 +29,9 @@ const SECTIONS := [
 
 ## Seção a reabrir depois de trocar o idioma (a tela é recriada).
 static var _restore_section := -1
+## Quem abre links externos. Vazio: OS.shell_open. Os testes trocam por um registrador,
+## para conferir a URL sem abrir o navegador.
+static var url_opener: Callable = Callable()
 
 var _scroll: ScrollContainer
 var _content: VBoxContainer
@@ -196,15 +202,22 @@ func _build_language(card: VBoxContainer) -> void:
 
 func _build_other(card: VBoxContainer) -> void:
 	card.add_child(_toggle_row("notifications", tr("options.notifications")))
-	card.add_child(_button_row("privacy", tr("options.privacy"),
-			[_small_button(tr("options.privacy_open"), _open_privacy)]))
-	card.add_child(_button_row("restore", tr("options.purchases"),
-			[_small_button(tr("shop.restore"), func() -> void: PurchaseManager.restore())]))
+	# Sem anúncios (AdsManager.ads_enabled = false) não há consentimento a rever nem compra
+	# a restaurar: as duas linhas somem.
+	if AdsManager.ads_enabled:
+		card.add_child(_button_row("privacy", tr("options.privacy"),
+				[_small_button(tr("options.privacy_open"), _open_privacy)]))
+	if PurchaseManager.available():
+		card.add_child(_button_row("restore", tr("options.purchases"),
+				[_small_button(tr("shop.restore"), func() -> void: PurchaseManager.restore())]))
 	var credits := _small_button(tr("title.credits"), func() -> void: app.go(&"credits"))
 	credits.name = "opt_credits"
 	var licenses := _small_button(tr("options.licenses"), func() -> void: app.go(&"licenses"))
 	licenses.name = "opt_licenses"
 	card.add_child(_button_row("about", tr("options.about"), [credits, licenses]))
+	# Visível com e sem anúncios (política de Dados do Usuário do Google Play).
+	card.add_child(_button_row("privacy_policy", tr("options.privacy_policy"),
+			[_small_button(tr("options.privacy_policy_open"), open_privacy_policy)]))
 	card.add_child(_reset_row())
 
 
@@ -393,6 +406,14 @@ func _reset_row() -> HBoxContainer:
 	box.add_child(version)
 	row.add_child(_holder(box))
 	return row
+
+
+## Abre a política de privacidade no navegador (ou no `url_opener` dos testes).
+func open_privacy_policy() -> void:
+	if url_opener.is_valid():
+		url_opener.call(PRIVACY_POLICY_URL)
+	else:
+		OS.shell_open(PRIVACY_POLICY_URL)
 
 
 ## AdMob: formulário de privacidade do Google (UMP); simulado: a tela própria.

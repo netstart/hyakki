@@ -10,19 +10,20 @@ config_version=5
 
 [admob]
 
+general/android/app_id="ca-app-pub-6552169828297838~1237111269"
 general/android/enable_r8_optimization=true
 
 [application]
 
 config/name="Hyakki"
 config/description="Hyakki — Até o Amanhecer"
-config/version="1.6.1"
+config/version="1.7.0"
 run/main_scene="res://scenes/app/App.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.05098039, 0.043137256, 0.08627451, 1)
 boot_splash/show_image=false
-config/icon="res://assets/art/actors/heroes/aki/Faceset.png"
+config/icon="res://assets/art/ui/app_icon/icon_192.png"
 
 [autoload]
 

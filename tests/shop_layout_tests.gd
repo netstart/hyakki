@@ -297,6 +297,9 @@ func _clip_parent(control: Control, stop: Control) -> Control:
 ## Coleta botões e textos de uma árvore de controles.
 func _controls_in(node: Node, out: Array[Control]) -> void:
 	for child: Node in node.get_children():
+		# Seção escondida (ex.: "Apoie o jogo" sem anúncios) não conta como controle da tela.
+		if child is CanvasItem and not (child as CanvasItem).visible:
+			continue
 		if (child is BaseButton or child is Label) and not out.has(child):
 			out.append(child as Control)
 		_controls_in(child, out)

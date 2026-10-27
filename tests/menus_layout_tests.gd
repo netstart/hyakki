@@ -20,7 +20,7 @@ const SHOT_VARIANTS: Array[String] = ["heroes", "heroes:locked", "options", "opt
 const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds",
 		"hurt_sounds", "joystick_mode", "joystick_side", "vibration", "fps", "graphics_quality", "colorblind",
 		"reduce_flashes", "damage_numbers", "hp_bar_below", "notifications", "privacy", "restore", "credits",
-		"licenses", "reset", "version"]
+		"licenses", "privacy_policy", "reset", "version"]
 
 var _host: Node
 var _check: Callable
@@ -252,6 +252,26 @@ func close_screen(screen: Control) -> void:
 
 
 
+## Opções num tamanho e idioma (também usado pelo tests/ads_off_tests.gd no modo sem anúncios).
+func run_options(host: Node, check: Callable, view: Vector2, state: String) -> void:
+	_host = host
+	_check = check
+	await _test_options(view, state)
+
+
+## Chaves esperadas: sem anúncios não há "privacy" nem "restore" (o resto, inclusive a
+## política de privacidade, aparece sempre).
+static func expected_option_keys() -> Array[String]:
+	var keys: Array[String] = []
+	for key: String in OPTION_KEYS:
+		if key == "privacy" and not AdsManager.ads_enabled:
+			continue
+		if key == "restore" and not PurchaseManager.available():
+			continue
+		keys.append(key)
+	return keys
+
+
 func _test_options(view: Vector2, state: String) -> void:
 	var screen := await open_screen(_host, view, &"options")
 	var st := "Opções %s" % state
@@ -266,7 +286,7 @@ func _test_options(view: Vector2, state: String) -> void:
 		_ok(not t.get_global_rect().intersects(scroll.get_global_rect()), "%s: aba %s fora da rolagem" % [st, t.name])
 	_ok(rail.get_global_rect().end.y <= view.y, "%s: trilho cabe na altura" % st)
 	var controls: Array[Control] = []
-	for key: String in OPTION_KEYS:
+	for key: String in expected_option_keys():
 		var c := screen.find_child("opt_%s" % key, true, false) as Control
 		_ok(c != null, "%s: tem opt_%s" % [st, key])
 		if c != null:
@@ -339,6 +359,14 @@ func _test_options_behaviour() -> void:
 	await _host.get_tree().process_frame
 	await _host.get_tree().process_frame
 	_ok(screen.call("current_section") == 0, "Opções: rolar ao topo acende Áudio")
+	# Política de privacidade: pede ao abridor exatamente a URL publicada (sem abrir o navegador).
+	var opened: Array[String] = []
+	var options_script := load(SCREENS[&"options"]) as GDScript
+	options_script.set("url_opener", func(url: String) -> void: opened.append(url))
+	(screen.find_child("opt_privacy_policy", true, false) as Button).pressed.emit()
+	options_script.set("url_opener", Callable())
+	_ok(opened == ["https://netstart.github.io/privacy-policy.html"],
+			"Opções: Política de privacidade pede a URL publicada (%s)" % [opened])
 	var reset := screen.find_child("opt_reset", true, false) as Button
 	SaveManager.data["ryo"] = 77
 	reset.pressed.emit()
