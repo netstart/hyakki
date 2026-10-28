@@ -204,12 +204,13 @@ func _build_language(card: VBoxContainer) -> void:
 
 func _build_other(card: VBoxContainer) -> void:
 	card.add_child(_toggle_row("notifications", tr("options.notifications")))
-	# Sem anúncios (AdsManager.ads_enabled = false) não há consentimento a rever nem compra
-	# a restaurar: as duas linhas somem.
+	# Sem anúncios (AdsManager.ads_enabled = false) não há consentimento a rever. "Restaurar
+	# compras" fica sempre que há loja de dinheiro (Play Billing ou o simulado): a Ampulheta de
+	# Fūjin (velocidade 2x/3x) é vendida com ou sem anúncios.
 	if AdsManager.ads_enabled:
 		card.add_child(_button_row("privacy", tr("options.privacy"),
 				[_small_button(tr("options.privacy_open"), _open_privacy)]))
-	if PurchaseManager.available():
+	if PurchaseManager.billing_available():
 		card.add_child(_button_row("restore", tr("options.purchases"),
 				[_small_button(tr("shop.restore"), func() -> void: PurchaseManager.restore())]))
 	var credits := _small_button(tr("title.credits"), func() -> void: app.go(&"credits"))

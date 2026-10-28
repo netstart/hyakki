@@ -11,9 +11,12 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 - Santuário (18 power-ups, reembolso total), 40 conquistas que desbloqueiam conteúdo, Diário do Guardião,
   história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V.
 - Velocidade **1x / 2x / 3x** com passo fixo: a mesma semente gera a mesma partida em qualquer velocidade.
+  2x e 3x são liberados pela **Ampulheta de Fūjin**, compra única e permanente na Loja: 3.000 ryō ou
+  dinheiro (Google Play, produto `unlock_speed`, R$ 4,99 / US$ 1,99). O bot e o `--speed=N` dos testes
+  aceleram sem a compra.
 - **11 idiomas** (pt-BR, en, es, de, fr, ru, id, ja, ko, zh-TW, zh-CN) com a fonte Fusion Pixel.
 - Monetização do plano 17: anúncio de abertura, Loja com recompensas a cada 6 h, reviver e dobrar ryō,
-  compra para remover o anúncio de abertura. **Hoje com provedores simulados** (sem SDK do AdMob/Billing).
+  compra para remover o anúncio de abertura e a Ampulheta de Fūjin (velocidade 2x/3x, com ryō ou dinheiro). **Hoje com provedores simulados** (sem SDK do AdMob/Billing).
 - Telas Licenças e Créditos geradas do registro de licenças.
 
 ## Rodar no PC
@@ -52,7 +55,7 @@ Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espa�
 powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 ```
 
-Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (629 chaves ×
+Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (799 chaves ×
 11 idiomas, marcadores `%s/%d`), licenças (cobertura de todos os arquivos de `assets/`, hashes, licenças
 permitidas), limites da ficha da loja, testes de integração (dados, idiomas, cobertura de glifos, Loja,
 Santuário, save, regras de anúncio), determinismo 1x/2x/3x e estresse com 500 inimigos.

@@ -8,7 +8,7 @@
 > mesmo conteúdo. Revise a seção "Anúncios" se mudar a rede de anúncios, o SDK ou se passar a haver
 > servidor próprio, e atualize a data. Guia de publicação: `docs/store/play-console-guia.md`.
 
-Última atualização: 27 de outubro de 2026
+Última atualização: 28 de outubro de 2026
 
 ## Português (Brasil)
 
@@ -45,10 +45,10 @@ Android. O jogo só solicita anúncios quando há conexão com a internet. Como 
 <https://policies.google.com/privacy> e
 <https://policies.google.com/technologies/partner-sites>.
 
-**Compras.** A compra única (não consumível) "Remover anúncio de abertura" é processada pelo Google
+**Compras.** As compras únicas (não consumíveis) "Remover anúncio de abertura" e "Ampulheta de Fūjin" (velocidade 2x/3x) são processadas pelo Google
 Play, segundo os termos e a política de privacidade do Google. Não recebemos seu nome, e-mail nem
-dados de pagamento; o jogo só confere a compra no próprio aparelho, sem servidor próprio, e guarda
-no aparelho apenas se ela foi feita. Para recuperar a compra (por exemplo, após reinstalar o jogo),
+dados de pagamento; o jogo só confere as compras no próprio aparelho, sem servidor próprio, e guarda
+no aparelho apenas se cada uma foi feita. Para recuperar as compras (por exemplo, após reinstalar o jogo),
 use Opções › Restaurar compras.
 
 **Crianças.** O jogo é direcionado a pessoas a partir de 13 anos e não coleta, de forma intencional,
@@ -105,10 +105,10 @@ choice in Options › Privacy and ads, and reset or delete the advertising ID in
 The game only requests ads when an internet connection is available. How Google uses this data: <https://policies.google.com/privacy> and
 <https://policies.google.com/technologies/partner-sites>.
 
-**Purchases.** The one-time (non-consumable) "Remove opening ad" purchase is processed by Google
+**Purchases.** The one-time (non-consumable) purchases "Remove opening ad" and "Fūjin's Hourglass" (2x/3x speed) are processed by Google
 Play under Google's terms and privacy policy. We do not receive your name, email or payment data; the
-game checks the purchase only on the device, with no server of our own, and stores on the device only
-whether it was made. To recover the purchase (for example, after reinstalling the game), use
+game checks the purchases only on the device, with no server of our own, and stores on the device only
+whether each one was made. To recover the purchases (for example, after reinstalling the game), use
 Options › Restore purchases.
 
 **Children.** The game is directed at people aged 13 and over and does not knowingly collect data

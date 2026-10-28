@@ -15,6 +15,8 @@ const DIM := Color(0.8, 0.76, 0.72)
 const JADE := Color("9fe0a8")
 const INK := Color(0.04, 0.032, 0.08, 0.92)
 const OUTLINE := Color(0.1, 0.04, 0.04)
+## Caixa do cadeado de padlock() (largura, altura).
+const PADLOCK_SIZE := Vector2(7, 9)
 const JA_FONT := "res://assets/fonts/fusion_pixel_12_ja.woff2"
 ## Números de melhoria (+5, -8%, +1,5) que ganham destaque na descrição.
 const NUMBER_PATTERN := "[+\\-−]?\\d+(?:[.,]\\d+)?%?"
@@ -119,6 +121,51 @@ static func glyph(ci: CanvasItem, kind: String, at: Vector2, color: Color) -> vo
 			ci.draw_circle(o + Vector2(6, 6), 4.0, Color("f0c050"))
 			ci.draw_rect(Rect2(o + Vector2(5, 4), Vector2(2, 4)), Color("8a5a12"))
 			ci.draw_rect(Rect2(o + Vector2(4, 3), Vector2(1, 1)), Color(1, 1, 0.85))
+
+
+## Cadeado de pixel numa caixa de PADLOCK_SIZE com canto em `at`: alça em arco, corpo cheio
+## e o buraco da chave, com contorno. Marca o que está bloqueado até uma compra (ex.: velocidade
+## 2x/3x sem a Ampulheta de Fūjin).
+static func padlock(ci: CanvasItem, at: Vector2, color: Color, outline: Color = OUTLINE) -> void:
+	var o := at.round()
+	ci.draw_arc(o + Vector2(3.5, 4.0), 2.0, PI, TAU, 8, outline, 3.0)
+	ci.draw_rect(Rect2(o + Vector2(0, 4), Vector2(7, 5)), outline)
+	ci.draw_arc(o + Vector2(3.5, 4.0), 2.0, PI, TAU, 8, color, 1.0)
+	ci.draw_rect(Rect2(o + Vector2(1, 5), Vector2(5, 3)), color)
+	ci.draw_rect(Rect2(o + Vector2(3, 6), Vector2(1, 1)), outline)
+
+
+## Põe um cadeado (escondido de início) logo depois do texto, na mesma linha: o texto passa
+## para uma HBox no lugar dele. Devolve o controle do cadeado.
+static func padlock_beside(text: Label, color: Color) -> Control:
+	var parent := text.get_parent()
+	var at := text.get_index()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 3)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.remove_child(text)
+	row.add_child(text)
+	var lock := Control.new()
+	lock.name = "Padlock"
+	lock.custom_minimum_size = PADLOCK_SIZE
+	lock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lock.visible = false
+	lock.draw.connect(func() -> void: padlock(lock, Vector2.ZERO, color))
+	row.add_child(lock)
+	parent.add_child(row)
+	parent.move_child(row, at)
+	return lock
+
+
+## Tremida de "negado" na horizontal (amplitude que cai até parar), voltando a x = 0.
+static func shake_x(node: Control, amplitude: float = 3.0, time: float = 0.32) -> Tween:
+	var tween := node.create_tween()
+	for i: int in 4:
+		var side := amplitude * (1.0 - i / 4.0) * (1.0 if i % 2 == 0 else -1.0)
+		tween.tween_property(node, "position:x", roundf(side), time / 5.0)
+	tween.tween_property(node, "position:x", 0.0, time / 5.0)
+	return tween
 
 
 ## Texto pronto para RichTextLabel com os números destacados em `color` (BBCode seguro).

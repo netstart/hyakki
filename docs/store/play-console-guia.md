@@ -18,7 +18,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 | Política de privacidade | https://netstart.github.io/privacy-policy.html |
 | targetSdk / minSdk | 36 (Android 16) / 24 (Android 7.0) |
 | Preço | gratuito |
-| Anúncios / compras | anúncio de abertura (removível com compra única) + anúncios premiados opcionais; compra `remove_open_ad` |
+| Anúncios / compras | anúncio de abertura (removível com compra única) + anúncios premiados opcionais; compras `remove_open_ad` e `unlock_speed` (Ampulheta de Fūjin, velocidade 2x/3x) |
 | AdMob | app `ca-app-pub-6552169828297838~1237111269`; editor `pub-6552169828297838` |
 
 Visão geral do caminho (conta pessoal nova):
@@ -29,7 +29,7 @@ Visão geral do caminho (conta pessoal nova):
 4. Preparar a monetização: conta **AdMob** (pagamentos, impostos, mensagem de consentimento, aparelho
    de teste) e **perfil de pagamentos** da Play Console.
 5. Gerar o AAB e enviar para o **teste interno** (só você, para conferir); só então criar o
-   **produto no app** `remove_open_ad` e testar a compra com a conta de teste de licença.
+   **produtos no app** `remove_open_ad` e `unlock_speed` e testar as compras com a conta de teste de licença.
 6. Enviar para o **teste fechado** e manter **pelo menos 12 testadores por 14 dias seguidos**.
 7. Pedir acesso à **produção**, esperar a análise (em geral até 7 dias) e lançar em etapas.
 8. Com a ficha pública, **vincular o app no AdMob à ficha da Play**.
@@ -169,7 +169,7 @@ Declarar errado é violação de política.
 | Humor grosseiro | **Não** | |
 | Interação entre usuários / chat / conteúdo gerado | **Não** | jogo offline, um jogador |
 | Compartilha localização do usuário | **Não** | |
-| Compras digitais | **Sim** | compra única `remove_open_ad` (remove o anúncio de abertura); não há caixa de itens aleatórios à venda |
+| Compras digitais | **Sim** | duas compras únicas, não consumíveis: `remove_open_ad` (remove o anúncio de abertura) e `unlock_speed` (Ampulheta de Fūjin: libera a velocidade 2x/3x; também pode ser liberada com ryō ganho jogando); não há caixa de itens aleatórios à venda |
 | Navegador ou busca na web | **Não** | |
 | NFT / blockchain | **Não** | |
 
@@ -348,10 +348,14 @@ Os IDs reais **já estão no projeto**; não há nada para colar no código:
 | `scripts/ads/admob_provider.gd` › `RELEASE_UNITS["app_open"]` | `ca-app-pub-6552169828297838/9118848597` |
 | `scripts/ads/admob_provider.gd` › `RELEASE_UNITS["rewarded"]` | `ca-app-pub-6552169828297838/5734137356` |
 | `scripts/autoload/purchase_manager.gd` › `PRODUCT` | `remove_open_ad` (preço de referência `PRICE_TEXT`: US$ 2,99) |
+| `scripts/autoload/purchase_manager.gd` › `SPEED_PRODUCT` | `unlock_speed` (preço de referência `SPEED_PRICE_USD`: US$ 1,99; `SPEED_PRICE_BRL`: R$ 4,99 em pt_BR) |
+| `scripts/autoload/purchase_manager.gd` › `SPEED_RYO_PRICE` | 3.000 ryō (a mesma Ampulheta, comprada com a moeda do jogo) |
 
 Com isso o build de release liga: anúncio de abertura (removível pela compra), anúncios premiados
 opcionais (Loja, Reviver, Dobrar ryō), o formulário de consentimento UMP e as linhas
 "Privacidade e anúncios" e "Restaurar compras" em Opções. Nenhum anúncio interrompe uma partida.
+A Ampulheta de Fūjin (`unlock_speed`) não depende de anúncios: o Play Billing conecta sempre e
+"Restaurar compras" aparece mesmo num build sem anúncios.
 
 ### 8.1 Conta AdMob
 Em <https://admob.google.com>, com a mesma conta Google (o app e os dois blocos já existem nela):
@@ -400,6 +404,39 @@ alguma faixa**. O teste interno serve. A ordem é:
    - **Salvar** e **Ativar**.
 3. **Configurações › Teste de licença** (*License testing*): adicione a sua conta Google (e a de quem
    for testar a compra). Contas de teste de licença compram com cartão de teste, **sem cobrança**.
+
+### 8.4 Produto `unlock_speed` — Ampulheta de Fūjin (velocidade 2x/3x)
+Mesmo caminho da seção 8.3 (depois do 1º AAB com `BILLING`):
+
+1. **Monetizar › Produtos › Produtos no app › Criar produto**:
+   - ID do produto: **`unlock_speed`** (a constante `SPEED_PRODUCT`; o ID **não pode ser mudado** nem
+     reaproveitado depois);
+   - tipo: **único, não consumível** (*one-time*): vale para sempre e volta em "Restaurar compras";
+   - preço: **US$ 1,99** como base, deixando a Play converter, e **preço manual de R$ 4,99 no
+     Brasil** (**Preços por país/região › Brasil › Editar**). Por quê: a conversão direta de
+     US$ 1,99 dá cerca de R$ 11, alto para o poder de compra local; R$ 4,99 fica na faixa de compra
+     por impulso (abaixo de um lanche), coerente com a mesma Ampulheta custar 3.000 ryō (~7 boas
+     partidas) para quem não quer pagar. O jogo mostra o `formatted_price` real que vem da Play e,
+     enquanto ela não responde, R$ 4,99 em pt-BR e US$ 1,99 nos outros idiomas;
+   - nome e descrição (até 55 e 200 caracteres), um por idioma:
+
+| Idioma | Nome | Descrição |
+|---|---|---|
+| pt-BR | Ampulheta de Fūjin | Libera para sempre a velocidade 2x e 3x em todas as partidas. |
+| en-US | Fūjin's Hourglass | Unlocks 2x and 3x game speed in every run, forever. |
+| es-ES / es-419 | Reloj de arena de Fūjin | Desbloquea para siempre la velocidad 2x y 3x en todas las partidas. |
+| de-DE | Fūjins Sanduhr | Schaltet Tempo 2x und 3x in jedem Lauf dauerhaft frei. |
+| fr-FR | Sablier de Fūjin | Débloque pour toujours la vitesse 2x et 3x dans chaque partie. |
+| ru-RU | Песочные часы Фудзина | Навсегда открывает скорость 2x и 3x во всех забегах. |
+| id | Jam Pasir Fūjin | Membuka kecepatan 2x dan 3x di setiap permainan, selamanya. |
+| ja-JP | 風神の砂時計 | すべてのプレイで2倍速・3倍速が永久に使えるようになります。 |
+| ko-KR | 후진의 모래시계 | 모든 판에서 2배속·3배속을 영구히 해제합니다. |
+| zh-TW | 風神沙漏 | 永久解鎖每一局的 2 倍與 3 倍速度。 |
+| zh-CN | 风神沙漏 | 永久解锁每一局的 2 倍与 3 倍速度。 |
+
+   - **Salvar** e **Ativar**.
+2. Teste com a conta de **Teste de licença**: comprar, reinstalar e "Restaurar compras". Um reembolso
+   pelo Play Console tira a velocidade só de quem pagou na Play; quem liberou com ryō nunca perde.
 
 ## 9. Lançamentos: teste interno → teste fechado → produção
 
@@ -539,6 +576,8 @@ O jogo não precisa de credenciais de login para o robô.
 - [ ] Assinatura de apps do Google Play aceita
 - [ ] Teste interno enviado (1º AAB com `BILLING`)
 - [ ] Produto `remove_open_ad` criado depois do 1º AAB: único, US$ 2,99, 10 traduções, **ativo**
+- [ ] Produto `unlock_speed` (Ampulheta de Fūjin) criado: único, US$ 1,99 com **R$ 4,99 manual no
+      Brasil**, 10 traduções, **ativo**; compra, restauração e velocidade 2x/3x testadas
 - [ ] Conta em **Teste de licença**; compra e "Restaurar compras" testadas sem cobrança
 - [ ] Teste interno instalado e jogado pela Play Store
 - [ ] Teste fechado aprovado, link enviado, 12+ inscritos

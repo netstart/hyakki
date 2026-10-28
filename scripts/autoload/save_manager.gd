@@ -49,7 +49,10 @@ static func default_profile() -> Dictionary:
 		"open_ads_seen": 0,
 		"remove_ad_offer_shown": false,
 		"shop": {"slots": {}, "max_seen_unix": 0, "next_run": {}},
-		"purchases": {"remove_open_ad": false, "pending": false},
+		# "pending" é o pendente do remove_open_ad (nome dos saves antigos); a Ampulheta de Fūjin
+		# (velocidade 2x/3x) guarda a posse, a origem ("ryo" | "play") e o próprio pendente.
+		"purchases": {"remove_open_ad": false, "pending": false, "unlock_speed": false,
+				"unlock_speed_source": "", "unlock_speed_pending": false},
 		"consent": {"asked": false, "personalized": false},
 		"daily": {"date": "", "best_time": 0.0, "best_kills": 0, "best_revived": false},
 		"defeat_streak": {},

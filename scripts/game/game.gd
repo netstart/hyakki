@@ -391,7 +391,7 @@ func start_run(cfg: Dictionary) -> void:
 	hud.start_run()
 	death.reset()
 	GameClock.reset()
-	GameClock.speed = clampi(int(cfg.get("speed", Settings.get_value("speed"))), 1, 3)
+	GameClock.start_speed(int(cfg.get("speed", Settings.get_value("speed"))), _bot)
 	_speed_min = GameClock.speed
 	_speed_max = GameClock.speed
 	hud.refresh_speed()

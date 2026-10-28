@@ -53,6 +53,8 @@ func _test_format() -> void:
 
 
 func _test_corner_buttons() -> void:
+	# Com a Ampulheta de Fūjin (sem ela a velocidade fica em 1x; ver tests/speed_unlock_tests.gd).
+	SaveManager.data["purchases"]["unlock_speed"] = true
 	var game := await _new_game()
 	var pause := game.hud.get("_pause_button") as Button
 	_check.call(pause.text == "" and pause.icon != null and pause.icon.get_size() == Vector2(14, 14),
@@ -87,7 +89,10 @@ func _test_corner_buttons() -> void:
 			and game.hud.speed_shown() == 1, "velocidade na pausa troca e atualiza os dois botões")
 	var tile_icon := ((menu.get("_speed") as Button).get_child(0).get_child(0).get_child(0)) as TextureRect
 	_check.call(tile_icon.texture == UiIcons.get_icon("fast_forward", 16), "pausa usa o mesmo ícone de velocidade")
+	_check.call(not (menu.get("_speed_lock") as Control).visible,
+			"com a Ampulheta a pausa não mostra o cadeado")
 	await _free(game)
+	SaveManager.data["purchases"]["unlock_speed"] = false
 
 
 func _test_open_close() -> void:
@@ -225,11 +230,18 @@ func _test_layouts() -> void:
 				continue
 			Locale.set_language(lang, false)
 			for full: bool in [true, false]:
-				var menu := await open_standalone(view, make_snapshot(full))
-				var state := "%s [%s] %s" % [lang, c["label"], "cheio" if full else "sem itens"]
+				var snapshot := make_snapshot(full)
+				# Sem itens, a velocidade bloqueada (sem a Ampulheta de Fūjin): cadeado e aviso.
+				snapshot["speed_locked"] = not full
+				if not full:
+					snapshot["speed"] = 1
+				var menu := await open_standalone(view, snapshot)
+				var state := "%s [%s] %s" % [lang, c["label"], "cheio" if full else "sem itens, velocidade bloqueada"]
 				check_layout(menu, view, state)
 				if full and lang == "pt_BR":
 					await _check_confirm_layout(menu, view, state)
+				if not full:
+					await _check_locked_speed(menu, view, state)
 				menu.get_parent().queue_free()
 				await _host.get_tree().process_frame
 	use_insets(Vector2.ZERO)
@@ -303,6 +315,35 @@ func check_layout(menu: PauseMenu, view: Vector2, state: String) -> void:
 	var luck := stats.find_child("Value_luck", true, false) as Label
 	_check.call(might != null and might.get_theme_color("font_color") == PauseMenu.JADE
 			and luck.get_theme_color("font_color") == ThemeFactory.TEXT, "%s: realce só acima da base" % state)
+
+
+## Velocidade bloqueada na pausa: valor esmaecido, cadeado inteiro dentro do botão e ao lado do
+## valor (sem encostar), e o aviso de onde liberar inteiro na área segura.
+func _check_locked_speed(menu: PauseMenu, view: Vector2, state: String) -> void:
+	var tile := menu.get("_speed") as Button
+	var lock := menu.get("_speed_lock") as Control
+	var value := menu.get("_speed_value") as Label
+	_check.call(lock.is_visible_in_tree() and value.modulate.a < 1.0,
+			"%s: velocidade bloqueada com cadeado e valor esmaecido" % state)
+	_check.call(tile.get_global_rect().grow(0.5).encloses(lock.get_global_rect()),
+			"%s: cadeado dentro do botão de velocidade (%s em %s)" % [state, lock.get_global_rect(),
+			tile.get_global_rect()])
+	_check.call(not lock.get_global_rect().grow(-0.5).intersects(value.get_global_rect().grow(-0.5)),
+			"%s: cadeado sem cobrir o valor" % state)
+	menu.deny_speed(tr("speed.locked"))
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	var notice := menu.get("_notice") as FloatingNotice
+	var label := notice.label
+	var safe := DeviceProfiles.safe_rect(view, _insets)
+	_check.call(notice.is_open() and safe.encloses(notice.get_global_rect()),
+			"%s: aviso da velocidade bloqueada dentro da área segura (%s em %s)" % [state,
+			notice.get_global_rect(), safe])
+	_check_text_fits(label, state, "aviso \"%s\"" % label.text)
+	_check.call(label.get_line_count() <= label.get_visible_line_count(), "%s: aviso com todas as linhas" % state)
+	await _seconds(0.4)
+	var content := tile.get_child(0) as Control
+	_check.call(is_equal_approx(content.position.x, 0.0), "%s: a tremida do negado volta ao lugar" % state)
 
 
 func _check_confirm_layout(menu: PauseMenu, view: Vector2, state: String) -> void:

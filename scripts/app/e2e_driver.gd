@@ -187,6 +187,7 @@ func _suite_full() -> void:
 	_check(await _wait_for(func() -> bool: return game.hud.pause_open(), WAIT), "voltar do Android pausa a partida")
 	_shot("pausa")
 	await _pause_quality(game)
+	await _pause_speed_locked(game)
 	var frozen := GameClock.game_time
 	await _seconds(1.0)
 	_check(is_equal_approx(frozen, GameClock.game_time), "tempo parado na pausa")
@@ -232,6 +233,7 @@ func _suite_full() -> void:
 	if app.game == null:
 		return
 	await _seconds(3.0)
+	await _hud_speed_locked(app.game)
 	_host("home")
 	await _seconds(HOST_DELAY + 2.0)
 	_check(not (SaveManager.data.get("suspended", {}) as Dictionary).is_empty(),
@@ -273,7 +275,16 @@ func _suite_resume() -> void:
 	_check(bool(app.last_result.get("gave_up", false)) or not bool(app.last_result.get("victory", true)),
 			"resultado registra a desistência")
 	await _tap_text("results.menu")
-	await _expect_screen(&"title", "resultados → título")
+	if not await _expect_screen(&"title", "resultados → título"):
+		return
+
+	_step("loja: Ampulheta de Fūjin")
+	await _shop_speed()
+	_step("partida acelerada")
+	await _start_run_from_title()
+	if app.game == null:
+		return
+	await _hud_speed_unlocked(app.game)
 
 
 ## Kaminari e Inazuma na partida de verdade: com inimigos por perto, as duas ferem dentro
@@ -481,6 +492,77 @@ func _shop_coin_item() -> void:
 	_shot("loja_reforco")
 	await _tap_text("menu.back", true)
 	await _expect_screen(&"title", "loja → voltar ao título")
+
+
+## Velocidade bloqueada na pausa (sem a Ampulheta de Fūjin): o toque real no botão da pausa
+## mantém 1x, mostra o cadeado e o aviso, e a pausa continua aberta.
+func _pause_speed_locked(game: HyakkiGame) -> void:
+	var menu := game.hud.pause_menu()
+	var tile := menu.get("_speed") as Button
+	var lock := menu.get("_speed_lock") as Control
+	_check(not PurchaseManager.owns_speed() and lock.is_visible_in_tree(),
+			"instalação limpa: velocidade da pausa com cadeado")
+	await _tap_control(tile)
+	var notice := menu.get("_notice") as FloatingNotice
+	_check(await _wait_for(func() -> bool: return notice.is_open(), WAIT), "toque na velocidade bloqueada avisa")
+	_check(GameClock.speed == 1 and game.hud.pause_open(), "velocidade bloqueada na pausa fica em 1x")
+	_shot("pausa_velocidade_bloqueada")
+
+
+## Botão de velocidade da HUD sem a compra (2ª partida, quando ele aparece): o toque real
+## mantém 1x, não pausa e mostra o aviso de onde liberar.
+func _hud_speed_locked(game: HyakkiGame) -> void:
+	var button := game.hud.get("_speed_button") as Button
+	_check(button.is_visible_in_tree() and game.hud.speed_locked(), "2ª partida: botão de velocidade com cadeado")
+	await _tap_control(button)
+	var toast := game.hud.get("_toast") as Label
+	_check(await _wait_for(func() -> bool: return toast.visible and toast.text == tr("speed.locked"), WAIT),
+			"toque no botão bloqueado avisa onde liberar")
+	_check(GameClock.speed == 1 and not game.hud.pause_open(), "botão bloqueado mantém 1x sem pausar")
+	_shot("hud_velocidade_bloqueada")
+
+
+## Loja: compra a Ampulheta de Fūjin com ryō por toque real (o perfil de teste ganha o ryō que
+## falta), confere o débito e o selo "Liberado" no lugar dos botões.
+func _shop_speed() -> void:
+	await _tap_text("title.shop", true)
+	if not await _expect_screen(&"shop", "título → loja (Ampulheta)"):
+		return
+	var screen := _visible_screen("shop_screen.gd")
+	if screen == null:
+		_check(false, "tela da loja encontrada")
+		return
+	var scroll := screen.get("_scroll") as ScrollContainer
+	SaveManager.data["ryo"] = maxi(SaveManager.ryo(), PurchaseManager.SPEED_RYO_PRICE + 100)
+	screen.call("_update_coin_cards")
+	var buy := screen.get("_speed_ryo") as Button
+	_check(buy.is_visible_in_tree() and not PurchaseManager.owns_speed(), "Loja mostra a Ampulheta à venda")
+	scroll.ensure_control_visible(buy)
+	await _seconds(0.5)
+	_shot("loja_ampulheta")
+	var before := SaveManager.ryo()
+	await _tap_control(buy)
+	_check(await _wait_for(func() -> bool: return PurchaseManager.owns_speed(), WAIT), "tocar em ryō compra a Ampulheta")
+	_check(SaveManager.ryo() == before - PurchaseManager.SPEED_RYO_PRICE and PurchaseManager.speed_source() == "ryo",
+			"a Ampulheta desconta %d ryō" % PurchaseManager.SPEED_RYO_PRICE)
+	var seal := screen.get("_speed_seal") as Control
+	_check(await _wait_for(func() -> bool: return seal.is_visible_in_tree() and not buy.is_visible_in_tree(), 4.0),
+			"Ampulheta comprada mostra o selo \"%s\"" % tr("shop.speed.owned"))
+	await _seconds(0.4)
+	_shot("loja_ampulheta_liberada")
+	await _tap_text("menu.back", true)
+	await _expect_screen(&"title", "loja → voltar ao título")
+
+
+## Com a Ampulheta: o toque real no botão da HUD acelera para 2x (sem cadeado).
+func _hud_speed_unlocked(game: HyakkiGame) -> void:
+	var button := game.hud.get("_speed_button") as Button
+	_check(button.is_visible_in_tree() and not game.hud.speed_locked() and GameClock.speed == 1,
+			"com a Ampulheta o botão de velocidade fica livre (1x)")
+	await _tap_control(button)
+	_check(await _wait_for(func() -> bool: return GameClock.speed == 2, WAIT), "tocar no botão acelera para 2x")
+	_check(game.hud.speed_shown() == 2, "o botão mostra 2x")
+	_shot("hud_velocidade_2x")
 
 
 ## Mapa da jornada na tela de fases, com toques reais nos pontos. Na 1ª abertura (instalação

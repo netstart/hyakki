@@ -61,6 +61,8 @@ const SkillIconTests := preload("res://tests/skill_icon_tests.gd")
 const AdsOffTests := preload("res://tests/ads_off_tests.gd")
 ## Furo da câmera trocando de lado com cada tela aberta, sem redimensionar (giro de 180°).
 const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
+## Ampulheta de Fūjin: velocidade 2x/3x como compra (ryō ou dinheiro), posse, reembolso e partida.
+const SpeedUnlockTests := preload("res://tests/speed_unlock_tests.gd")
 ## Aparelhos-alvo dos testes de layout (Redmi Note 14 Pro+, Galaxy M55, Pixel 7) e o furo da câmera.
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
@@ -91,6 +93,7 @@ func _ready() -> void:
 	await _test_revive_by_ad()
 	await DeathSequenceTests.new().run(self, _check)
 	await AdsOffTests.new().run(self, _check)
+	await SpeedUnlockTests.new().run(self, _check)
 	await _test_thunder_weapons()
 	await _test_raijin_bolts()
 	await OnikiriTests.new().run(self, _check)

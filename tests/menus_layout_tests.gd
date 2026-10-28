@@ -288,14 +288,14 @@ func run_options(host: Node, check: Callable, view: Vector2, state: String, inse
 	use_insets(Vector2.ZERO)
 
 
-## Chaves esperadas: sem anúncios não há "privacy" nem "restore" (o resto, inclusive a
-## política de privacidade, aparece sempre).
+## Chaves esperadas: sem anúncios não há "privacy"; "restore" só some sem loja de dinheiro (o
+## resto, inclusive a política de privacidade, aparece sempre).
 static func expected_option_keys() -> Array[String]:
 	var keys: Array[String] = []
 	for key: String in OPTION_KEYS:
 		if key == "privacy" and not AdsManager.ads_enabled:
 			continue
-		if key == "restore" and not PurchaseManager.available():
+		if key == "restore" and not PurchaseManager.billing_available():
 			continue
 		keys.append(key)
 	return keys

@@ -88,6 +88,7 @@ func _check_controls(hud: Hud, safe: Rect2, label: String) -> void:
 			for o: Rect2 in rects:
 				_check.call(not o.intersects(r), "%s: botão %s sem sobrepor outro" % [state, b.name])
 			rects.append(r)
+		_check_speed_parts(hud, safe, state)
 		var joy := hud.joystick
 		_check.call(joy.fixed and joy.left_side == (side == "left"), "%s: joystick fixo no lado escolhido" % state)
 		var c := joy.get_global_transform() * joy.fixed_center()
@@ -98,6 +99,38 @@ func _check_controls(hud: Hud, safe: Rect2, label: String) -> void:
 		_check.call((ring.get_center().x < safe.get_center().x) == (side == "left")
 				and (ult.get_global_rect().get_center().x < safe.get_center().x) != (side == "left"),
 				"%s: Golpe no lado oposto ao joystick" % state)
+
+
+## Conteúdo do botão de velocidade, livre (1x, 2x, 3x) e bloqueado sem a Ampulheta de Fūjin
+## (1x esmaecido + cadeado): ícone, texto e cadeado inteiros dentro do botão, na área segura
+## e sem se sobrepor.
+func _check_speed_parts(hud: Hud, safe: Rect2, state: String) -> void:
+	var button := hud.get("_speed_button") as Button
+	var speed := GameClock.speed
+	var top := GameClock.max_speed
+	for locked: bool in [false, true]:
+		GameClock.max_speed = 1 if locked else GameClock.SPEEDS[-1]
+		for value: int in ([1] if locked else GameClock.SPEEDS):
+			GameClock.speed = value
+			hud.refresh_speed()
+			var tag := "%s, velocidade %dx%s" % [state, value, " bloqueada" if locked else ""]
+			_check.call(hud.speed_locked() == locked, "%s: estado do cadeado" % tag)
+			var parts: Dictionary = hud.speed_parts()
+			_check.call(parts.has("lock") == locked, "%s: cadeado só quando bloqueada" % tag)
+			var origin := button.get_global_rect().position
+			var rects: Array[Rect2] = []
+			for key: String in ["icon", "label", "lock"]:
+				if not parts.has(key):
+					continue
+				var r := Rect2((parts[key] as Rect2).position + origin, (parts[key] as Rect2).size)
+				_check.call(button.get_global_rect().grow(0.5).encloses(r) and safe.encloses(r),
+						"%s: %s inteiro no botão e na área segura (%s em %s)" % [tag, key, r, button.get_global_rect()])
+				for o: Rect2 in rects:
+					_check.call(not o.grow(-0.5).intersects(r.grow(-0.5)), "%s: %s sem sobrepor" % [tag, key])
+				rects.append(r)
+	GameClock.max_speed = top
+	GameClock.speed = speed
+	hud.refresh_speed()
 
 
 ## Topo: barra de XP, textos e fileiras de ícones, com números curtos e longos.
@@ -137,7 +170,7 @@ func _check_labels(hud: Hud, safe: Rect2, state: String) -> void:
 	var toast := hud.get("_toast") as Label
 	var hint := hud.get("_hint") as Label
 	var countdown := hud.get("_countdown_label") as Label
-	for key: String in ["tutorial.move", "tutorial.embers", "tutorial.ultimate"]:
+	for key: String in ["tutorial.move", "tutorial.embers", "tutorial.ultimate", "speed.locked"]:
 		hint.text = TranslationServer.translate(key)
 		hint.visible = true
 		hud.toast(TranslationServer.translate(key))

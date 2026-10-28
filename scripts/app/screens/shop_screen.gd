@@ -7,7 +7,8 @@ extends Screen
 ## Layout (referência 678x305; vale para qualquer tela lógica, ver tests/device_profiles.gd):
 ## fixos só o voltar, o título e a pílula do saldo de ryō no topo. Todo o resto rola num
 ## ScrollContainer vertical que vai até a borda inferior, em seções com cabeçalho (título,
-## filete e subtítulo): Oferendas (vagas por anúncio), Reforços (itens por ryō) e Apoie o
+## filete e subtítulo): Oferendas (vagas por anúncio), Reforços (itens por ryō), Ampulheta de
+## Fūjin (velocidade 2x/3x, compra permanente por ryō ou dinheiro, sempre visível) e Apoie o
 ## jogo (compra e restauração, por último). Tudo respeita a área segura (furo da câmera de
 ## MenuKit.safe_insets) e se refaz quando a tela muda de tamanho ou o recorte troca de lado.
 ##
@@ -76,6 +77,16 @@ const SHORT := Color("ff8f80")
 const CLOCK := Color("aab9cc")
 const LACQUER := Color("8f2333")
 const OWNED := Color("2c4a2e")
+## Ampulheta de Fūjin: cartão largo (ícone, textos e as duas compras, ou o selo "Liberado").
+## Abaixo de SPEED_TEXT_MIN de largura para os textos, as compras descem para baixo deles.
+const SPEED_WELL := Vector2(40, 40)
+const SPEED_PAD := 6.0
+const SPEED_TEXT_MIN := 170.0
+const SPEED_BUTTON_H := 26.0
+const SAND := Color("f0c050")
+const GLASS := Color(0.72, 0.88, 1.0, 0.22)
+const WOOD := Color("8a5a32")
+const WIND := Color("9fe0d8")
 
 var _scroll: ScrollContainer
 var _title: Label
@@ -99,6 +110,17 @@ var _restore: Button
 ## Subtítulo das Oferendas (texto de anúncio ou de presente) e os nós da seção de compra.
 var _offer_hint: Label
 var _support: Array[Control] = []
+## Ampulheta de Fūjin: cartão, linha de cima (ícone + textos), compras e selo de liberada.
+var _speed_card: PanelContainer
+var _speed_body: VBoxContainer
+var _speed_top: HBoxContainer
+var _speed_texts: VBoxContainer
+var _speed_actions: HBoxContainer
+var _speed_ryo: Button
+var _speed_money: Button
+var _speed_seal: PanelContainer
+var _speed_icon: Control
+var _speed_coin: AtlasTexture
 ## id -> {"button": Button, "name": Label, "state": Label, "pill": PanelContainer, "dim": Array}
 var _cards: Dictionary = {}
 ## id -> {"button": Button, "price": Label, "coin": TextureRect, "pill": PanelContainer, "dim": Array}
@@ -156,6 +178,9 @@ func _ready() -> void:
 	_coin_row = _card_row()
 	col.add_child(_coin_row)
 	col.add_child(_spacer(6))
+	col.add_child(_section(tr("shop.section.speed"), tr("shop.speed_hint")))
+	col.add_child(_speed_section())
+	col.add_child(_spacer(6))
 	_support.append(_section(tr("shop.section.support"), tr("shop.support_hint")))
 	_support.append(_purchase_row())
 	for node: Control in _support:
@@ -167,9 +192,13 @@ func _ready() -> void:
 	resized.connect(_relayout)
 	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
 	MenuKit.on_insets_change(self, _relayout)
-	PurchaseManager.purchase_finished.connect(func(_p: String, ok: bool) -> void:
-		var pending := bool(SaveManager.data["purchases"].get("pending", false))
-		_show_status(tr("shop.thanks") if ok else (tr("shop.pending") if pending else tr("shop.failed")))
+	PurchaseManager.purchase_finished.connect(func(product: String, ok: bool) -> void:
+		var speed := product == PurchaseManager.SPEED_PRODUCT
+		var thanks := tr("shop.speed.thanks") if speed else tr("shop.thanks")
+		var pending := PurchaseManager.is_pending(product)
+		_show_status(thanks if ok else (tr("shop.pending") if pending else tr("shop.failed")))
+		if ok and speed:
+			AudioManager.play("jingle_unlock")
 		on_show())
 
 
@@ -257,6 +286,7 @@ func on_show() -> void:
 		_coin_cards[id] = {"button": b, "price": price, "coin": coin, "pill": price_pill,
 				"dim": [well, name_label, chip]}
 	_update_cards()
+	_layout_speed()
 	var owned := PurchaseManager.owns()
 	_buy.text = tr("shop.owned") if owned else tr("shop.remove_ad") % PurchaseManager.price_text()
 	_buy.disabled = owned
@@ -272,6 +302,8 @@ func _process(delta: float) -> void:
 	_coin_time += delta
 	var frame := floori(_coin_time * COIN_FPS) % 4
 	(_balance_coin.texture as AtlasTexture).region = Rect2(frame * COIN_FRAME, 0, COIN_FRAME, COIN_FRAME)
+	if _speed_ryo.visible:
+		_speed_coin.region = Rect2(frame * COIN_FRAME, 0, COIN_FRAME, COIN_FRAME)
 	_refresh_timer -= delta
 	if _refresh_timer <= 0.0:
 		_refresh_timer = 1.0
@@ -312,6 +344,7 @@ func _update_cards() -> void:
 ## dourado "guardado" quando já está na fila da próxima partida.
 func _update_coin_cards() -> void:
 	_ryo.text = Locale.format_number(SaveManager.ryo())
+	_update_speed_card()
 	for id: StringName in _coin_cards:
 		var card: Dictionary = _coin_cards[id]
 		var b: Button = card["button"]
@@ -418,6 +451,28 @@ func _buy_coin(id: StringName) -> bool:
 
 func _on_buy() -> void:
 	PurchaseManager.purchase()
+
+
+## Ampulheta de Fūjin com ryō (devolve se comprou; o teste e o E2E chamam direto). O aviso de
+## obrigado vem de purchase_finished; sem saldo, avisa e não debita.
+func _buy_speed_ryo() -> bool:
+	if _was_drag() or PurchaseManager.owns_speed():
+		return false
+	if not PurchaseManager.buy_speed_with_ryo():
+		AudioManager.play_ui("ui_cancel")
+		_show_status(tr("sanctuary.not_enough"))
+		_update_coin_cards()
+		return false
+	AudioManager.play("coin2")
+	_update_coin_cards()
+	return true
+
+
+## Ampulheta de Fūjin com dinheiro (Play Billing ou o simulado); a resposta vem por purchase_finished.
+func _buy_speed_money() -> void:
+	if _was_drag():
+		return
+	PurchaseManager.buy_speed_with_money()
 
 
 func _on_restore() -> void:
@@ -778,6 +833,185 @@ func _text_height(lines: int) -> float:
 	return lines * font.get_height(CARD_TEXT_SIZE) + (lines - 1) * spacing
 
 
+# --- Ampulheta de Fūjin ------------------------------------------------------------
+
+## Cartão largo: poço com a ampulheta desenhada, nome e descrição, e as compras (ryō com a
+## moeda que gira e o preço da loja) ou, depois da compra, o selo dourado "Liberado".
+func _speed_section() -> PanelContainer:
+	_speed_card = PanelContainer.new()
+	_speed_card.name = "SpeedCard"
+	_speed_card.mouse_filter = Control.MOUSE_FILTER_PASS
+	_speed_body = VBoxContainer.new()
+	_speed_body.add_theme_constant_override("separation", 4)
+	_speed_body.mouse_filter = Control.MOUSE_FILTER_PASS
+	_speed_card.add_child(_speed_body)
+	_speed_top = HBoxContainer.new()
+	_speed_top.add_theme_constant_override("separation", 8)
+	_speed_top.mouse_filter = Control.MOUSE_FILTER_PASS
+	_speed_body.add_child(_speed_top)
+	var well := Panel.new()
+	well.name = "SpeedWell"
+	well.custom_minimum_size = SPEED_WELL
+	well.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	well.clip_contents = true
+	well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	well.add_theme_stylebox_override("panel", _flat(WELL_BG, Color(0, 0, 0, 0.35), 1, 3))
+	_speed_icon = Control.new()
+	_speed_icon.name = "SpeedIcon"
+	_speed_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_speed_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_icon.draw.connect(func() -> void:
+		draw_hourglass(_speed_icon, _speed_icon.size, PurchaseManager.owns_speed()))
+	well.add_child(_speed_icon)
+	_speed_top.add_child(well)
+	_speed_texts = VBoxContainer.new()
+	_speed_texts.add_theme_constant_override("separation", 1)
+	_speed_texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_speed_texts.alignment = BoxContainer.ALIGNMENT_CENTER
+	_speed_texts.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var name_label := label(tr("shop.speed.name"), 12)
+	name_label.name = "SpeedName"
+	name_label.add_theme_color_override("font_color", ThemeFactory.ACCENT)
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_texts.add_child(name_label)
+	var desc := label(tr("shop.speed.desc"), CARD_TEXT_SIZE)
+	desc.name = "SpeedDesc"
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.add_theme_color_override("font_color", MUTED)
+	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_texts.add_child(desc)
+	_speed_top.add_child(_speed_texts)
+	_speed_actions = HBoxContainer.new()
+	_speed_actions.name = "SpeedActions"
+	_speed_actions.add_theme_constant_override("separation", 6)
+	_speed_actions.alignment = BoxContainer.ALIGNMENT_END
+	_speed_actions.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_speed_actions.mouse_filter = Control.MOUSE_FILTER_PASS
+	_speed_top.add_child(_speed_actions)
+	_speed_coin = AtlasTexture.new()
+	_speed_coin.atlas = load(COIN_SHEET) as Texture2D
+	_speed_coin.region = Rect2(0, 0, COIN_FRAME, COIN_FRAME)
+	_speed_ryo = _speed_button("SpeedRyo", _buy_speed_ryo)
+	_speed_ryo.icon = _speed_coin
+	_speed_ryo.text = Locale.format_number(PurchaseManager.SPEED_RYO_PRICE)
+	_speed_actions.add_child(_speed_ryo)
+	_speed_money = _speed_button("SpeedMoney", _buy_speed_money)
+	_speed_money.add_theme_stylebox_override("normal", _premium_style(LACQUER, ThemeFactory.ACCENT, 8))
+	_speed_money.add_theme_stylebox_override("hover", _premium_style(LACQUER.lightened(0.15), Color("fff1c4"), 8))
+	_speed_money.add_theme_stylebox_override("pressed", _premium_style(LACQUER.darkened(0.25), ThemeFactory.ACCENT, 8))
+	_speed_money.add_theme_color_override("font_color", Color("fff1d6"))
+	_speed_actions.add_child(_speed_money)
+	_speed_seal = PanelContainer.new()
+	_speed_seal.name = "SpeedOwned"
+	_speed_seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_seal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var seal_box := _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 6)
+	seal_box.content_margin_left = 12
+	seal_box.content_margin_right = 12
+	seal_box.content_margin_top = 3
+	seal_box.content_margin_bottom = 3
+	seal_box.shadow_color = Color(ThemeFactory.ACCENT, 0.35)
+	seal_box.shadow_size = 3
+	_speed_seal.add_theme_stylebox_override("panel", seal_box)
+	var seal_label := label(tr("shop.speed.owned"), 12, HORIZONTAL_ALIGNMENT_CENTER)
+	seal_label.name = "SpeedOwnedLabel"
+	seal_label.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
+	seal_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_seal.add_child(seal_label)
+	_speed_actions.add_child(_speed_seal)
+	return _speed_card
+
+
+## Botão de compra da Ampulheta: PASS (o arrasto rola a Loja) e o toque que virou arrasto não compra.
+func _speed_button(node_name: String, on_press: Callable) -> Button:
+	var b := Button.new()
+	b.name = node_name
+	b.custom_minimum_size = Vector2(0, SPEED_BUTTON_H)
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_filter = Control.MOUSE_FILTER_PASS
+	b.clip_text = false
+	b.add_theme_font_size_override("font_size", 12)
+	b.add_theme_constant_override("h_separation", 4)
+	b.add_theme_stylebox_override("focus", _focus_style())
+	b.button_down.connect(func() -> void: _press_scroll = _scroll.scroll_vertical)
+	b.pressed.connect(func() -> void: on_press.call())
+	return b
+
+
+## Estado do cartão: sem a posse, ryō (apagado e em vermelho sem saldo) e o preço da loja (só
+## com Play Billing ou o simulado); com a posse, só o selo e o cartão em destaque dourado.
+func _update_speed_card() -> void:
+	if _speed_card == null:
+		return
+	var owned := PurchaseManager.owns_speed()
+	_speed_ryo.visible = not owned
+	_speed_money.visible = PurchaseManager.speed_available_for_money()
+	_speed_seal.visible = owned
+	_speed_money.text = PurchaseManager.speed_price_text()
+	var short := not owned and not PurchaseManager.can_buy_speed_with_ryo()
+	var tone := SHORT if short else ThemeFactory.ACCENT
+	var pill := _flat(Color(0.05, 0.02, 0.03, 0.7), Color(tone, 0.5), 1, 6)
+	pill.content_margin_left = 8
+	pill.content_margin_right = 8
+	var hover := pill.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.12, 0.05, 0.07, 0.85)
+	hover.border_color = tone
+	_speed_ryo.add_theme_stylebox_override("normal", pill)
+	_speed_ryo.add_theme_stylebox_override("hover", hover)
+	_speed_ryo.add_theme_stylebox_override("pressed", hover)
+	for state: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		_speed_ryo.add_theme_color_override(state, tone)
+	_speed_ryo.modulate = Color(1, 1, 1, 0.6) if short else Color.WHITE
+	var card := _queued_style() if owned else _card_style(CARD_BG, CARD_BORDER)
+	if owned:
+		card.shadow_color = Color(ThemeFactory.ACCENT, 0.3)
+		card.shadow_size = 4
+	card.content_margin_left = SPEED_PAD
+	card.content_margin_right = SPEED_PAD
+	card.content_margin_top = SPEED_PAD
+	card.content_margin_bottom = SPEED_PAD
+	_speed_card.add_theme_stylebox_override("panel", card)
+	_speed_icon.queue_redraw()
+
+
+## Compras ao lado dos textos quando sobra SPEED_TEXT_MIN para eles; senão, descem para baixo.
+func _layout_speed() -> void:
+	_update_speed_card()
+	var actions_w := _speed_actions.get_combined_minimum_size().x
+	var room := _content_width(_insets) - 2 * SPEED_PAD - SPEED_WELL.x - 16.0 - actions_w
+	var parent: BoxContainer = _speed_top if room >= SPEED_TEXT_MIN else _speed_body
+	if _speed_actions.get_parent() != parent:
+		_speed_actions.get_parent().remove_child(_speed_actions)
+		parent.add_child(_speed_actions)
+
+
+## Ampulheta de pixel com o vento de Fūjin (centrada em `box`): moldura de madeira, vidro,
+## areia caindo e duas volutas de vento. Liberada, a areia brilha e o vento fica mais forte.
+static func draw_hourglass(ci: CanvasItem, box: Vector2, lit: bool) -> void:
+	var o := ((box - Vector2(32, 32)) * 0.5).floor()
+	var wind := Color(WIND, 0.95 if lit else 0.6)
+	ci.draw_arc(o + Vector2(5, 12), 4.0, -PI * 0.9, PI * 0.4, 8, wind, 1.0)
+	ci.draw_arc(o + Vector2(27, 21), 3.5, PI * 0.1, PI * 1.4, 8, wind, 1.0)
+	ci.draw_line(o + Vector2(1, 16), o + Vector2(7, 16), Color(wind, wind.a * 0.7), 1.0)
+	ci.draw_line(o + Vector2(25, 26), o + Vector2(31, 26), Color(wind, wind.a * 0.7), 1.0)
+	var glass := PackedVector2Array([o + Vector2(10, 5), o + Vector2(22, 5), o + Vector2(17, 16),
+			o + Vector2(22, 27), o + Vector2(10, 27), o + Vector2(15, 16)])
+	ci.draw_colored_polygon(glass, GLASS)
+	var sand := SAND.lightened(0.15) if lit else SAND
+	ci.draw_colored_polygon(PackedVector2Array([o + Vector2(12, 8), o + Vector2(20, 8), o + Vector2(16, 14)]), sand)
+	ci.draw_colored_polygon(PackedVector2Array([o + Vector2(11, 26), o + Vector2(21, 26), o + Vector2(16, 21)]), sand)
+	ci.draw_rect(Rect2(o + Vector2(15.5, 15), Vector2(1, 6)), sand)
+	ci.draw_polyline(glass + PackedVector2Array([glass[0]]), Color(1, 1, 1, 0.55), 1.0)
+	for x: float in [8.0, 23.0]:
+		ci.draw_rect(Rect2(o + Vector2(x, 5), Vector2(1, 22)), WOOD.darkened(0.2))
+	for y: float in [2.0, 27.0]:
+		ci.draw_rect(Rect2(o + Vector2(6, y), Vector2(20, 3)), WOOD)
+		ci.draw_rect(Rect2(o + Vector2(6, y), Vector2(20, 1)), WOOD.lightened(0.3))
+	if lit:
+		ci.draw_circle(o + Vector2(16, 16), 1.5, Color(1, 0.95, 0.7, 0.9))
+
+
 # --- Estilos ------------------------------------------------------------------------
 
 func _flat(bg: Color, border: Color, width: int, radius: int) -> StyleBoxFlat:
@@ -817,13 +1051,13 @@ func _focus_style() -> StyleBoxFlat:
 	return box
 
 
-func _premium_style(bg: Color, border: Color) -> StyleBoxFlat:
+func _premium_style(bg: Color, border: Color, margin: float = 12.0) -> StyleBoxFlat:
 	var box := _flat(bg, border, 2, 5)
 	box.border_width_bottom = 3
 	box.shadow_color = Color(ThemeFactory.ACCENT, 0.18)
 	box.shadow_size = 3
-	box.content_margin_left = 12
-	box.content_margin_right = 12
+	box.content_margin_left = margin
+	box.content_margin_right = margin
 	return box
 
 

@@ -3,7 +3,8 @@ extends RefCounted
 ## do AdMob, ou `--ads-off` no PC. Confere que o SDK/UMP não é usado, que não há anúncio de
 ## abertura nem consentimento, que cada recompensado entrega na hora sem tela nenhuma (Loja
 ## com a mesma espera de 6 h, Reviver e Dobrar ryō), que a compra "Remover anúncio de
-## abertura" e "Privacidade e anúncios" somem e que os textos não prometem anúncio.
+## abertura" e "Privacidade e anúncios" somem, que a Ampulheta de Fūjin (velocidade 2x/3x) segue
+## à venda (ryō e dinheiro) e que os textos não prometem anúncio.
 ## Ao religar (`ads_enabled = true`) tudo volta ao comportamento com anúncios.
 ## Chamado por tests/integration_tests.gd, que passa o nó da cena e o _check.
 
@@ -120,7 +121,21 @@ func _test_purchase() -> void:
 			"sem anúncios: comprar não cobra nem entrega")
 	SaveManager.data["purchases"]["pending"] = true
 	PurchaseManager.restore()
-	_check.call(not PurchaseManager.owns(), "sem anúncios: restaurar não entrega nada")
+	_check.call(not PurchaseManager.owns(), "sem anúncios: restaurar não entrega o remover anúncio")
+	# A Ampulheta de Fūjin (velocidade 2x/3x) não depende de anúncios: dinheiro e ryō seguem.
+	SaveManager.data = SaveManager.default_profile()
+	_check.call(PurchaseManager.speed_available_for_money(),
+			"sem anúncios: a Ampulheta continua à venda por dinheiro (%s)" % PurchaseManager.provider)
+	answers.clear()
+	PurchaseManager.purchase_finished.connect(listener)
+	PurchaseManager.buy_speed_with_money()
+	PurchaseManager.purchase_finished.disconnect(listener)
+	_check.call(PurchaseManager.owns_speed() and PurchaseManager.speed_source() == "play" and answers == [true],
+			"sem anúncios: comprar a Ampulheta com dinheiro libera a velocidade")
+	SaveManager.data = SaveManager.default_profile()
+	SaveManager.data["ryo"] = PurchaseManager.SPEED_RYO_PRICE
+	_check.call(PurchaseManager.buy_speed_with_ryo() and SaveManager.ryo() == 0,
+			"sem anúncios: comprar a Ampulheta com ryō libera a velocidade")
 	SaveManager.data = SaveManager.default_profile()
 
 
@@ -156,6 +171,10 @@ func _shop_lang(layout: ShopLayoutTests, lang_code: String, lang: String, size: 
 	var restore := screen.get("_restore") as Button
 	_check.call(not buy.is_visible_in_tree() and not restore.is_visible_in_tree(),
 			"%s: sem anúncios a compra e a restauração somem da Loja" % lang)
+	_check.call((screen.get("_speed_card") as Control).is_visible_in_tree()
+			and (screen.get("_speed_ryo") as Control).is_visible_in_tree()
+			and (screen.get("_speed_money") as Control).is_visible_in_tree(),
+			"%s: sem anúncios a Ampulheta de Fūjin continua na Loja (ryō e dinheiro)" % lang)
 	layout.check_layout(screen, view, "%s, sem anúncios" % lang)
 	if lang_code == "pt_BR":
 		var before := SaveManager.ryo()
@@ -235,7 +254,7 @@ func _close_results(screen: Control) -> void:
 	screen.get_parent().queue_free()
 
 
-## Opções: sem "Privacidade e anúncios" e sem "Compras" (restaurar); o resto continua,
+## Opções: sem "Privacidade e anúncios"; "Compras" (restaurar) fica pela Ampulheta; o resto continua,
 ## inclusive a Política de privacidade (abre a URL publicada).
 func _test_options() -> void:
 	SaveManager.data = SaveManager.default_profile()
@@ -243,8 +262,9 @@ func _test_options() -> void:
 	var screen := await menus.open_screen(_host, _screen.size, &"options")
 	_check.call(screen.find_child("opt_privacy", true, false) == null,
 			"Opções sem anúncios: sem \"Privacidade e anúncios\"")
-	_check.call(screen.find_child("opt_restore", true, false) == null,
-			"Opções sem anúncios: sem \"Restaurar compras\"")
+	# A Ampulheta de Fūjin segue à venda sem anúncios: "Restaurar compras" continua (PC: simulado).
+	_check.call(screen.find_child("opt_restore", true, false) != null,
+			"Opções sem anúncios: \"Restaurar compras\" continua (Ampulheta de Fūjin)")
 	for key: String in ["notifications", "credits", "licenses", "privacy_policy", "reset", "version"]:
 		_check.call(screen.find_child("opt_%s" % key, true, false) != null,
 				"Opções sem anúncios: opt_%s continua" % key)

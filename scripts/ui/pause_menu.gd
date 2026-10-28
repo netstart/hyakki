@@ -113,6 +113,9 @@ var _resume: Button
 var _speed: Button
 var _speed_caption: Label
 var _speed_value: Label
+## Cadeado ao lado do valor (velocidade sem a Ampulheta de Fūjin) e o aviso flutuante.
+var _speed_lock: Control
+var _notice: FloatingNotice
 var _music: Button
 var _music_icon: TextureRect
 var _music_caption: Label
@@ -156,6 +159,8 @@ func _ready() -> void:
 	_build_sky()
 	_build_left()
 	_build_panel()
+	_notice = FloatingNotice.new()
+	add_child(_notice)
 	_build_confirm()
 	resized.connect(_layout)
 	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
@@ -172,7 +177,7 @@ func open(snapshot: Dictionary) -> void:
 	_calm = bool(Settings.get_value("reduce_flashes"))
 	_apply_texts()
 	_fill(snapshot)
-	set_speed(int(snapshot.get("speed", GameClock.speed)))
+	set_speed(int(snapshot.get("speed", GameClock.speed)), bool(snapshot.get("speed_locked", false)))
 	_refresh_music()
 	_refresh_quality()
 	_confirm.visible = false
@@ -190,6 +195,7 @@ func open(snapshot: Dictionary) -> void:
 func close(animated: bool = true) -> void:
 	_open = false
 	_confirm.visible = false
+	_notice.hide_now()
 	if not animated or not visible:
 		_kill_tween()
 		visible = false
@@ -202,8 +208,18 @@ func is_open() -> bool:
 	return _open
 
 
-func set_speed(speed: int) -> void:
+## `locked` (sem a Ampulheta de Fūjin): valor esmaecido, cadeado e a dica de onde liberar.
+func set_speed(speed: int, locked: bool = false) -> void:
 	_speed_value.text = "%dx" % speed
+	_speed_value.modulate.a = Hud.SPEED_LOCKED_ALPHA if locked else 1.0
+	_speed_lock.visible = locked
+	_speed.tooltip_text = tr("speed.locked") if locked else tr("pause.speed_caption")
+
+
+## Toque na velocidade bloqueada: o conteúdo do botão treme e o aviso diz onde liberar.
+func deny_speed(text: String) -> void:
+	UiPaint.shake_x(_speed.get_child(0) as Control)
+	_notice.show_text(text)
 
 
 func confirm_open() -> bool:
@@ -231,6 +247,8 @@ func _on_resume() -> void:
 
 func _on_speed() -> void:
 	if _open and not _confirm.visible:
+		if not _speed_lock.visible:
+			AudioManager.play_ui("ui_accept")
 		speed_pressed.emit()
 
 
@@ -391,6 +409,7 @@ func _layout() -> void:
 	_resume.add_theme_font_size_override("font_size",
 			24 if font.get_string_size(_resume.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x <= room else 12)
 	_confirm_card.custom_minimum_size.x = minf(280.0, view.x - 40.0)
+	_notice.place(view.x, insets)
 
 
 # --- Conteúdo ----------------------------------------------------------------------------
@@ -525,7 +544,7 @@ static func snapshot_of(game: HyakkiGame) -> Dictionary:
 			"level": game.level, "kills": game.tracker.kills, "ryo": game.tracker.ryo,
 			"subtitle": run_subtitle(game), "weapons": weapons, "items": items, "stats": stats,
 			"weapon_cap": LevelUpSystem.MAX_WEAPONS, "item_cap": LevelUpSystem.MAX_PASSIVES,
-			"speed": GameClock.speed}
+			"speed": GameClock.speed, "speed_locked": not GameClock.can_accelerate()}
 
 
 ## "Fase · modo · Lua", como nos Resultados (o modo só quando não é o normal).
@@ -671,11 +690,12 @@ func _build_left() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_speed = _button("", _on_speed, Vector2(0, TILE_HEIGHT))
+	_speed = _button("", _on_speed, Vector2(0, TILE_HEIGHT), false)
 	var speed_parts := _tile_content(_speed, UiIcons.get_icon("fast_forward", 16))
 	_speed_caption = speed_parts[1]
 	_speed_value = speed_parts[2]
 	_speed_value.add_theme_color_override("font_color", ThemeFactory.ACCENT)
+	_speed_lock = UiPaint.padlock_beside(_speed_value, Hud.LOCK_TINT)
 	row.add_child(_speed)
 	_music = _button("", _on_music, Vector2(0, TILE_HEIGHT))
 	var music_parts := _tile_content(_music, null)
@@ -1129,13 +1149,14 @@ func _label(text: String, font_size: int = 12, color: Color = ThemeFactory.TEXT,
 	return label
 
 
-func _button(text: String, on_press: Callable, min_size: Vector2) -> Button:
+func _button(text: String, on_press: Callable, min_size: Vector2, sound: bool = true) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.custom_minimum_size = min_size
 	button.focus_mode = Control.FOCUS_NONE
 	button.pressed.connect(on_press)
-	button.pressed.connect(func() -> void: AudioManager.play_ui("ui_accept"))
+	if sound:
+		button.pressed.connect(func() -> void: AudioManager.play_ui("ui_accept"))
 	return button
 
 

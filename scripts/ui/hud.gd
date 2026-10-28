@@ -27,6 +27,11 @@ const PAUSE_ICON := 14
 const SPEED_ICON := 12
 ## Cor do botão de velocidade em cada multiplicador: 1x calmo, 2x dourado, 3x vermelhão.
 const SPEED_TINT := {1: Color("fff4e0"), 2: Color("ffd166"), 3: Color("ff8a5c")}
+## Sem a Ampulheta de Fūjin: "1x" esmaecido com cadeado no canto; o toque treme (negado).
+const SPEED_LOCKED_ALPHA := 0.45
+const LOCK_TINT := Color("e0b04a")
+const DENY_TIME := 0.32
+const DENY_SHAKE := 3.0
 const ULT_SIZE := 54.0
 const REVIVE_SECONDS := 8.0
 const COUNTDOWN := 1.5
@@ -83,6 +88,9 @@ var _pause: PauseMenu
 ## Velocidade mostrada no botão do canto e o "soco" de escala do toque.
 var _speed_shown: int = 1
 var _speed_tween: Tween
+## Velocidade bloqueada (sem a compra) e o tempo que falta da tremida de "negado".
+var _speed_locked: bool = false
+var _deny_left: float = 0.0
 var _revive_panel: Control
 var _revive_label: Label
 var _revive_watch: Button
@@ -128,7 +136,8 @@ func _ready() -> void:
 	_speed_button.pivot_offset = CORNER_BUTTON * 0.5
 	_speed_button.draw.connect(_draw_speed)
 	_speed_button.pressed.connect(func() -> void:
-		_punch(_speed_button)
+		if not _speed_locked:
+			_punch(_speed_button)
 		speed_pressed.emit())
 
 	_ult_button = Button.new()
@@ -201,6 +210,9 @@ func _ready() -> void:
 	_gameplay = [joystick, _top, _pause_button, _speed_button, _ult_button, _boss_label, _boss_line,
 			_toast, _hint]
 	Settings.changed.connect(_on_setting)
+	# Velocidade sem a Ampulheta de Fūjin (negado) e compra/reembolso no meio da partida.
+	GameClock.speed_denied.connect(deny_speed)
+	GameClock.speed_lock_changed.connect(refresh_speed)
 	_apply_joystick_settings()
 	_root.resized.connect(_layout)
 	# Furo da câmera que troca de lado no meio da partida (giro de 180°).
@@ -798,10 +810,36 @@ func hide_boss() -> void:
 
 func refresh_speed() -> void:
 	_speed_shown = GameClock.speed
-	_speed_button.tooltip_text = "%s %dx" % [tr("pause.speed_caption"), _speed_shown]
+	_speed_locked = GameClock.max_speed <= 1
+	var caption := "%s %dx" % [tr("pause.speed_caption"), _speed_shown]
+	_speed_button.tooltip_text = tr("speed.locked") if _speed_locked else caption
 	_speed_button.queue_redraw()
 	if _pause:
-		_pause.set_speed(_speed_shown)
+		_pause.set_speed(_speed_shown, _speed_locked)
+
+
+## Velocidade presa em 1x até a compra da Ampulheta de Fūjin (botão com cadeado).
+func speed_locked() -> bool:
+	return _speed_locked
+
+
+## Toque na velocidade sem a compra: som de negado, tremida curta (no botão do canto ou no da
+## pausa) e o aviso de onde liberar. A partida segue; nenhuma tela abre.
+func deny_speed() -> void:
+	refresh_speed()
+	AudioManager.play_ui("ui_cancel")
+	if _pause.is_open():
+		_pause.deny_speed(tr("speed.locked"))
+		return
+	_deny_left = DENY_TIME
+	_speed_button.scale = Vector2.ONE
+	_speed_button.queue_redraw()
+	toast(tr("speed.locked"), 3.0)
+
+
+## Tremida em andamento (testes).
+func speed_denied() -> bool:
+	return _deny_left > 0.0
 
 
 ## Velocidade mostrada no botão do canto (testes).
@@ -817,28 +855,59 @@ func speed_tint() -> Color:
 ## Mesma moldura do botão de pausa (o par se lê como um conjunto): ícone de avanço rápido e o
 ## multiplicador. Em 1x, claro como o ícone de pausa; acelerado, vai para um selo escuro
 ## embutido, na cor da velocidade, com aro que respira (parado com "Reduzir flashes").
+## Bloqueado (sem a Ampulheta de Fūjin): "1x" esmaecido e o cadeado no canto de cima, à direita
+## do texto; o "negado" treme só o conteúdo, sem mexer no botão.
 func _draw_speed() -> void:
 	var b := _speed_button
 	var tint := speed_tint()
-	var fast := _speed_shown > 1
+	var fast := _speed_shown > 1 and not _speed_locked
+	if _speed_locked:
+		tint = Color(tint, SPEED_LOCKED_ALPHA)
+	var parts := speed_parts()
+	var shake := Vector2.ZERO
+	if _deny_left > 0.0:
+		shake.x = roundf(sin(_deny_left * 70.0) * DENY_SHAKE * _deny_left / DENY_TIME)
+	var icon_at := (parts["icon"] as Rect2).position + shake
+	var label_rect: Rect2 = parts["label"]
+	var label := "%dx" % _speed_shown
+	if fast:
+		var calm := bool(Settings.get_value("reduce_flashes"))
+		var pulse := 1.0 if calm else 0.65 + 0.35 * sin(Time.get_ticks_msec() * 0.006)
+		var cy := floorf(b.size.y * 0.5)
+		var chip := Rect2(icon_at.x - 3.0, cy - 8.0, label_rect.end.x - icon_at.x + 6.0, 16.0)
+		b.draw_rect(chip, Color(0.14, 0.05, 0.03, 0.92))
+		b.draw_rect(chip.grow(-0.5), Color(tint, 0.45 + 0.5 * pulse), false, 1.0)
 	var icon := UiIcons.get_icon("fast_forward", SPEED_ICON)
+	if icon:
+		b.draw_texture(icon, icon_at, tint)
+	var font := Locale.font
+	var base := Vector2(label_rect.position.x, float(parts["baseline"])) + shake
+	b.draw_string_outline(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0.1, 0.05, 0.05))
+	b.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, tint)
+	if _speed_locked:
+		var lock_color := LOCK_TINT if _deny_left <= 0.0 else SPEED_TINT[3]
+		UiPaint.padlock(b, (parts["lock"] as Rect2).position + shake, lock_color)
+
+
+## Peças do botão de velocidade, no espaço do botão: "icon", "label" (caixa do texto, da
+## ascendente à descendente), "baseline" e, bloqueado, "lock" (caixa do cadeado). Testes de layout.
+func speed_parts() -> Dictionary:
+	var b := _speed_button
 	var font := Locale.font
 	var label := "%dx" % _speed_shown
 	var text_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-	var total := SPEED_ICON + 2.0 + text_w
+	var lock_w := UiPaint.PADLOCK_SIZE.x + 1.0 if _speed_locked else 0.0
+	var total := SPEED_ICON + 2.0 + text_w + lock_w
 	var x := floorf((b.size.x - total) * 0.5)
 	var cy := floorf(b.size.y * 0.5)
-	if fast:
-		var pulse := 1.0 if bool(Settings.get_value("reduce_flashes")) \
-				else 0.65 + 0.35 * sin(Time.get_ticks_msec() * 0.006)
-		var chip := Rect2(x - 3.0, cy - 8.0, total + 6.0, 16.0)
-		b.draw_rect(chip, Color(0.14, 0.05, 0.03, 0.92))
-		b.draw_rect(chip.grow(-0.5), Color(tint, 0.45 + 0.5 * pulse), false, 1.0)
-	if icon:
-		b.draw_texture(icon, Vector2(x, cy - SPEED_ICON * 0.5), tint)
-	var base := Vector2(x + SPEED_ICON + 2.0, cy + 5.0)
-	b.draw_string_outline(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0.1, 0.05, 0.05))
-	b.draw_string(font, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, tint)
+	var baseline := cy + 5.0
+	var label_rect := Rect2(x + SPEED_ICON + 2.0, baseline - font.get_ascent(12), text_w,
+			font.get_ascent(12) + font.get_descent(12))
+	var parts := {"icon": Rect2(x, cy - SPEED_ICON * 0.5, SPEED_ICON, SPEED_ICON), "label": label_rect,
+			"baseline": baseline}
+	if _speed_locked:
+		parts["lock"] = Rect2(Vector2(label_rect.end.x + 1.0, label_rect.position.y), UiPaint.PADLOCK_SIZE)
+	return parts
 
 
 ## "Soco" de escala no toque: encolhe e volta com um leve quique.
@@ -896,8 +965,10 @@ func bot_answer() -> void:
 func _process(delta: float) -> void:
 	_top.queue_redraw()
 	_ult_button.queue_redraw()
-	if _speed_shown > 1 and _speed_button.visible:
+	if (_speed_shown > 1 or _deny_left > 0.0) and _speed_button.visible:
 		_speed_button.queue_redraw()
+	if _deny_left > 0.0:
+		_deny_left = maxf(0.0, _deny_left - delta)
 	if _toast_left > 0.0:
 		_toast_left -= delta
 		_toast.visible = _toast_left > 0.0

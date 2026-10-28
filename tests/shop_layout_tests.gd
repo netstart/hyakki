@@ -12,6 +12,11 @@ extends RefCounted
 ## dentro do conteúdo rolável; textos inteiros nas caixas; ícones do mesmo tamanho de poço e
 ## sempre dentro do cartão; hover escuro e legível (nada do painel quase branco); o status
 ## é um aviso flutuante que aparece e some.
+##
+## Ampulheta de Fūjin (velocidade 2x/3x): seção própria entre Reforços e Apoie o jogo, em cada
+## resolução e idioma nos estados sem saldo, com saldo (não comprada) e liberada: ícone, textos e
+## botões inteiros no cartão, sem sobreposição; preço em ryō em vermelho e apagado sem saldo;
+## liberada, só o selo dourado.
 
 const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
@@ -63,6 +68,7 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 	check.call(toast.modulate.a == 0.0, "%s: o aviso começa escondido" % lang)
 	check_layout(screen, view, "%s, ao abrir" % lang)
 	_check_cards(screen, lang)
+	await check_speed_states(screen, view, lang)
 
 	# Resgate bem-sucedido (anúncio simulado até o fim): a vaga volta a ficar em cronômetro.
 	screen.call("_claim", &"slot_ryo")
@@ -121,6 +127,7 @@ func _relayout_cases() -> void:
 		var tag := "pt_BR, refeita para %s" % c["label"]
 		check_layout(screen, fixed_area(), tag)
 		_check_cards(screen, tag)
+		check_speed_card(screen, tag)
 	screen.get_parent().queue_free()
 	await _host.get_tree().process_frame
 
@@ -179,9 +186,16 @@ func run_scroll(host: Node, check: Callable) -> void:
 	await host.get_tree().process_frame
 	check.call(scroll.scroll_vertical > 0, "Loja: rola até o fim")
 	var last := cards[&"coin_chest"]["button"] as Button
-	for c: Control in [last, buy, restore]:
+	# A Ampulheta de Fūjin fica entre os Reforços e a compra: no fim aparecem a compra e a restauração.
+	for c: Control in [buy, restore]:
 		check.call(scroll.get_global_rect().grow(0.5).encloses(c.get_global_rect()),
 				"Loja: rolando até o fim, %s aparece inteiro" % c.name)
+	# Ampulheta de Fūjin: entre os Reforços e "Apoie o jogo".
+	var speed_card := screen.get("_speed_card") as Control
+	check.call(content.is_ancestor_of(speed_card)
+			and speed_card.get_global_rect().position.y >= last.get_global_rect().end.y
+			and speed_card.get_global_rect().end.y <= buy.get_global_rect().position.y,
+			"Loja: a Ampulheta fica entre os Reforços e \"Apoie o jogo\"")
 	check_layout(screen, view, "pt_BR, rolada até o fim")
 	var status := screen.get("_status") as Label
 	check.call(not bool(screen.call("_buy_coin", &"coin_bag")) and status.text == tr("sanctuary.not_enough"),
@@ -207,9 +221,98 @@ func run_scroll(host: Node, check: Callable) -> void:
 			"Loja: arrastar sobre o cartão não compra")
 	await host.get_tree().process_frame
 	check_layout(screen, view, "pt_BR, depois da compra")
+	await _speed_purchase(screen, status)
 	screen.get_parent().queue_free()
 	await host.get_tree().process_frame
 	SaveManager.data = SaveManager.default_profile()
+
+
+## Compra da Ampulheta pela tela: sem saldo avisa e não debita; com 3.000 ryō debita, vira o
+## selo "Liberado" e agradece; não compra duas vezes.
+func _speed_purchase(screen: Control, status: Label) -> void:
+	var price := PurchaseManager.SPEED_RYO_PRICE
+	SaveManager.data["ryo"] = price - 1
+	screen.call("_update_coin_cards")
+	_check.call(not bool(screen.call("_buy_speed_ryo")) and SaveManager.ryo() == price - 1
+			and status.text == tr("sanctuary.not_enough") and not PurchaseManager.owns_speed(),
+			"Loja: sem ryō a Ampulheta não é comprada e avisa")
+	SaveManager.data["ryo"] = price + 50
+	screen.call("_update_coin_cards")
+	_check.call(bool(screen.call("_buy_speed_ryo")) and SaveManager.ryo() == 50 and PurchaseManager.owns_speed(),
+			"Loja: com %d ryō a Ampulheta é comprada e debitada" % price)
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	_check.call((screen.get("_speed_seal") as Control).is_visible_in_tree()
+			and not (screen.get("_speed_ryo") as Control).is_visible_in_tree()
+			and not (screen.get("_speed_money") as Control).is_visible_in_tree(),
+			"Loja: comprada, os dois botões viram o selo \"Liberado\"")
+	_check.call(status.text == tr("shop.speed.thanks"), "Loja: o aviso agradece a Ampulheta")
+	_check.call(not bool(screen.call("_buy_speed_ryo")) and SaveManager.ryo() == 50,
+			"Loja: a Ampulheta não é comprada duas vezes")
+	check_layout(screen, fixed_area(), "pt_BR, Ampulheta comprada pela tela")
+	SaveManager.data = SaveManager.default_profile()
+
+
+## Os três estados da Ampulheta (sem saldo, com saldo e liberada) com o layout inteiro.
+func check_speed_states(screen: Control, view: Rect2, lang: String) -> void:
+	SaveManager.data["ryo"] = 0
+	screen.call("on_show")
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	check_speed_card(screen, "%s, Ampulheta sem saldo" % lang)
+	var ryo_button := screen.get("_speed_ryo") as Button
+	_check.call(ryo_button.get_theme_color("font_color") != ThemeFactory.ACCENT and ryo_button.modulate.a < 1.0,
+			"%s: sem saldo o preço da Ampulheta fica em vermelho e apagado" % lang)
+	SaveManager.data["ryo"] = PurchaseManager.SPEED_RYO_PRICE
+	screen.call("on_show")
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	check_layout(screen, view, "%s, Ampulheta com saldo" % lang)
+	check_speed_card(screen, "%s, Ampulheta com saldo" % lang)
+	_check.call(ryo_button.get_theme_color("font_color") == ThemeFactory.ACCENT and ryo_button.modulate.a == 1.0,
+			"%s: com saldo o preço da Ampulheta fica dourado" % lang)
+	SaveManager.data["purchases"]["unlock_speed"] = true
+	SaveManager.data["purchases"]["unlock_speed_source"] = "ryo"
+	screen.call("on_show")
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	check_layout(screen, view, "%s, Ampulheta liberada" % lang)
+	check_speed_card(screen, "%s, Ampulheta liberada" % lang)
+	SaveManager.data = SaveManager.default_profile()
+	screen.call("on_show")
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+
+
+## Cartão da Ampulheta: ícone, textos e compras (ou o selo) inteiros dentro do cartão, sem se
+## sobrepor; o preço em dinheiro aparece (simulado no PC) só sem a posse.
+func check_speed_card(screen: Control, state: String) -> void:
+	var card := screen.get("_speed_card") as Control
+	var owned := PurchaseManager.owns_speed()
+	var ryo_button := screen.get("_speed_ryo") as Button
+	var money := screen.get("_speed_money") as Button
+	var seal := screen.get("_speed_seal") as Control
+	_check.call(card.is_visible_in_tree(), "%s: o cartão da Ampulheta aparece" % state)
+	_check.call(ryo_button.is_visible_in_tree() != owned and seal.is_visible_in_tree() == owned
+			and money.is_visible_in_tree() == (not owned and PurchaseManager.billing_available()),
+			"%s: botões da Ampulheta conforme a posse (liberada: %s)" % [state, owned])
+	if not owned:
+		_check.call(money.text == PurchaseManager.speed_price_text(), "%s: preço da loja \"%s\"" % [state, money.text])
+		_check.call(ryo_button.text == Locale.format_number(PurchaseManager.SPEED_RYO_PRICE) and ryo_button.icon != null,
+				"%s: preço em ryō com a moeda" % state)
+	var rect := card.get_global_rect()
+	var parts: Array[Control] = [card.find_child("SpeedWell", true, false) as Control,
+			screen.get("_speed_texts") as Control]
+	for c: Control in [ryo_button, money, seal]:
+		if c.is_visible_in_tree():
+			parts.append(c)
+	for i: int in parts.size():
+		var r := parts[i].get_global_rect()
+		_check.call(rect.grow(0.5).encloses(r), "%s: %s dentro do cartão da Ampulheta (%s em %s)" % [state,
+				parts[i].name, r, rect])
+		for j: int in range(i + 1, parts.size()):
+			_check.call(not r.grow(-0.5).intersects(parts[j].get_global_rect().grow(-0.5)),
+					"%s: %s e %s não se sobrepõem" % [state, parts[i].name, parts[j].name])
 
 
 ## Confere que cada botão e texto da Loja está visível: os fixos do topo dentro de `view` e
