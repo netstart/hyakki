@@ -251,7 +251,8 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 				var won := defeated.has(String(b))
 				var sprite: Dictionary = data["sprite"]
 				out.append({"title": tr("boss.%s.name" % b), "known": won,
-						"icon": String(sprite["path"]).get_base_dir().path_join("Faceset.png"), "face": true,
+						"icon": String(data.get("faceset", String(sprite["path"]).get_base_dir().path_join("Faceset.png"))),
+						"face": true,
 						"sprite": sprite, "text": tr("boss.%s.lore" % b) if won else tr("codex.boss_locked"),
 						"stats": ["%s %d · %s %d · %s %d" % [tr("heroes.attr_hp"), int(data.get("hp", 0)),
 								tr("codex.stat_damage"), int(data.get("damage", 0)), tr("heroes.attr_speed"),

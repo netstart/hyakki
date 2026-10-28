@@ -3,7 +3,7 @@ extends RefCounted
 ## (scripts/ui/chest_panel.gd + lacquer_chest.gd), com o fundo compartilhado (overlay_fx.gd):
 ## - regras puras: números destacados, categoria/elemento/sinergia de cada carta, raridade;
 ## - fluxo numa partida de verdade: entrada em leque, bloqueio do toque acidental, escolha
-##   (o jogo aplica, a luz voa para a HUD, a tela some sozinha), pular, rerrolar, banir com o
+##   (o jogo aplica, o ícone voa até a guardiã, a tela some sozinha), pular, rerrolar, banir com o
 ##   carimbo e o bot;
 ## - baú: queda, tremor, abertura com a explosão, itens um a um, ryō contando, pular a qualquer
 ##   momento, fechar, novo baú e nova partida;
@@ -11,11 +11,13 @@ extends RefCounted
 ##   troca ao vivo com a tela aberta;
 ## - layout em cada resolução de tests/device_profiles.gd, sem e com o furo da câmera de cada
 ##   lado, nos idiomas, com as cartas e os cartões mais longos.
+## - e, por tests/reward_flight_tests.gd, o voo das recompensas até a guardiã e o pacto com um Kami.
 ## Chamado por tests/integration_tests.gd ou sozinho por tests/level_chest_tests.tscn.
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "moon": 2, "mode": "normal", "seed": 5, "speed": 1}
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+const RewardFlightTests := preload("res://tests/reward_flight_tests.gd")
 ## Espera até o baú pousar e começar a tremer.
 const DROP_WAIT := 0.6
 
@@ -33,6 +35,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_chest_flow()
 	await _test_quality()
 	await _test_layouts()
+	await RewardFlightTests.new().run(host, check)
 	GfxQuality.clear_override()
 	Locale.set_language("pt_BR", false)
 	GameClock.paused = true
@@ -164,7 +167,7 @@ func _test_level_flow() -> void:
 	_check.call(banished[0] == 1 and game.level_up.banished.has(banished_id) and not panel.banish_mode(),
 			"banir depois do carimbo, e o modo sai")
 	await _seconds(0.8)
-	# Escolher: o jogo aplica, a tela fecha e a luz voa até a HUD.
+	# Escolher: o jogo aplica, a tela fecha e o ícone voa até a guardiã.
 	var card := panel.level_cards()[0]
 	var data := card.data
 	card.pressed.emit()
@@ -172,11 +175,13 @@ func _test_level_flow() -> void:
 	card.pressed.emit()
 	_check.call(chosen[1] == 1, "segundo toque não escolhe de novo")
 	_check.call(not hud.level_up_open() and not hud.overlay_open(), "a luta volta logo depois da escolha")
-	_check.call(panel.outro_playing() and panel.flyers() == 1, "a carta escolhida voa para a HUD")
+	var flight := hud.reward_flight()
+	_check.call(panel.outro_playing() and flight.flyer_count() == 1, "o ícone da carta escolhida voa até a guardiã")
 	var slot := hud.skill_slot(data)
-	_check.call(slot.y < 80.0, "alvo do voo na barra do topo (%s)" % slot)
+	_check.call(slot.y < 80.0, "encaixe da carta na barra do topo (%s)" % slot)
 	await _seconds(1.2)
-	_check.call(not panel.visible and panel.flyers() == 0, "a tela some sozinha ao fim da saída")
+	_check.call(not panel.visible and not flight.active() and flight.landed_count() >= 1,
+			"a tela some sozinha e o ícone chega ao fim da saída")
 	# Pular.
 	game.call("_open_level_up")
 	await _seconds(0.9)

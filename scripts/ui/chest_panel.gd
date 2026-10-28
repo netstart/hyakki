@@ -7,13 +7,17 @@ extends Control
 ##     3 = raro, violeta; 5 = lendário, ouro), com raios girando, clarão e moedas jorrando;
 ##  4. os itens sobem um a um girando e voam até os cartões de recompensa à direita, cada
 ##     pouso com uma nota do koto subindo (arpejo pentatônico) e um brilho no cartão;
-##  5. o ryō ganho conta até o total embaixo do baú, e "Pular" vira "Continuar".
+##  5. o ryō ganho conta até o total embaixo do baú, e "Pular" vira "Continuar";
+##  6. no "Continuar", o ícone de cada item (e o saco de ryō) sai do cartão e voa até a guardiã
+##     (`claimed` -> RewardFlight da HUD) enquanto a luta já volta.
 ## "Pular" (ou tocar fora do botão) mostra tudo de uma vez a qualquer momento.
 ## GfxQuality: Baixa = mesma coreografia com poucas moedas/faíscas e sem efeito de tela cheia
 ## (sem desfoque, vinheta, clarão nem tremor de tela); Alta = completo. Troca ao vivo.
 ## A sequência anda por um relógio próprio (`_t`, tempo real): pular é só ir para o fim.
 
 signal closed
+## Os ícones ganhos, prontos para o voo até a guardiã (ver RewardFlight.launch).
+signal claimed(items: Array[Dictionary])
 
 const MARGIN := 8.0
 const GAP := 10.0
@@ -612,8 +616,28 @@ func _on_button() -> void:
 	if _busy:
 		skip()
 		return
+	var items := flight_items()
 	cancel()
+	claimed.emit(items)
 	closed.emit()
+
+
+## Um item de voo por cartão (do centro do ícone, na cor do cartão) e o saco de ryō saindo do
+## total embaixo do baú, no espaço da tela.
+func flight_items() -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	for row: RewardRow in _rows:
+		items.append({"from": row.get_global_transform_with_canvas() * row.icon_center(), "icon": row.icon,
+				"color": row.accent, "scale": float(row.icon_side()) / maxf(row.icon.get_width(), 1.0) if row.icon else 1.0,
+				"key": LevelUpPanel.slot_key(row.reward)})
+	if _has_ryo:
+		var bag: Texture2D = null
+		for reward: Dictionary in _rewards:
+			if String(reward.get("kind", "")) == "ryo":
+				bag = LevelUpPanel._load(String(reward.get("icon", "")))
+		var at := _stage.get_global_transform_with_canvas() * Vector2(_stage.size.x * 0.5, _stage.size.y - BUTTON_H - 14.0)
+		items.append({"from": at, "icon": bag, "color": UiPaint.GOLD_HI, "scale": 1.0, "key": ""})
+	return items
 
 
 func _gui_input(event: InputEvent) -> void:

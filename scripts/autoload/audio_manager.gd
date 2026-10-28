@@ -83,6 +83,12 @@ const VARIANTS := {
 	"draw_knife": ["k_draw_knife_0", "k_draw_knife_1", "k_draw_knife_2"],
 	"metal_light": ["k_metal_light_0", "k_metal_light_1", "k_metal_light_2"],
 	"ult_burst": ["g_ult_burst_0", "g_ult_burst_1"],
+	# Portal do 隠世 e chefe intermediário (p_*, CC0, tools/gen_portal_sfx.py). O zumbido
+	# p_portal_hum é tocado pelo nome e tem loop no .import: quem tocar precisa pará-lo.
+	"portal_open": ["p_portal_open_0", "p_portal_open_1"],
+	"teleport": ["p_teleport_0", "p_teleport_1"],
+	"midboss_roar": ["p_midboss_roar_0", "p_midboss_roar_1", "p_midboss_roar_2"],
+	"midboss_intro": ["p_midboss_intro_0"],
 }
 
 ## Último som pedido e quantos pedidos por id (inclusive os descartados), para os testes,

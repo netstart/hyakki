@@ -15,6 +15,8 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Hyakki - app icon** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/make_store_art.gd
 - **Platformer character pack (free sample)** — Merakintsugi (LicenseRef-Merakintsugi) — https://merakintsugi.itch.io/platformer-character-pack
 - **Lightning (OpenGameArt)** — oglsdl (CC0-1.0) — https://opengameart.org/content/lightning-1
+- **FreeMix - AssetsMix free demo (mid-boss monsters)** — pixel-boy & AAA (challengerAAA) (LicenseRef-PixelBoy-AssetsMix) — https://pixel-boy.itch.io/free-mix
+- **Hyakki - Kakuriyo portal art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_portal_fx.py
 
 ## Música
 
@@ -27,6 +29,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Hyakki - procedural enemy and boss sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_enemy_sfx.py
 - **効果音ラボ (Sound Effect Lab) - Japanese sound effects** — 効果音ラボ (LicenseRef-SoundEffectLab) — https://soundeffect-lab.info/
 - **Helton Yan's Pixel Combat** — Helton Yan and Beto Bezerra (CC-BY-4.0) — https://heltonyan.itch.io/pixelcombat
+- **Hyakki - procedural portal and mid-boss sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_portal_sfx.py
 
 ## Fontes
 

@@ -1,0 +1,11 @@
+Registro de origem - hyakki_portal_sfx (2026-10-28)
+
+Arquivos: assets/audio/sfx/p_*.wav (9 arquivos: zumbido do portal em loop x 1, abertura do portal
+x 2, teletransporte x 2, rugido do chefe intermediário x 3 e aviso de chegada do chefe
+intermediário x 1).
+Origem: gerados pelo próprio projeto com tools/gen_portal_sfx.py (síntese procedural, só
+biblioteca padrão do Python, sementes fixas; rodar de novo reproduz os mesmos bytes).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma gravação, sample de terceiros ou modelo de IA de áudio foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_portal_sfx.py

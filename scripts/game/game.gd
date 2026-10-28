@@ -17,10 +17,10 @@ const LEVEL_UP_PUSH_RADIUS := 70.0
 const LEVEL_UP_PUSH_FORCE := 160.0
 const SPEED_GUARD_MS := 13.0
 const SPEED_GUARD_SECONDS := 5.0
-const BOT_SEED := 7
-const BOT_TOO_CLOSE := 9.0
-const BOT_STRIKE_OFFSET := 24.0
-const BOT_SIGHT_RADIUS := 400.0
+## Chama da lanterna por cosmético da Loja (sem cosmético, a âmbar de sempre).
+const LANTERN_TINTS := {"golden_lantern": Color(1.0, 0.85, 0.2), "crimson_lantern": Color(1.0, 0.3, 0.3),
+		"jade_lantern": Color(0.4, 1.0, 0.6), "azure_lantern": Color(0.4, 0.7, 1.0), "violet_lantern": Color(0.8, 0.5, 1.0)}
+const DEFAULT_LANTERN := Color(1.0, 0.8, 0.3)
 const MOON_HP := 0.25
 const MOON_REWARD := 0.15
 
@@ -44,6 +44,8 @@ var spawner: Spawner
 var bosses: BossDirector
 var kami: KamiSystem
 var lantern: LanternSystem
+## Guardião do Limiar, portal e o Kakuriyo (outro mundo da fase).
+var rift: RiftPortal
 var fx: FxLayer
 var level_up: LevelUpSystem
 var chests: ChestSystem
@@ -133,7 +135,7 @@ func _parse_args() -> void:
 		elif arg.begins_with("--screenshot="):
 			_shot_path = value
 	if _bot and _seed == 0:
-		_seed = BOT_SEED
+		_seed = BotPilot.SEED
 
 
 func _cli_config() -> Dictionary:
@@ -174,6 +176,9 @@ func apply_scenario(name: String) -> void:
 			GameClock.game_time = RUN_LENGTH - 3.0
 			spawner.skip_until(GameClock.game_time)
 			player.god_mode = true
+		"midboss", "portal", "realm":
+			player.god_mode = true
+			rift.scenario(name)
 
 
 ## Partida suspensa (plano 10.11): estado leve para "Continuar partida". Inimigos não entram.
@@ -196,7 +201,7 @@ func snapshot() -> Dictionary:
 		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
 		"dead": not player.is_alive, "speed": GameClock.speed,
-		"damage": player.damage.summary(),
+		"damage": player.damage.summary(), "realm": rift.snapshot(),
 	}
 
 
@@ -239,6 +244,7 @@ func restore_snapshot(s: Dictionary) -> void:
 	for id: Variant in s.get("unions", []):
 		tracker.unions.append(StringName(id))
 	endless_phase = bool(s.get("endless_phase", false))
+	rift.restore(s.get("realm", {}))
 	_ad_revive_used = bool(s.get("ad_revive_used", false))
 	hud.refresh_speed()
 	if bool(s.get("dead", false)):
@@ -270,6 +276,10 @@ func _build() -> void:
 	pickups = PickupManager.new()
 	pickups.game = self
 	add_child(pickups)
+	rift = RiftPortal.new()
+	rift.game = self
+	rift.z_index = -2
+	add_child(rift)
 	enemies = EnemyManager.new()
 	enemies.game = self
 	add_child(enemies)
@@ -348,7 +358,7 @@ func start_run(cfg: Dictionary) -> void:
 		player.stats.set_source("mode", {"revive": 1, "magnet": 0.5})
 	player.reset()
 	player.god_mode = _cli_god or stress_count > 0
-	player.lantern_tint = _cosmetic_tint(String(cfg.get("cosmetic", "")))
+	player.lantern_tint = LANTERN_TINTS.get(String(cfg.get("cosmetic", "")), DEFAULT_LANTERN)
 	world.setup(stage, run_seed if run_seed != 0 else rng.randi())
 	enemies.reset()
 	enemy_shots.reset()
@@ -361,6 +371,7 @@ func start_run(cfg: Dictionary) -> void:
 	lantern.reset()
 	ultimate.reset()
 	tracker = RunTracker.new()
+	rift.reset()
 	no_revive = false
 	chest_min = 1
 	extra_choices = 0
@@ -406,7 +417,7 @@ func _on_tick(dt: float) -> void:
 	step_index += 1
 	var t0 := Time.get_ticks_usec()
 	if _bot:
-		player.move_input = _bot_input()
+		player.move_input = BotPilot.input(self)
 	player.step(dt)
 	world.step(dt)
 	spawner.step(dt)
@@ -422,6 +433,7 @@ func _on_tick(dt: float) -> void:
 	areas.step(dt)
 	pickups.step(dt)
 	kami.step(dt)
+	rift.step(dt)
 	lantern.step(dt)
 	ultimate.step(dt)
 	fx.step(dt)
@@ -825,7 +837,10 @@ func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: String
 func on_boss_defeated(id: StringName, at: Vector2) -> void:
 	tracker.bosses.append(id)
 	Events.boss_defeated.emit(id)
-	pickups.spawn_item(&"chest", at, {"boss": true})
+	if RiftPortal.is_midboss(id):
+		rift.on_midboss_defeated(at)  # dois baús e o portal para o Kakuriyo
+	else:
+		pickups.spawn_item(&"chest", at, {"boss": true})
 	add_run_ryo(100)
 	fx.play_anim("explosion", at, 3.0)
 	fx.add_ring(at, 160.0, Color(1.0, 0.9, 0.6))
@@ -1024,6 +1039,7 @@ func _on_dawn() -> void:
 			enemies.despawn(i)
 	enemy_shots.clear_all()
 	bosses.reset()
+	rift.close_portal()
 	hud.hide_boss()
 	AudioManager.play("jingle_success")
 	AudioManager.play("j_temple_bell")
@@ -1052,6 +1068,7 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 	running = false
 	GameClock.paused = true
 	AudioManager.set_low_health(false)
+	rift.close_portal()  # e o zumbido dele
 	var result := build_result(victory or endless_phase, gave_up)
 	if _bot:
 		if _quit_at <= 0.0:
@@ -1080,7 +1097,7 @@ func build_result(victory: bool, gave_up: bool) -> Dictionary:
 			"stage": String(stage["id"]), "mode": mode, "moon": moon, "time": GameClock.game_time,
 			"level": level, "kills": tracker.kills, "ryo_run": tracker.ryo, "weapons": weapon_rows,
 			"endless": endless_phase, "daily": bool(config.get("daily", false)),
-			"revived_by_ad": tracker.revived_by_ad,
+			"revived_by_ad": tracker.revived_by_ad, "realm": rift.reached,
 			"daily_date": String(config.get("daily_date", "")), "speed_min": _speed_min,
 			"speed_max": _speed_max, "damage_taken": player.damage.summary()}
 
@@ -1158,43 +1175,3 @@ func _speed_guard(delta: float) -> void:
 func _note_section(index: int, usec: int) -> void:
 	if usec > _section_worst[index]:
 		_section_worst[index] = usec
-
-
-func _cosmetic_tint(id: String) -> Color:
-	match id:
-		"golden_lantern":
-			return Color(1.0, 0.85, 0.2)
-		"crimson_lantern":
-			return Color(1.0, 0.3, 0.3)
-		"jade_lantern":
-			return Color(0.4, 1.0, 0.6)
-		"azure_lantern":
-			return Color(0.4, 0.7, 1.0)
-		"violet_lantern":
-			return Color(0.8, 0.5, 1.0)
-	return Color(1.0, 0.8, 0.3)
-
-
-## Piloto automático (plano 14.4), imitando um jogador simples: fica ao lado do inimigo
-## mais próximo (a katana corta na horizontal), recua se algo encosta, pega o santuário.
-func _bot_input() -> Vector2:
-	var t := GameClock.game_time
-	var wander := Vector2(cos(t * 0.45), sin(t * 0.31)).normalized()
-	var me := player.sim_pos
-	if kami.has_shrine() and me.distance_to(kami.shrine_pos) < 300.0:
-		return (kami.shrine_pos - me).normalized()
-	var nearest := enemies.nearest(me, BOT_SIGHT_RADIUS)
-	if nearest < 0:
-		return wander
-	var target := enemies.pos[nearest]
-	var dist := me.distance_to(target)
-	if dist < BOT_TOO_CLOSE + enemies.radius[nearest]:
-		return (me - target).normalized()
-	var side := signf(me.x - target.x)
-	if side == 0.0:
-		side = 1.0
-	var goal := target + Vector2(side * (BOT_STRIKE_OFFSET + enemies.radius[nearest]), 0.0)
-	var to_goal := goal - me
-	if to_goal.length() < 3.0:
-		return Vector2(-side * 0.3, 0.0)
-	return to_goal.normalized()

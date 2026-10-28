@@ -141,6 +141,18 @@ func step(dt: float) -> void:
 			game.collect_item(item)
 
 
+## Travessia para o Kakuriyo: nada do chão se perde. Brasas viram XP na hora e os itens são
+## coletados (baús vão para a fila de baús e abrem um depois do outro).
+func collect_all() -> void:
+	for i: int in range(CAPACITY):
+		if alive[i] == 1:
+			_collect(i)
+	var held := items.duplicate()
+	items.clear()
+	for item: Dictionary in held:
+		game.collect_item(item)
+
+
 ## Ímã total: todas as brasas do chão voam para a guardiã.
 func magnet_all() -> void:
 	for i: int in range(CAPACITY):
@@ -244,7 +256,12 @@ func _draw_item(tex: Texture2D, at: Vector2, t: float, calm: bool) -> void:
 		for k: int in range(4):
 			var dir := Vector2.from_angle(spin + k * PI * 0.5)
 			draw_line(p + dir * (reach - 4.0), p + dir * reach, Color(1.0, 1.0, 0.85, 0.5 + 0.5 * pulse), 1.0)
-	draw_texture(tex, (p - tex.get_size() * 0.5).round())
+	# Folha de quadros (o baú é fechado | aberto lado a lado): só o primeiro quadro, senão um baú
+	# aparece como dois no chão.
+	var frame := tex.get_size()
+	if frame.x >= frame.y * 2.0:
+		frame.x = frame.y
+	draw_texture_rect_region(tex, Rect2((p - frame * 0.5).round(), frame), Rect2(Vector2.ZERO, frame))
 
 
 ## Cores das brasas por valor; no modo daltônico usa azul/laranja/branco (plano 7.5).

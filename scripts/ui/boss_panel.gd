@@ -31,6 +31,8 @@ var kanji: String = ""
 var color := Color(0.75, 0.4, 1.0)
 var marks: Array[float] = []
 var invincible: bool = false
+## Ideograma do selo vermelho da faixa de entrada ("鬼"; "門" no Guardião do Limiar).
+var seal_glyph: String = "鬼"
 var fraction: float = -1.0
 var enraged: bool = false
 ## Segundos desde a entrada (testes leem para saber se a faixa está na tela).
@@ -65,6 +67,7 @@ func open(p_title: String, p_line: String, info: Dictionary) -> void:
 	color = info.get("color", color)
 	marks.assign(info.get("marks", []))
 	invincible = bool(info.get("invincible", false))
+	seal_glyph = String(info.get("seal", "鬼"))
 	fraction = 1.0
 	_lag = 1.0
 	enraged = false
@@ -205,7 +208,7 @@ func _draw_intro(view: Vector2, level: int) -> void:
 		draw_string(_ja, Vector2(kx, y), kanji, HORIZONTAL_ALIGNMENT_LEFT, -1, big, Color(1.0, 0.97, 0.92, text_a))
 		draw_rect(seal, Color(VERMILION, text_a))
 		draw_rect(seal.grow(-1.0), Color(1, 0.8, 0.7, 0.35 * text_a), false, 1.0)
-		draw_string(_ja, seal.position + Vector2(2, 13), "鬼", HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
+		draw_string(_ja, seal.position + Vector2(2, 13), seal_glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
 				Color(1.0, 0.95, 0.9, text_a))
 		y += 16.0
 	_centered(title, Vector2(center.x, y + 2.0), 12, Color(GOLD, text_a))

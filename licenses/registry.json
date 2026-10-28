@@ -67,7 +67,7 @@
     "commercial_use": true,
     "redistribution_of_raw_pack": true,
     "ai_generated": false,
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses",
     "files": [
       "assets/art/**",
       "assets/licenses_src/ninja_adventure_*",
@@ -566,7 +566,7 @@
     "name": "甘茶の音楽工房 (Amacha) - Japanese-style background music",
     "category": "audio",
     "author": "甘茶 (Amacha)",
-    "version": "13 tracks of the 和風・アジア category + 4 boss tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦), downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
+    "version": "13 tracks of the 和風・アジア category + 5 tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦; 幕末舞曲〜戦〜 as the mid-boss theme), downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
     "source_url": "https://amachamusic.chagasi.com/genre_asia.html",
     "license_id": "LicenseRef-Amacha",
     "license_source": "licenses/sources/LicenseRef-Amacha.txt",
@@ -619,5 +619,92 @@
     },
     "snapshot_file": "docs/licenses/opengameart_lightning_1_2026-10-23.pdf",
     "downloaded_at": "2026-10-23"
+  },
+  {
+    "id": "pixelboy_freemix",
+    "name": "FreeMix - AssetsMix free demo (mid-boss monsters)",
+    "category": "art",
+    "author": "pixel-boy & AAA (challengerAAA)",
+    "version": "FreeMix.zip (itch.io upload 18782511, SHA-256 71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075; local copy and SHA-256 in C:/src/assets/pixelboy-freemix/)",
+    "source_url": "https://pixel-boy.itch.io/free-mix",
+    "license_id": "LicenseRef-PixelBoy-AssetsMix",
+    "license_source": "licenses/sources/LicenseRef-PixelBoy-AssetsMix.txt",
+    "license_file": "licenses/texts/LicenseRef-PixelBoy-AssetsMix.txt",
+    "notice_file": "licenses/notices/pixelboy_freemix_NOTICE.txt",
+    "snapshot_url": "https://pixel-boy.itch.io/free-mix",
+    "attribution_required": false,
+    "commercial_use": true,
+    "redistribution_of_raw_pack": false,
+    "ai_generated": false,
+    "modifications": "two monster sprites (candlesnake_boss, mimic_campfire) renamed to Sprite.png; 4-frame breathing strip Idle.png derived by tools/make_midboss_idle.py",
+    "files": [
+      "assets/art/midbosses/yomi/*",
+      "assets/art/midbosses/dunes/*"
+    ],
+    "verified_at": "2026-10-28",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "ad01a9263856e5f891f32637baf6ab4e1440551ddbd68a02d1e2f0bf9027b06c",
+      "notice_file": "3fdc2cf776e4757bb988a93b4cbfe17ff83e8503c5f16de6ea4c2b3da45ab191",
+      "snapshot_file": "d926656743a4dcc7f877afdc6ed44aee426e67a183d6028906df7e62c16323b6"
+    },
+    "snapshot_file": "docs/licenses/pixelboy_freemix_2026-10-28.pdf",
+    "downloaded_at": "2026-10-28"
+  },
+  {
+    "id": "hyakki_portal_fx",
+    "name": "Hyakki - Kakuriyo portal art",
+    "category": "art",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "version": "tools/gen_portal_fx.py (2026-10-28)",
+    "source_url": "tools/gen_portal_fx.py",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_file": "licenses/notices/hyakki_portal_fx_NOTICE.txt",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "original pixel art drawn procedurally by tools/gen_portal_fx.py (vortex loop, opening and torii frame) with colors from the Ninja Adventure palette (CC0)",
+    "files": [
+      "assets/art/fx/portal/*"
+    ],
+    "verified_at": "2026-10-28",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "045f65b2c564aae996af415722ef8eeffa6fc58c856a28baf8e1958303dc79b4",
+      "snapshot_file": "1d365aa2fac7c16308d0b801f77604843066778516899c9096bff3cd330103be"
+    },
+    "snapshot_file": "docs/licenses/hyakki_portal_fx_2026-10-28.txt",
+    "downloaded_at": "2026-10-28"
+  },
+  {
+    "id": "hyakki_portal_sfx",
+    "name": "Hyakki - procedural portal and mid-boss sound effects",
+    "category": "audio",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "version": "tools/gen_portal_sfx.py (2026-10-28)",
+    "source_url": "tools/gen_portal_sfx.py",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_file": "licenses/notices/hyakki_portal_sfx_NOTICE.txt",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "original work, synthesized procedurally by tools/gen_portal_sfx.py (p_*.wav)",
+    "files": [
+      "assets/audio/sfx/p_*"
+    ],
+    "verified_at": "2026-10-28",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "c2a1d549a1a7a77931e6ae28c1052d98d90e1fed673db2afbe5d0af4a68a110b",
+      "snapshot_file": "5a20e876fe7f1b2738d0ed5991a692ae931559fd83e18fff2dcad7030bf6fa73"
+    },
+    "snapshot_file": "docs/licenses/hyakki_portal_sfx_2026-10-28.txt",
+    "downloaded_at": "2026-10-28"
   }
 ]

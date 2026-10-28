@@ -53,6 +53,13 @@ func note(key: String, level: int, now: float) -> bool:
 	return rose
 
 
+## Acende o lampejo de `key` agora (o ícone de uma recompensa chegou na guardiã), com efeitos
+## ligados.
+func pulse(key: String, now: float) -> void:
+	if fx() > 0 and not key.is_empty():
+		_flash_at[key] = now
+
+
 ## 0..1 do lampejo de `key` (1 = acabou de subir).
 func flash(key: String, now: float) -> float:
 	if not _flash_at.has(key):

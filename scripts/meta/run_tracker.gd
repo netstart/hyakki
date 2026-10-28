@@ -22,6 +22,8 @@ var max_no_damage: float = 0.0
 var max_kills_10s: int = 0
 var revived_by_ad: bool = false
 var doubled_ryo: bool = false
+## Atravessou o portal do Guardião do Limiar e jogou no Kakuriyo.
+var realm_reached: bool = false
 
 var _kill_times: PackedFloat32Array = []
 

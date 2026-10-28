@@ -3,6 +3,8 @@ extends RefCounted
 ## Diretor de ondas (plano 5.2): mistura de inimigos por faixa de tempo, eventos marcados
 ## (enxame, cerco, elite, procissão, tambores), chefes e santuários Kami nos minutos
 ## definidos em data/stages.json, amanhecer aos 15:00 e Shinigami aos 20:00 (Noite Sem Fim).
+## O Guardião do Limiar ("midboss") vem com um aviso antes (RiftPortal.WARN_LEAD) e, na entrada
+## dele e na chegada ao Kakuriyo, hush() segura os comuns por alguns segundos.
 ##
 ## Nasce quem falta para o alvo, logo além da borda da tela e dentro de um orçamento
 ## por segundo (Progression.spawn_rate), para não virar uma torneira infinita de XP.
@@ -27,6 +29,8 @@ var _timer: float = 0.0
 var _budget: float = 0.0
 var _events: Array[Dictionary] = []
 var _shinigami_done: bool = false
+## Segundos sem nascer inimigos comuns (entrada do Guardião, chegada ao outro mundo).
+var _hush: float = 0.0
 
 
 func _init(p_game: HyakkiGame) -> void:
@@ -38,6 +42,7 @@ func reset() -> void:
 	_budget = float(Progression.target_count(0.0, cap))
 	drums = false
 	_shinigami_done = false
+	_hush = 0.0
 	_events.clear()
 	var stage := game.stage
 	for e: Variant in stage.get("events", []):
@@ -48,6 +53,10 @@ func reset() -> void:
 		_events.append({"t": float((b as Dictionary)["t"]), "type": "boss", "boss": (b as Dictionary)["id"], "done": false})
 	for t: Variant in stage.get("kami", []):
 		_events.append({"t": float(t), "type": "kami", "done": false})
+	var mid := RiftPortal.midboss_of(stage)
+	if not mid.is_empty():
+		_events.append({"t": float(mid["t"]) - RiftPortal.WARN_LEAD, "type": "midboss_warn", "done": false})
+		_events.append({"t": float(mid["t"]), "type": "midboss", "boss": mid["id"], "done": false})
 	_events.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["t"]) < float(b["t"]))
 
 
@@ -62,6 +71,9 @@ func step(dt: float) -> void:
 			_shinigami_done = true
 			game.bosses.spawn(&"shinigami")
 			game.hud.toast(tr("endless.shinigami"))
+	if _hush > 0.0:
+		_hush -= dt
+		return
 	_timer -= dt
 	if _timer > 0.0:
 		return
@@ -107,6 +119,15 @@ func _run_event(event: Dictionary) -> void:
 			game.bosses.spawn(StringName(event["boss"]))
 		"kami":
 			game.kami.spawn_shrine()
+		"midboss_warn":
+			game.rift.warn_midboss()
+		"midboss":
+			game.rift.spawn_midboss(StringName(event["boss"]))
+
+
+## Segura os comuns por `seconds` (eventos e chefes seguem): um respiro para uma entrada.
+func hush(seconds: float) -> void:
+	_hush = maxf(_hush, seconds)
 
 
 ## Ponto logo além da borda visível da tela, numa direção sorteada (com viés para

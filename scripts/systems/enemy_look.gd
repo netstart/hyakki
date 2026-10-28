@@ -12,6 +12,8 @@ extends RefCounted
 ## - Investida: "!" e seta vermelha na direção do bote durante a preparação.
 ## - Chefes: anda com a folha de andar, prepara com a de ataque e o Dragão de Cinza é montado
 ##   em partes (cabeça, asas, corpo e cauda que seguem o caminho da cabeça).
+## - Chefes de frente, sem folha de andar (Onibi, Yomi-hebi, Nuppeppō: data "breathe"): respiram
+##   (squash lento, parados ou não) e, preparando um golpe, a silhueta pulsa na cor da aura.
 
 const SPAWN_TIME := 0.35
 const BOSS_SPAWN_TIME := 1.4
@@ -39,6 +41,9 @@ var spawn_styles := PackedStringArray()
 var walk_sheets: Array[SpriteSheet] = []
 var attack_sheets: Array[SpriteSheet] = []
 var composite := PackedStringArray()
+## Amplitude do "respiro" do chefe (data "breathe"; 0 = sem) e a cor da aura dele.
+var breathe := PackedFloat32Array()
+var aura := PackedColorArray()
 
 var _shadow: Texture2D
 var _soft: Texture2D
@@ -75,6 +80,8 @@ func _init(manager: EnemyManager) -> void:
 		walk_sheets.append(_extra_sheet(data.get("walk_sprite", {}), sprite))
 		attack_sheets.append(_extra_sheet(data.get("attack_sprite", {}), sprite))
 		composite.append(String(sprite.get("composite", "")))
+		breathe.append(float(data.get("breathe", 0.0)) if is_boss else 0.0)
+		aura.append(Color(String(data.get("aura", "#ffffff"))))
 		if composite[t] == "dragon" and _dragon.is_empty():
 			_load_dragon()
 	apply_quality()
@@ -228,6 +235,9 @@ func draw(canvas: CanvasItem) -> void:
 		var rect := Rect2(Vector2(-size.x * 0.5, -size.y + 2.0), size)
 		var tex: Texture2D = sheet.outline_texture if m.elite[i] == 1 else sheet.texture
 		canvas.draw_texture_rect_region(tex, rect, src, color)
+		if breathe[t] > 0.0 and m.pose[i] == 1 and not reduce_flash:
+			var glow := 0.25 + 0.25 * sin(time * 16.0)
+			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, Color(aura[t], glow * color.a))
 		if m.flash[i] > 0.0:
 			# Chefes levam golpe o tempo todo: clarão mais leve para o corpo continuar legível.
 			var f := clampf(m.flash[i] / 0.08, 0.0, 1.0) * (0.55 if m.is_boss(i) else 1.0)
@@ -267,6 +277,11 @@ func _squash(i: int, time: float) -> Vector2:
 		var k := sin(age / HIT_SQUASH * PI) * (0.6 if m.is_boss(i) else 1.0)
 		sx += 0.22 * k
 		sy -= 0.18 * k
+	var b := breathe[m.kind[i]]
+	if b > 0.0:
+		var r := sin(time * 2.6 + m.phase[i])
+		sy += r * b
+		sx -= r * b * 0.6
 	if m.pose[i] == 1:
 		var p := 0.5 + 0.5 * sin(time * 18.0)
 		sx += 0.05 * p

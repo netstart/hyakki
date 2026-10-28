@@ -5,11 +5,17 @@ extends Node
 ## Com `-- --shots=<pasta>` (sem --headless) abre uma partida de verdade (6 armas, 6 passivas,
 ## números grandes, joystick fixo) e grava capturas da HUD e do painel de Kami em cada
 ## resolução de tests/device_profiles.gd, sem recorte e com o furo da câmera de cada lado (a
-## faixa do recorte aparece em vermelho); `--langs=pt_BR,de` troca os idiomas.
+## faixa do recorte aparece em vermelho); `--langs=pt_BR,de` troca os idiomas e
+## `--views=678x305,480x270` limita as resoluções. O painel de Kami sai parado, com uma placa
+## destacada e, em 678x305 sem recorte, quadros do voo das recompensas até a guardiã (pacto
+## selado e "Continuar" de um baú).
 
 const HudLayoutTests := preload("res://tests/hud_layout_tests.gd")
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const TitleRunner := preload("res://tests/title_layout_runner.gd")
+const LevelChestTests := preload("res://tests/level_chest_tests.gd")
+## Quadros do voo (segundos depois do toque).
+const FLIGHT_FRAMES := [0.1, 0.3, 0.5, 0.7, 0.9]
 
 var _count: int = 0
 var _failures: int = 0
@@ -23,13 +29,16 @@ func _ready() -> void:
 	Settings.use_test_file()
 	var shots := ""
 	var langs: PackedStringArray = ["pt_BR"]
+	var views: PackedStringArray = []
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			shots = arg.trim_prefix("--shots=")
 		elif arg.begins_with("--langs="):
 			langs = arg.trim_prefix("--langs=").split(",")
+		elif arg.begins_with("--views="):
+			views = arg.trim_prefix("--views=").split(",")
 	if shots != "":
-		await _screenshots(shots, langs)
+		await _screenshots(shots, langs, views)
 	else:
 		await HudLayoutTests.new().run(self, _check)
 	GameClock.paused = false
@@ -52,7 +61,7 @@ func _check(condition: bool, label: String) -> void:
 		print("ok: " + label)
 
 
-func _screenshots(dir: String, langs: PackedStringArray) -> void:
+func _screenshots(dir: String, langs: PackedStringArray, views: PackedStringArray = []) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	var native := get_window().size
 	Settings.set_value("joystick_mode", "fixed")
@@ -66,6 +75,8 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 	for lang: String in langs:
 		Locale.set_language(lang, false)
 		for r: Dictionary in DeviceProfiles.RESOLUTIONS:
+			if not views.is_empty() and not views.has(String(r["label"])):
+				continue
 			var view: Vector2 = await DeviceProfiles.set_window_view(self, r["view"])
 			var cut := DeviceProfiles.cutout_logical(r)
 			for insets: Vector2 in [Vector2.ZERO, Vector2(cut, 0.0), Vector2(0.0, cut)]:
@@ -78,14 +89,51 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 				await _shot(dir.path_join("hud_%s_%s_%dx%d.png" % [lang, side, view.x, view.y]))
 				var offer: Array[StringName] = [&"hachiman", &"inari", &"raijin"]
 				app.game.open_kami(offer)
-				await get_tree().create_timer(0.3).timeout
-				await _shot(dir.path_join("kami_%s_%s_%dx%d.png" % [lang, side, view.x, view.y]))
+				var tag := "%s_%s_%dx%d" % [lang, side, view.x, view.y]
+				await get_tree().create_timer(0.35).timeout
+				await _shot(dir.path_join("kami_%s_deal.png" % tag))
+				await get_tree().create_timer(1.2).timeout
+				await _shot(dir.path_join("kami_%s.png" % tag))
+				var panel := app.game.hud.kami_panel()
+				panel.select(1)
+				await get_tree().create_timer(0.5).timeout
+				await _shot(dir.path_join("kami_%s_selected.png" % tag))
+				if insets == Vector2.ZERO and r == DeviceProfiles.RESOLUTIONS[0]:
+					await _flight_frames(app, dir, tag)
+				else:
+					panel.close_now()
+					app.game.call("_on_kami_chosen", &"")
 				strip.queue_free()
 	DeviceProfiles.clear_insets()
 	app.queue_free()
 	await get_tree().process_frame
 	DisplayServer.window_set_size(native)
 	Locale.set_language("pt_BR", false)
+
+
+## Pacto selado e "Continuar" de um baú: quadros dos ícones voando até a guardiã.
+func _flight_frames(app: App, dir: String, tag: String) -> void:
+	var hud := app.game.hud
+	# Longe da aurora (a HUD cheia começa em 59:59): a partida segue enquanto os ícones voam.
+	GameClock.game_time = 120.0
+	hud.kami_panel().confirm()
+	await get_tree().create_timer(KamiPanel.STAMP_TIME + 0.1).timeout
+	await _shot(dir.path_join("flight_kami_%s_stamp.png" % tag))
+	for at: float in FLIGHT_FRAMES:
+		await get_tree().create_timer(FLIGHT_FRAMES[0] if at == FLIGHT_FRAMES[0] else 0.2).timeout
+		await _shot(dir.path_join("flight_kami_%s_%03d.png" % [tag, roundi(at * 1000.0)]))
+	await get_tree().create_timer(0.6).timeout
+	GameClock.paused = true
+	hud.show_chest(LevelChestTests.sample_rewards(5))
+	hud.chest_panel().skip()
+	await get_tree().create_timer(0.4).timeout
+	await _shot(dir.path_join("flight_chest_%s_before.png" % tag))
+	hud.chest_panel().button().pressed.emit()
+	for at: float in FLIGHT_FRAMES:
+		await get_tree().create_timer(FLIGHT_FRAMES[0] if at == FLIGHT_FRAMES[0] else 0.2).timeout
+		await _shot(dir.path_join("flight_chest_%s_%03d.png" % [tag, roundi(at * 1000.0)]))
+	await get_tree().create_timer(0.8).timeout
+	GameClock.paused = true
 
 
 ## Partida nova com a HUD cheia: 6 armas, 6 passivas, números grandes, sem inimigos por perto.

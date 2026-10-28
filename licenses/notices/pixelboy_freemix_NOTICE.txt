@@ -1,0 +1,11 @@
+FreeMix - AssetsMix free demo (assets/art/midbosses/yomi/*, assets/art/midbosses/dunes/*)
+
+Copyright (c) pixel-boy (https://pixel-boy.itch.io/) and AAA (challengerAAA).
+Source: https://pixel-boy.itch.io/free-mix
+
+Used under the AssetsMix terms published on the asset page: the assets may be used in any game,
+commercial or not, and edited freely; they may not be resold, redistributed or shared on their own
+(even if edited), included in asset packs, templates or bundles, or used for NFTs or AI training.
+Credit is appreciated but not required.
+
+Full terms as checked: licenses/texts/LicenseRef-PixelBoy-AssetsMix.txt

@@ -63,6 +63,8 @@ const AdsOffTests := preload("res://tests/ads_off_tests.gd")
 const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
 ## Ampulheta de Fūjin: velocidade 2x/3x como compra (ryō ou dinheiro), posse, reembolso e partida.
 const SpeedUnlockTests := preload("res://tests/speed_unlock_tests.gd")
+## Guardião do Limiar, portal e Kakuriyo: dados, travessia, outro mundo, retomada e cenários.
+const RealmTests := preload("res://tests/realm_tests.gd")
 ## Aparelhos-alvo dos testes de layout (Redmi Note 14 Pro+, Galaxy M55, Pixel 7) e o furo da câmera.
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
@@ -114,6 +116,7 @@ func _ready() -> void:
 	await GfxQualityTests.new().run(self, _check)
 	await (load("res://tests/terrain_tests.gd") as GDScript).new().run(self, _check)
 	await (load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run(self, _check)
+	await RealmTests.new().run(self, _check)
 	await EnemyFxTests.new().run(self, _check)
 	await WeatherTests.new().run(self, _check)
 	await SurfaceTests.new().run(self, _check)

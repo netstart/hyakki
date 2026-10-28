@@ -47,7 +47,7 @@ def data_keys() -> set:
                  f"ultimate.{h['ultimate']['type']}.name", f"ultimate.{h['ultimate']['type']}.desc"}
         keys |= {f"stat.{k}" for k in h.get("modifiers", {})}
     for k in data("kami"):
-        keys.add(f"kami.{k['id']}.name")
+        keys |= {f"kami.{k['id']}.name", f"kami.{k['id']}.domain"}
         if "special" in k:
             keys |= {f"kami.{k['id']}.special", f"kami.{k['id']}.cost"}
         keys |= {f"stat.{s}" for s in k.get("blessing", {})} | {f"stat.{s}" for s in k.get("cost", {})}
@@ -61,6 +61,8 @@ def data_keys() -> set:
         keys.add(f"shop.{s['id']}.name")
     for s in data("stages"):
         keys |= {f"stage.{s['id']}.{x}" for x in ("name", "desc", "opening", "dawn", "region", "journey")}
+        if "otherworld" in s:
+            keys.add(f"realm.{s['id']}.name")
     for story in data("story"):
         keys |= {p["text"] for p in story["panels"]}
     keys |= {f"moon.rule{n}" for n in range(1, 6)}

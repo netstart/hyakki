@@ -1,0 +1,21 @@
+FreeMix (AssetsMix collection) — pixel-boy & AAA (challengerAAA)
+https://pixel-boy.itch.io/free-mix  (checked 2026-10-28; PDF snapshot in docs/licenses)
+
+License (from the asset page, 2026-10-28; the same terms appear on every AssetsMix page):
+- You can: use the assets in any game (commercial or not).
+- You can: edit or modify them however you like.
+- You can't: resell, redistribute, or share the assets on their own (even if edited).
+- You can't: include them in asset packs, templates, or bundles.
+- You can't: NFT and AI training.
+- Giving credit is appreciated but not mandatory.
+- The pack pages state: "No generative AI was used". Made by Pixel-Boy and AAA, the authors of the
+  Ninja Adventure Asset Pack (CC0) that the rest of the game's art comes from.
+
+Used in Hyakki: only the free demo "FreeMix.zip" (itch.io upload 18782511, SHA-256
+71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075). Two monster sprites, used as
+mid-bosses inside the game binary:
+- rpg/candlesnake_boss.png -> assets/art/midbosses/yomi/Sprite.png
+- rpg/mimic_campfire.png   -> assets/art/midbosses/dunes/Sprite.png
+Each also gets a 4-frame breathing strip (Idle.png) made by tools/make_midboss_idle.py (rows removed
+from the upper part; no new colors). The paid packs (RpgMix, VfxMix, full bundle) are not included.
+Credited in the game's Credits screen anyway.

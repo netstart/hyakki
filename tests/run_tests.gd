@@ -20,6 +20,7 @@ func _initialize() -> void:
 	load("res://tests/enemy_fx_tests.gd").run_unit(_check)
 	(load("res://tests/terrain_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run_unit(_check)
+	(load("res://tests/realm_tests.gd") as GDScript).new().run_unit(_check)
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 

@@ -1956,6 +1956,24 @@
   "sha256": "bc531359e696205fe47c0654c93f97c85b0116c520c2f7530b41866e589f9582"
  },
  {
+  "file": "assets/art/fx/portal/portal_loop.png",
+  "source": "tools/gen_portal_fx.py",
+  "license_id": "hyakki_portal_fx",
+  "sha256": "efff1a6300f34bb88e3087861e084e8383142239ed9b7455c0d61830460f29a6"
+ },
+ {
+  "file": "assets/art/fx/portal/portal_open.png",
+  "source": "tools/gen_portal_fx.py",
+  "license_id": "hyakki_portal_fx",
+  "sha256": "6363f270a216d53c4e51793e6f7b3175cfc2b5f523ae39e9f123ea34d23f3294"
+ },
+ {
+  "file": "assets/art/fx/portal/torii.png",
+  "source": "tools/gen_portal_fx.py",
+  "license_id": "hyakki_portal_fx",
+  "sha256": "593ebf44755a16acc21e17347c26ad8b1ddbe75be439eaa0f4db6d6660dea0d3"
+ },
+ {
   "file": "assets/art/fx/projectile/Arrow.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/FX/Projectile/Arrow.png",
   "license_id": "ninja_adventure",
@@ -2644,6 +2662,114 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Items/Weapons/Whip/Sprite.png",
   "license_id": "ninja_adventure",
   "sha256": "d41ec1e684916fbf9cc8cd7d38ef3165d30dba7d09761759e43dcaf565040f66"
+ },
+ {
+  "file": "assets/art/midbosses/bamboo/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "f5ca42e715017cbaf624f5c7ac04ff02589bcf9ef816f60c6805a5470e6d6a1b"
+ },
+ {
+  "file": "assets/art/midbosses/bamboo/Hit.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Hit.png",
+  "license_id": "ninja_adventure",
+  "sha256": "42073c137b251e3b17a2ee11a92c3d75eec1d131511b52ae702ba17d5ba957e9"
+ },
+ {
+  "file": "assets/art/midbosses/bamboo/Idle.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Idle.png",
+  "license_id": "ninja_adventure",
+  "sha256": "459d02491f25cdc0d8e3b87863e1422ec1e2cfca9286db83494e7d98f1dcfb47"
+ },
+ {
+  "file": "assets/art/midbosses/bamboo/Jump.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Jump.png",
+  "license_id": "ninja_adventure",
+  "sha256": "75a676512247665ca6515d770ca8b4d7ce20d23198841924b454ba383b576a91"
+ },
+ {
+  "file": "assets/art/midbosses/dunes/Idle.png",
+  "source": "tools/make_midboss_idle.py",
+  "license_id": "pixelboy_freemix",
+  "sha256": "ca24d23376a3c237bd49865b7aaef45b0d70aaf872d826924785b6d50226f357"
+ },
+ {
+  "file": "assets/art/midbosses/dunes/Sprite.png",
+  "source": "C:/src/assets/pixelboy-freemix/pack/FreeMix/rpg/mimic_campfire.png",
+  "license_id": "pixelboy_freemix",
+  "sha256": "463437b45a29831395a851f4d9736b04ee903ece7221701c45806ee47eb09aae"
+ },
+ {
+  "file": "assets/art/midbosses/secret/Attack.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Attack.png",
+  "license_id": "ninja_adventure",
+  "sha256": "0d8165036968b8bd01278bf554bd37ada2eb7fef5e79579d3a6f476b9f596e35"
+ },
+ {
+  "file": "assets/art/midbosses/secret/Charge.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Charge.png",
+  "license_id": "ninja_adventure",
+  "sha256": "39b6d5299b88aecc60b42b11b5986afeec76e7c1c21b86766b7030d4e967a613"
+ },
+ {
+  "file": "assets/art/midbosses/secret/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "d1a95d359b276aa9a94b06ca063aab4979994291d6fa7626647d80d744a36e8c"
+ },
+ {
+  "file": "assets/art/midbosses/secret/Idle.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Idle.png",
+  "license_id": "ninja_adventure",
+  "sha256": "0bb87a7466ddf36b111763567eee41e12f95118c2cd1d380f0bf4511617757a9"
+ },
+ {
+  "file": "assets/art/midbosses/secret/Jump.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Jump.png",
+  "license_id": "ninja_adventure",
+  "sha256": "b7c9793cf1521aa1bd103cc06387fcda1397823b616137170df646c1420964b3"
+ },
+ {
+  "file": "assets/art/midbosses/secret/Sprite.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Sprite.png",
+  "license_id": "ninja_adventure",
+  "sha256": "09d8a1bd443a99d1ab38485a7d1654c6d37f40b44487bf540dd971d8bab81124"
+ },
+ {
+  "file": "assets/art/midbosses/temple/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Owl2/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "ad8142676768d1f0a8a4a6735bfba976026c4da9ac6fa8ad1157ada4fd1ff493"
+ },
+ {
+  "file": "assets/art/midbosses/temple/Owl2.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Owl2/Owl2.png",
+  "license_id": "ninja_adventure",
+  "sha256": "d94dc8b6edf6ba7d74169b3c59b5aa638d8149556a91d11fcc646008bb528cbd"
+ },
+ {
+  "file": "assets/art/midbosses/village/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Bear/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "529e40b702dc5d3af1eedf0e4744bba836730fa1d8a815bd3ffa55519b62ab94"
+ },
+ {
+  "file": "assets/art/midbosses/village/SpriteSheet.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Bear/SpriteSheet.png",
+  "license_id": "ninja_adventure",
+  "sha256": "f4da7b71149dbf9ad90b17106692c9747f1a332704514aee17bd0563db41c686"
+ },
+ {
+  "file": "assets/art/midbosses/yomi/Idle.png",
+  "source": "tools/make_midboss_idle.py",
+  "license_id": "pixelboy_freemix",
+  "sha256": "8eeda6ed5da8e594d2ef7089af233f4bb84fcd0c3f15e8fad08f225227f56aa7"
+ },
+ {
+  "file": "assets/art/midbosses/yomi/Sprite.png",
+  "source": "C:/src/assets/pixelboy-freemix/pack/FreeMix/rpg/candlesnake_boss.png",
+  "license_id": "pixelboy_freemix",
+  "sha256": "b95eebb705b203f778849248c36133acdcd381914b34a47fbf0a1e605ceb1d65"
  },
  {
   "file": "assets/art/tilesets/desert.png",
@@ -4278,6 +4404,18 @@
   "sha256": "20cd1e505f60915b8317e0fe75caedd861d6385d097aac2f57d28f4a05083d25"
  },
  {
+  "file": "assets/audio/music/kakuriyo.ogg",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/13 - Mystical.ogg",
+  "license_id": "ninja_adventure",
+  "sha256": "eb741e9ec62636770f5b97a9d56df8cd0718be040ebf60f0233b440ee4656c96"
+ },
+ {
+  "file": "assets/audio/music/midboss.mp3",
+  "source": "C:/src/assets/amacha/mp3/bakumatsubukyoku_ikusa.mp3",
+  "license_id": "amacha_music",
+  "sha256": "e793318d81297328a6b02201e5f066567fca0978628a9a218df3b450b43904b9"
+ },
+ {
   "file": "assets/audio/music/sanctuary.mp3",
   "source": "C:/src/assets/amacha/mp3/ouun.mp3",
   "license_id": "amacha_music",
@@ -5620,6 +5758,60 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Magic & Skill/Magic4.wav",
   "license_id": "ninja_adventure",
   "sha256": "47c67a62aeb5ebcd90db28ab8f13fb1d7894a6f39157afc363426ceddd98b12b"
+ },
+ {
+  "file": "assets/audio/sfx/p_midboss_intro_0.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "1ea67b9d0d760056553ab985976e9c5271a57bc718500da7f08f9bd532395011"
+ },
+ {
+  "file": "assets/audio/sfx/p_midboss_roar_0.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "0cd6202d622437e0cb0dc9ae9d0c0e76674773afab530623e9479d118a4872dd"
+ },
+ {
+  "file": "assets/audio/sfx/p_midboss_roar_1.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "176f9edac0930f0f8281d213940936bc6479b1435a1c8c9d154561f4d7a00c9d"
+ },
+ {
+  "file": "assets/audio/sfx/p_midboss_roar_2.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "7eb8202521b5ad5361e76f29e58ef0f5590743a13874ef9fdf1a886fb0818644"
+ },
+ {
+  "file": "assets/audio/sfx/p_portal_hum.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "08b4122cec768a38c1235265eead8bc7433773cc457a33eea6fddf3c682119fc"
+ },
+ {
+  "file": "assets/audio/sfx/p_portal_open_0.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "5e073834046b1d78f77b52e33a45308d30385abac233d8b1e2ffdfdc4bdc77e7"
+ },
+ {
+  "file": "assets/audio/sfx/p_portal_open_1.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "03bc26d6aa93609ce7feefd18a0e5524064023cec0391ab58d104ccdac4861af"
+ },
+ {
+  "file": "assets/audio/sfx/p_teleport_0.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "6e109221c6ab3ea98cbd039e0406dc58c2d4a1d44b483bef2fe41d123d1b4791"
+ },
+ {
+  "file": "assets/audio/sfx/p_teleport_1.wav",
+  "source": "tools/gen_portal_sfx.py",
+  "license_id": "hyakki_portal_sfx",
+  "sha256": "9f2c1d1dda5d0b83ff06eaeed8b663b9e4edacb1374976d5cfb9f6fb9c600588"
  },
  {
   "file": "assets/audio/sfx/powerup.wav",

@@ -138,6 +138,8 @@ func _process(delta: float) -> void:
 ## Escolhe as luzes mais perto do centro da tela (lights_max - 1, o herói é a outra).
 func _update_lights(cam: Vector2, zoom: Vector2, view: Vector2, calm: bool, dawn: float) -> void:
 	var found: Array = game.world.collect_lights(cam, view * 0.5 / zoom + Vector2(40, 40))
+	if game.rift != null:
+		found.append_array(game.rift.collect_lights(cam, view * 0.5 / zoom + Vector2(40, 40)))
 	found.sort_custom(func(a: Array, b: Array) -> bool:
 			return cam.distance_squared_to(a[0]) < cam.distance_squared_to(b[0]))
 	var count := mini(found.size(), mini(_lights_max - 1, SHADER_LIGHTS))

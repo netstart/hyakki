@@ -1,0 +1,10 @@
+{
+  "_doc": "Monstros da amostra gratuita FreeMix (AssetsMix, de pixel-boy e AAA, os mesmos autores do Ninja Adventure) para chefes intermediários; licença própria (uso comercial em jogos, edição livre, crédito opcional; proibido revender ou redistribuir os assets soltos, colocar em packs/templates, NFT e treino de IA). Sprite.png é o quadro original; Idle.png (respiração em 4 quadros) é gerado por tools/make_midboss_idle.py.",
+  "pack_root": "C:/src/assets/pixelboy-freemix/pack/FreeMix",
+  "license_id": "pixelboy_freemix",
+  "folders": {},
+  "files": {
+    "rpg/candlesnake_boss.png": "art/midbosses/yomi/Sprite.png",
+    "rpg/mimic_campfire.png": "art/midbosses/dunes/Sprite.png"
+  }
+}

@@ -35,14 +35,6 @@ const DENY_SHAKE := 3.0
 const ULT_SIZE := 54.0
 const REVIVE_SECONDS := 8.0
 const COUNTDOWN := 1.5
-## Kami: o ícone fica no topo do cartão, numa caixa de 32 px; o texto começa abaixo dela.
-const KAMI_ICON_TOP := 8.0
-const KAMI_ICON_BOX := 32.0
-const KAMI_TEXT_TOP := 46.0
-const KAMI_CARD := 150.0
-const KAMI_GAP := 6.0
-## Folga do painel de Kami até as bordas da área segura.
-const KAMI_MARGIN := 6.0
 ## Linha de base dos textos do topo e folga mínima entre eles.
 const TOP_TEXT_Y := 24.0
 const TOP_TEXT_GAP := 8.0
@@ -77,12 +69,13 @@ var _countdown_left: float = 0.0
 var _hint: Label
 var _hint_step: int = 0
 
-## Telas de nova habilidade e de baú (scripts/ui/level_up_panel.gd e chest_panel.gd).
+## Telas de nova habilidade, baú e pacto (scripts/ui/level_up_panel.gd, chest_panel.gd e
+## kami_panel.gd).
 var _level_panel: LevelUpPanel
 var _chest_panel: ChestPanel
-var _kami_panel: Control
-var _kami_row: HBoxContainer
-var _kami_ids: Array[StringName] = []
+var _kami_panel: KamiPanel
+## Ícones das recompensas voando até a guardiã (scripts/ui/reward_flight.gd), sobre as telas.
+var _flight: RewardFlight
 ## Tela de pausa (scripts/ui/pause_menu.gd).
 var _pause: PauseMenu
 ## Velocidade mostrada no botão do canto e o "soco" de escala do toque.
@@ -100,8 +93,6 @@ var _revive_bar: Control
 var _gameplay: Array[Control] = []
 ## Recorte da câmera (esquerda, direita) usado no último _layout.
 var _insets := Vector2.ZERO
-## Colunas centralizadas das telas escuras (Kami) e faixas do reviver: acompanham a área segura.
-var _overlay_centers: Array[Control] = []
 var _revive_top: Control
 var _revive_bottom: Control
 var _gameplay_alpha: float = 1.0
@@ -207,6 +198,7 @@ func _ready() -> void:
 	_build_kami_panel()
 	_build_pause_panel()
 	_build_revive_panel()
+	_build_flight()
 	_gameplay = [joystick, _top, _pause_button, _speed_button, _ult_button, _boss_label, _boss_line,
 			_toast, _hint]
 	Settings.changed.connect(_on_setting)
@@ -224,7 +216,8 @@ func _ready() -> void:
 func start_run() -> void:
 	_level_panel.close_now()
 	_chest_panel.cancel()
-	_kami_panel.visible = false
+	_kami_panel.close_now()
+	_flight.clear()
 	_pause.close(false)
 	_show_play_hud(true)
 	_revive_panel.visible = false
@@ -239,8 +232,8 @@ func start_run() -> void:
 
 
 func overlay_open() -> bool:
-	return _level_panel.is_open() or _chest_panel.is_open() or _kami_panel.visible \
-			or _pause.is_open() or _revive_panel.visible
+	return _level_panel.is_open() or _chest_panel.is_open() or _kami_panel.is_open() \
+			or _pause.is_open() or _revive_panel.visible or realm_active()
 
 
 func pause_open() -> bool:
@@ -360,7 +353,8 @@ func _draw_icon(at: Vector2, path: String, lvl: int, evolved: bool, key: String,
 	_skill_icons.draw(_top, at, _icon(path), key, lvl, max_level, evolved, now)
 
 
-## Seta na borda para santuários e baús fora da tela (plano 7.2).
+## Seta na borda para santuários e baús fora da tela (plano 7.2) e a do portal do Kakuriyo
+## (RiftPortal.draw_arrow: chevron violeta com um vórtice atrás).
 func _draw_offscreen_arrows() -> void:
 	var targets: Array[Array] = []
 	if game.kami.has_shrine():
@@ -379,6 +373,10 @@ func _draw_offscreen_arrows() -> void:
 		var tip := edge + dir * 7.0
 		var side := dir.orthogonal() * 5.0
 		_top.draw_colored_polygon(PackedVector2Array([tip, edge - dir * 3.0 + side, edge - dir * 3.0 - side]), color)
+	if game.rift != null and game.rift.is_open():
+		var to: Vector2 = game.rift.portal_pos - game.player.position
+		if absf(to.x) >= view.x * 0.5 - 10.0 or absf(to.y) >= view.y * 0.5 - 10.0:
+			RiftPortal.draw_arrow(_top, arrow_point(to.normalized(), view), to.normalized(), Time.get_ticks_msec() / 1000.0)
 
 
 ## Base da seta que aponta na direção `dir`: na borda da tela, com 18 px de folga, e do lado
@@ -487,7 +485,7 @@ func _chest_skip() -> void:
 func _build_level_panel() -> void:
 	_level_panel = LevelUpPanel.new()
 	_root.add_child(_level_panel)
-	_level_panel.slot_target = skill_slot
+	_level_panel.claimed.connect(fly_rewards)
 	_level_panel.card_chosen.connect(func(i: int) -> void: card_chosen.emit(i))
 	_level_panel.reroll_pressed.connect(func() -> void: reroll_pressed.emit())
 	_level_panel.skip_pressed.connect(func() -> void: skip_pressed.emit())
@@ -498,96 +496,61 @@ func _build_chest_panel() -> void:
 	_chest_panel = ChestPanel.new()
 	_root.add_child(_chest_panel)
 	_chest_panel.closed.connect(func() -> void: chest_closed.emit())
+	_chest_panel.claimed.connect(fly_rewards)
+
+
+# --- Voo das recompensas até a guardiã ---------------------------------------------------
+
+## Solta os ícones ganhos (ver RewardFlight.launch); cada um que chega acende o encaixe dele
+## na barra do topo. Também para quem mais der itens à guardiã (ex.: recompensas do Kakuriyo).
+func fly_rewards(items: Array[Dictionary]) -> void:
+	_flight.launch(items)
+
+
+func reward_flight() -> RewardFlight:
+	return _flight
+
+
+## Onde a guardiã está na tela agora (segue a câmera); o centro da tela sem partida.
+func guardian_point() -> Vector2:
+	if game == null or game.player == null or not game.player.is_inside_tree():
+		return _root.size * 0.5
+	return game.player.get_global_transform_with_canvas().origin
+
+
+func _build_flight() -> void:
+	_flight = RewardFlight.new()
+	_flight.name = "RewardFlight"
+	_flight.target = guardian_point
+	# Com a pausa aberta o voo congela e some; volta de onde parou.
+	_flight.hold = func() -> bool: return _pause.is_open()
+	_flight.landed.connect(func(item: Dictionary) -> void:
+		_skill_icons.pulse(String(item.get("key", "")), Time.get_ticks_msec() / 1000.0))
+	_root.add_child(_flight)
 
 
 # --- Kami ----------------------------------------------------------------------------
 
-## Marca cada linha com + ou -, sem duplicar quando o valor já vem com sinal ("+25% ...").
-static func _signed_lines(text: String, sign: String) -> String:
-	var lines: PackedStringArray = []
-	for line: String in text.split("\n", false):
-		lines.append(line if line.begins_with("+") or line.begins_with("-") else "%s %s" % [sign, line])
-	return "\n".join(lines)
-
-
+## Placas votivas dos Kami em oferta (scripts/ui/kami_panel.gd).
 func show_kami(offer: Array[StringName]) -> void:
-	_kami_ids = offer
-	_kami_panel.visible = true
 	joystick.release()
-	for child: Node in _kami_row.get_children():
-		child.queue_free()
-	for id: StringName in offer:
-		var data: Dictionary = DB.kami[id]
-		var button := Button.new()
-		button.custom_minimum_size = Vector2(_kami_card_width(), KAMI_CARD)
-		button.focus_mode = Control.FOCUS_NONE
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		# Moldura com um leve tom da cor do Kami e margem no topo para o ícone.
-		var normal := ThemeFactory.card_box()
-		var hover := ThemeFactory.card_box_hover()
-		var tint := Color(String(data["color"])).lerp(Color.WHITE, 0.6)
-		for box: StyleBoxTexture in [normal, hover]:
-			box.set_content_margin(SIDE_TOP, KAMI_TEXT_TOP)
-			box.modulate_color = tint
-		button.add_theme_stylebox_override("normal", normal)
-		button.add_theme_stylebox_override("hover", hover)
-		button.add_child(_kami_icon(data))
-		var blessing := LevelUpSystem.describe_stats(data.get("blessing", {}))
-		if data.has("special"):
-			blessing = (blessing + "\n" if not blessing.is_empty() else "") + tr("kami.%s.special" % id)
-		var cost := LevelUpSystem.describe_stats(data.get("cost", {}))
-		if cost.is_empty() and data.has("special"):
-			cost = tr("kami.%s.cost" % id)
-		button.text = "%s\n\n%s\n\n%s" % [tr("kami.%s.name" % id), _signed_lines(blessing, "+"),
-				_signed_lines(cost, "-")]
-		button.add_theme_color_override("font_color", Color(String(data["color"])).lightened(0.4))
-		button.pressed.connect(func() -> void:
-			_kami_panel.visible = false
-			kami_chosen.emit(id))
-		_kami_row.add_child(button)
+	_kami_panel.open(offer)
 
 
-## Largura dos cartões de Kami: 150, ou o que couber (3 cartões e as folgas) entre as bordas
-## da área segura numa tela estreita com recorte da câmera.
-func _kami_card_width() -> float:
-	if _root.size.x <= 0.0:
-		return KAMI_CARD
-	var room := _root.size.x - _insets.x - _insets.y - KAMI_MARGIN * 2.0 - KAMI_GAP * 2.0
-	return minf(KAMI_CARD, floorf(room / 3.0))
+func kami_open() -> bool:
+	return _kami_panel.is_open()
 
 
-## Ícone do Kami em escala inteira (pixel-perfect), centralizado na faixa do topo do cartão.
-func _kami_icon(data: Dictionary) -> TextureRect:
-	var tex := _icon(String(data.get("icon", "")))
-	var icon := TextureRect.new()
-	icon.texture = tex
-	icon.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_SCALE
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if tex:
-		var size := tex.get_size()
-		var factor := maxi(1, floori(KAMI_ICON_BOX / maxf(size.x, size.y)))
-		var shown := size * factor
-		icon.offset_left = floorf(-shown.x * 0.5)
-		icon.offset_right = icon.offset_left + shown.x
-		icon.offset_top = KAMI_ICON_TOP + floorf((KAMI_ICON_BOX - shown.y) * 0.5)
-		icon.offset_bottom = icon.offset_top + shown.y
-	return icon
+func kami_panel() -> KamiPanel:
+	return _kami_panel
 
 
 func _build_kami_panel() -> void:
-	var box := _overlay_box()
-	_kami_panel = box.get_parent().get_parent() as Control
-	box.add_child(_label(tr("kami.title"), HORIZONTAL_ALIGNMENT_CENTER))
-	_kami_row = HBoxContainer.new()
-	_kami_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_kami_row.add_theme_constant_override("separation", int(KAMI_GAP))
-	box.add_child(_kami_row)
-	box.add_child(_menu_button(tr("kami.ignore"), func() -> void:
-		_kami_panel.visible = false
-		kami_chosen.emit(&"")))
+	_kami_panel = KamiPanel.new()
+	_kami_panel.name = "KamiPanel"
+	_root.add_child(_kami_panel)
+	_kami_panel.chosen.connect(func(id: StringName) -> void: kami_chosen.emit(id))
+	_kami_panel.claimed.connect(fly_rewards)
 
 
 # --- Pausa ----------------------------------------------------------------------------
@@ -786,6 +749,25 @@ func boss_panel() -> BossPanel:
 	return panel
 
 
+## Travessia para o Kakuriyo (scripts/ui/realm_card.gd), por cima de toda a HUD.
+func realm_card() -> RealmCard:
+	var card := _root.get_node_or_null(^"RealmCard") as RealmCard
+	if card == null:
+		card = RealmCard.new()
+		card.name = "RealmCard"
+		card.visible = false
+		_root.add_child(card)
+	return card
+
+
+func realm_card_exists() -> bool:
+	return _root != null and _root.get_node_or_null(^"RealmCard") != null
+
+
+func realm_active() -> bool:
+	return realm_card_exists() and realm_card().active
+
+
 func boss_flash(strength: float) -> void:
 	boss_panel().flash(strength)
 
@@ -954,9 +936,8 @@ func bot_answer() -> void:
 	elif _chest_panel.is_open():
 		_chest_panel.cancel()
 		chest_closed.emit()
-	elif _kami_panel.visible and not _kami_ids.is_empty():
-		_kami_panel.visible = false
-		kami_chosen.emit(_kami_ids[0])
+	elif _kami_panel.is_open():
+		kami_chosen.emit(_kami_panel.bot_choose())
 	elif _revive_panel.visible:
 		_revive_panel.visible = false
 		revive_answered.emit(false)
@@ -1049,7 +1030,8 @@ func _layout_ultimate() -> void:
 
 
 ## Posições que dependem da área segura (recorte da câmera): botões dos cantos, golpe,
-## joystick fixo, textos de largura cheia, telas de Kami e do reviver e o topo.
+## joystick fixo, textos de largura cheia, faixas do reviver e o topo (as telas de nova
+## habilidade, baú e Kami refazem o próprio layout).
 func _layout() -> void:
 	_insets = MenuKit.safe_insets(_root)
 	for slot: int in 2:
@@ -1061,35 +1043,11 @@ func _layout() -> void:
 	joystick.insets = _insets
 	joystick.queue_redraw()
 	var wide: Array[Control] = [_boss_label, _boss_line, _hint, _revive_top, _revive_bottom]
-	for control: Control in wide + _overlay_centers:
+	for control: Control in wide:
 		control.offset_left = _insets.x
 		control.offset_right = -_insets.y
 	_debug.position.x = 4.0 + _insets.x
-	var card_w := _kami_card_width()
-	for card: Node in _kami_row.get_children():
-		(card as Control).custom_minimum_size.x = card_w
 	_top.queue_redraw()
-
-
-## Tela escura por cima do jogo com uma coluna centralizada; devolve a coluna.
-func _overlay_box() -> VBoxContainer:
-	var overlay := Control.new()
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	var dim := ColorRect.new()
-	dim.color = Color(0.03, 0.02, 0.08, 0.72)
-	overlay.add_child(_full_rect(dim))
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-	_overlay_centers.append(center)
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 6)
-	center.add_child(box)
-	overlay.visible = false
-	_root.add_child(overlay)
-	return box
 
 
 func _label(text: String, align: HorizontalAlignment) -> Label:

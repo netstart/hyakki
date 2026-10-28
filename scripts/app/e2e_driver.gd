@@ -135,8 +135,10 @@ func _suite_full() -> void:
 		_check(await _wait_for(func() -> bool: return game.hud.level_cards().all(
 				func(b: Button) -> bool: return b is LevelCard and (b as LevelCard).settled), 4.0),
 				"cartas pousadas em leque, prontas para o toque")
+		var landed := game.hud.reward_flight().landed_count()
 		await _tap_control(game.hud.level_cards()[0])
 		_check(await _wait_for(func() -> bool: return not game.hud.level_up_open(), 4.0), "tocar a carta escolhe")
+		await _reward_flight(game, landed, 1, "carta escolhida")
 		var gained := game.weapons.size() + game.level_up.passive_levels.size() > weapons_before
 		_check(gained or game.weapons.any(func(w: Weapon) -> bool: return w.level > 1), "escolha aplicada")
 	else:
@@ -157,8 +159,11 @@ func _suite_full() -> void:
 		_check(game.hud.chest_panel().ryo_shown() == game.hud.chest_panel().ryo_total(), "pular mostra o ryō completo")
 		await _seconds(0.6)
 		_shot("bau")
+		var items := game.hud.chest_lines_total()
+		var landed := game.hud.reward_flight().landed_count()
 		await _tap_text("chest.close", true)
 		_check(await _wait_for(func() -> bool: return not game.hud.chest_open(), 4.0), "baú fecha")
+		await _reward_flight(game, landed, items, "itens do baú")
 		# Sem pular: a animação termina sozinha e o botão vira "fechar".
 		game.apply_scenario("chest")
 		if await _wait_for(func() -> bool: return game.hud.chest_open(), 5.0):
@@ -173,6 +178,10 @@ func _suite_full() -> void:
 			_check(await _wait_for(func() -> bool: return not game.hud.chest_open(), 4.0), "baú fecha de novo")
 	else:
 		_check(false, "baú abre")
+
+	_step("pacto com um Kami")
+	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
+	await _kami_pact(game)
 
 	_step("armas de trovão")
 	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
@@ -197,6 +206,10 @@ func _suite_full() -> void:
 	# Na falha, o estado que segura o relógio (para investigar pelo relatório).
 	_check(runs, "tempo volta a correr" + ("" if runs else " (pausado %s, sobreposição %s, partida %s, contagem %.2f)" % [
 			GameClock.paused, game.hud.overlay_open(), game.running, float(game.hud.get("_countdown_left"))]))
+
+	_step("guardião do limiar")
+	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
+	await _threshold(game)
 
 	_step("derrota")
 	game.player.god_mode = false
@@ -395,6 +408,42 @@ func _pause_quality(game: HyakkiGame) -> void:
 
 
 ## Chefe: entrada com a faixa em kanji, barra no topo e o chefe em campo (despachado depois).
+## Voo das recompensas: os ícones saem e chegam na guardiã (`count` pousos), e o efeito acaba.
+func _reward_flight(game: HyakkiGame, landed_before: int, count: int, label: String) -> void:
+	var flight := game.hud.reward_flight()
+	var landed := await _wait_for(func() -> bool: return flight.landed_count() >= landed_before + count, 5.0)
+	_check(landed, "%s: %d ícone(s) voam até a guardiã (%d)" % [label, count, flight.landed_count() - landed_before])
+	_check(await _wait_for(func() -> bool: return not flight.active(), 4.0), "%s: o voo acaba sozinho" % label)
+
+
+## Santuário do Kami (cenário "kami"): as placas caem, o primeiro toque destaca, "Selar o pacto"
+## sela, a luta volta e o ícone do Kami voa até a guardiã.
+func _kami_pact(game: HyakkiGame) -> void:
+	var accepted := game.kami.accepted.size()
+	var landed := game.hud.reward_flight().landed_count()
+	game.apply_scenario("kami")
+	if not await _wait_for(func() -> bool: return game.hud.kami_open(), 5.0):
+		_check(false, "o santuário abre o pacto")
+		return
+	_check(true, "o santuário abre o pacto")
+	var panel := game.hud.kami_panel()
+	_check(await _wait_for(func() -> bool: return panel.cards().all(
+			func(c: KamiPanel.KamiCard) -> bool: return c.settled), 5.0), "as placas dos Kami param no cordão")
+	_check(_button(tr("kami.seal"), false) == null, "Selar o pacto desligado antes de escolher")
+	await _seconds(0.4)
+	_shot("kami")
+	await _tap_control(panel.cards()[1])
+	_check(await _wait_for(func() -> bool: return panel.selected() == 1, 4.0), "tocar uma placa destaca o Kami")
+	var id := panel.cards()[1].id
+	await _seconds(0.3)
+	_shot("kami_destacado")
+	await _tap_text("kami.seal")
+	_check(await _wait_for(func() -> bool: return not game.hud.kami_open(), 5.0), "Selar o pacto fecha o santuário")
+	_check(game.kami.accepted.size() == accepted + 1 and game.kami.accepted.has(id), "o pacto com %s vale" % id)
+	await _reward_flight(game, landed, 1, "pacto selado")
+	_check(await _wait_for(func() -> bool: return not GameClock.paused, 4.0), "a luta volta depois do pacto")
+
+
 func _boss_entrance(game: HyakkiGame) -> void:
 	game.bosses.spawn(&"tanuki")
 	var panel := game.hud.boss_panel()
@@ -416,6 +465,81 @@ func _boss_entrance(game: HyakkiGame) -> void:
 			item["pos"] = game.player.sim_pos
 	_check(await _wait_for(func() -> bool: return game.hud.chest_open(), WAIT), "baú do chefe abre")
 	await _settle(game)
+
+
+## Guardião do Limiar vencido (cenário "portal"): dois baús de chefe e o portal; os baús abrem um
+## depois do outro, a guardiã anda até o portal pelo joystick e, no toque, a travessia leva ao
+## Kakuriyo com o relógio de volta.
+func _threshold(game: HyakkiGame) -> void:
+	var rift := game.rift
+	var opened := game.tracker.chests
+	game.apply_scenario("portal")
+	_check(rift.is_open() and rift.midboss_done, "Guardião vencido abre o portal")
+	var chests := game.pickups.items.filter(func(item: Dictionary) -> bool:
+			return item["id"] == &"chest" and bool(item.get("boss", false)))
+	_check(chests.size() == 2, "Guardião deixa dois baús de chefe")
+	await _seconds(0.8)
+	_shot("portal")
+	for item: Dictionary in chests:
+		item["pos"] = game.player.sim_pos
+	_check(await _wait_for(func() -> bool: return game.hud.chest_open(), WAIT), "baú do Guardião abre")
+	await _settle(game)
+	_check(game.tracker.chests >= opened + 2, "os dois baús do Guardião abrem")
+	var biome := game.world.biome
+	var paused_at_cross := [false]
+	var crossed := await _walk_into_portal(game, paused_at_cross)
+	_check(crossed and paused_at_cross[0], "andar até o portal e tocar começa a travessia com o relógio parado")
+	await _seconds(RiftPortal.CROSS_IN + 0.25)
+	_shot("travessia")
+	_check(await _wait_for(func() -> bool: return rift.in_realm and not game.hud.realm_active(), WAIT),
+			"travessia chega ao Kakuriyo")
+	_check(game.world.biome != biome and bool(game.world.biome.get("otherworld", false)),
+			"mundo refeito com o bioma do outro mundo")
+	var time := GameClock.game_time
+	# Brasas coletadas na travessia podem dar um nível novo: responde como o bot e segue.
+	_check(await _wait_for(func() -> bool:
+			if game.hud.overlay_open():
+				game.hud.bot_answer()
+			return GameClock.game_time > time + 0.5, 8.0), "relógio volta a correr no outro mundo")
+	await _seconds(0.6)
+	_shot("kakuriyo")
+	await _settle(game)
+
+
+## A guardiã anda até o portal pelo joystick de toque (adb swipe de verdade, mirando de novo a cada
+## arrasto) até a travessia começar. No Redmi frio, um nível novo (brasas dos baús chegando depois
+## do _settle) parava o relógio enquanto o roteiro esperava 4 s pela travessia; como o toque no
+## portal só conta num passo do relógio, ela nunca começava. Aqui as telas que abrirem são
+## respondidas como o bot antes de cada arrasto, e a espera é por condição, com folga.
+## `paused_at_cross[0]`: o relógio estava parado no instante em que a travessia apareceu.
+func _walk_into_portal(game: HyakkiGame, paused_at_cross: Array) -> bool:
+	var rift := game.rift
+	var joystick := game.hud.joystick
+	var view := get_viewport().get_visible_rect().size
+	var anchor := Vector2(view.x * 0.22, view.y * 0.7)
+	var started := func() -> bool:
+		if game.hud.realm_active():
+			paused_at_cross[0] = GameClock.paused
+			return true
+		return false
+	for _try: int in 14:
+		if started.call():
+			return true
+		while game.hud.overlay_open() and not game.hud.realm_active():
+			game.hud.bot_answer()
+			await _seconds(0.3)
+		await _wait_for(func() -> bool: return not GameClock.paused or started.call(), WAIT)
+		if started.call() or not rift.is_open():
+			break
+		var dir := (rift.portal_pos - game.player.sim_pos).normalized()
+		var from := _to_screen(anchor)
+		var to := _to_screen(anchor + dir * TouchJoystick.RADIUS * 1.5)
+		_host("swipe %d %d %d %d 1400" % [from.x, from.y, to.x, to.y])
+		await _wait_for(func() -> bool: return joystick.vector != Vector2.ZERO or started.call(), WAIT)
+		await _wait_for(func() -> bool: return joystick.vector == Vector2.ZERO or started.call(), WAIT)
+		if await _wait_for(started, 1.0):
+			return true
+	return started.call()
 
 
 ## Fecha as telas sobrepostas que a partida abrir sozinha (baú, nível novo) até o jogo correr

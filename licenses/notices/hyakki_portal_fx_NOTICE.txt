@@ -1,0 +1,15 @@
+Hyakki - procedural Kakuriyo portal art (assets/art/fx/portal/*.png)
+
+Copyright (c) 2026 Clayton K. N. Passos and the Hyakki project contributors.
+
+These sprites are original works of the Hyakki project. They were drawn pixel by pixel by
+tools/gen_portal_fx.py (Python standard library only, deterministic math, PNG written with zlib),
+using colors taken from the Ninja Adventure palette (CC0). No third-party images, tiles or AI image
+models were used.
+
+To the extent possible under law, the authors have dedicated all copyright and
+related and neighboring rights to these files to the public domain worldwide,
+under the Creative Commons CC0 1.0 Universal Public Domain Dedication:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Full text: licenses/texts/CC0-1.0.txt

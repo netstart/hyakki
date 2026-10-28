@@ -1,0 +1,11 @@
+Registro de origem - hyakki_portal_fx (2026-10-28)
+
+Arquivos: assets/art/fx/portal/*.png (3 arquivos: portal_loop.png - vórtice em 12 quadros 32x32;
+portal_open.png - abertura em 8 quadros 32x32; torii.png - moldura de torii 48x48).
+Origem: gerados pelo próprio projeto com tools/gen_portal_fx.py (desenho procedural pixel a pixel,
+só biblioteca padrão do Python, sem aleatoriedade; rodar de novo reproduz os mesmos bytes). Cores
+da paleta do Ninja Adventure (CC0).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma imagem de terceiros ou modelo de IA de imagem foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_portal_fx.py

@@ -3,6 +3,8 @@
    "lanterns_per_chunk": 2,
    "bosses": [{"t": 300, "id": "tanuki"}, {"t": 600, "id": "kappa_elder"}],
    "kami": [300, 600],
+   "midboss": {"t": 450, "id": "onikuma"},
+   "otherworld": {"biome": "village_ura", "kanji": "裏村", "tint": "#f2c6d2", "light_mult": 0.85, "music": "kakuriyo", "weather": "secret", "bounds": [1400, 1400], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"slime_rice": 1}},
      {"from": 60, "to": 120, "mix": {"slime_rice": 4, "bat_lantern": 1}},
@@ -19,8 +21,8 @@
      {"t": 60, "type": "swarm", "enemy": "bat_lantern", "count": 16},
      {"t": 150, "type": "elite", "enemy": "skeleton_peasant"},
      {"t": 200, "type": "ring", "enemy": "slime_red", "count": 36},
-     {"t": 450, "type": "swarm", "enemy": "bat_lantern", "count": 22},
-     {"t": 470, "type": "swarm", "enemy": "bat_lantern", "count": 22},
+     {"t": 430, "type": "swarm", "enemy": "bat_lantern", "count": 22},
+     {"t": 495, "type": "swarm", "enemy": "bat_lantern", "count": 22},
      {"t": 540, "type": "elite", "enemy": "kappa_young"},
      {"t": 545, "type": "elite", "enemy": "tsuchigumo"},
      {"t": 690, "type": "ring", "enemy": "slime_red", "count": 48},
@@ -34,6 +36,8 @@
    "lanterns_per_chunk": 2, "hazard": {"type": "fog"},
    "bosses": [{"t": 300, "id": "bamboo_ancestral"}, {"t": 600, "id": "kitsune_nine"}],
    "kami": [300, 600],
+   "midboss": {"t": 450, "id": "nuppeppo"},
+   "otherworld": {"biome": "bamboo_ura", "kanji": "月雪原", "tint": "#c8d8ff", "light_mult": 1.0, "music": "kakuriyo", "weather": "temple", "bounds": [], "hazard": {"type": "fog"}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"bamboo_spirit": 1}},
      {"from": 60, "to": 180, "mix": {"bamboo_spirit": 3, "butterfly_swarm": 1, "mushroom": 1}},
@@ -59,6 +63,8 @@
    "lanterns_per_chunk": 3, "hazard": {"type": "statues", "interval": 4.5, "per_chunk": 1},
    "bosses": [{"t": 300, "id": "tengu_crow_king"}, {"t": 600, "id": "faceless_monk"}],
    "kami": [300, 600],
+   "midboss": {"t": 450, "id": "onmoraki"},
+   "otherworld": {"biome": "temple_ura", "kanji": "逆寺", "tint": "#dccaff", "light_mult": 0.85, "music": "kakuriyo", "weather": "yomi", "bounds": [700, 0], "hazard": {"type": "statues", "interval": 4.0, "per_chunk": 1.4}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"lantern_obake": 1}},
      {"from": 60, "to": 180, "mix": {"lantern_obake": 3, "skull": 1, "owl": 1}},
@@ -84,6 +90,8 @@
    "lanterns_per_chunk": 2, "hazard": {"type": "ash_storm", "interval": 90, "duration": 15, "slow": 0.2},
    "bosses": [{"t": 300, "id": "stone_cyclops"}, {"t": 600, "id": "ash_dragon"}],
    "kami": [300, 600],
+   "midboss": {"t": 450, "id": "onibi"},
+   "otherworld": {"biome": "dunes_ura", "kanji": "灰海", "tint": "#c4e6dc", "light_mult": 0.9, "music": "kakuriyo", "weather": "secret", "bounds": [], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"dune_snake": 1}},
      {"from": 60, "to": 180, "mix": {"dune_snake": 3, "ash_larva": 1, "sand_lizard": 1}},
@@ -109,6 +117,8 @@
    "lanterns_per_chunk": 2, "hazard": {"type": "lava", "per_chunk": 2, "damage": 6},
    "bosses": [{"t": 300, "id": "red_oni"}, {"t": 600, "id": "kuroe"}],
    "kami": [300, 600],
+   "midboss": {"t": 450, "id": "yomi_hebi"},
+   "otherworld": {"biome": "yomi_ura", "kanji": "根の国", "tint": "#c0c2ff", "light_mult": 0.9, "music": "kakuriyo", "weather": "bamboo", "bounds": [1100, 1100], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"skull_blue": 1}},
      {"from": 60, "to": 180, "mix": {"skull_blue": 3, "yurei": 1, "oni_small": 1}},
@@ -134,6 +144,8 @@
    "lanterns_per_chunk": 2,
    "bosses": [{"t": 300, "id": "ash_dragon"}, {"t": 600, "id": "izanami"}],
    "kami": [300, 600],
+   "midboss": {"t": 450, "id": "kincho"},
+   "otherworld": {"biome": "secret_ura", "kanji": "常世", "tint": "#fff0e2", "light_mult": 1.05, "music": "kakuriyo", "weather": "temple", "bounds": [], "hazard": {"type": "statues", "interval": 5.0, "per_chunk": 0.8}},
    "waves": [
      {"from": 0, "to": 120, "mix": {"skull_blue": 3, "yurei": 1}},
      {"from": 120, "to": 300, "mix": {"yurei": 3, "yomi_eye": 1, "yomi_beast_dark": 1}},

@@ -102,7 +102,8 @@ func ensure_model() -> WeatherModel:
 	var stage_data: Dictionary = {}
 	if game != null and game.world != null:
 		stage_data = game.stage
-		stage_id = String(stage_data.get("id", "village"))
+		# No Kakuriyo, o clima de outra fase ("weather" do "otherworld" em data/stages.json).
+		stage_id = String(stage_data.get("weather", stage_data.get("id", "village")))
 		run_seed = game.world.seed_value
 	var key := [stage_id, run_seed, forced_state]
 	if model == null or key != _model_key:

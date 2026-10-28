@@ -11,9 +11,16 @@ extends RefCounted
 ##   canhotos) inteiros na área segura e sem se sobrepor;
 ## - aviso, dica do tutorial, contagem e a oferta de reviver: textos inteiros na área segura;
 ## - setas de santuário e baú fora da tela: dentro da área segura em qualquer direção;
-## - "Um Kami oferece um pacto": título, os 3 cartões (ícone e texto) e "Ignorar o santuário"
-##   dentro da área segura com 4 px de folga; cada Kami em cada posição e Hachiman (bênção,
-##   especial e custo: o texto mais longo) em cada uma delas;
+## - seta do portal do Kakuriyo (vórtice + chevron, RiftPortal.arrow_rect) inteira na área segura
+##   em 16 direções;
+## - título da travessia (scripts/ui/realm_card.gd): legenda, kanji e nome de cada um dos 6 reinos,
+##   em cada idioma, inteiros na área segura com folga, sem se sobrepor e na ordem de leitura;
+## - "Um Kami oferece um pacto" (scripts/ui/kami_panel.gd): selo + título, subtítulo, as placas
+##   (com o cordão e o aro de seleção) e os botões Ignorar / Selar dentro da área segura com 4 px
+##   de folga, sem se sobrepor; cada placa com nome, domínio, bênção e preço inteiros e sem um
+##   texto encostar no outro, o mesmo arranjo nas três e as legendas "Bênção"/"Preço" em telas
+##   de 300 px ou mais; todo Kami em alguma oferta, Hachiman em cada posição e a oferta de 2
+##   (Lua V);
 ## - a HUD refaz o layout quando a tela muda de tamanho e quando o recorte troca de lado.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
@@ -35,12 +42,14 @@ func run(host: Node, check: Callable) -> void:
 		var safe := DeviceProfiles.safe_rect(c["view"], c["insets"])
 		var hud := await _open(c["view"])
 		await _check_controls(hud, safe, String(c["label"]))
+		_check_portal_arrows(hud, c["view"], safe, "HUD [%s]" % c["label"])
 		for lang: String in c["langs"]:
 			Locale.set_language(lang, false)
 			var state := "HUD %s [%s]" % [lang, c["label"]]
 			_check_top(hud, safe, state)
 			await _check_labels(hud, safe, state)
 			_check_arrows(hud, c["view"], safe, state)
+			_check_realm_card(hud, c["view"], c["insets"], safe, state)
 		await _check_kami(hud, safe.grow(-4.0), c["langs"], String(c["label"]))
 		await _close(hud)
 	DeviceProfiles.clear_insets()
@@ -218,59 +227,105 @@ func _check_arrows(hud: Hud, view: Vector2, safe: Rect2, state: String) -> void:
 		_check.call(safe.encloses(arrow), "%s: seta para %.0f° na área segura (%s)" % [state, rad_to_deg(dir.angle()), p])
 
 
+## Seta do portal: o vórtice e a ponta no pulso máximo, em 16 direções, na área segura.
+func _check_portal_arrows(hud: Hud, view: Vector2, safe: Rect2, state: String) -> void:
+	for i: int in 16:
+		var dir := Vector2.RIGHT.rotated(TAU * i / 16.0)
+		var r := RiftPortal.arrow_rect(hud.arrow_point(dir, view), dir)
+		_check.call(safe.encloses(r), "%s: seta do portal para %.0f° na área segura (%s)"
+				% [state, rad_to_deg(dir.angle()), r])
+
+
+## Título da travessia de cada reino: legenda, kanji e nome inteiros na área segura (com a folga
+## RealmCard.MARGIN dos lados), um embaixo do outro, sem se sobrepor.
+func _check_realm_card(hud: Hud, view: Vector2, insets: Vector2, safe: Rect2, state: String) -> void:
+	var card := hud.realm_card()
+	var room := safe.grow_individual(-RealmCard.MARGIN, 0.0, -RealmCard.MARGIN, 0.0)
+	for id: StringName in DB.ids("stages"):
+		var ow: Dictionary = DB.stage(id).get("otherworld", {})
+		card.kanji = String(ow.get("kanji", ""))
+		card.title = TranslationServer.translate("realm.%s.name" % id)
+		card.caption = TranslationServer.translate("realm.caption")
+		var layout: Dictionary = card.title_layout(view, insets)
+		var tag := "%s: título do reino %s" % [state, id]
+		var rects: Array[Rect2] = []
+		for key: String in ["caption", "kanji", "name"]:
+			var r: Rect2 = layout[key]
+			_check.call(r.size.x > 0.0 and room.encloses(r), "%s, %s inteiro na área segura (%s em %s)" % [tag, key, r, room])
+			for o: Rect2 in rects:
+				_check.call(not o.intersects(r) and o.end.y <= r.position.y + 0.5, "%s, %s abaixo e sem sobrepor" % [tag, key])
+			rects.append(r)
+		_check.call(int(layout["name_size"]) >= 12, "%s, nome legível" % tag)
+
+
 # --- Kami -------------------------------------------------------------------------
 
-func _check_kami(hud: Hud, view: Rect2, langs: Array, label: String) -> void:
+func _check_kami(hud: Hud, room: Rect2, langs: Array, label: String) -> void:
 	var ids := DB.ids("kami")
 	var count := ids.size()
 	var offers: Array = []
-	for i: int in count:
+	for i: int in range(0, count, 3):
 		offers.append([ids[i], ids[(i + 1) % count], ids[(i + 2) % count]])
 	for slot: int in 3:
-		var offer: Array = [StringName("inari"), StringName("raijin"), StringName("inari")]
+		var offer: Array = [StringName("inari"), StringName("raijin"), StringName("bishamon")]
 		offer[slot] = StringName("hachiman")
 		offers.append(offer)
+	offers.append([StringName("benzaiten"), StringName("bishamon")])
+	var panel := hud.kami_panel()
 	for lang: String in langs:
 		Locale.set_language(lang, false)
 		for offer: Array in offers:
 			var typed: Array[StringName] = []
 			typed.assign(offer)
 			hud.show_kami(typed)
-			await _host.get_tree().process_frame
-			await _host.get_tree().process_frame
-			var state := "%s [%s], %s" % [lang, label, ", ".join(offer)]
-			var panel := hud.get("_kami_panel") as Control
-			var controls: Array[Control] = []
-			_kami_controls_in(panel, controls)
-			_check.call(controls.size() >= 3 + 3 + 1, "%s: o painel mostra título, cartões e botão" % state)
-			for control: Control in controls:
-				_check.call(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
-						"%s: %s dentro da tela (%s)" % [state, control.get_class(), control.get_global_rect()])
-				if control is Button and (control as Button).text != "":
-					var button_node := control as Button
-					var minimum := button_node.get_combined_minimum_size()
-					_check.call(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
-							"%s: o cartão mostra o texto inteiro (%s de %s)" % [state, minimum, button_node.size])
-			var row := hud.get("_kami_row") as HBoxContainer
-			_check.call(row.get_child_count() == 3, "%s: três cartões" % state)
-			for card: Node in row.get_children():
-				var icons := 0
-				for child: Node in card.get_children():
-					if child is TextureRect and (child as TextureRect).texture != null:
-						icons += 1
-						_check.call(view.encloses((child as Control).get_global_rect()),
-								"%s: ícone do cartão dentro da tela" % state)
-				_check.call(icons == 1, "%s: cada cartão mostra o ícone do Kami" % state)
-	(hud.get("_kami_panel") as Control).visible = false
+			panel.finish_intro()
+			check_kami_layout(panel, room, "%s [%s], %s" % [lang, label, ", ".join(offer)])
+		await _host.get_tree().process_frame
+	panel.close_now()
 	Locale.set_language("pt_BR", false)
 
 
-## Coleta botões, textos e ícones de uma árvore de controles (o painel de Kami).
-func _kami_controls_in(node: Node, out: Array[Control]) -> void:
-	for child: Node in node.get_children():
-		if (child is BaseButton or child is Label or child is TextureRect) and not out.has(child):
-			out.append(child as Control)
-		_kami_controls_in(child, out)
+## Painel de Kami aberto e parado: tudo inteiro em `room` (área segura com folga), sem sobrepor.
+func check_kami_layout(panel: KamiPanel, room: Rect2, state: String) -> void:
+	var origin := panel.get_global_rect().position
+	var cards := panel.cards()
+	_check.call(cards.size() == panel.offer().size(), "%s: uma placa por Kami" % state)
+	var header := panel.header_rects()
+	for r: Rect2 in header:
+		_check.call(room.encloses(r), "%s: título e subtítulo na tela (%s em %s)" % [state, r, room])
+	_check.call(not header[0].intersects(header[1]), "%s: título e subtítulo separados" % state)
+	var mode := panel.layout_mode()
+	var rects: Array[Rect2] = []
+	for i: int in range(cards.size()):
+		var card := cards[i]
+		var r := Rect2(origin + card.base_position, card.size)
+		var cord_top := r.position.y - KamiPanel.CORD
+		_check.call(room.encloses(r) and cord_top >= header[1].end.y,
+				"%s: placa %s na tela, com o cordão abaixo do título (%s em %s)" % [state, card.id, r, room])
+		_check.call(room.grow(4.0).encloses(r.grow(4.0)), "%s: aro de seleção de %s na área segura" % [state, card.id])
+		_check.call(card.fits(), "%s: textos de %s inteiros na placa" % [state, card.id])
+		_check.call(card.icon_texture() != null and card.icon_scale() == int(mode[0])
+				and card.captions_shown() == bool(mode[1]),
+				"%s: ícone de %s e o mesmo arranjo nas placas" % [state, card.id])
+		var texts := card.text_controls()
+		for a: int in range(texts.size()):
+			for b: int in range(a + 1, texts.size()):
+				var ra := Rect2(texts[a].position, texts[a].size).grow(-1.0)
+				var rb := Rect2(texts[b].position, texts[b].size).grow(-1.0)
+				_check.call(not ra.intersects(rb), "%s: textos %d e %d de %s sem se sobrepor" % [state, a, b, card.id])
+		for other: Rect2 in rects:
+			_check.call(not other.intersects(r), "%s: placas separadas" % state)
+		rects.append(r)
+	_check.call(bool(mode[1]) or room.size.y < 290.0, "%s: legendas Bênção/Preço em tela alta" % state)
+	var buttons: Array[Button] = [panel.decline_button(), panel.confirm_button()]
+	for b: Button in buttons:
+		var br := b.get_global_rect()
+		_check.call(room.encloses(br), "%s: botão %s na tela (%s em %s)" % [state, b.text, br, room])
+		var minimum := b.get_combined_minimum_size()
+		_check.call(minimum.x <= br.size.x + 0.5 and minimum.y <= br.size.y + 0.5, "%s: botão %s inteiro" % [state, b.text])
+		for r: Rect2 in rects:
+			_check.call(not r.intersects(br), "%s: botão %s longe das placas" % [state, b.text])
+	_check.call(not buttons[0].get_global_rect().intersects(buttons[1].get_global_rect()), "%s: botões separados" % state)
 
 
 # --- Relayout ---------------------------------------------------------------------

@@ -87,7 +87,7 @@ static func panel_info(data: Dictionary) -> Dictionary:
 	if not enrage.is_empty():
 		marks.append(float(enrage["below"]))
 	return {"kanji": String(data.get("kanji", "")), "color": BossFx.aura_color(data), "marks": marks,
-			"invincible": bool(data.get("invincible", false))}
+			"invincible": bool(data.get("invincible", false)), "seal": String(data.get("seal", "鬼"))}
 
 
 func _step_force() -> void:
@@ -199,6 +199,8 @@ func _step_boss(boss: Dictionary, dt: float) -> void:
 		"charge":
 			var v: Vector2 = boss["dir"]
 			enemies.vel[i] = v
+			# Folhas "dir4" (Onikuma, Onmoraki) olham para onde investem.
+			enemies.facing[i] = SpriteSheet.dir_from_vector(v, enemies.facing[i])
 			enemies.pos[i] = game.world.clamp_to_bounds(me + v * dt)
 			if float(boss["timer"]) <= 0.0:
 				_back_to_move(boss)
@@ -403,6 +405,24 @@ func _step_decoys(boss: Dictionary, dt: float) -> void:
 		var around := game.player.sim_pos + (enemies.pos[d] - game.player.sim_pos).normalized().rotated(dt * 0.6) * 90.0
 		enemies.vel[d] = (around - enemies.pos[d]) / maxf(dt, 0.001) * 0.1
 		enemies.pos[d] = enemies.pos[d].lerp(around, 0.1)
+
+
+## Travessia para o Kakuriyo: os chefes em campo vêm junto e reaparecem na borda da tela,
+## voltando a andar (um golpe preparado no mundo de lá não cai no de cá); ilusões somem.
+func relocate_all() -> void:
+	var enemies := game.enemies
+	for boss: Dictionary in bosses:
+		var i := int(boss["index"])
+		var at := game.spawner.edge_point()
+		enemies.pos[i] = at
+		enemies.prev[i] = at
+		enemies.vel[i] = Vector2.ZERO
+		enemies.submerged[i] = 0
+		for entry: Array in boss["decoys"]:
+			if enemies.alive[int(entry[0])] == 1:
+				enemies.despawn(int(entry[0]))
+		(boss["decoys"] as Array).clear()
+		_back_to_move(boss)
 
 
 func _on_dead(boss: Dictionary) -> void:

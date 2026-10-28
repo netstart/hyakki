@@ -20,6 +20,7 @@
     "boss.mp3": "audio/music/boss_a.mp3",
     "shinkou.mp3": "audio/music/boss_b.mp3",
     "senka.mp3": "audio/music/boss_c.mp3",
-    "saishuusen.mp3": "audio/music/boss_final.mp3"
+    "saishuusen.mp3": "audio/music/boss_final.mp3",
+    "bakumatsubukyoku_ikusa.mp3": "audio/music/midboss.mp3"
   }
 }

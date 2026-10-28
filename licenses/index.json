@@ -33,11 +33,11 @@
     "version": "NinjaAdventure-AssetPack.zip (SHA-256 95a06f4fdcfd1882f061a45ff313b7c905dbe2de1e8512b281d7937df62a7b15)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses",
     "source_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/ninja_adventure_LICENSE.txt",
-    "files_count": 744
+    "files_count": 759
   },
   {
     "id": "fusion_pixel_font",
@@ -278,13 +278,13 @@
     "author": "甘茶 (Amacha)",
     "license_id": "LicenseRef-Amacha",
     "category": "audio",
-    "version": "13 tracks of the 和風・アジア category + 4 boss tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦), downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
+    "version": "13 tracks of the 和風・アジア category + 5 tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦; 幕末舞曲〜戦〜 as the mid-boss theme), downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
     "modifications": "files renamed; played in loop",
     "source_url": "https://amachamusic.chagasi.com/genre_asia.html",
     "license_file": "res://licenses/texts/LicenseRef-Amacha.txt",
-    "files_count": 17
+    "files_count": 18
   },
   {
     "id": "opengameart_lightning_1",
@@ -300,5 +300,50 @@
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/opengameart_lightning_1_LICENSE.txt",
     "files_count": 2
+  },
+  {
+    "id": "pixelboy_freemix",
+    "name": "FreeMix - AssetsMix free demo (mid-boss monsters)",
+    "author": "pixel-boy & AAA (challengerAAA)",
+    "license_id": "LicenseRef-PixelBoy-AssetsMix",
+    "category": "art",
+    "version": "FreeMix.zip (itch.io upload 18782511, SHA-256 71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075; local copy and SHA-256 in C:/src/assets/pixelboy-freemix/)",
+    "downloaded_at": "2026-10-28",
+    "verified_at": "2026-10-28",
+    "modifications": "two monster sprites (candlesnake_boss, mimic_campfire) renamed to Sprite.png; 4-frame breathing strip Idle.png derived by tools/make_midboss_idle.py",
+    "source_url": "https://pixel-boy.itch.io/free-mix",
+    "license_file": "res://licenses/texts/LicenseRef-PixelBoy-AssetsMix.txt",
+    "notice_file": "res://licenses/notices/pixelboy_freemix_NOTICE.txt",
+    "files_count": 4
+  },
+  {
+    "id": "hyakki_portal_fx",
+    "name": "Hyakki - Kakuriyo portal art",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "license_id": "CC0-1.0",
+    "category": "art",
+    "version": "tools/gen_portal_fx.py (2026-10-28)",
+    "downloaded_at": "2026-10-28",
+    "verified_at": "2026-10-28",
+    "modifications": "original pixel art drawn procedurally by tools/gen_portal_fx.py (vortex loop, opening and torii frame) with colors from the Ninja Adventure palette (CC0)",
+    "source_url": "tools/gen_portal_fx.py",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/hyakki_portal_fx_NOTICE.txt",
+    "files_count": 3
+  },
+  {
+    "id": "hyakki_portal_sfx",
+    "name": "Hyakki - procedural portal and mid-boss sound effects",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "license_id": "CC0-1.0",
+    "category": "audio",
+    "version": "tools/gen_portal_sfx.py (2026-10-28)",
+    "downloaded_at": "2026-10-28",
+    "verified_at": "2026-10-28",
+    "modifications": "original work, synthesized procedurally by tools/gen_portal_sfx.py (p_*.wav)",
+    "source_url": "tools/gen_portal_sfx.py",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/hyakki_portal_sfx_NOTICE.txt",
+    "files_count": 9
   }
 ]

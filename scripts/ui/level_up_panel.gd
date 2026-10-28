@@ -5,9 +5,9 @@ extends Control
 ##   abrem atrás das cartas, o título "Nível N" desce com o selo 昇 e as cartas entram em
 ##   leque, uma a uma, cada uma com o som do papel;
 ## - cartas LevelCard (moldura por categoria, lendária animada, números em verde, sinergia);
-## - toque: a carta destacada sobe e brilha; ao escolher, as outras caem e a escolhida vira uma
-##   luz que voa até o seu lugar na barra da HUD com rastro; bloqueio contra toque acidental
-##   (CARD_LOCK_MS depois de abrir e só com a carta já no lugar);
+## - toque: a carta destacada sobe e brilha; ao escolher, as outras caem, a escolhida encolhe
+##   na luz e o ícone dela voa até a guardiã (`claimed` -> RewardFlight da HUD); bloqueio contra
+##   toque acidental (CARD_LOCK_MS depois de abrir e só com a carta já no lugar);
 ## - Rerrolar / Pular / Banir com glifo e contador; no modo banir as cartas ficam com borda
 ##   vermelha e o carimbo 封 cai na escolhida.
 ## Cabe em 678x305 e 480x270 em todos os idiomas (tests/level_up_panel_tests.gd).
@@ -17,6 +17,8 @@ signal card_chosen(index: int)
 signal reroll_pressed
 signal skip_pressed
 signal banish_pressed(index: int)
+## O ícone da carta escolhida, pronto para o voo até a guardiã (ver RewardFlight.launch).
+signal claimed(items: Array[Dictionary])
 
 const CARD_LOCK_MS := 350
 const MAX_CARDS := 4
@@ -32,9 +34,8 @@ const DEAL_DELAY := 0.14
 const DEAL_STEP := 0.085
 const DEAL_TIME := 0.32
 const REDEAL_DELAY := 0.0
-## Saída: queda das outras cartas, voo da escolhida até a HUD e o fundo sumindo.
+## Saída: queda das outras cartas e o fundo sumindo (o voo do ícone fica com a RewardFlight).
 const DROP_TIME := 0.32
-const FLY_TIME := 0.55
 const FADE_OUT := 0.32
 const STAMP_TIME := 0.42
 ## Cor do halo por elemento (a primeira etiqueta da arma que estiver aqui, na ordem).
@@ -77,9 +78,6 @@ class ActionButton:
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 0)
 
 
-## Quem calcula o alvo do voo (posição do ícone na barra da HUD). Recebe o dicionário da carta.
-var slot_target: Callable
-
 var _open: bool = false
 var _opened_at: int = 0
 var _banish_mode: bool = false
@@ -101,11 +99,6 @@ var _actions: HBoxContainer
 var _reroll: ActionButton
 var _skip: ActionButton
 var _banish: ActionButton
-var _trail: Control
-## Luzes voando para a HUD: {from, to, t, icon, color, trail}
-var _flyers: Array[Dictionary] = []
-## Anéis de chegada na HUD: Vector3(x, y, t).
-var _arrivals: PackedVector3Array = []
 var _time: float = 0.0
 
 
@@ -149,11 +142,6 @@ func _ready() -> void:
 	_banish = _action("banish", func() -> void:
 		if _accepting():
 			_set_banish(not _banish_mode))
-	_trail = Control.new()
-	_trail.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_trail.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_trail.draw.connect(_draw_trail)
-	add_child(_trail)
 	resized.connect(_layout)
 	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
 	MenuKit.on_insets_change(self, _layout)
@@ -237,8 +225,6 @@ func close_now() -> void:
 	_busy = false
 	_chosen = -1
 	_kill_tweens()
-	_flyers.clear()
-	_arrivals.clear()
 	_set_banish(false)
 	for card: LevelCard in _cards:
 		card.settled = false
@@ -251,7 +237,7 @@ func is_open() -> bool:
 	return _open
 
 
-## A saída (cartas caindo, luz voando) ainda está tocando.
+## A saída (cartas caindo, fundo sumindo) ainda está tocando.
 func outro_playing() -> bool:
 	return not _open and visible
 
@@ -270,10 +256,6 @@ func level_cards() -> Array[LevelCard]:
 
 func banish_mode() -> bool:
 	return _banish_mode
-
-
-func flyers() -> int:
-	return _flyers.size()
 
 
 func overlay() -> OverlayFx:
@@ -383,18 +365,17 @@ func _on_card(index: int) -> void:
 	_choose(index)
 
 
-## Escolha: a carta vira luz e voa para a HUD; as outras caem. O sinal sai antes da saída
-## (o jogo aplica a escolha e decide se fecha a tela ou mostra o próximo nível).
+## Escolha: o ícone da carta sai voando até a guardiã; as outras caem. O sinal sai antes da
+## saída (o jogo aplica a escolha e decide se fecha a tela ou mostra o próximo nível).
 func _choose(index: int) -> void:
 	var card := _cards[index]
 	_busy = true
-	var from := card.get_global_transform_with_canvas() * card.icon_center()
-	var flyer := {"from": from, "t": 0.0, "icon": card.icon_texture(), "color": card.element,
-			"trail": PackedVector2Array(), "card": card.data}
+	var item := {"from": card.get_global_transform_with_canvas() * card.icon_center(), "icon": card.icon_texture(),
+			"color": card.element, "scale": card.icon_scale(), "key": slot_key(card.data)}
 	AudioManager.play("magic1", 1.3, 0.0, -6.0)
 	card_chosen.emit(index)
-	flyer["to"] = _target_for(card.data)
-	_flyers.append(flyer)
+	var items: Array[Dictionary] = [item]
+	claimed.emit(items)
 	if _open:
 		# O jogo ainda não fechou a tela: a queda das cartas espera o hide_panel.
 		_chosen = index
@@ -420,12 +401,15 @@ func _drop_cards(index: int) -> void:
 			t.parallel().tween_property(other, "modulate:a", 0.0, DROP_TIME)
 
 
-func _target_for(card: Dictionary) -> Vector2:
-	if slot_target.is_valid():
-		var at: Variant = slot_target.call(card)
-		if at is Vector2:
-			return at
-	return Vector2(12.0, 36.0)
+## Encaixe da recompensa na barra da HUD ("w:<arma>" ou "p:<passiva>"; "" se não tiver ícone lá).
+static func slot_key(reward: Dictionary) -> String:
+	var id := String(reward.get("id", ""))
+	match String(reward.get("kind", "")):
+		"weapon_new", "weapon_up", "evolution", "union":
+			return "w:" + id
+		"passive":
+			return "p:" + id
+	return ""
 
 
 ## Pular: as cartas sobem e somem como papel ao vento.
@@ -605,75 +589,10 @@ func _process(delta: float) -> void:
 	_header.queue_redraw()
 	if _banish_mode:
 		_banish.queue_redraw()
-	_update_flyers(delta)
-	if not _open and _flyers.is_empty() and _arrivals.is_empty() and _fx.power <= 0.0:
+	if not _open and _fx.power <= 0.0:
 		visible = false
 		for card: LevelCard in _cards:
 			card.visible = false
-
-
-func _update_flyers(delta: float) -> void:
-	var trail_len: int = [4, 9, 16][_fx_level]
-	for i: int in range(_flyers.size() - 1, -1, -1):
-		var f := _flyers[i]
-		f["t"] = float(f["t"]) + delta / FLY_TIME
-		var k := clampf(float(f["t"]), 0.0, 1.0)
-		var trail: PackedVector2Array = f["trail"]
-		trail.append(_flyer_pos(f, k))
-		while trail.size() > trail_len:
-			trail.remove_at(0)
-		f["trail"] = trail
-		if k >= 1.0:
-			var to: Vector2 = f["to"]
-			_arrivals.append(Vector3(to.x, to.y, 0.0))
-			AudioManager.play("bell", 1.4, 0.0, -10.0)
-			_flyers.remove_at(i)
-	for i: int in range(_arrivals.size() - 1, -1, -1):
-		var a := _arrivals[i]
-		a.z += delta / 0.35
-		if a.z >= 1.0:
-			_arrivals.remove_at(i)
-		else:
-			_arrivals[i] = a
-	_trail.queue_redraw()
-
-
-## Arco do voo: sobe um pouco e acelera até o alvo (ease-in).
-func _flyer_pos(f: Dictionary, k: float) -> Vector2:
-	var from: Vector2 = f["from"]
-	var to: Vector2 = f["to"]
-	var e := k * k * (3.0 - 2.0 * k)
-	var at := from.lerp(to, e)
-	at.y -= sin(k * PI) * 40.0
-	return at
-
-
-func _draw_trail() -> void:
-	var glow := _fx_level >= 1
-	for f: Dictionary in _flyers:
-		var color: Color = f["color"]
-		var trail: PackedVector2Array = f["trail"]
-		for j: int in range(trail.size()):
-			var a := float(j + 1) / trail.size()
-			if glow:
-				_trail.draw_circle(trail[j], 1.5 + 4.0 * a, Color(color, 0.12 * a))
-			_trail.draw_rect(Rect2(trail[j].floor(), Vector2.ONE * (2.0 if a > 0.5 else 1.0)),
-					Color(color.lerp(Color.WHITE, 0.5), a))
-		var k := clampf(float(f["t"]), 0.0, 1.0)
-		var at := _flyer_pos(f, k)
-		_trail.draw_circle(at, 9.0 - 4.0 * k, Color(color, 0.3))
-		_trail.draw_circle(at, 4.0, Color(1, 1, 0.9, 0.85))
-		var icon: Texture2D = f["icon"]
-		if icon != null:
-			var native := icon.get_size()
-			# Escala inteira do ícone nativo: 2x na saída da carta, 1x perto da barra.
-			var s := native * (2.0 if k < 0.45 else 1.0)
-			_trail.draw_texture_rect(icon, Rect2((at - s * 0.5).floor(), s.floor()), false)
-	for a: Vector3 in _arrivals:
-		var c := Vector2(a.x, a.y)
-		_trail.draw_arc(c, 4.0 + 14.0 * a.z, 0.0, TAU, 20, Color(1, 0.9, 0.6, 1.0 - a.z), 1.0)
-		if glow:
-			_trail.draw_circle(c, 9.0 * (1.0 - a.z), Color(1, 0.95, 0.75, 0.4 * (1.0 - a.z)))
 
 
 func _draw_header() -> void:
