@@ -2,10 +2,12 @@ extends Node
 ## Roda tests/credits_screen_tests.gd sozinho, com os autoloads e arquivos de save e opções
 ## próprios dos testes (o perfil do jogador não é tocado):
 ##   godot --headless --path . res://tests/credits_screen_tests.tscn
-## Com `-- --shots=<pasta>` (sem --headless) grava capturas dos Créditos em PNG (678x305):
+## Com `-- --shots=<pasta>` (sem --headless) grava capturas dos Créditos em PNG, em cada
+## resolução de tests/device_profiles.gd:
 ## topo, meio, parte de baixo e fim da rolagem, em pt_BR e ja (`--langs=pt_BR,en` troca os idiomas).
 
 const CreditsScreenTests := preload("res://tests/credits_screen_tests.gd")
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -52,21 +54,30 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 	var tests := CreditsScreenTests.new()
 	tests.set("_host", self)
 	tests.set("_check", _check)
-	for lang: String in langs:
-		Locale.set_language(lang, false)
-		var ctx: Array = await tests.open_screen()
-		var screen := ctx[1] as Control
-		var scroll := screen.get("_scroll") as ScrollContainer
-		var content := scroll.get_child(0) as Control
-		var stops := {"top": 0, "middle": int((content.size.y - scroll.size.y) * 0.4),
-				"lower": int((content.size.y - scroll.size.y) * 0.75), "end": int(content.size.y)}
-		for stop: String in stops:
-			scroll.scroll_vertical = int(stops[stop])
-			await get_tree().create_timer(0.5).timeout
-			await RenderingServer.frame_post_draw
-			var image := get_viewport().get_texture().get_image()
-			var path := dir.path_join("credits_%s_%s.png" % [stop, lang])
-			image.save_png(path)
-			print("captura: %s (%dx%d)" % [path, image.get_width(), image.get_height()])
-		await tests.close(ctx)
+	var native := get_window().size
+	for target: Vector2 in DeviceProfiles.views():
+		var view: Vector2 = await DeviceProfiles.set_window_view(self, target)
+		tests.use_case(view, Vector2.ZERO)
+		for lang: String in langs:
+			await _shot(dir, tests, lang, view)
+	DisplayServer.window_set_size(native)
 	Locale.set_language("pt_BR", false)
+
+
+func _shot(dir: String, tests: CreditsScreenTests, lang: String, view: Vector2) -> void:
+	Locale.set_language(lang, false)
+	var ctx: Array = await tests.open_screen()
+	var screen := ctx[1] as Control
+	var scroll := screen.get("_scroll") as ScrollContainer
+	var content := scroll.get_child(0) as Control
+	var stops := {"top": 0, "middle": int((content.size.y - scroll.size.y) * 0.4),
+			"lower": int((content.size.y - scroll.size.y) * 0.75), "end": int(content.size.y)}
+	for stop: String in stops:
+		scroll.scroll_vertical = int(stops[stop])
+		await get_tree().create_timer(0.5).timeout
+		await RenderingServer.frame_post_draw
+		var image := get_viewport().get_texture().get_image()
+		var path := dir.path_join("credits_%s_%s_%dx%d.png" % [stop, lang, view.x, view.y])
+		image.save_png(path)
+		print("captura: %s (%dx%d)" % [path, image.get_width(), image.get_height()])
+	await tests.close(ctx)

@@ -1,34 +1,44 @@
 extends RefCounted
-## Tela de título em 678x305: coluna de menu, saldo, bloco de ação e selos (Loja pronta,
+## Tela de título em cada resolução de tests/device_profiles.gd (sem e com o furo da câmera
+## de cada lado): coluna de menu, saldo, bloco de ação e selos (Loja pronta,
 ## Desafio Diário feito, partida suspensa) em todos os idiomas; foco no botão principal e
 ## entrada animada que não acumula deslocamento. Chamado por tests/integration_tests.gd.
 
-const VIEW := Rect2(Vector2.ZERO, Vector2(678, 305))
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
+
+## Tela lógica do caso atual e a área segura (fora do furo da câmera).
+var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 
 
 func run(host: Node, check: Callable) -> void:
 	var original := SaveManager.data
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		for state: int in 4:
-			# bit 0: Loja pronta; bit 1: Desafio Diário feito e partida suspensa.
-			var shop_ready := state & 1 == 1
-			var done := state & 2 == 2
-			_setup(shop_ready, done)
-			var app := App.new()
-			host.add_child(app)
-			await host.get_tree().process_frame
-			_fit_game_view(app)
-			app.go(&"title")
-			var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
-			await _settle(host, screen)
-			var tag := "Título %s (loja %s, diário %s)" % [lang, shop_ready, done]
-			_check_layout(screen, check, tag)
-			_check_states(app, screen, check, tag, shop_ready, done)
-			if state == 0:
-				await _check_repeat(host, app, screen, check, tag)
-			app.queue_free()
-			await host.get_tree().process_frame
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		_view = Rect2(Vector2.ZERO, c["view"])
+		_safe = DeviceProfiles.safe_rect(c["view"], c["insets"])
+		DeviceProfiles.simulate_insets(c["insets"])
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			for state: int in 4:
+				# bit 0: Loja pronta; bit 1: Desafio Diário feito e partida suspensa.
+				var shop_ready := state & 1 == 1
+				var done := state & 2 == 2
+				_setup(shop_ready, done)
+				var app := App.new()
+				host.add_child(app)
+				await host.get_tree().process_frame
+				_fit_game_view(app, _view.size)
+				app.go(&"title")
+				var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
+				await _settle(host, screen)
+				var tag := "Título %s [%s] (loja %s, diário %s)" % [lang, c["label"], shop_ready, done]
+				_check_layout(screen, check, tag)
+				_check_states(app, screen, check, tag, shop_ready, done)
+				if state == 0:
+					await _check_repeat(host, app, screen, check, tag)
+				app.queue_free()
+				await host.get_tree().process_frame
+	DeviceProfiles.clear_insets()
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
 
@@ -36,10 +46,10 @@ func run(host: Node, check: Callable) -> void:
 ## O teste roda numa janela menor que o jogo (64x64 no --headless, e o PixelScaler deixa o
 ## viewport lógico desse tamanho): a raiz das telas recebe o tamanho do viewport do jogo,
 ## como no aparelho. A tela ancora o saldo e o bloco de ação nos cantos dessa raiz.
-static func _fit_game_view(app: App) -> void:
+static func _fit_game_view(app: App, view: Vector2) -> void:
 	var root := app.get("_root") as Control
 	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	root.size = VIEW.size
+	root.size = view
 
 
 func _setup(shop_ready: bool, done: bool) -> void:
@@ -76,7 +86,7 @@ func _check_layout(screen: Control, check: Callable, tag: String) -> void:
 	var rects: Array[Rect2] = []
 	for b: Button in buttons:
 		var rect := b.get_global_rect()
-		check.call(VIEW.encloses(rect), "%s: '%s' inteiro na tela (%s)" % [tag, b.text, rect])
+		check.call(_safe.encloses(rect), "%s: '%s' inteiro na tela (%s em %s)" % [tag, b.text, rect, _safe])
 		check.call(rect.size.y >= 30, "%s: '%s' com alvo de toque ≥ 30 (%.0f)" % [tag, b.text, rect.size.y])
 		check.call(is_equal_approx(b.modulate.a, 1.0), "%s: '%s' terminou de aparecer" % [tag, b.text])
 		var font := b.get_theme_font("font")
@@ -98,11 +108,12 @@ func _check_layout(screen: Control, check: Callable, tag: String) -> void:
 		check.call(icon.get_global_rect().end.x <= row.get_global_rect().position.x + box.get_margin(SIDE_LEFT),
 				"%s: ícone de '%s' antes do texto" % [tag, row.text])
 	var title := (screen.get("_title_box") as Control).get_global_rect()
-	check.call(VIEW.encloses(title), "%s: título inteiro na tela" % tag)
+	check.call(_safe.encloses(title), "%s: título inteiro na tela (%s em %s)" % [tag, title, _safe])
 	for row: Button in rows:
 		check.call(not title.intersects(row.get_global_rect()), "%s: título não cobre '%s'" % [tag, row.text])
 	var chip := (screen.get("_chip") as Control).get_global_rect()
-	check.call(VIEW.encloses(chip) and not title.intersects(chip), "%s: saldo inteiro e longe do título" % tag)
+	check.call(_safe.encloses(chip) and not title.intersects(chip),
+			"%s: saldo inteiro e longe do título (%s em %s)" % [tag, chip, _safe])
 	var ryo := screen.get("_ryo") as Label
 	check.call(ryo.text == Locale.format_number(1234567) and chip.encloses(ryo.get_global_rect()),
 			"%s: saldo mostra o ryō dentro do selo" % tag)

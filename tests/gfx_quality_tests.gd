@@ -6,11 +6,13 @@ extends RefCounted
 ##   cada 20 s, nunca sobe sozinho, só em "auto" e nunca abaixo de LOW;
 ## - tela de Opções: escolha "opt_graphics_quality" com Auto (nível) / Baixa / Média / Alta;
 ## - pausa: botão em ciclo Auto → Baixa → Média → Alta → Auto, com "Auto (nível)", e texto
-##   inteiro em todos os idiomas na coluna mais estreita.
+##   inteiro em todos os idiomas na coluna mais estreita, em cada resolução de
+##   tests/device_profiles.gd (com e sem o furo da câmera).
 ## Chamado por tests/integration_tests.gd.
 
 const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 const PauseMenuTests := preload("res://tests/pause_menu_tests.gd")
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const KEY := "graphics_quality"
 
 var _host: Node
@@ -111,7 +113,7 @@ func _test_adaptive() -> void:
 func _test_options() -> void:
 	Locale.set_language("pt_BR", false)
 	var host := Control.new()
-	host.size = Vector2(678, 305)
+	host.size = DeviceProfiles.main_view()
 	host.theme = ThemeFactory.build()
 	_host.add_child(host)
 	var screen := (load(OPTIONS_SCREEN) as GDScript).new() as Control
@@ -142,16 +144,18 @@ func _test_options() -> void:
 func _test_pause() -> void:
 	var tests := PauseMenuTests.new()
 	tests.set("_host", _host)
-	for view: Vector2 in [Vector2(678, 305), Vector2(480, 270)]:
-		for lang: String in Locale.SUPPORTED:
-			await _check_pause(tests, view, lang)
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		tests.call("use_insets", c["insets"])
+		for lang: String in c["langs"]:
+			await _check_pause(tests, c["view"], lang, c["label"])
+	tests.call("use_insets", Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 
 
-func _check_pause(tests: RefCounted, view: Vector2, lang: String) -> void:
+func _check_pause(tests: RefCounted, view: Vector2, lang: String, label: String) -> void:
 	Locale.set_language(lang, false)
 	Settings.set_value(KEY, "auto")
-	var state := "gfx %s %dx%d" % [lang, view.x, view.y]
+	var state := "gfx %s [%s]" % [lang, label]
 	var menu: PauseMenu = await tests.call("open_standalone", view, PauseMenuTests.make_snapshot(true))
 	var quality := menu.get("_quality") as Button
 	var caption := menu.get("_quality_caption") as Label

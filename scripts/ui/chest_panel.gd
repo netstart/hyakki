@@ -69,6 +69,7 @@ class RewardRow:
 		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		name_label.clip_text = true
 		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name_label.add_theme_constant_override("line_spacing", -1)
 		add_child(name_label)
 		effect = RichTextLabel.new()
 		effect.bbcode_enabled = true
@@ -98,14 +99,20 @@ class RewardRow:
 		var x := 4.0 + icon_box() + 6.0
 		var pill_w := UiPaint.text_width(pill) + 10.0 if not pill.is_empty() else 0.0
 		var lh := Locale.font.get_height(12) - 1.0
+		# Nome que não cabe ao lado do selo (tela estreita com câmera, idioma longo) quebra
+		# em duas linhas em vez de ganhar "…"; o efeito desce uma linha.
+		var name_w := maxf(row_size.x - x - pill_w - 8.0, 10.0)
+		var wrap := UiPaint.text_width(name_label.text) > name_w
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+		var name_h := lh * (2.0 if wrap else 1.0)
 		effect.size = Vector2(maxf(row_size.x - x - 4.0, 10.0), row_size.y)
 		var need := float(effect.get_content_height()) if not effect.get_parsed_text().is_empty() else 0.0
-		var room := row_size.y - 3.0 - lh
+		var room := row_size.y - 3.0 - name_h
 		var effect_h := minf(need, room)
-		var top := maxf(1.0, floorf((row_size.y - lh - effect_h) * 0.5))
+		var top := maxf(1.0, floorf((row_size.y - name_h - effect_h) * 0.5))
 		name_label.position = Vector2(x, top - 1.0)
-		name_label.size = Vector2(maxf(row_size.x - x - pill_w - 8.0, 10.0), lh + 1.0)
-		effect.position = Vector2(x - 1.0, top + lh)
+		name_label.size = Vector2(name_w, name_h + 1.0)
+		effect.position = Vector2(x - 1.0, top + name_h)
 		effect.size = Vector2(effect.size.x, maxf(row_size.y - 1.0 - effect.position.y, 4.0))
 		# Último recurso: corta o efeito em palavras e termina com "…".
 		var words := plain.split(" ", false)
@@ -122,8 +129,18 @@ class RewardRow:
 			return true
 		return effect.position.y + effect.get_content_height() <= size.y
 
+	## Nome inteiro: numa linha, ou em até duas com cada palavra cabendo na largura.
 	func name_fits() -> bool:
-		return UiPaint.text_width(name_label.text) <= name_label.size.x + 0.5
+		var w := name_label.size.x + 0.5
+		if UiPaint.text_width(name_label.text) <= w:
+			return true
+		if name_label.autowrap_mode == TextServer.AUTOWRAP_OFF or name_label.get_line_count() > 2 \
+				or name_label.get_visible_line_count() < name_label.get_line_count():
+			return false
+		for word: String in name_label.text.split(" ", false):
+			if UiPaint.text_width(word) > w:
+				return false
+		return true
 
 	func _process(delta: float) -> void:
 		time += delta
@@ -237,6 +254,8 @@ func _ready() -> void:
 	_fly.draw.connect(_draw_fly)
 	add_child(_fly)
 	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 	Settings.changed.connect(func(key: String) -> void:
 		if key == GfxQuality.changed_signal_key():
 			_apply_quality())
@@ -668,13 +687,7 @@ func _update_particles(delta: float) -> void:
 
 func _layout() -> void:
 	var view := size
-	var insets := Vector2.ZERO
-	if OS.has_feature("mobile") and is_inside_tree():
-		var safe := Rect2(DisplayServer.get_display_safe_area())
-		var scale_x := get_viewport().get_final_transform().x.x
-		if safe.size.x > 0.0 and scale_x > 0.0:
-			insets = Vector2(maxf(safe.position.x, 0.0),
-					maxf(DisplayServer.screen_get_size().x - safe.end.x, 0.0)) / scale_x
+	var insets := MenuKit.safe_insets(self)
 	var left := MARGIN + insets.x
 	var stage_w := clampf(roundf(view.x * 0.4), 172.0, 290.0) if view.x >= 560.0 else 172.0
 	_stage_rect = Rect2(left, MARGIN, stage_w, view.y - MARGIN * 2.0)

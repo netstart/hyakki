@@ -12,6 +12,8 @@ const FIXED_OFFSET := Vector2(64.0, 64.0)
 var vector := Vector2.ZERO
 var fixed: bool = false
 var left_side: bool = true
+## Recorte da câmera (esquerda, direita), em pontos: o joystick fixo fica do lado de dentro.
+var insets := Vector2.ZERO
 
 var _touch_index: int = -1
 var _origin := Vector2.ZERO
@@ -43,8 +45,13 @@ func _in_zone(p: Vector2) -> bool:
 
 func _fixed_center() -> Vector2:
 	if left_side:
-		return Vector2(FIXED_OFFSET.x, size.y - FIXED_OFFSET.y)
-	return Vector2(size.x - FIXED_OFFSET.x, size.y - FIXED_OFFSET.y)
+		return Vector2(FIXED_OFFSET.x + insets.x, size.y - FIXED_OFFSET.y)
+	return Vector2(size.x - FIXED_OFFSET.x - insets.y, size.y - FIXED_OFFSET.y)
+
+
+## Centro do joystick fixo (testes de layout).
+func fixed_center() -> Vector2:
+	return _fixed_center()
 
 
 func release() -> void:

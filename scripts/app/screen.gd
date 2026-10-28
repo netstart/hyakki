@@ -66,8 +66,12 @@ func back_button() -> Button:
 	b.pressed.connect(on_back)
 	b.position = Vector2(4, 2)
 	b.size = b.get_combined_minimum_size()
-	# Recorte da câmera no Android: afasta da borda pela área segura.
-	b.ready.connect(func() -> void: b.position.x = 4.0 + MenuKit.safe_insets(b).x)
+	# Recorte da câmera no Android: afasta da borda pela área segura, também quando o furo troca
+	# de lado com a tela aberta (giro de 180°).
+	var place := func() -> void: b.position.x = 4.0 + MenuKit.safe_insets(b).x
+	b.ready.connect(func() -> void:
+		place.call()
+		MenuKit.on_insets_change(b, place), CONNECT_ONE_SHOT)
 	# Os painéis de tela cheia adicionados depois cobririam o botão e engoliriam o toque.
 	b.tree_entered.connect(b.move_to_front, CONNECT_DEFERRED | CONNECT_ONE_SHOT)
 	return b

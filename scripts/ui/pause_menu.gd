@@ -158,6 +158,8 @@ func _ready() -> void:
 	_build_panel()
 	_build_confirm()
 	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 	Settings.changed.connect(_on_setting)
 	_seed_motes()
 
@@ -277,6 +279,13 @@ func _refresh_music() -> void:
 
 ## Telas baixas (ex.: 16:9 com 270 de altura): Qualidade e Desistir dividem uma linha; a
 ## qualidade perde a legenda e, em Auto, mostra só "Auto" (as barras dão o nível efetivo).
+## Coluna do menu mais alta que o espaço (medida já acertada): passa ao modo compacto. Só vai
+## nesse sentido; o _layout volta ao normal quando a tela muda.
+func _fit_compact() -> void:
+	if not _compact and _left_rect.size.y > 0.0 and _menu.get_combined_minimum_size().y > _left_rect.size.y:
+		_set_compact(true)
+
+
 func _set_compact(on: bool) -> void:
 	_compact = on
 	_bottom.columns = 2 if on else 1
@@ -355,14 +364,7 @@ func _process(delta: float) -> void:
 
 ## Bordas seguras (recorte da câmera, cantos) em pixels lógicos; zero fora do celular.
 func _safe_insets() -> Vector2:
-	if not OS.has_feature("mobile") or not is_inside_tree():
-		return Vector2.ZERO
-	var safe := Rect2(DisplayServer.get_display_safe_area())
-	var screen := Vector2(DisplayServer.screen_get_size())
-	var scale_x := get_viewport().get_final_transform().x.x
-	if safe.size.x <= 0.0 or scale_x <= 0.0:
-		return Vector2.ZERO
-	return Vector2(maxf(safe.position.x, 0.0), maxf(screen.x - safe.end.x, 0.0)) / scale_x
+	return MenuKit.safe_insets(self)
 
 
 func _layout() -> void:
@@ -629,6 +631,9 @@ func _build_left() -> void:
 	_menu.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_menu.add_theme_constant_override("separation", 4)
 	_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# O mínimo da coluna só se acerta depois que os filhos remedem (troca de modo, textos): se
+	# passar da altura, compacta na hora.
+	_menu.minimum_size_changed.connect(_fit_compact)
 	_left.add_child(_menu)
 	_kicker = _label("", 12, DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	_kicker.clip_text = true

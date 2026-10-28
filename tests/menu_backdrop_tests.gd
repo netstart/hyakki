@@ -1,9 +1,12 @@
 extends RefCounted
 ## Fundo dos menus (MenuBackdrop): não captura toque, carrega todas as folhas, procissão com
 ## variedade andando na crista, guardiã que acompanha o herói escolhido e desenho sem erros
-## em vários tamanhos. Chamado por tests/integration_tests.gd, que passa o nó e o _check.
+## em cada resolução de tests/device_profiles.gd e em tamanhos fora da lista. Chamado por
+## tests/integration_tests.gd, que passa o nó e o _check.
 
-const SIZES: Array[Vector2] = [Vector2(678, 305), Vector2(400, 305), Vector2(900, 400)]
+## Tamanhos fora da lista de resoluções: só robustez do desenho (estreito e grande).
+const ODD_SIZES: Array[Vector2] = [Vector2(400, 305), Vector2(900, 400)]
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 
 func run(host: Node, check: Callable) -> void:
@@ -11,7 +14,7 @@ func run(host: Node, check: Callable) -> void:
 	SaveManager.data = SaveManager.default_profile()
 	var holder := Control.new()
 	host.add_child(holder)
-	holder.size = SIZES[0]
+	holder.size = DeviceProfiles.main_view()
 	var backdrop := MenuBackdrop.new()
 	holder.add_child(backdrop)
 	await host.get_tree().process_frame
@@ -21,9 +24,9 @@ func run(host: Node, check: Callable) -> void:
 		check.call((layer as Control).mouse_filter == Control.MOUSE_FILTER_IGNORE,
 				"Fundo dos menus: camada %s ignora o mouse" % layer.name)
 	_check_textures(backdrop, check)
-	_check_walkers(backdrop, check, "678x305")
+	_check_walkers(backdrop, check, "%dx%d" % [holder.size.x, holder.size.y])
 	await _check_hero(host, backdrop, check)
-	for area: Vector2 in SIZES:
+	for area: Vector2 in DeviceProfiles.views() + ODD_SIZES:
 		holder.size = area
 		await host.get_tree().process_frame
 		await host.get_tree().process_frame

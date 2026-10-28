@@ -12,6 +12,11 @@ const HEADER_H := 40.0
 const MARGIN := 8.0
 const GAP := 6.0
 const PORTRAIT_GAP := 4.0
+## Retrato mínimo e folga mínima entre eles (telas estreitas com recorte da câmera).
+const PORTRAIT_MIN := 26.0
+const PORTRAIT_GAP_MIN := 2.0
+## Folga do título do cabeçalho até o "voltar".
+const TITLE_CLEAR := 6.0
 const ATTRS: Array[String] = ["max_hp", "might", "speed", "area"]
 const PIPS := 5
 const SWITCH_TIME := 0.22
@@ -27,6 +32,8 @@ const LOOK := {
 }
 
 var _grid: HBoxContainer
+var _header: Control
+var _back: Button
 var _stage: HeroStage
 var _motes: MenuKit.Motes
 var _panel: PanelContainer
@@ -59,7 +66,7 @@ func _ready() -> void:
 	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(scrim)
-	MenuKit.header(self, tr("heroes.title"), "守")
+	_header = MenuKit.header(self, tr("heroes.title"), "守")
 	_stage = HeroStage.new()
 	_stage.name = "Stage"
 	add_child(_stage)
@@ -71,8 +78,11 @@ func _ready() -> void:
 	_grid.add_theme_constant_override("separation", int(PORTRAIT_GAP))
 	add_child(_grid)
 	_build_panel()
-	add_child(back_button())
+	_back = back_button()
+	add_child(_back)
 	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 	MenuKit.on_quality_change(self, _apply_quality)
 
 
@@ -360,8 +370,15 @@ func _layout() -> void:
 	var left_w := roundf(clampf(w * 0.44, 200.0, 320.0))
 	var count := maxi(1, _grid.get_child_count())
 	var frame := floorf((left_w - MARGIN * 2.0 - PORTRAIT_GAP * (count - 1)) / count)
-	frame = clampf(frame, 26.0, 36.0)
-	var roster_w := frame * count + PORTRAIT_GAP * (count - 1)
+	frame = clampf(frame, PORTRAIT_MIN, 36.0)
+	# Na tela mais estreita (480 com recorte) os retratos mínimos não cabem com a folga
+	# normal: aperta a folga e, se ainda faltar, alarga o palco (o painel cede o resto).
+	var gap := PORTRAIT_GAP
+	if count > 1 and frame * count + gap * (count - 1) > left_w - 4.0:
+		gap = maxf(PORTRAIT_GAP_MIN, floorf((left_w - 4.0 - frame * count) / (count - 1)))
+	var roster_w := frame * count + gap * (count - 1)
+	left_w = maxf(left_w, roster_w + 4.0)
+	_grid.add_theme_constant_override("separation", int(gap))
 	_grid.position = Vector2(inset.x + roundf((left_w - roster_w) * 0.5), h - MARGIN - frame)
 	_grid.size = Vector2(roster_w, frame)
 	for child: Node in _grid.get_children():
@@ -388,7 +405,23 @@ func _layout() -> void:
 	var narrow := w - left_w - 2 - MARGIN < 300.0
 	_name.add_theme_font_size_override("font_size", 16 if narrow else 24)
 	_go.add_theme_font_size_override("font_size", 12 if narrow else 16)
+	_layout_title(inset)
 	_stage.queue_redraw()
+
+
+## Título do cabeçalho centrado na área segura e, se o "voltar" (que anda para dentro com o
+## recorte da câmera) chegar perto, empurrado para a direita até liberar o botão.
+func _layout_title(inset: Vector2) -> void:
+	var row := _header.get_node(^"TitleRow") as Control
+	var shift := roundf((inset.x - inset.y) * 0.5)
+	var row_w := row.get_combined_minimum_size().x
+	var back_end := 4.0 + inset.x + _back.get_combined_minimum_size().x + TITLE_CLEAR
+	var left := (size.x - row_w) * 0.5 + shift
+	if left < back_end:
+		shift += ceilf(back_end - left)
+	row.offset_left = -row_w * 0.5 + shift
+	row.offset_right = row_w * 0.5 + shift
+	_header.queue_redraw()
 
 
 func _load(path: String) -> Texture2D:

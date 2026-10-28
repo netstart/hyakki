@@ -22,6 +22,9 @@ const PETAL_SHEET := "res://assets/art/fx/particle/LeafPink.png"
 const LANTERN_FRAME := 16.0
 const LANTERN_FPS := 4.0
 const SIDE_MARGIN := 12.0
+## Folga mínima entre a área rolável e o recorte da câmera (MenuKit.safe_insets).
+const INSET_MARGIN := 4.0
+const TITLE_HALF := 150.0
 const SCROLL_TOP := 42.0
 const SCROLL_RIGHT := 4.0
 const BAR_WIDTH := 6.0
@@ -60,6 +63,8 @@ const SECTION_ORDER: Array[StringName] = [&"art", &"music", &"sfx", &"fonts", &"
 const SEALS := {&"art": "絵", &"music": "楽", &"sfx": "音", &"fonts": "字", &"tech": "技", &"thanks": "謝"}
 
 var _scroll: ScrollContainer
+var _title: Label
+var _rule_line: ColorRect
 var _column: VBoxContainer
 ## Blocos do conteúdo (abertura, seções, agradecimentos e amanhecer), na ordem da entrada.
 var _blocks: Array[Control] = []
@@ -89,11 +94,12 @@ func _ready() -> void:
 	add_child(back_button())
 	var title := title_label(tr("credits.title"))
 	title.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	title.offset_left = -150
-	title.offset_right = 150
+	title.offset_left = -TITLE_HALF
+	title.offset_right = TITLE_HALF
 	title.offset_top = 6
 	title.clip_text = true
 	add_child(title)
+	_title = title
 	var rule := ColorRect.new()
 	rule.color = Color(ThemeFactory.ACCENT, 0.22)
 	rule.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -103,12 +109,18 @@ func _ready() -> void:
 	rule.offset_bottom = SCROLL_TOP - 2
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(rule)
+	_rule_line = rule
 	_build_scroll()
+	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
+	_layout()
 	visibility_changed.connect(func() -> void: set_process(is_visible_in_tree()))
 	set_process(false)
 
 
 func on_show() -> void:
+	_layout()
 	_scroll.scroll_vertical = 0
 	_auto = true
 	_auto_wait = AUTO_DELAY
@@ -199,6 +211,22 @@ func _play_intro() -> void:
 	for i: int in _blocks.size():
 		_blocks[i].modulate.a = 0.0
 		_intro.tween_property(_blocks[i], "modulate:a", 1.0, INTRO_FADE).set_delay(i * INTRO_STAGGER)
+
+
+## Laterais pela área segura (furo da câmera): a área rolável e o filete entram só o que o
+## recorte pede (sem recorte, as margens de sempre); o título centra no espaço livre.
+func _layout() -> void:
+	if _scroll == null:
+		return
+	var inset := MenuKit.safe_insets(self)
+	var left := maxf(SIDE_MARGIN, inset.x + INSET_MARGIN)
+	_scroll.offset_left = left
+	_scroll.offset_right = -(SCROLL_RIGHT + inset.y)
+	_rule_line.offset_left = left
+	_rule_line.offset_right = -maxf(SIDE_MARGIN, inset.y + INSET_MARGIN)
+	var shift := roundf((inset.x - inset.y) * 0.5)
+	_title.offset_left = -TITLE_HALF + shift
+	_title.offset_right = TITLE_HALF + shift
 
 
 func _build_scroll() -> void:

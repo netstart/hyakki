@@ -133,7 +133,8 @@ if ($SkipStress) {
 
 Step '8. Ponta a ponta no emulador (E2E)'
 if ($E2E) {
-    $run = Invoke-Logged 'e2e' { powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'run_e2e.ps1') -NoOpen }
+    # -NoChecks: as verificações já rodaram nas etapas acima.
+    $run = Invoke-Logged 'e2e' { powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'run_e2e.ps1') -NoOpen -NoChecks }
     $e2eDir = Get-ChildItem (Join-Path $project 'build\e2e-report') -Directory -ErrorAction SilentlyContinue |
         Sort-Object Name | Select-Object -Last 1
     $resumo = if ($e2eDir) { Join-Path $e2eDir.FullName 'resumo.json' }

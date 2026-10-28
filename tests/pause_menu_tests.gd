@@ -6,17 +6,23 @@ extends RefCounted
 ## - pausa abre e fecha pelo jogo (tempo parado, contagem na volta);
 ## - música liga/desliga mostrando o estado (ícone e texto) com o mesmo efeito de antes;
 ## - "Desistir" pede confirmação ("voltar" cancela) e só então encerra a partida;
-## - layout em 20:9 e 16:9 (678x305, 600x270, 640x360, 480x270) em pt_BR, de, ru e ja: tudo
-##   dentro da tela, sem sobreposição, textos inteiros e o painel alcançável rolando.
+## - layout em cada resolução de tests/device_profiles.gd, sem e com o furo da câmera de cada
+##   lado, e também em 640x360 (EXTRA_SIZES), em pt_BR, de, ru e ja: tudo dentro da área segura,
+##   sem sobreposição, textos inteiros e o painel alcançável rolando.
 ## Chamado por tests/pause_menu_runner.gd (ou pelo integration_tests.gd).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "moon": 2, "mode": "normal", "seed": 5, "speed": 1}
-const SIZES: Array[Vector2] = [Vector2(678, 305), Vector2(600, 270), Vector2(640, 360), Vector2(480, 270)]
 const LANGS: Array[String] = ["pt_BR", "de", "ru", "ja"]
+## Telas a mais, além das de tests/device_profiles.gd (sem recorte): 640x360 é a mais alta,
+## onde o painel sobra na vertical.
+const EXTRA_SIZES: Array[Vector2] = [Vector2(640, 360)]
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _host: Node
 var _check: Callable
+## Recorte da câmera (esquerda, direita) do caso atual; o conteúdo fica fora dele.
+var _insets := Vector2.ZERO
 
 
 func run(host: Node, check: Callable) -> void:
@@ -208,27 +214,41 @@ func open_standalone(view: Vector2, snapshot: Dictionary) -> PauseMenu:
 
 
 func _test_layouts() -> void:
-	for lang: String in LANGS:
-		Locale.set_language(lang, false)
-		for view: Vector2 in SIZES:
+	var cases := DeviceProfiles.layout_cases()
+	for view: Vector2 in EXTRA_SIZES:
+		cases.append({"label": "%dx%d" % [view.x, view.y], "view": view, "insets": Vector2.ZERO, "langs": LANGS})
+	for c: Dictionary in cases:
+		use_insets(c["insets"])
+		var view: Vector2 = c["view"]
+		for lang: String in LANGS:
+			if lang not in c["langs"]:
+				continue
+			Locale.set_language(lang, false)
 			for full: bool in [true, false]:
 				var menu := await open_standalone(view, make_snapshot(full))
-				var state := "%s %dx%d %s" % [lang, view.x, view.y, "cheio" if full else "sem itens"]
+				var state := "%s [%s] %s" % [lang, c["label"], "cheio" if full else "sem itens"]
 				check_layout(menu, view, state)
 				if full and lang == "pt_BR":
 					await _check_confirm_layout(menu, view, state)
 				menu.get_parent().queue_free()
 				await _host.get_tree().process_frame
+	use_insets(Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 
 
+## Liga o recorte simulado da câmera (MenuKit.safe_insets, usado pela pausa).
+func use_insets(insets: Vector2) -> void:
+	_insets = insets
+	DeviceProfiles.simulate_insets(insets)
+
+
 func check_layout(menu: PauseMenu, view: Vector2, state: String) -> void:
-	var screen := Rect2(Vector2.ZERO, view)
+	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var left := menu.get("_left") as Control
 	var panel := menu.get("_panel") as Control
 	var menu_box := menu.get("_menu") as VBoxContainer
 	_check.call(screen.encloses(left.get_global_rect()) and screen.encloses(panel.get_global_rect()),
-			"%s: colunas dentro da tela" % state)
+			"%s: colunas dentro da tela (%s, %s em %s)" % [state, left.get_global_rect(), panel.get_global_rect(), screen])
 	_check.call(not left.get_global_rect().intersects(panel.get_global_rect()), "%s: colunas separadas" % state)
 	_check.call(menu_box.get_combined_minimum_size().y <= left.size.y + 0.5,
 			"%s: coluna do menu cabe na altura (%.0f de %.0f)" % [state, menu_box.get_combined_minimum_size().y,
@@ -236,9 +256,16 @@ func check_layout(menu: PauseMenu, view: Vector2, state: String) -> void:
 	var resume := menu.get("_resume") as Button
 	var quit := menu.get("_quit") as Button
 	_check.call(resume.size.y > quit.size.y and resume.size.y >= 36.0, "%s: Continuar é o maior botão" % state)
-	for b: Button in [resume, menu.get("_speed"), menu.get("_music"), quit]:
+	# Todo controle da pausa fica visível e tocável em qualquer tela (o modo compacto só esconde a
+	# legenda "Gráficos" do botão de qualidade, que segue com o valor, as barras e a dica).
+	var quality := menu.get("_quality") as Button
+	for b: Button in [resume, menu.get("_speed"), menu.get("_music"), quality, quit]:
 		_check.call(b.is_visible_in_tree() and screen.encloses(b.get_global_rect()) and b.size.y >= 22.0,
-				"%s: botão %s visível e inteiro" % [state, b.text])
+				"%s: botão %s visível e inteiro" % [state, b.name if b.text.is_empty() else b.text])
+	var value := menu.get("_quality_value") as Label
+	_check.call(value.is_visible_in_tree() and not value.text.is_empty() and quality.get_global_rect().encloses(
+			value.get_global_rect()) and quality.tooltip_text == tr("options.graphics_quality"),
+			"%s: qualidade gráfica mostra o valor (%s) e diz o que é na dica" % [state, value.text])
 	# Coluna fixa: tudo dentro da tela, textos inteiros e sem sobreposição.
 	var controls: Array[Control] = []
 	_controls_in(left, controls)
@@ -282,7 +309,8 @@ func _check_confirm_layout(menu: PauseMenu, view: Vector2, state: String) -> voi
 	(menu.get("_quit") as Button).pressed.emit()
 	await _seconds(0.25)
 	var card := menu.get("_confirm_card") as Control
-	_check.call(Rect2(Vector2.ZERO, view).encloses(card.get_global_rect()), "%s: confirmação dentro da tela" % state)
+	_check.call(DeviceProfiles.safe_rect(view, _insets).encloses(card.get_global_rect()),
+			"%s: confirmação dentro da tela" % state)
 	var inside: Array[Control] = []
 	_controls_in(card, inside)
 	for c: Control in inside:

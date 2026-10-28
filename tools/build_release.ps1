@@ -9,7 +9,7 @@
 #   -VersionCode N     versionCode do Android (cada envio à Play Store precisa de um maior)
 #   -VersionName X     versão visível (ex.: 1.0.1)
 #   -KeystoreEnv path  arquivo com as variáveis da chave (padrão C:\src\keys\hyakki-release.env)
-#   -Avd nome          emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G)
+#   -Avd nome          emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G; também Galaxy_M55_5G e Pixel_7)
 #
 # A chave de envio (upload key) NUNCA fica no repositório: o arquivo .env tem
 #   GODOT_ANDROID_KEYSTORE_RELEASE_PATH / _USER / _PASSWORD
@@ -134,22 +134,15 @@ if ($NoEmulator) { Write-Host 'PRONTO (sem emulador)' -ForegroundColor Green; ex
 
 # --- 6. Emulador ---------------------------------------------------------------------
 Step "Emulador ($Avd)"
-& $adb start-server | Out-Null
-$device = (& $adb devices) | Select-String 'emulator-\d+\s+device' | Select-Object -First 1
-if (-not $device) {
-    # Processo independente (WMI): não morre quando este script ou o terminal terminam.
-    Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
-        CommandLine = "`"$(Join-Path $AndroidSdk 'emulator\emulator.exe')`" -avd $Avd -no-boot-anim" } | Out-Null
-    $deadline = (Get-Date).AddMinutes(5)
-    while ((Get-Date) -lt $deadline) {
-        Start-Sleep -Seconds 5
-        $device = (& $adb devices) | Select-String 'emulator-\d+\s+device' | Select-Object -First 1
-        if ($device -and ((& $adb -s ($device -split '\s+')[0] shell getprop sys.boot_completed) -match '1')) { break }
-    }
-}
-if (-not $device) { Fail 'emulador não ficou pronto' }
-$serial = ($device -split '\s+')[0]
-Write-Host "aparelho: $serial"
+# Processo independente (WMI): não morre quando este script ou o terminal terminam. Outro AVD
+# ligado é desligado antes (tools\test_devices.ps1).
+. (Join-Path $PSScriptRoot 'test_devices.ps1')
+try { Start-EmulatorFor $adb $AndroidSdk $Avd | Out-Null } catch { Fail $_.Exception.Message }
+# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez (AGENTS.md, "Emulador travado").
+$serial = Wait-EmulatorReady $adb $AndroidSdk $Avd 8
+if (-not $serial) { Fail "emulador $Avd não ficou pronto em 8 minutos nem depois de reiniciado" }
+$cutout = Set-EmulatorCutout $adb $serial $Avd
+Write-Host "aparelho: $serial ($Avd$(if ($cutout) { ", recorte de câmera: $cutout" }))"
 $install = & $adb -s $serial install -r $apk 2>&1 | Out-String
 if ($install -match 'INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match') {
     Write-Host 'Assinatura diferente da instalação anterior (debug): desinstalando (apaga o save do emulador)' -ForegroundColor Yellow

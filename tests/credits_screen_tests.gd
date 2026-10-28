@@ -1,5 +1,7 @@
 extends RefCounted
-## Créditos (scripts/app/screens/credits_screen.gd) em 678x305, em cada idioma.
+## Créditos (scripts/app/screens/credits_screen.gd) em cada resolução de
+## tests/device_profiles.gd (sem e com o furo da câmera de cada lado), em cada idioma; arrasto
+## e roda na resolução de referência.
 ## Chamado por tests/integration_tests.gd e por tests/credits_screen_runner.gd.
 ##
 ## O que vale para a tela:
@@ -13,27 +15,42 @@ extends RefCounted
 ##   do mouse rola, e todo nó do conteúdo deixa o toque passar.
 
 const CREDITS_SCREEN := "res://scripts/app/screens/credits_screen.gd"
-const VIEW := Rect2(Vector2.ZERO, Vector2(678, 305))
 const MIN_SIDE := 12.0
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _host: Node
 var _check: Callable
+## Tela lógica do caso atual e a área segura (fora do furo da câmera); fora do laço, a
+## resolução de referência (arrasto e roda).
+var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 
 
 func run(host: Node, check: Callable) -> void:
 	_host = host
 	_check = check
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		var ctx: Array = await open_screen()
-		var screen := ctx[1] as Control
-		_check_complete(screen, lang)
-		_check_texts(screen, lang)
-		check_layout(screen, lang)
-		await close(ctx)
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		use_case(c["view"], c["insets"])
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			var tag := "%s [%s]" % [lang, c["label"]]
+			var ctx: Array = await open_screen()
+			var screen := ctx[1] as Control
+			_check_complete(screen, tag)
+			_check_texts(screen, tag)
+			check_layout(screen, tag)
+			await close(ctx)
+	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 	await _check_scrolling()
 	_check_credits_md()
+
+
+## Tela lógica e recorte da câmera (esquerda, direita) usados por open_screen e check_layout.
+func use_case(view: Vector2, insets: Vector2) -> void:
+	_view = Rect2(Vector2.ZERO, view)
+	_safe = DeviceProfiles.safe_rect(view, insets)
+	DeviceProfiles.simulate_insets(insets)
 
 
 ## Abre a tela pelo App (com o fundo dos menus), sem a abertura, no tamanho do jogo.
@@ -46,7 +63,7 @@ func open_screen() -> Array:
 			child.free()
 	var root := app.get("_root") as Control
 	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	root.size = VIEW.size
+	root.size = _view.size
 	app.go(&"credits")
 	var screen := (app.get("_screens") as Dictionary)[&"credits"] as Control
 	await _host.get_tree().process_frame
@@ -127,8 +144,9 @@ func check_layout(screen: Control, state: String) -> void:
 	var scroll_rect := scroll.get_global_rect()
 	var bar := scroll.get_v_scroll_bar()
 	var visible_right := bar.get_global_rect().position.x if bar.visible else scroll_rect.end.x
-	_check.call(VIEW.encloses(scroll_rect) and scroll_rect.position.x >= MIN_SIDE
-			and VIEW.end.x - scroll_rect.end.x >= 0.0, "Créditos %s: área rolável na tela (%s)" % [state, scroll_rect])
+	_check.call(_safe.encloses(scroll_rect) and scroll_rect.position.x >= MIN_SIDE
+			and _safe.end.x - scroll_rect.end.x >= 0.0,
+			"Créditos %s: área rolável na tela (%s em %s)" % [state, scroll_rect, _safe])
 	_check.call(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED,
 			"Créditos %s: sem rolagem horizontal" % state)
 	_check.call(bar.visible and bar.max_value > scroll.size.y, "Créditos %s: barra de rolagem visível" % state)
@@ -158,19 +176,19 @@ func check_layout(screen: Control, state: String) -> void:
 	for child: Node in screen.get_children():
 		if child is Button or child is Label:
 			var fixed := (child as Control).get_global_rect()
-			_check.call(VIEW.encloses(fixed) and not fixed.intersects(scroll_rect),
+			_check.call(_safe.encloses(fixed) and not fixed.intersects(scroll_rect),
 					"Créditos %s: %s fixo fora da área rolável (%s)" % [state, child.name, fixed])
 
 
 ## Arrasto (toque emulado pelo mouse) e roda num SubViewport do tamanho do jogo.
 func _check_scrolling() -> void:
 	var viewport := SubViewport.new()
-	viewport.size = Vector2i(VIEW.size)
+	viewport.size = Vector2i(_view.size)
 	viewport.gui_disable_input = false
 	_host.add_child(viewport)
 	var root := Control.new()
 	root.theme = ThemeFactory.build()
-	root.size = VIEW.size
+	root.size = _view.size
 	viewport.add_child(root)
 	var screen := (load(CREDITS_SCREEN) as GDScript).new() as Control
 	root.add_child(screen)

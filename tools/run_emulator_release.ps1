@@ -9,7 +9,7 @@
 #   -NoBuild           reinstala o último APK (build\release\hyakki-release.apk) sem exportar de novo
 #   -NoLog             não fica mostrando o log depois de abrir
 #   -KeystoreEnv path  arquivo com as variáveis da chave (padrão C:\src\keys\hyakki-release.env)
-#   -Avd nome          emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G)
+#   -Avd nome          emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G; também Galaxy_M55_5G e Pixel_7)
 #
 # Para gerar o AAB da Play Store (com verificações e conferência da assinatura) use build_release.ps1.
 
@@ -32,34 +32,12 @@ $package = 'io.github.netstart.hyakki'
 function Step([string]$text) { Write-Host "== $text" -ForegroundColor Cyan }
 function Fail([string]$text) { Write-Host "FALHOU: $text" -ForegroundColor Red; exit 1 }
 
-# Liga o emulador já no começo (processo independente via WMI) para ele dar boot enquanto exporta.
-function Start-Emulator {
-    Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
-        CommandLine = "`"$adb`" start-server"; CurrentDirectory = (Split-Path $adb) } | Out-Null
-    Start-Sleep -Seconds 2
-    $running = (& $adb devices 2>$null) | Select-String 'emulator-\d+\s+(device|offline)'
-    if ($running) { return }
-    Step "Ligando o emulador ($Avd)"
-    Remove-Item "$env:USERPROFILE\.android\avd\$Avd.avd\*.lock" -Recurse -Force -ErrorAction SilentlyContinue
-    Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
-        CommandLine = "`"$(Join-Path $AndroidSdk 'emulator\emulator.exe')`" -avd $Avd -no-boot-anim" } | Out-Null
-}
-
-function Wait-Emulator {
-    $deadline = (Get-Date).AddMinutes(5)
-    while ((Get-Date) -lt $deadline) {
-        $device = (& $adb devices 2>$null) | Select-String 'emulator-\d+\s+device' | Select-Object -First 1
-        if ($device) {
-            $serial = ($device -split '\s+')[0]
-            if (((& $adb -s $serial shell getprop sys.boot_completed 2>$null) -join '').Trim() -eq '1') { return $serial }
-        }
-        Start-Sleep -Seconds 3
-    }
-    return $null
-}
+# AVDs dos aparelhos-alvo, troca de emulador e recorte de câmera (tools\test_devices.ps1).
+. (Join-Path $PSScriptRoot 'test_devices.ps1')
 
 # --- 1. Emulador (boot em paralelo com o export) -------------------------------------
-Start-Emulator
+# Processo independente (WMI); se outro AVD estiver ligado, ele é desligado antes.
+try { Start-EmulatorFor $adb $AndroidSdk $Avd | Out-Null } catch { Fail $_.Exception.Message }
 
 # --- 2. Export de release ------------------------------------------------------------
 if (-not $NoBuild) {
@@ -108,9 +86,11 @@ if (-not $NoBuild) {
 
 # --- 3. Instalar e abrir -------------------------------------------------------------
 Step 'Esperando o emulador'
-$serial = Wait-Emulator
-if (-not $serial) { Fail 'o emulador não ficou pronto em 5 minutos' }
-Write-Host "aparelho: $serial"
+# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez (AGENTS.md, "Emulador travado").
+$serial = Wait-EmulatorReady $adb $AndroidSdk $Avd 8
+if (-not $serial) { Fail "o emulador $Avd não ficou pronto em 8 minutos nem depois de reiniciado" }
+$cutout = Set-EmulatorCutout $adb $serial $Avd
+Write-Host "aparelho: $serial ($Avd$(if ($cutout) { ", recorte de câmera: $cutout" }))"
 
 Step 'Instalando'
 $install = & $adb -s $serial install -r $apk 2>&1 | Out-String

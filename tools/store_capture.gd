@@ -6,7 +6,9 @@ extends Node
 ##
 ## Uso (precisa de janela, não roda --headless):
 ##   Godot_v4.7.2-stable_win64.exe --path . res://tools/store_capture.tscn -- \
-##       --out=C:/caminho/absoluto [--lang=pt_BR] [--only=combat,boss] --ads-off
+##       --out=C:/caminho/absoluto [--lang=pt_BR] [--only=combat,boss] [--view=600x270] --ads-off
+## `--view=LxA` troca a tela lógica (ex.: 600x270 do Galaxy M55 e do Pixel 7, ver
+## tests/device_profiles.gd); a janela fica em 2x dela.
 ## `--ads-off` (lido pelo AdsManager) deixa a interface como na v1: sem botões de anúncio.
 ## O save e as opções do jogador não são tocados: usa os arquivos de teste
 ## (SaveManager.use_test_files / Settings.use_test_file) com um perfil de vitrine.
@@ -15,6 +17,7 @@ extends Node
 const NATIVE := Vector2i(678, 305)
 
 var out_dir := ""
+var native := NATIVE
 var lang := "pt_BR"
 var only: PackedStringArray = []
 var app: App
@@ -28,6 +31,9 @@ func _ready() -> void:
 			lang = arg.trim_prefix("--lang=")
 		elif arg.begins_with("--only="):
 			only = arg.trim_prefix("--only=").split(",", false)
+		elif arg.begins_with("--view="):
+			var parts := arg.trim_prefix("--view=").split("x")
+			native = Vector2i(int(parts[0]), int(parts[1]))
 	if out_dir.is_empty():
 		out_dir = ProjectSettings.globalize_path("res://build/store_capture")
 	DirAccess.make_dir_recursive_absolute(out_dir)
@@ -35,10 +41,12 @@ func _ready() -> void:
 		push_warning("store_capture: sem --ads-off a interface mostra botões de anúncio")
 	# O PixelScaler do jogo usa k = round(altura / 300): na janela 1356×610, k = 2 e a tela
 	# lógica fica em 678×305, exatamente a do aparelho alvo.
-	DisplayServer.window_set_size(NATIVE * 2)
+	DisplayServer.window_set_size(native * 2)
 	await _frames(3)
-	if get_tree().root.content_scale_size != NATIVE:
-		push_error("store_capture: tela lógica %s (esperado %s)" % [get_tree().root.content_scale_size, NATIVE])
+	PixelScaler.call("_apply")
+	await _frames(3)
+	if get_tree().root.content_scale_size != native:
+		push_error("store_capture: tela lógica %s (esperado %s)" % [get_tree().root.content_scale_size, native])
 	SaveManager.use_test_files()
 	Settings.use_test_file()
 	Settings.set_value("graphics_quality", "high")

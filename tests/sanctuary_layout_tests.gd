@@ -1,35 +1,122 @@
 extends RefCounted
-## Tela do Santuário em 678x305: todos os cartões cabem sem rolagem, ícones contidos nos
+## Tela do Santuário em cada resolução de tests/device_profiles.gd (sem e com o furo da
+## câmera de cada lado): todos os cartões cabem sem rolagem, ícones contidos nos
 ## cartões, painel de detalhes do item selecionado e estados (comprável, sem ryō, máximo),
-## em todos os idiomas. Chamado por tests/integration_tests.gd, que passa o nó e o _check.
+## em todos os idiomas; saldo e "voltar" fora do furo da câmera; em 678x305 sem recorte, o
+## visual de referência (grade 6x3 de cartões 70x81 e painel de 196); e o layout refeito quando
+## a tela muda de tamanho com a tela aberta. Chamado por tests/integration_tests.gd ou por
+## tests/sanctuary_layout_runner.gd (tests/sanctuary_layout_tests.tscn), que passam o nó e o _check.
 
-const VIEW := Rect2(Vector2.ZERO, Vector2(678, 305))
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
+
+## Área segura do caso atual (tela lógica menos o furo da câmera).
+var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 
 
 func run(host: Node, check: Callable) -> void:
 	var original := SaveManager.data
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		SaveManager.data["ryo"] = 2500
-		SaveManager.data["powerups"] = {"pu_might": 2, "pu_greed": 5, "pu_amount": 1}
-		var app := App.new()
-		host.add_child(app)
-		await host.get_tree().process_frame
-		app.go(&"sanctuary")
-		await host.get_tree().process_frame
-		await host.get_tree().process_frame
-		var screen := (app.get("_screens") as Dictionary)[&"sanctuary"] as Control
-		_check_grid(screen, check, lang)
-		for id: StringName in DB.ids("powerups"):
-			screen.call("_select", id)
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		_safe = DeviceProfiles.safe_rect(c["view"], c["insets"])
+		DeviceProfiles.simulate_insets(c["insets"])
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			var tag := "%s [%s]" % [lang, c["label"]]
+			SaveManager.data = SaveManager.default_profile()
+			SaveManager.data["ryo"] = 2500
+			SaveManager.data["powerups"] = {"pu_might": 2, "pu_greed": 5, "pu_amount": 1}
+			var app := App.new()
+			host.add_child(app)
 			await host.get_tree().process_frame
-			_check_panel(screen, check, "%s, %s" % [lang, id])
-		await _check_states(host, screen, check, lang)
-		app.queue_free()
-		await host.get_tree().process_frame
+			# A raiz das telas com o tamanho da tela lógica do aparelho.
+			var root := app.get("_root") as Control
+			root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			root.size = c["view"]
+			app.go(&"sanctuary")
+			await host.get_tree().process_frame
+			await host.get_tree().process_frame
+			var screen := (app.get("_screens") as Dictionary)[&"sanctuary"] as Control
+			_check_grid(screen, check, tag)
+			_check_chrome(screen, check, tag)
+			if c["view"] == DeviceProfiles.main_view() and c["insets"] == Vector2.ZERO:
+				_check_reference(screen, check, tag)
+			for id: StringName in DB.ids("powerups"):
+				screen.call("_select", id)
+				await host.get_tree().process_frame
+				_check_panel(screen, check, "%s, %s" % [tag, id])
+			await _check_states(host, screen, check, tag)
+			app.queue_free()
+			await host.get_tree().process_frame
+	await _check_resize(host, check)
+	DeviceProfiles.clear_insets()
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
+
+
+## Tela aberta na de referência e depois trocada para cada resolução com o furo da câmera à
+## esquerda (na de referência, só o furo muda, como ao girar o aparelho): a grade e o painel se
+## refazem e continuam cabendo.
+func _check_resize(host: Node, check: Callable) -> void:
+	Locale.set_language("de", false)
+	SaveManager.data = SaveManager.default_profile()
+	SaveManager.data["ryo"] = 2500
+	SaveManager.data["powerups"] = {"pu_might": 2, "pu_greed": 5, "pu_amount": 1}
+	DeviceProfiles.clear_insets()
+	var app := App.new()
+	host.add_child(app)
+	await host.get_tree().process_frame
+	var root := app.get("_root") as Control
+	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	root.size = DeviceProfiles.main_view()
+	app.go(&"sanctuary")
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	var screen := (app.get("_screens") as Dictionary)[&"sanctuary"] as Control
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		if c["insets"].x <= 0.0:
+			continue
+		DeviceProfiles.simulate_insets(c["insets"])
+		_safe = DeviceProfiles.safe_rect(c["view"], c["insets"])
+		root.size = c["view"]
+		# A troca só do lado do furo (mesmo tamanho) chega por PixelScaler.safe_insets_changed.
+		await host.get_tree().process_frame
+		await host.get_tree().process_frame
+		var tag := "de [%s, redimensionada com a tela aberta]" % c["label"]
+		_check_grid(screen, check, tag)
+		_check_panel(screen, check, tag)
+		_check_chrome(screen, check, tag)
+	app.queue_free()
+	await host.get_tree().process_frame
+
+
+## Saldo de ryō e "voltar" inteiros na área segura, sem encostar um no outro nem no título.
+func _check_chrome(screen: Control, check: Callable, tag: String) -> void:
+	var pill := (screen.get("_ryo") as Control).get_parent().get_parent() as Control
+	var pill_rect := pill.get_global_rect()
+	check.call(_safe.encloses(pill_rect), "Santuário %s: saldo de ryō fora do furo (%s em %s)" % [tag, pill_rect, _safe])
+	var back: Control = screen.find_children("*", "Button", false, false)[0]
+	var back_rect := back.get_global_rect()
+	check.call(_safe.encloses(back_rect), "Santuário %s: voltar fora do furo (%s em %s)" % [tag, back_rect, _safe])
+	check.call(not back_rect.intersects(pill_rect), "Santuário %s: voltar e saldo não se encostam" % tag)
+	var title: Label = screen.find_children("*", "Label", false, false)[0]
+	var text_w := title.get_theme_font("font").get_string_size(title.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			title.get_theme_font_size("font_size")).x
+	var title_rect := title.get_global_rect()
+	var text_rect := Rect2(title_rect.get_center().x - text_w / 2.0, title_rect.position.y, text_w, title_rect.size.y)
+	check.call(not text_rect.intersects(back_rect) and not text_rect.intersects(pill_rect),
+			"Santuário %s: título livre do voltar e do saldo" % tag)
+
+
+## 678x305 sem recorte: o visual de sempre (grade 6x3 de cartões 70x81, painel de 196).
+func _check_reference(screen: Control, check: Callable, tag: String) -> void:
+	var grid := screen.get("_grid") as GridContainer
+	check.call(grid.columns == 6, "Santuário %s: grade de referência com 6 colunas" % tag)
+	var cards: Dictionary = screen.get("_cards")
+	for id: StringName in cards:
+		var b := cards[id]["button"] as Control
+		check.call(b.size == Vector2(70, 81), "Santuário %s: cartão %s no tamanho de referência (%s)" % [tag, id, b.size])
+	var panel := (screen.get("_buy_button") as Control).get_parent().get_parent() as Control
+	check.call(is_equal_approx(panel.size.x, 196.0),
+			"Santuário %s: painel de referência com 196 (%.0f)" % [tag, panel.size.x])
 
 
 func _check_grid(screen: Control, check: Callable, lang: String) -> void:
@@ -42,7 +129,8 @@ func _check_grid(screen: Control, check: Callable, lang: String) -> void:
 		var card: Dictionary = cards[id]
 		var b := card["button"] as Button
 		var rect := b.get_global_rect()
-		check.call(b.is_visible_in_tree() and VIEW.encloses(rect), "Santuário %s: cartão %s inteiro na tela" % [lang, id])
+		check.call(b.is_visible_in_tree() and _safe.encloses(rect),
+				"Santuário %s: cartão %s inteiro na tela (%s em %s)" % [lang, id, rect, _safe])
 		check.call(rect.size.x >= 48 and rect.size.y >= 48, "Santuário %s: cartão %s com alvo de toque ≥ 48" % [lang, id])
 		var icon := card["icon"] as TextureRect
 		check.call(icon.texture != null and rect.encloses(icon.get_global_rect()),
@@ -72,7 +160,7 @@ func _check_panel(screen: Control, check: Callable, state: String) -> void:
 	var buy := screen.get("_buy_button") as Button
 	var panel := buy.get_parent().get_parent() as Control
 	var panel_rect := panel.get_global_rect()
-	check.call(VIEW.encloses(panel_rect), "Santuário %s: painel inteiro na tela (%s)" % [state, panel_rect])
+	check.call(_safe.encloses(panel_rect), "Santuário %s: painel inteiro na tela (%s em %s)" % [state, panel_rect, _safe])
 	var parts: Array[Control] = [name, screen.get("_detail_effect"), screen.get("_detail_next"),
 			screen.get("_info"), buy, screen.get("_refund_button"), screen.get("_detail_icon")]
 	for part: Control in parts:

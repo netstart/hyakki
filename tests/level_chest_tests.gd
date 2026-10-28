@@ -9,17 +9,20 @@ extends RefCounted
 ##   momento, fechar, novo baú e nova partida;
 ## - GfxQuality: Baixa sem desfoque/vinheta e com menos moedas e faíscas, Alta completa, e a
 ##   troca ao vivo com a tela aberta;
-## - layout em 678x305 e 480x270 nos 11 idiomas, com as cartas e os cartões mais longos.
+## - layout em cada resolução de tests/device_profiles.gd, sem e com o furo da câmera de cada
+##   lado, nos idiomas, com as cartas e os cartões mais longos.
 ## Chamado por tests/integration_tests.gd ou sozinho por tests/level_chest_tests.tscn.
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "moon": 2, "mode": "normal", "seed": 5, "speed": 1}
-const SIZES: Array[Vector2] = [Vector2(678, 305), Vector2(480, 270)]
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 ## Espera até o baú pousar e começar a tremer.
 const DROP_WAIT := 0.6
 
 var _host: Node
 var _check: Callable
+## Recorte da câmera (esquerda, direita) do caso atual; o conteúdo fica fora dele.
+var _insets := Vector2.ZERO
 
 
 func run(host: Node, check: Callable) -> void:
@@ -316,10 +319,13 @@ func _test_quality() -> void:
 # --- Layout ------------------------------------------------------------------------------
 
 func _test_layouts() -> void:
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		for view: Vector2 in SIZES:
-			var state := "%s %dx%d" % [lang, view.x, view.y]
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		_insets = c["insets"]
+		DeviceProfiles.simulate_insets(_insets)
+		var view: Vector2 = c["view"]
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			var state := "%s [%s]" % [lang, c["label"]]
 			var area := _area(view)
 			var panel := LevelUpPanel.new()
 			area.add_child(panel)
@@ -335,17 +341,20 @@ func _test_layouts() -> void:
 			check_chest_layout(chest, view, state)
 			area.queue_free()
 			await _host.get_tree().process_frame
+	_insets = Vector2.ZERO
+	DeviceProfiles.clear_insets()
 	Locale.set_language("pt_BR", false)
 
 
 func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String) -> void:
-	var screen := Rect2(Vector2.ZERO, view)
+	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var cards := panel.level_cards()
 	_check.call(cards.size() == 4, "%s: 4 cartas" % state)
 	for i: int in range(cards.size()):
 		var c := cards[i]
 		var r := c.get_global_rect()
-		_check.call(screen.encloses(r) and r.position.y >= LevelUpPanel.HEADER_H, "%s: carta %d na tela" % [state, i])
+		_check.call(screen.encloses(r) and r.position.y >= LevelUpPanel.HEADER_H,
+				"%s: carta %d na tela (%s em %s)" % [state, i, r, screen])
 		_check.call(c.desc_fits(), "%s: descrição cabe na carta %d (%s)" % [state, i, c.data["title"]])
 		_check.call(not c.shortened or view.x < 600.0, "%s: descrição inteira na carta %d (%s)" % [state, i, c.data["title"]])
 		_check.call(c.name_fits(), "%s: nome inteiro na carta %d" % [state, i])
@@ -356,12 +365,12 @@ func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String) -> vo
 		if i > 0:
 			_check.call(not cards[i - 1].get_global_rect().intersects(r), "%s: cartas %d e %d separadas" % [state, i - 1, i])
 	var title := UiPaint.text_width(panel.title_text(), 24) + 26.0
-	_check.call(title <= view.x - 16.0, "%s: título cabe" % state)
-	_check.call(UiPaint.text_width(tr("levelup.banish_hint")) <= view.x - 16.0, "%s: dica de banir cabe" % state)
+	_check.call(title <= screen.size.x - 16.0, "%s: título cabe" % state)
+	_check.call(UiPaint.text_width(tr("levelup.banish_hint")) <= screen.size.x - 16.0, "%s: dica de banir cabe" % state)
 	var last := Rect2()
 	for b: Button in panel.action_buttons():
 		var r := b.get_global_rect()
-		_check.call(screen.encloses(r), "%s: botão %s na tela" % [state, b.text])
+		_check.call(screen.encloses(r), "%s: botão %s na tela (%s em %s)" % [state, b.text, r, screen])
 		_check.call(b.get_combined_minimum_size().x <= r.size.x + 0.5, "%s: botão %s inteiro" % [state, b.text])
 		for c: LevelCard in cards:
 			_check.call(not c.get_global_rect().intersects(r), "%s: botão %s não cobre cartas" % [state, b.text])
@@ -371,9 +380,9 @@ func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String) -> vo
 
 
 func check_chest_layout(chest: ChestPanel, view: Vector2, state: String) -> void:
-	var screen := Rect2(Vector2.ZERO, view)
+	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var stage := chest.stage_rect()
-	_check.call(screen.encloses(stage), "%s: palco do baú na tela" % state)
+	_check.call(screen.encloses(stage), "%s: palco do baú na tela (%s em %s)" % [state, stage, screen])
 	var c := chest.chest()
 	var chest_rect := Rect2(chest.get("_chest_rest") + stage.position, c.size)
 	_check.call(stage.encloses(chest_rect), "%s: baú dentro do palco" % state)
@@ -386,7 +395,8 @@ func check_chest_layout(chest: ChestPanel, view: Vector2, state: String) -> void
 	_check.call(UiPaint.text_width(tr("chest.ryo") % 999) + 16.0 <= stage.size.x, "%s: ryō cabe" % state)
 	for row: ChestPanel.RewardRow in chest.rows():
 		var r := row.get_global_rect()
-		_check.call(screen.encloses(r) and not r.intersects(stage), "%s: cartão %s na tela" % [state, row.name_label.text])
+		_check.call(screen.encloses(r) and not r.intersects(stage),
+				"%s: cartão %s na tela (%s em %s)" % [state, row.name_label.text, r, screen])
 		_check.call(row.effect_fits(), "%s: efeito cabe em %s" % [state, row.name_label.text])
 		_check.call(not row.shortened or view.x < 600.0, "%s: efeito inteiro em %s" % [state, row.name_label.text])
 		_check.call(row.name_fits(), "%s: nome inteiro em %s" % [state, row.name_label.text])

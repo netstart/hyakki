@@ -16,6 +16,11 @@ const BACK_HEIGHT := 36.0
 const BACK_FACE_HEIGHT := 24.0
 const BACK_MEDALLION := 9.0
 
+## Só para testes: área segura simulada no desktop (pontos lógicos, esquerda e direita),
+## como a de um celular com furo da câmera em paisagem. Troque por set_test_insets (avisa as
+## telas abertas na hora). Ver tests/device_profiles.gd.
+static var test_insets := Vector2.ZERO
+static var test_insets_enabled := false
 static var _ja: Font
 static var _textures: Dictionary = {}
 
@@ -32,8 +37,10 @@ static func ui_fx() -> int:
 
 
 ## Área segura do Android (recorte da câmera, bordas curvas), em pontos da tela:
-## (esquerda, direita). Zero no desktop.
+## (esquerda, direita). Zero no desktop (ou test_insets, quando os testes simulam o recorte).
 static func safe_insets(node: Control) -> Vector2:
+	if test_insets_enabled:
+		return test_insets
 	if not OS.has_feature("mobile") or not node.is_inside_tree():
 		return Vector2.ZERO
 	var safe := Rect2(DisplayServer.get_display_safe_area())
@@ -42,6 +49,44 @@ static func safe_insets(node: Control) -> Vector2:
 	if safe.size.x <= 0.0 or scale_x <= 0.0:
 		return Vector2.ZERO
 	return Vector2(maxf(safe.position.x, 0.0), maxf(screen.x - safe.end.x, 0.0)) / scale_x
+
+
+## Só para testes: liga (ou desliga, com Vector2.ZERO) o recorte simulado e avisa na hora quem
+## escuta on_insets_change, como o giro de 180° do celular (sem redimensionar a janela).
+static func set_test_insets(insets: Vector2) -> void:
+	test_insets = insets
+	test_insets_enabled = insets != Vector2.ZERO
+	var scaler := _pixel_scaler(null)
+	if scaler != null:
+		scaler.call("check_safe_insets")
+
+
+## Liga `on_change` à troca da área segura (furo da câmera que muda de lado ao girar o celular
+## 180°, tamanho da tela, recorte simulado dos testes); desliga sozinho quando o nó sai da árvore.
+static func on_insets_change(node: Node, on_change: Callable) -> void:
+	var scaler := _pixel_scaler(node)
+	if scaler == null:
+		return
+	var handler := func() -> void:
+		if is_instance_valid(node) and node.is_inside_tree():
+			on_change.call()
+	# Fica ligado só enquanto o nó está na árvore (religa se ele voltar).
+	var link := func() -> void:
+		if is_instance_valid(scaler) and not scaler.is_connected("safe_insets_changed", handler):
+			scaler.connect("safe_insets_changed", handler)
+	var unlink := func() -> void:
+		if is_instance_valid(scaler) and scaler.is_connected("safe_insets_changed", handler):
+			scaler.disconnect("safe_insets_changed", handler)
+	link.call()
+	node.tree_entered.connect(link)
+	node.tree_exiting.connect(unlink)
+
+
+static func _pixel_scaler(node: Node) -> Node:
+	if node != null and node.is_inside_tree():
+		return node.get_tree().root.get_node_or_null(^"PixelScaler")
+	var loop := Engine.get_main_loop() as SceneTree
+	return loop.root.get_node_or_null(^"PixelScaler") if loop != null else null
 
 
 ## Liga `on_change` à troca de qualidade gráfica (ao vivo); desliga sozinho com o nó.

@@ -7,6 +7,7 @@ extends Node
 ## da HUD (pausa + velocidade em 1x e 3x, ampliado 4x).
 
 const PauseMenuTests := preload("res://tests/pause_menu_tests.gd")
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 
 var _count: int = 0
@@ -51,9 +52,12 @@ func _screenshots(dir: String) -> void:
 	SaveManager.data["stats"]["runs"] = 3
 	var window := get_window()
 	var native := window.size
-	# Janela 2x: 1356x610 dá 678x305 (Redmi, 20:9) e 960x540 dá 480x270 (16:9 em 1080p).
-	for item: Array in [["pt_BR", native], ["de", native], ["ru", native], ["ja", native],
-			["pt_BR", Vector2i(960, 540)]]:
+	# Janela 2x de cada resolução de tests/device_profiles.gd (k = 2 dá a mesma tela lógica).
+	var items: Array = []
+	for view: Vector2 in DeviceProfiles.views():
+		for lang: String in ["pt_BR", "de", "ru", "ja"]:
+			items.append([lang, Vector2i(view) * 2])
+	for item: Array in items:
 		Locale.set_language(String(item[0]), false)
 		DisplayServer.window_set_size(item[1])
 		await get_tree().create_timer(0.3).timeout
@@ -65,7 +69,7 @@ func _screenshots(dir: String) -> void:
 		var view := get_tree().root.content_scale_size
 		var game := await _game()
 		var tag := "%s_%dx%d" % [item[0], view.x, view.y]
-		if String(item[0]) == "pt_BR" and item[1] == native:
+		if String(item[0]) == "pt_BR" and item[1] == Vector2i(DeviceProfiles.main_view()) * 2:
 			for speed: int in [1, 3]:
 				GameClock.speed = speed
 				game.hud.refresh_speed()
@@ -77,7 +81,7 @@ func _screenshots(dir: String) -> void:
 		game.open_pause()
 		await _wait(0.5)
 		await _save(dir.path_join("pause_%s.png" % tag))
-		if String(item[0]) in ["pt_BR", "de"] and item[1] == native:
+		if String(item[0]) in ["pt_BR", "de"]:
 			(game.hud.pause_menu().get("_quit") as Button).pressed.emit()
 			await _wait(0.4)
 			await _save(dir.path_join("pause_confirm_%s.png" % tag))

@@ -1,36 +1,48 @@
 extends RefCounted
-## Jornada do Guardião (seleção de fase) em 678x305, em todos os idiomas: pontos do mapa
+## Jornada do Guardião (seleção de fase) em cada resolução de tests/device_profiles.gd, sem e
+## com o furo da câmera de cada lado, em todos os idiomas: pontos do mapa
 ## dentro do mapa e da tela, tocáveis e sem se encostar; pergaminho com todos os textos
 ## (região, nome, chefes, narrativa, crônica, recordes) contidos; opções e Começar
 ## visíveis. Estados: perfil novo (só a vila liberada) e perfil com vila e bambuzal
 ## vencidos (selo, estrada vermelha, luas e chefes derrotados coloridos).
 ## Chamado por tests/integration_tests.gd e tests/stage_map_runner.gd (que passam o _check).
 
-const VIEW := Rect2(Vector2.ZERO, Vector2(678, 305))
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Tamanho do pergaminho na resolução de referência (a primeira de tests/device_profiles.gd);
+## nas outras ele só não pode mudar de um ponto para outro (não cresce com o texto).
 const CARD_SIZE := Vector2(266, 293)
 
 var _host: Node
 var _check: Callable
+## Tela lógica do caso atual e a área segura (fora do furo da câmera).
+var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _case := ""
+var _card_size := Vector2.ZERO
 
 
 func run(host: Node, check: Callable) -> void:
 	_host = host
 	_check = check
 	var original := SaveManager.data
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		var ctx := await open_screen("village")
-		await _check_layout(ctx[1], "%s, perfil novo" % lang)
-		_check_new_profile(ctx[1], lang)
-		await close(ctx)
-		SaveManager.data = progress_profile(2)
-		ctx = await open_screen("")
-		_check_progress(ctx[1], lang)
-		await _check_layout(ctx[1], "%s, com progresso" % lang)
-		if lang == "pt_BR":
-			await _check_walk(ctx[1])
-		await close(ctx)
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		use_case(c)
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			var tag := "%s [%s]" % [lang, _case]
+			SaveManager.data = SaveManager.default_profile()
+			var ctx := await open_screen("village")
+			await _check_layout(ctx[1], "%s, perfil novo" % tag)
+			_check_new_profile(ctx[1], tag)
+			await close(ctx)
+			SaveManager.data = progress_profile(2)
+			ctx = await open_screen("")
+			_check_progress(ctx[1], tag)
+			await _check_layout(ctx[1], "%s, com progresso" % tag)
+			if lang == "pt_BR":
+				await _check_walk(ctx[1])
+			await close(ctx)
+	DeviceProfiles.clear_insets()
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
 
@@ -51,11 +63,24 @@ static func progress_profile(moon: int, extra_won: Array = []) -> Dictionary:
 	return data
 
 
-## Abre o App na tela de fases; devolve [app, tela].
+## Usa a tela lógica e o recorte de um caso de DeviceProfiles.layout_cases().
+func use_case(c: Dictionary) -> void:
+	_view = Rect2(Vector2.ZERO, c["view"])
+	_safe = DeviceProfiles.safe_rect(c["view"], c["insets"])
+	_case = String(c["label"])
+	_card_size = Vector2.ZERO
+	DeviceProfiles.simulate_insets(c["insets"])
+
+
+## Abre o App na tela de fases, com a raiz das telas do tamanho da tela lógica do caso;
+## devolve [app, tela].
 func open_screen(stage: String) -> Array:
 	var app := App.new()
 	_host.add_child(app)
 	await _host.get_tree().process_frame
+	var root := app.get("_root") as Control
+	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	root.size = _view.size
 	# Sem a abertura (ela cobriria a tela e, ao terminar, levaria ao título).
 	for child: Node in app.get_children():
 		if child is CanvasLayer and (child as CanvasLayer).layer == 40:
@@ -77,21 +102,26 @@ func _check_layout(screen: Control, state: String) -> void:
 	var card := screen.get("_card") as Control
 	var map_rect := map.get_global_rect()
 	var card_rect := card.get_global_rect()
-	_check.call(VIEW.encloses(map_rect) and VIEW.encloses(card_rect), "Jornada %s: mapa e cartão na tela" % state)
+	_check.call(_safe.encloses(map_rect) and _safe.encloses(card_rect),
+			"Jornada %s: mapa e cartão na tela (%s, %s em %s)" % [state, map_rect, card_rect, _safe])
 	_check.call(not map_rect.intersects(card_rect), "Jornada %s: mapa e cartão lado a lado" % state)
-	_check.call(card_rect.size.is_equal_approx(CARD_SIZE),
-			"Jornada %s: cartão não cresce com o texto (%s)" % [state, card_rect.size])
+	# O mapa encolhe com a tela, mas segue o painel principal (os pontos precisam de espaço).
+	_check.call(map_rect.size.x >= card_rect.size.x and map_rect.size.y >= card_rect.size.y,
+			"Jornada %s: mapa ao menos do tamanho do cartão (%s, %s)" % [state, map_rect.size, card_rect.size])
+	_check_card_size(card_rect, "Jornada %s: cartão não cresce com o texto" % state)
 	var back := _back_button(screen)
 	var title := map.get("_title") as Label
 	_check.call(title.get_minimum_size().x <= title.size.x + 0.5 and map_rect.encloses(title.get_global_rect()),
 			"Jornada %s: título cabe no topo do mapa" % state)
 	_check.call(back != null and not back.get_global_rect().intersects(title.get_global_rect()),
 			"Jornada %s: título não encosta no voltar" % state)
+	_check.call(back != null and _safe.encloses(back.get_global_rect()),
+			"Jornada %s: voltar fora do furo da câmera (%s)" % [state, back.get_global_rect() if back else Rect2()])
 	var rects: Array[Rect2] = []
 	for id: StringName in map.nodes:
 		var node := map.nodes[id] as Control
 		var rect := node.get_global_rect()
-		_check.call(map_rect.encloses(rect) and VIEW.encloses(rect), "Jornada %s: ponto %s dentro do mapa" % [state, id])
+		_check.call(map_rect.encloses(rect) and _safe.encloses(rect), "Jornada %s: ponto %s dentro do mapa" % [state, id])
 		_check.call(rect.size.x >= 28 and rect.size.y >= 28, "Jornada %s: ponto %s tocável (≥ 28)" % [state, id])
 		_check.call(not rect.intersects(card_rect), "Jornada %s: ponto %s fora do cartão" % [state, id])
 		_check.call(back == null or not rect.intersects(back.get_global_rect()),
@@ -112,8 +142,7 @@ func _check_layout(screen: Control, state: String) -> void:
 
 func _check_card(screen: Control, state: String) -> void:
 	var card_rect := (screen.get("_card") as Control).get_global_rect()
-	_check.call(card_rect.size.is_equal_approx(CARD_SIZE),
-			"Jornada %s: cartão do tamanho fixo (%s)" % [state, card_rect.size])
+	_check_card_size(card_rect, "Jornada %s: cartão do tamanho fixo" % state)
 	for key: String in ["_region", "_name", "_cleared", "_boss", "_stats", "_bonus", "_suggest"]:
 		var l := screen.get(key) as Label
 		if not l.visible:
@@ -132,7 +161,7 @@ func _check_card(screen: Control, state: String) -> void:
 	for key: String in ["_mode", "_moon", "_endless", "_go"]:
 		var c := screen.get(key) as Control
 		var rect := c.get_global_rect()
-		_check.call(c.is_visible_in_tree() and card_rect.encloses(rect) and VIEW.encloses(rect),
+		_check.call(c.is_visible_in_tree() and card_rect.encloses(rect) and _safe.encloses(rect),
 				"Jornada %s: %s visível dentro do cartão" % [state, key])
 		_check.call(rect.size.y >= 28.0, "Jornada %s: %s com altura tocável" % [state, key])
 	var go := (screen.get("_go") as Control).get_global_rect()
@@ -145,6 +174,14 @@ func _check_card(screen: Control, state: String) -> void:
 		if icon.visible:
 			_check.call(card_rect.encloses(icon.get_global_rect()) and icon.size.x >= 24.0 and icon.size.x <= 28.0,
 					"Jornada %s: retrato do chefe no cartão" % state)
+
+
+## Na resolução de referência o pergaminho tem o tamanho de CARD_SIZE; em toda tela, o mesmo em todo ponto.
+func _check_card_size(card_rect: Rect2, label: String) -> void:
+	if _card_size == Vector2.ZERO:
+		_card_size = card_rect.size
+	var expected := CARD_SIZE if _view.size == DeviceProfiles.main_view() else _card_size
+	_check.call(card_rect.size.is_equal_approx(expected), "%s (%s, esperado %s)" % [label, card_rect.size, expected])
 
 
 func _back_button(screen: Control) -> Button:

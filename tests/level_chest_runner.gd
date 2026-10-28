@@ -3,9 +3,10 @@ extends Node
 ## próprios dos testes (o perfil do jogador não é tocado):
 ##   godot --headless --path . res://tests/level_chest_tests.tscn
 ## Com `-- --shots=<pasta> [--gfx=low|high]` (sem --headless) grava capturas das telas de
-## nova habilidade e do baú numa partida de verdade, em 678x305 e 480x270.
+## nova habilidade e do baú numa partida de verdade, em cada resolução de tests/device_profiles.gd.
 
 const LevelChestTests := preload("res://tests/level_chest_tests.gd")
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 
 var _count: int = 0
@@ -54,7 +55,10 @@ func _screenshots(dir: String, langs: Array[String]) -> void:
 	var gfx := GfxQuality.mode()
 	var window := get_window()
 	var native := window.size
-	var sizes := [native, Vector2i(960, 540)]
+	# Janela 2x de cada resolução de tests/device_profiles.gd (k = 2 dá a mesma tela lógica).
+	var sizes: Array[Vector2i] = []
+	for view: Vector2 in DeviceProfiles.views():
+		sizes.append(Vector2i(view) * 2)
 	for lang: String in langs:
 		for wsize: Vector2i in sizes:
 			Locale.set_language(lang, false)

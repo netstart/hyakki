@@ -155,6 +155,8 @@ func _ready() -> void:
 	_trail.draw.connect(_draw_trail)
 	add_child(_trail)
 	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 	Settings.changed.connect(func(key: String) -> void:
 		if key == GfxQuality.changed_signal_key():
 			_apply_quality())
@@ -504,14 +506,7 @@ func _kill_tweens() -> void:
 # --- Layout ------------------------------------------------------------------------------
 
 func _safe_insets() -> Vector2:
-	if not OS.has_feature("mobile") or not is_inside_tree():
-		return Vector2.ZERO
-	var safe := Rect2(DisplayServer.get_display_safe_area())
-	var screen := Vector2(DisplayServer.screen_get_size())
-	var scale_x := get_viewport().get_final_transform().x.x
-	if safe.size.x <= 0.0 or scale_x <= 0.0:
-		return Vector2.ZERO
-	return Vector2(maxf(safe.position.x, 0.0), maxf(screen.x - safe.end.x, 0.0)) / scale_x
+	return MenuKit.safe_insets(self)
 
 
 func _layout() -> void:

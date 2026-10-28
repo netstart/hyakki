@@ -2,19 +2,55 @@ extends Screen
 ## Santuário (plano 4.10): power-ups permanentes com preço crescente (comprar qualquer um
 ## encarece os outros) e reembolso total gratuito.
 ##
-## Tudo cabe em 678x305 sem rolagem: grade 6x3 de cartões compactos (só ícone, pips de nível
-## e preço — sem texto traduzido, então serve em qualquer idioma) e, à direita, o painel do
-## item selecionado com nome, efeito, nível atual → próximo e o botão de oferecer.
+## Tudo cabe na tela sem rolagem: grade de cartões compactos (só ícone, pips de nível e preço —
+## sem texto traduzido, então serve em qualquer idioma) e, à direita, o painel do item
+## selecionado com nome, efeito, nível atual → próximo e o botão de oferecer.
+##
+## O layout segue a tela lógica e a área segura (furo da câmera, MenuKit.safe_insets): em 678x305
+## é a grade 6x3 de cartões 70x81 com o painel de 196, como sempre foi; em telas menores o cartão
+## troca para um miolo mais justo (CARD_STYLES), o painel estreita até PANEL_MIN e a grade escolhe
+## as colunas que dão o maior cartão que ainda contém o miolo (e o alvo de toque ≥ 48). Refaz a
+## cada mudança de tamanho, de área segura ou de preços.
 
 const COIN_ICON := "res://assets/art/ui/icons/items/Money.png"
-const COLUMNS := 6
+## Colunas da grade, da tela de referência (6x3) às telas estreitas.
+const COLUMN_CHOICES: Array[int] = [6, 5, 4]
+## Tamanho do cartão na tela de referência (também o máximo) e o mínimo (alvo de toque ≥ 48).
 const CARD_SIZE := Vector2(70, 81)
+const CARD_MIN := Vector2(48, 48)
 const GAP := 5
-## Caixa do ícone no cartão e no painel; o ícone é ampliado só em múltiplos inteiros.
-const CARD_ICON_BOX := 32
+const GAP_TIGHT := 4
+## Margens do conteúdo: laterais (a partir da borda ou do fim do furo da câmera) e topo abaixo
+## do "voltar"; ROW_SEP separa a grade do painel.
+const MARGIN := 12.0
+const INSET_MARGIN := 4.0
+const TOP := 42.0
+const ROW_SEP := 10
+## Caixa do ícone no painel; o ícone é ampliado só em múltiplos inteiros.
 const DETAIL_ICON_BOX := 48
 const PIP_SIZE := Vector2(6, 6)
+## Painel de detalhes: largura de referência (≈ 30% da área útil); estreita até PANEL_MIN
+## (de PANEL_STEP em PANEL_STEP) quando a grade não cabe.
 const PANEL_WIDTH := 196.0
+const PANEL_MIN := 128.0
+const PANEL_STEP := 4.0
+const PANEL_SHARE := 0.3
+## Miolo do cartão, do mais folgado (o de 678x305) ao mais justo; vence o primeiro que couber.
+## medal: caixa do ícone (o ícone 24 px só amplia em múltiplos inteiros); pad: respiro do disco;
+## pip: lado do pip de nível; coin: moeda do preço (0 = sem moeda no cartão; o botão do painel
+## ainda a mostra); pill: respiro lateral da pílula de preço; sep: separação do miolo;
+## side/edge: margens lateral e vertical do miolo.
+const CARD_STYLES: Array[Dictionary] = [
+	{"medal": 32, "pad": 2, "pip": 6, "coin": 12, "pill": 3, "sep": 3, "side": 3, "edge": 4},
+	{"medal": 26, "pad": 1, "pip": 6, "coin": 12, "pill": 3, "sep": 2, "side": 2, "edge": 3},
+	{"medal": 24, "pad": 1, "pip": 4, "coin": 0, "pill": 2, "sep": 1, "side": 2, "edge": 1},
+]
+## Espaçamento vertical do painel (separação e margem) e margem de baixo da tela, do folgado
+## (678x305) ao justo; vale o primeiro em que painel e grade cabem.
+const PANEL_STYLES: Array[Dictionary] = [
+	{"sep": 4, "pad": 6, "bottom": 8},
+	{"sep": 3, "pad": 4, "bottom": 4},
+]
 ## Laca escura do santuário, dourado e vermelhão do torii.
 const LACQUER := Color("24150f")
 const LACQUER_LIGHT := Color("3a2317")
@@ -25,9 +61,16 @@ const SHORT := Color("ff9a8a")
 const DIM := Color(0.8, 0.74, 0.66)
 
 var _grid: GridContainer
+var _margin: MarginContainer
+var _side: PanelContainer
+var _ryo_box: PanelContainer
+## Miolo de cartão em uso (um de CARD_STYLES).
+var _style: Dictionary = CARD_STYLES[0]
+## Tamanho de tela, área segura e preços do último layout (evita refazer à toa).
+var _laid_out: Array = []
 var _ryo: Label
 var _info: Label
-## id → {button, icon, pips, price_box, price, coin}
+## id → {button, box, disc, medal, icon, pips, price_box, price, coin}
 var _cards: Dictionary = {}
 var _selected: StringName = &""
 var _detail_icon: TextureRect
@@ -50,22 +93,27 @@ func _ready() -> void:
 	title.offset_right = 150
 	title.offset_top = 6
 	add_child(title)
-	add_child(_ryo_pill())
-	var margin := content_box(42.0)
+	_ryo_box = _ryo_pill()
+	add_child(_ryo_box)
+	_margin = content_box(TOP)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	margin.add_child(row)
+	row.add_theme_constant_override("separation", ROW_SEP)
+	_margin.add_child(row)
 	var left := CenterContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(left)
 	_grid = GridContainer.new()
-	_grid.columns = COLUMNS
+	_grid.columns = COLUMN_CHOICES[0]
 	_grid.add_theme_constant_override("h_separation", GAP)
 	_grid.add_theme_constant_override("v_separation", GAP)
 	left.add_child(_grid)
 	for id: StringName in DB.ids("powerups"):
 		_grid.add_child(_make_card(id))
-	row.add_child(_make_detail_panel())
+	_side = _make_detail_panel()
+	row.add_child(_side)
+	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 
 
 func on_show() -> void:
@@ -75,6 +123,8 @@ func on_show() -> void:
 	for id: StringName in _cards:
 		_update_card(id)
 	_update_detail()
+	# Os preços mudam a largura dos cartões (e a área segura pode ter mudado): refaz o layout.
+	_layout()
 
 
 ## Toque/foco num cartão: mostra o item no painel (a compra é pelo botão do painel).
@@ -114,6 +164,172 @@ func _refund() -> void:
 	on_show()
 
 
+# --- Layout -----------------------------------------------------------------------
+
+## Distribui grade e painel pela tela atual, fora do furo da câmera: o miolo de cartão mais
+## folgado que couber, com o painel o mais largo possível (até a parte de referência).
+func _layout() -> void:
+	if _grid == null or size.x <= 0.0 or size.y <= 0.0 or _selected == &"":
+		return
+	var insets := MenuKit.safe_insets(self)
+	var prices: Array[String] = []
+	for id: StringName in _cards:
+		prices.append((_cards[id]["price"] as Label).text)
+	var key := [size, insets, prices]
+	if key == _laid_out:
+		return
+	_laid_out = key
+	var left := ceilf(maxf(MARGIN, insets.x + INSET_MARGIN))
+	var right := ceilf(maxf(MARGIN, insets.y + INSET_MARGIN))
+	_margin.add_theme_constant_override("margin_left", int(left))
+	_margin.add_theme_constant_override("margin_right", int(right))
+	_ryo_box.offset_right = -right
+	var width := size.x - left - right
+	var plan := {}
+	for panel_style: Dictionary in PANEL_STYLES:
+		_apply_panel_style(panel_style)
+		var area_h := size.y - TOP - float(panel_style["bottom"])
+		for style: Dictionary in CARD_STYLES:
+			_apply_card_style(style)
+			plan = _fit(width, area_h)
+			if plan["fits"]:
+				break
+		if plan["fits"]:
+			break
+	_size_panel(_side.custom_minimum_size.x)
+	_update_detail()
+	_grid.columns = plan["columns"]
+	_grid.add_theme_constant_override("h_separation", plan["gap"])
+	_grid.add_theme_constant_override("v_separation", plan["gap"])
+	for id: StringName in _cards:
+		(_cards[id]["button"] as Button).custom_minimum_size = plan["card"]
+
+
+## Painel e grade na largura e altura úteis com o miolo de cartão em uso. O painel parte da
+## largura de referência (proporcional à tela) e só alarga se o texto mais longo não couber na
+## altura; a grade fica com o resto e, se não couber, o painel estreita até PANEL_MIN.
+## Devolve o grid_plan, com "fits" só se o painel também couber.
+func _fit(width: float, area_h: float) -> Dictionary:
+	var need := _card_need()
+	var panel_w := clampf(roundf(width * PANEL_SHARE), PANEL_MIN, PANEL_WIDTH)
+	while panel_w < PANEL_WIDTH and _panel_need_h(panel_w) > area_h:
+		panel_w = minf(PANEL_WIDTH, panel_w + PANEL_STEP)
+	var plan := {}
+	while true:
+		var real_w := _size_panel(panel_w)
+		plan = grid_plan(Vector2(width - ROW_SEP - real_w, area_h), _cards.size(), need)
+		if plan["fits"] or panel_w <= PANEL_MIN:
+			break
+		panel_w = maxf(PANEL_MIN, panel_w - PANEL_STEP)
+	plan["fits"] = plan["fits"] and _panel_need_h(panel_w) <= area_h
+	return plan
+
+
+## Melhor grade para `count` cartões numa área: as colunas que dão o maior cartão (na
+## proporção do de referência), sem passar de CARD_SIZE nem ficar menor que `need` (o miolo)
+## ou CARD_MIN (alvo de toque). Devolve {columns, gap, card, fits}; sem encaixe, o maior.
+static func grid_plan(area: Vector2, count: int, need: Vector2 = CARD_MIN) -> Dictionary:
+	var least := need.max(CARD_MIN)
+	var best := {}
+	var best_score := -INF
+	for gap: int in [GAP, GAP_TIGHT]:
+		for cols: int in COLUMN_CHOICES:
+			var rows := ceili(float(count) / cols)
+			var w := minf(CARD_SIZE.x, floorf((area.x - (cols - 1) * gap) / cols))
+			var h := minf(CARD_SIZE.y, floorf((area.y - (rows - 1) * gap) / rows))
+			var fits := w >= least.x and h >= least.y
+			var score := minf(w / CARD_SIZE.x, h / CARD_SIZE.y) + (1.0 if fits else 0.0)
+			if score > best_score:
+				best_score = score
+				best = {"columns": cols, "gap": gap, "card": Vector2(w, h), "fits": fits}
+		if best["fits"]:
+			break
+	return best
+
+
+## Miolo de todos os cartões no estilo dado (o tamanho do cartão vem do _layout).
+func _apply_card_style(style: Dictionary) -> void:
+	_style = style
+	var medal := int(style["medal"])
+	for id: StringName in _cards:
+		var card: Dictionary = _cards[id]
+		var box := card["box"] as VBoxContainer
+		box.offset_left = int(style["side"])
+		box.offset_right = -int(style["side"])
+		box.offset_top = int(style["edge"])
+		box.offset_bottom = -int(style["edge"])
+		box.add_theme_constant_override("separation", int(style["sep"]))
+		(card["medal"] as Control).custom_minimum_size = Vector2(medal, medal)
+		(card["disc"] as PanelContainer).add_theme_stylebox_override("panel",
+				_flat(Color(0, 0, 0, 0.35), Color(GOLD, 0.25), 1, int(style["pad"])))
+		(card["coin"] as Control).custom_minimum_size = Vector2.ONE * int(style["coin"])
+		# Pips, moeda e pílula de preço seguem o estilo (_update_card os refaz com ele).
+		_update_card(id)
+
+
+## Espaçamento vertical do painel e margem de baixo da tela.
+func _apply_panel_style(style: Dictionary) -> void:
+	_side.get_child(0).add_theme_constant_override("separation", int(style["sep"]))
+	var box := _side.get_theme_stylebox("panel") as StyleBoxFlat
+	box.content_margin_top = int(style["pad"])
+	box.content_margin_bottom = int(style["pad"])
+	_margin.add_theme_constant_override("margin_bottom", int(style["bottom"]))
+
+
+## Altura do painel na largura dada com o item de textos mais longos e um aviso inteiro
+## (falta de ryō ou reembolso) no lugar da dica; depois volta os textos do selecionado.
+func _panel_need_h(width: float) -> float:
+	_size_panel(width)
+	var info_text := _info.text
+	var overrun := _info.text_overrun_behavior
+	_info.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	var notices: Array[String] = [tr("sanctuary.not_enough"),
+			tr("sanctuary.refunded") % Locale.format_number(SaveManager.ryo() + 99999)]
+	var need := 0.0
+	for id: StringName in _cards:
+		var texts := _detail_texts(id)
+		_detail_name.text = texts[0]
+		_detail_effect.text = texts[1]
+		_detail_next.text = texts[2]
+		for notice: String in notices:
+			_info.text = notice
+			need = maxf(need, _side.get_combined_minimum_size().y)
+	_info.text_overrun_behavior = overrun
+	_info.text = info_text
+	var texts := _detail_texts(_selected)
+	_detail_name.text = texts[0]
+	_detail_effect.text = texts[1]
+	_detail_next.text = texts[2]
+	return need
+
+
+## Menor cartão que contém o miolo de todos os cartões no estilo em uso.
+func _card_need() -> Vector2:
+	var need := Vector2.ZERO
+	for id: StringName in _cards:
+		need = need.max((_cards[id]["box"] as Control).get_combined_minimum_size())
+	return need + Vector2(int(_style["side"]), int(_style["edge"])) * 2
+
+
+## Largura do painel e dos textos que quebram linha dentro dele; devolve a largura real
+## (um botão de texto longo pode alargar o painel além do pedido). Já põe nos textos a largura
+## que o painel vai lhes dar: o Label quebra linhas pela largura atual, então a altura mínima
+## medida logo depois (_panel_need_h) é a de verdade, sem esperar o contêiner reorganizar.
+func _size_panel(width: float) -> float:
+	_side.custom_minimum_size.x = width
+	_detail_name.custom_minimum_size.x = width - DETAIL_ICON_BOX - 26
+	for wrap: Label in [_detail_effect, _detail_next, _info]:
+		wrap.custom_minimum_size.x = width - 16
+	var real := maxf(width, _side.get_combined_minimum_size().x)
+	var inner := real - _side.get_theme_stylebox("panel").get_minimum_size().x
+	var head := _detail_name.get_parent().get_parent() as HBoxContainer
+	var medal := head.get_child(0) as Control
+	_detail_name.size.x = inner - medal.get_combined_minimum_size().x - head.get_theme_constant("separation")
+	for wrap: Label in [_detail_effect, _detail_next, _info]:
+		wrap.size.x = inner
+	return real
+
+
 # --- Estado -----------------------------------------------------------------------
 
 func _level(id: StringName) -> int:
@@ -133,6 +349,24 @@ func card_state(id: StringName) -> String:
 	if _is_maxed(id):
 		return "max"
 	return "buy" if MetaProgress.can_buy(id) else "short"
+
+
+## Textos do painel para um item: [nome, efeito por nível, nível atual → próximo].
+func _detail_texts(id: StringName) -> Array[String]:
+	var data: Dictionary = DB.powerups[id]
+	var stat := String(data["stat"])
+	var per_level: float = float(data["per_level"])
+	var level := _level(id)
+	var effect := LevelUpSystem.describe_stats({stat: per_level}) + " " + tr("sanctuary.per_level")
+	var next := ""
+	if _is_maxed(id):
+		next = LevelUpSystem.describe_stats({stat: per_level * level})
+	elif level == 0:
+		next = "→ " + LevelUpSystem.describe_stats({stat: per_level})
+	else:
+		next = "%s → %s" % [LevelUpSystem.describe_stats({stat: per_level * level}),
+				LevelUpSystem.describe_stats({stat: per_level * (level + 1)})]
+	return [tr("powerup.%s.name" % id), effect, next]
 
 
 func _update_card(id: StringName) -> void:
@@ -162,45 +396,41 @@ func _update_card(id: StringName) -> void:
 	b.add_theme_stylebox_override("pressed", _flat(bg.darkened(0.2), ThemeFactory.ACCENT, 2))
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	(card["icon"] as TextureRect).modulate = Color(1, 1, 1, 0.55) if state == "short" else Color.WHITE
-	_fill_pips(card["pips"] as HBoxContainer, _level(id), _max(id))
+	var pip := Vector2.ONE * int(_style["pip"])
+	_fill_pips(card["pips"] as HBoxContainer, _level(id), _max(id), pip)
 	var price := card["price"] as Label
 	var pill := card["price_box"] as PanelContainer
 	var coin := card["coin"] as TextureRect
+	var pad := int(_style["pill"])
 	if state == "max":
 		price.text = tr("sanctuary.max")
 		price.add_theme_color_override("font_color", ThemeFactory.ACCENT)
 		coin.visible = false
-		pill.add_theme_stylebox_override("panel", _pill(Color("5a3d10"), GOLD))
+		pill.add_theme_stylebox_override("panel", _pill(Color("5a3d10"), GOLD, pad))
 	else:
 		price.text = Locale.format_number(MetaProgress.powerup_price(id))
 		price.add_theme_color_override("font_color", SHORT if state == "short" else ThemeFactory.TEXT)
-		coin.visible = true
+		# No miolo mais justo o cartão fica sem a moeda (o botão do painel ainda a mostra).
+		coin.visible = int(_style["coin"]) > 0
 		coin.modulate = Color(1, 1, 1, 0.6) if state == "short" else Color.WHITE
-		pill.add_theme_stylebox_override("panel", _pill(Color(0, 0, 0, 0.45), Color(0, 0, 0, 0)))
+		pill.add_theme_stylebox_override("panel", _pill(Color(0, 0, 0, 0.45), Color(0, 0, 0, 0), pad))
 
 
 func _update_detail() -> void:
 	var id := _selected
 	var data: Dictionary = DB.powerups[id]
-	var stat := String(data["stat"])
-	var per_level: float = float(data["per_level"])
 	var level := _level(id)
 	var top := _max(id)
 	var state := card_state(id)
 	_set_icon(_detail_icon, String(data["icon"]), DETAIL_ICON_BOX)
-	_detail_name.text = tr("powerup.%s.name" % id)
 	_detail_level.text = "%d/%d" % [level, top]
 	_detail_level.add_theme_color_override("font_color",
 			ThemeFactory.ACCENT if state == "max" else ThemeFactory.TEXT)
-	_fill_pips(_detail_pips, level, top)
-	_detail_effect.text = LevelUpSystem.describe_stats({stat: per_level}) + " " + tr("sanctuary.per_level")
-	if state == "max":
-		_detail_next.text = LevelUpSystem.describe_stats({stat: per_level * level})
-	elif level == 0:
-		_detail_next.text = "→ " + LevelUpSystem.describe_stats({stat: per_level})
-	else:
-		_detail_next.text = "%s → %s" % [LevelUpSystem.describe_stats({stat: per_level * level}),
-				LevelUpSystem.describe_stats({stat: per_level * (level + 1)})]
+	_fill_pips(_detail_pips, level, top, PIP_SIZE)
+	var texts := _detail_texts(id)
+	_detail_name.text = texts[0]
+	_detail_effect.text = texts[1]
+	_detail_next.text = texts[2]
 	var short := state == "short"
 	_buy_button.disabled = state == "max"
 	_buy_coin.visible = state != "max"
@@ -227,7 +457,7 @@ func _ryo_pill() -> PanelContainer:
 	pill.add_theme_stylebox_override("panel", _pill(Color(LACQUER, 0.9), GOLD, 8))
 	pill.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	pill.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	pill.offset_right = -12
+	pill.offset_right = -MARGIN
 	pill.offset_top = 9
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
@@ -239,6 +469,7 @@ func _ryo_pill() -> PanelContainer:
 	return pill
 
 
+## Cartão no tamanho e miolo de referência; o _layout ajusta os dois à tela.
 func _make_card(id: StringName) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = CARD_SIZE
@@ -248,21 +479,21 @@ func _make_card(id: StringName) -> Button:
 	b.focus_entered.connect(_select.bind(id))
 	var box := VBoxContainer.new()
 	box.set_anchors_preset(Control.PRESET_FULL_RECT)
-	box.offset_left = 3
-	box.offset_right = -3
-	box.offset_top = 4
-	box.offset_bottom = -4
+	box.offset_left = int(_style["side"])
+	box.offset_right = -int(_style["side"])
+	box.offset_top = int(_style["edge"])
+	box.offset_bottom = -int(_style["edge"])
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 3)
+	box.add_theme_constant_override("separation", int(_style["sep"]))
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(box)
 	var disc := PanelContainer.new()
 	disc.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	disc.add_theme_stylebox_override("panel", _flat(Color(0, 0, 0, 0.35), Color(GOLD, 0.25), 1, 2))
+	disc.add_theme_stylebox_override("panel", _flat(Color(0, 0, 0, 0.35), Color(GOLD, 0.25), 1, int(_style["pad"])))
 	box.add_child(disc)
 	var medal := CenterContainer.new()
-	medal.custom_minimum_size = Vector2(CARD_ICON_BOX, CARD_ICON_BOX)
+	medal.custom_minimum_size = Vector2.ONE * int(_style["medal"])
 	medal.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	disc.add_child(medal)
 	var icon := TextureRect.new()
@@ -270,7 +501,7 @@ func _make_card(id: StringName) -> Button:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_set_icon(icon, String(DB.powerups[id]["icon"]), CARD_ICON_BOX)
+	_set_icon(icon, String(DB.powerups[id]["icon"]), int(CARD_STYLES[0]["medal"]))
 	medal.add_child(icon)
 	var pips := HBoxContainer.new()
 	pips.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -285,12 +516,13 @@ func _make_card(id: StringName) -> Button:
 	row.add_theme_constant_override("separation", 2)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pill.add_child(row)
-	var coin := _coin(12)
+	var coin := _coin(int(_style["coin"]))
 	row.add_child(coin)
 	var price := label("", 12, HORIZONTAL_ALIGNMENT_CENTER)
 	price.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(price)
-	_cards[id] = {"button": b, "icon": icon, "pips": pips, "price_box": pill, "price": price, "coin": coin}
+	_cards[id] = {"button": b, "box": box, "disc": disc, "medal": medal, "icon": icon, "pips": pips,
+			"price_box": pill, "price": price, "coin": coin}
 	return b
 
 
@@ -304,11 +536,11 @@ func _make_detail_panel() -> PanelContainer:
 	var side := PanelContainer.new()
 	side.custom_minimum_size = Vector2(PANEL_WIDTH, 0)
 	var style := _flat(Color(Color("1c110c"), 0.92), GOLD.darkened(0.3), 1, 7)
-	style.content_margin_top = 6
-	style.content_margin_bottom = 6
+	style.content_margin_top = int(PANEL_STYLES[0]["pad"])
+	style.content_margin_bottom = int(PANEL_STYLES[0]["pad"])
 	side.add_theme_stylebox_override("panel", style)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 4)
+	col.add_theme_constant_override("separation", int(PANEL_STYLES[0]["sep"]))
 	side.add_child(col)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 6)
@@ -389,13 +621,13 @@ func _make_detail_panel() -> PanelContainer:
 	return side
 
 
-func _fill_pips(row: HBoxContainer, level: int, top: int) -> void:
+func _fill_pips(row: HBoxContainer, level: int, top: int, pip_size: Vector2) -> void:
 	for child: Node in row.get_children():
 		row.remove_child(child)
 		child.queue_free()
 	for i: int in range(top):
 		var pip := Panel.new()
-		pip.custom_minimum_size = PIP_SIZE
+		pip.custom_minimum_size = pip_size
 		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var on := i < level
 		var full := level >= top

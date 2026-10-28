@@ -5,8 +5,20 @@ extends Screen
 ## (Brisa / Normal), Lua Vermelha I–V (liberada vencendo a anterior) e Noite Sem Fim
 ## (depois de vencer a fase). Fases bloqueadas podem ser lidas, mas não começadas.
 
-const MAP_RECT := Rect2(6, 6, 396, 293)
-const CARD_RECT := Rect2(406, 6, 266, 293)
+## Layout pela tela de verdade (e pela área segura do furo da câmera): margem da borda, vão
+## entre o mapa e o pergaminho e a largura do pergaminho, que na tela de referência (678x305,
+## sem recorte) é CARD_WIDTH, ou seja 266 de 662 px úteis, e encolhe na mesma proporção até
+## CARD_MIN_WIDTH (onde os textos de todos os idiomas ainda cabem). O mapa fica com o resto.
+const MARGIN := 6.0
+const GAP := 4.0
+const CARD_WIDTH := 266.0
+const CARD_MIN_WIDTH := 200.0
+const CARD_SHARE := CARD_WIDTH / 662.0
+## Pergaminho mais baixo que isto (telas de 270 de altura): os recordes e os avisos (bônus,
+## sugestão do Brisa) entram na rolagem, acima da narrativa, para ela não sumir.
+const COMPACT_HEIGHT := 280.0
+## Largura mínima da Noite Sem Fim (chave e duas linhas de texto) ao lado do Começar.
+const ENDLESS_MIN_WIDTH := 100.0
 const PAPER := Color("eddcb4")
 const INK := Color("2a1a10")
 const INK_SOFT := Color("5a4030")
@@ -20,6 +32,13 @@ var _cleared: Label
 var _boss_icons: Array[TextureRect] = []
 var _boss: Label
 var _stats: Label
+## Coluna ao lado dos retratos (chefes e, no pergaminho alto, os recordes), texto rolável e
+## corpo do pergaminho (para os avisos voltarem acima das opções).
+var _info: VBoxContainer
+var _text: VBoxContainer
+var _body: VBoxContainer
+var _options: HBoxContainer
+var _compact := false
 var _scroll: ScrollContainer
 var _journey: Label
 var _chronicle: Label
@@ -35,19 +54,58 @@ var _viewing: StringName = &"village"
 
 func _ready() -> void:
 	_map = JourneyMap.new()
-	_map.position = MAP_RECT.position
-	_map.size = MAP_RECT.size
 	_map.stage_selected.connect(_select)
 	add_child(_map)
 	_build_card()
 	add_child(back_button())
+	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
+	_layout()
+
+
+## Mapa à esquerda e pergaminho à direita, dentro da área segura; o pergaminho tem o mesmo
+## tamanho para todo ponto (não cresce com o texto).
+func _layout() -> void:
+	if size.x < 10.0 or size.y < 10.0:
+		return
+	var insets := MenuKit.safe_insets(self)
+	var left := MARGIN + insets.x
+	var right := size.x - MARGIN - insets.y
+	var height := size.y - MARGIN * 2.0
+	var room := right - left - GAP
+	# Proporção pela largura da tela inteira: o recorte da câmera sai do mapa, não do pergaminho.
+	var card_w := clampf(roundf((size.x - MARGIN * 2.0 - GAP) * CARD_SHARE), CARD_MIN_WIDTH, CARD_WIDTH)
+	_set_compact(height < COMPACT_HEIGHT)
+	_scroll_auto()
+	_card.custom_minimum_size = Vector2(card_w, height)
+	_card.position = Vector2(right - card_w, MARGIN)
+	_card.size = _card.custom_minimum_size
+	_map.position = Vector2(left, MARGIN)
+	_map.size = Vector2(room - card_w, height)
+
+
+## Pergaminho baixo: recordes e avisos passam para o alto da rolagem (e o nome do chefe fica
+## centrado ao lado dos retratos); alto: recordes ao lado dos retratos e avisos acima das opções.
+func _set_compact(on: bool) -> void:
+	if on == _compact:
+		return
+	_compact = on
+	_info.alignment = BoxContainer.ALIGNMENT_CENTER if on else BoxContainer.ALIGNMENT_BEGIN
+	if on:
+		for k: int in range(3):
+			var l: Label = [_stats, _bonus, _suggest][k]
+			l.reparent(_text, false)
+			_text.move_child(l, k)
+	else:
+		_stats.reparent(_info, false)
+		for l: Label in [_bonus, _suggest]:
+			l.reparent(_body, false)
+			_body.move_child(l, _options.get_index())
 
 
 func _build_card() -> void:
 	_card = PanelContainer.new()
-	_card.position = CARD_RECT.position
-	_card.size = CARD_RECT.size
-	_card.custom_minimum_size = CARD_RECT.size
 	var paper := StyleBoxFlat.new()
 	paper.bg_color = PAPER
 	paper.border_color = Color("6b4a2a")
@@ -62,6 +120,7 @@ func _build_card() -> void:
 	var body := VBoxContainer.new()
 	body.add_theme_constant_override("separation", 3)
 	_card.add_child(body)
+	_body = body
 	_region = _ink(label(""), RED_INK)
 	_region.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_region)
@@ -88,6 +147,7 @@ func _build_card() -> void:
 		boss_row.add_child(icon)
 		_boss_icons.append(icon)
 	var info := VBoxContainer.new()
+	_info = info
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_theme_constant_override("separation", 0)
 	_boss = _ink(label(""), INK)
@@ -108,7 +168,14 @@ func _build_card() -> void:
 	_scroll = ScrollContainer.new()
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Narrativa no limite da altura: a barra aparece, o texto estreita e cresce, a barra some, o
+	# texto alarga... (laço sem fim de reordenação). Quando a barra aparece, a largura dela fica
+	# reservada até o próximo texto ou layout (_scroll_auto), então o texto não pula de largura.
+	_scroll.get_v_scroll_bar().visibility_changed.connect(func() -> void:
+		if _scroll.get_v_scroll_bar().visible:
+			_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE)
 	var text := VBoxContainer.new()
+	_text = text
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# Se a narrativa couber, fica centrada no espaço livre do pergaminho.
 	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -133,6 +200,7 @@ func _build_card() -> void:
 
 func _build_options(body: VBoxContainer) -> void:
 	var options := HBoxContainer.new()
+	_options = options
 	options.add_theme_constant_override("separation", 4)
 	_mode = OptionButton.new()
 	_mode.add_item(tr("mode.normal"))
@@ -163,7 +231,10 @@ func _build_options(body: VBoxContainer) -> void:
 	bottom.add_theme_constant_override("v_separation", 3)
 	_endless = CheckButton.new()
 	_endless.text = tr("stages.endless")
-	_endless.custom_minimum_size = Vector2(0, 32)
+	# Em pergaminho estreito o texto quebra em duas linhas em vez de empurrar o Começar para baixo;
+	# sem espaço nem para isso (Começar longo), o Começar desce para a linha de baixo.
+	_endless.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_endless.custom_minimum_size = Vector2(ENDLESS_MIN_WIDTH, 32)
 	_endless.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_endless.toggled.connect(func(on: bool) -> void: app.selection["endless"] = on)
 	bottom.add_child(_endless)
@@ -228,7 +299,13 @@ func _select(id: StringName) -> void:
 	_refresh()
 
 
+## Rolagem do pergaminho de volta ao automático (barra só se o texto novo não couber).
+func _scroll_auto() -> void:
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+
+
 func _refresh() -> void:
+	_scroll_auto()
 	var id := _viewing
 	var best := SaveManager.stage_best(id)
 	var unlocked := MetaProgress.is_stage_unlocked(id)
@@ -250,6 +327,8 @@ func _refresh() -> void:
 		if moon > 0:
 			lines.append(tr("moon.rule%d" % moon))
 	_stats.text = "\n".join(lines)
+	# Sem recordes, a linha some (no pergaminho baixo ela abriria um vão acima da narrativa).
+	_stats.visible = not lines.is_empty()
 	_journey.text = tr("stages.secret_hint") if hidden else tr("stage.%s.journey" % id)
 	_chronicle.text = _format(tr("stages.chronicle"), tr("stage.%s.dawn" % id)) if bool(best["won"]) else ""
 	_chronicle.visible = bool(best["won"])

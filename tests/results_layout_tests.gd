@@ -1,5 +1,6 @@
 extends RefCounted
-## Resultados (scripts/app/screens/results_screen.gd) em 678x305: nada cortado nem sobreposto,
+## Resultados (scripts/app/screens/results_screen.gd) em cada resolução de
+## tests/device_profiles.gd (sem e com o furo da câmera de cada lado): nada cortado nem sobreposto,
 ## botões visíveis e dentro da tela, armas em ordem de dano com barras proporcionais,
 ## vitória/derrota/desistência, sem armas, muitas armas (rolagem), textos longos (todos os
 ## idiomas), "Dobrar ryō" só quando dá e uma vez, jingle de conquista uma vez, trava de toque
@@ -8,7 +9,7 @@ extends RefCounted
 ## anfitrião e o _check.
 
 const RESULTS_SCREEN := "res://scripts/app/screens/results_screen.gd"
-const SCREEN := Rect2(Vector2.ZERO, Vector2(678, 305))
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 
 ## App de mentira: guarda para onde a tela mandou o jogador, sem abrir partida nem menu.
@@ -26,6 +27,10 @@ class StubApp:
 
 var _host: Node
 var _check: Callable
+## Tela lógica do caso atual (tamanho do anfitrião) e a área segura (fora do furo da câmera).
+## Fora do laço de resoluções (rolagem, Dobrar ryō etc.), a resolução de referência.
+var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 
 
 func run(host: Node, check: Callable) -> void:
@@ -35,22 +40,25 @@ func run(host: Node, check: Callable) -> void:
 	var flashes: Variant = Settings.get_value("reduce_flashes")
 	Settings.set_value("reduce_flashes", false)
 	AdsManager.mock_fill = true
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		for variant: String in ["defeat", "victory", "gave_up"]:
-			# Todos os idiomas no caso mais cheio (derrota); os mais longos em todos os casos.
-			if variant != "defeat" and lang not in ["de", "ru", "fr", "pt_BR"]:
-				continue
-			for count: int in [6, 0, 10]:
-				var r := make_result(variant, count)
-				var opened := await _open(r)
-				var state := "%s, %s, %d armas" % [lang, variant, count]
-				check_layout(opened, state)
-				_check_variant(opened, r, variant, state)
-				_check_weapons(opened, r, state)
-				_close(opened)
-				await host.get_tree().process_frame
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		use_case(c["view"], c["insets"])
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			SaveManager.data = SaveManager.default_profile()
+			for variant: String in ["defeat", "victory", "gave_up"]:
+				# Todos os idiomas no caso mais cheio (derrota); os mais longos em todos os casos.
+				if variant != "defeat" and lang not in ["de", "ru", "fr", "pt_BR"]:
+					continue
+				for count: int in [6, 0, 10]:
+					var r := make_result(variant, count)
+					var opened := await _open(r)
+					var state := "%s [%s], %s, %d armas" % [lang, c["label"], variant, count]
+					check_layout(opened, state)
+					_check_variant(opened, r, variant, state)
+					_check_weapons(opened, r, state)
+					_close(opened)
+					await host.get_tree().process_frame
+	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 	SaveManager.data = SaveManager.default_profile()
 	await _test_scroll()
@@ -63,6 +71,13 @@ func run(host: Node, check: Callable) -> void:
 	Settings.set_value("reduce_flashes", flashes)
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
+
+
+## Tela lógica e recorte da câmera (esquerda, direita) usados por _open e check_layout.
+func use_case(view: Vector2, insets: Vector2) -> void:
+	_view = Rect2(Vector2.ZERO, view)
+	_safe = DeviceProfiles.safe_rect(view, insets)
+	DeviceProfiles.simulate_insets(insets)
 
 
 ## Resultado de exemplo como o HyakkiGame.build_result + MetaProgress.apply_run.
@@ -93,7 +108,7 @@ func check_layout(screen: Control, state: String) -> void:
 	for name: String in ["Left", "Center", "Right"]:
 		var column := screen.get_node(name) as Control
 		var rect := column.get_global_rect()
-		_check.call(SCREEN.encloses(rect), "%s: coluna %s dentro da tela (%s)" % [state, name, rect])
+		_check.call(_safe.encloses(rect), "%s: coluna %s dentro da tela (%s em %s)" % [state, name, rect, _safe])
 		_check.call(column.get_combined_minimum_size().y <= rect.size.y + 0.5,
 				"%s: coluna %s cabe na altura (%s)" % [state, name, column.get_combined_minimum_size()])
 		for other: Rect2 in columns:
@@ -110,7 +125,7 @@ func check_layout(screen: Control, state: String) -> void:
 					and local.position.y >= -0.5 and local.end.y <= content.size.y + 0.5,
 					"%s: %s alcançável rolando" % [state, path])
 		else:
-			_check.call(SCREEN.encloses(rect), "%s: %s dentro da tela" % [state, path])
+			_check.call(_safe.encloses(rect), "%s: %s dentro da tela" % [state, path])
 		_check_text_fits(control, state, path)
 	# Sem sobreposição entre textos e botões da mesma região (fixa ou a mesma rolagem).
 	for i: int in range(controls.size()):
@@ -126,7 +141,7 @@ func check_layout(screen: Control, state: String) -> void:
 	var again := screen.get("_again") as Button
 	var menu := screen.get("_menu") as Button
 	for b: Button in [again, menu]:
-		_check.call(b.is_visible_in_tree() and not b.disabled and SCREEN.encloses(b.get_global_rect())
+		_check.call(b.is_visible_in_tree() and not b.disabled and _safe.encloses(b.get_global_rect())
 				and b.size.y >= 22.0, "%s: botão \"%s\" visível e ativo" % [state, b.text])
 	_check.call(again.text == tr("results.again") and menu.text == tr("results.menu"),
 			"%s: botões com os textos results.again e results.menu" % state)
@@ -361,7 +376,7 @@ func _test_actions() -> void:
 func _open(r: Dictionary, skip: bool = true) -> Control:
 	# Anfitrião com o tamanho e o tema do jogo: a tela sozinha na árvore de testes não os tem.
 	var host := Control.new()
-	host.size = SCREEN.size
+	host.size = _view.size
 	host.theme = ThemeFactory.build()
 	_host.add_child(host)
 	var app := StubApp.new()

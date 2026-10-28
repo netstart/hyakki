@@ -85,6 +85,8 @@ func _ready() -> void:
 	_let_drag_through(_content)
 	add_child(back_button())
 	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 	MenuKit.on_quality_change(self, _refresh_quality)
 	_layout()
 

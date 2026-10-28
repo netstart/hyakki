@@ -75,9 +75,41 @@ Antes de adicionar algo com licença incerta, abra uma issue ou pergunte ao mant
 1. **Testes unitários**: testes rápidos e isolados de unidades de código (scripts GDScript etc.), executados dentro do Godot com a suíte de testes do projeto.
 2. **Testes end-to-end (E2E)**: testes que exercitam fluxos completos do jogo, executados em **ambos**:
    - no **Godot** (editor/exportação de desktop), e
-   - no **emulador Android** emulando o dispositivo **Redmi Note 14 Pro+ 5G** (build Android/APK rodando no emulador com esse perfil de dispositivo).
+   - no **emulador Android**, em **cada uma** das resoluções-alvo abaixo (build Android/APK rodando no emulador com o perfil de cada resolução).
 
-Nenhum PR é mesclado sem que os testes unitários e os testes E2E passem no Godot e no emulador Android com o perfil Redmi Note 14 Pro+ 5G.
+**Resoluções-alvo** (a regra de qualidade é **por resolução**, não por aparelho). O jogo escala a tela
+por um fator inteiro `k = round(altura / 300)` (`scripts/autoload/pixel_scaler.gd`), então cada
+resolução física vira uma **resolução lógica**, e é ela que define o layout. **Toda tela, todo painel
+e todo HUD precisam ser testados em todas as resoluções lógicas da tabela.** Os aparelhos são só
+exemplos e perfis de emulador de cada resolução:
+
+| Resolução lógica | Tela física (paisagem) | Escala | Aparelhos de exemplo | AVD do E2E |
+|---|---|---|---|---|
+| **678x305** | 2712x1220 (20:9) | ×4 | Redmi Note 14 Pro+ 5G | `Redmi_Note_14_Pro_Plus_5G` |
+| **600x270** | 2400x1080 (20:9) | ×4 | Samsung Galaxy M55 5G (SM-M556B/DS), Google Pixel 7 | `Galaxy_M55_5G`, `Pixel_7` |
+| **585x270** | 2340x1080 (19.5:9) | ×4 | Samsung Galaxy A15 / A15 5G (SM-A155F / SM-A156B), Samsung Galaxy A56 5G (SM-A566B), Xiaomi POCO M3, Galaxy S24 Ultra / S25 Ultra em FHD+ (padrão) | `Galaxy_A15` |
+| **624x288** | 3120x1440 (19.5:9) | ×5 | Samsung Galaxy S24 Ultra (SM-S928B) / S25 Ultra (SM-S938B) em QHD+ | `Galaxy_S24_Ultra` |
+| **780x360** | 1560x720 (19.5:9) | ×2 | Samsung Galaxy S24 Ultra / S25 Ultra em HD+ | — (só testes unitários) |
+| **480x270** | 1920x1080 (16:9) | ×4 | telas 16:9 / desktop | — (só testes unitários) |
+
+- **Fonte única:** a lista de resoluções dos testes fica em `tests/device_profiles.gd`; os testes de
+  layout leem dela, sem tamanho fixo no código. Resolução nova = uma linha nesta tabela **e** em
+  `tests/device_profiles.gd`; a partir daí todas as telas passam a ser testadas nela.
+- **Testes unitários de layout:** em **cada** resolução da tabela, com a área segura de um furo de
+  câmera **dos dois lados** (paisagem para a esquerda e para a direita), nenhum botão, texto ou elemento
+  de toque pode ficar fora da tela, cortado, sobreposto ou dentro do recorte.
+- **E2E:** `tools/run_e2e.ps1` (ou `Testes E2E no emulador.bat`) roda o roteiro nos AVDs da tabela
+  (criados por `tools/create_test_avds.ps1`, perfis em `tools/test_devices.ps1`), um depois do outro, com
+  o recorte de câmera emulado do Android ligado (`com.android.internal.display.cutout.emulation.hole`),
+  e só passa se passar em todos.
+- **Emulador travado:** a execução no emulador pode travar eventualmente (boot congelado ou `adb`
+  sem resposta). Espere o emulador responder por até **8 minutos**; se não responder, desligue-o à força
+  e reinicie-o, e retome o roteiro naquele AVD. Um travamento não conta como falha do teste, mas um
+  AVD que não fica pronto nem depois do reinício reprova o E2E.
+
+Nenhum PR é mesclado e nenhuma versão é lançada sem que os testes unitários (inclusive os de layout em
+todas as resoluções-alvo) e os testes E2E passem no Godot e no emulador Android em todas as
+resoluções-alvo.
 ## Versionamento (SemVer, obrigatório em todo commit)
 
 A versão do jogo segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) no formato `MAIOR.MENOR.CORREÇÃO` (ex.: `1.4.12`).

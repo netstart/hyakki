@@ -2,10 +2,11 @@ extends Node
 ## Roda tests/menus_layout_tests.gd sozinho (Guardiões, Opções, Diário e botão "voltar"), com
 ## os arquivos de save e opções próprios dos testes (o perfil do jogador não é tocado):
 ##   godot --headless --path . res://tests/menus_layout_tests.tscn
-## Com `-- --shots=<pasta>` (sem --headless) grava capturas das três telas em 678x305 e
-## 480x270, nos níveis gráficos Baixa e Alta, para conferir o visual.
+## Com `-- --shots=<pasta>` (sem --headless) grava capturas das três telas em cada resolução de
+## tests/device_profiles.gd, nos níveis gráficos Baixa e Alta, para conferir o visual.
 
 const MenusLayoutTests := preload("res://tests/menus_layout_tests.gd")
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -65,7 +66,7 @@ func _screenshots(dir: String) -> void:
 		for level: int in [GfxQuality.LOW, GfxQuality.HIGH]:
 			GfxQuality.set_override(level)
 			var tag := "low" if level == GfxQuality.LOW else "high"
-			for view: Vector2 in [Vector2(678, 305), Vector2(480, 270)]:
+			for view: Vector2 in DeviceProfiles.views():
 				for variant: String in variants:
 					var screen_name := variant.get_slice(":", 0)
 					if only != "" and screen_name != only:

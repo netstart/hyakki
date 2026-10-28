@@ -3,16 +3,26 @@ extends Screen
 ## Loja, Diário, Opções e Créditos), saldo de ryō no alto à direita e o bloco de ação no
 ## canto inferior direito (Desafio Diário, Jogar e, com partida suspensa, Continuar).
 ## O centro fica livre para o torii e a guardiã do fundo (MenuBackdrop).
+## Com recorte de câmera (MenuKit.safe_insets), título, menu e versão andam para dentro pela
+## esquerda e saldo e bloco de ação pela direita (_layout, a cada exibição,
+## redimensionamento e troca do lado do furo).
 
 const JA_FONT := "res://assets/fonts/fusion_pixel_12_ja.woff2"
 const COIN_SHEET := "res://assets/art/items/treasure/Coin2.png"
 const ROW_SIZE := Vector2(200, 30)
 const ROW_GAP := 1.0
 const MENU_AT := Vector2(14, 90)
+const TITLE_AT := Vector2(18, 8)
+const VERSION_X := 18.0
+const SHADE_WIDTH := 300.0
+const CHIP_MARGIN := 14.0
+const CTA_MARGIN := 16.0
 const CTA_WIDTH := 190.0
 const PRIMARY_HEIGHT := 46.0
 const CARD_HEIGHT := 30.0
 const CTA_GAP := 6.0
+## Folga mínima entre a coluna de menu e o bloco de ação.
+const COLUMN_GAP := 8.0
 const VERMILION := Color("c0392b")
 const SEAL_RED := Color("b3261e")
 const SHADOW := Color(0.08, 0.03, 0.03)
@@ -26,6 +36,10 @@ var _continue: Button
 var _play: Button
 var _title: Label
 var _title_box: Control
+var _menu: Control
+var _shade: Control
+var _version: Label
+var _cta_anchor: Control
 var _chip: Control
 var _shop_badge: Control
 var _daily_done: Control
@@ -35,6 +49,9 @@ var _glow: TextureRect
 var _rows: Array[Button] = []
 var _row_base: Array[Vector2] = []
 var _intro: Tween
+var _divider: ColorRect
+## Largura atual do bloco de ação (cresce com o texto do idioma).
+var _cta_width := CTA_WIDTH
 
 
 func _ready() -> void:
@@ -44,9 +61,10 @@ func _ready() -> void:
 	shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	shade.stretch_mode = TextureRect.STRETCH_SCALE
 	shade.set_anchors_preset(Control.PRESET_LEFT_WIDE)
-	shade.offset_right = 300
+	shade.offset_right = SHADE_WIDTH
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(shade)
+	_shade = shade
 	_build_title()
 	_build_menu()
 	_build_chip()
@@ -55,10 +73,15 @@ func _ready() -> void:
 	version.add_theme_color_override("font_color", Color(MUTED, 0.45))
 	version.add_theme_constant_override("outline_size", 0)
 	version.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	version.offset_left = 18
+	version.offset_left = VERSION_X
 	version.offset_top = -20
 	version.offset_bottom = -4
 	add_child(version)
+	_version = version
+	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
+	_layout()
 	_start_loops()
 
 
@@ -70,6 +93,7 @@ func on_show() -> void:
 	_daily_done.visible = done
 	_daily_new.visible = not done
 	_daily.self_modulate = Color(1, 1, 1, 0.72) if done else Color.WHITE
+	_layout()
 	_layout_cta()
 	_play_intro()
 	_primary().grab_focus()
@@ -85,9 +109,41 @@ func _primary() -> Button:
 	return _continue if _continue.visible else _play
 
 
+## Afasta das bordas pela área segura (furo da câmera): à esquerda o título, o menu, a versão
+## e a sombra que os acompanha; à direita o saldo e o bloco de ação.
+func _layout() -> void:
+	if _cta_anchor == null:
+		return
+	var inset := MenuKit.safe_insets(self)
+	_title_box.position.x = _title_x()
+	_menu.position = MENU_AT + Vector2(inset.x, 0)
+	_shade.offset_right = SHADE_WIDTH + inset.x
+	_version.offset_left = VERSION_X + inset.x
+	_chip.offset_right = -CHIP_MARGIN - inset.y
+	_cta_anchor.offset_left = -CTA_MARGIN - inset.y - CTA_WIDTH
+	_cta_anchor.offset_right = -CTA_MARGIN - inset.y
+	_fit_rows()
+
+
+## Linhas do menu com ROW_SIZE.x, ou mais estreitas (até o texto mais largo) quando o bloco de
+## ação chega perto: idioma longo numa tela estreita com recorte da câmera.
+func _fit_rows() -> void:
+	var cta_left := size.x - CTA_MARGIN - MenuKit.safe_insets(self).y - _cta_width
+	var width := minf(ROW_SIZE.x, cta_left - COLUMN_GAP - _menu.position.x)
+	for row: Button in _rows:
+		width = maxf(width, ceilf(row.get_minimum_size().x))
+	width = minf(width, ROW_SIZE.x)
+	for row: Button in _rows:
+		row.size.x = width
+	_divider.size.x = width - 40.0
+
+func _title_x() -> float:
+	return TITLE_AT.x + MenuKit.safe_insets(self).x
+
+
 func _build_title() -> void:
 	_title_box = Control.new()
-	_title_box.position = Vector2(18, 8)
+	_title_box.position = TITLE_AT
 	_title_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_title_box)
 	_title = label("HYAKKI", 48)
@@ -151,6 +207,7 @@ func _build_menu() -> void:
 	menu.position = MENU_AT
 	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(menu)
+	_menu = menu
 	var items := [
 		["res://assets/art/items/object/Gourd.png", tr("title.sanctuary"), func() -> void: app.go(&"sanctuary")],
 		["res://assets/art/items/object/MoneyBag.png", tr("title.shop"), func() -> void: app.go(&"shop")],
@@ -167,6 +224,7 @@ func _build_menu() -> void:
 			divider.position = Vector2(12, y + 2)
 			divider.size = Vector2(ROW_SIZE.x - 40, 1)
 			menu.add_child(divider)
+			_divider = divider
 			y += 5
 		var row := _menu_item(item[0], item[1], item[2])
 		row.position = Vector2(0, y)
@@ -194,7 +252,7 @@ func _build_menu() -> void:
 
 ## Linha do menu: fundo transparente, ícone 16 px, faixa e marcador ao destacar.
 func _menu_item(icon: Variant, text: String, action: Callable) -> Button:
-	var b := button(text, action, ROW_SIZE)
+	var b := button(text, action, Vector2(0, ROW_SIZE.y))
 	b.size = ROW_SIZE
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	for state: String in ["normal", "hover", "focus", "disabled"]:
@@ -272,7 +330,7 @@ func _build_chip() -> void:
 	chip.add_theme_stylebox_override("panel", box)
 	chip.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	chip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	chip.offset_right = -14
+	chip.offset_right = -CHIP_MARGIN
 	chip.offset_top = 10
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var row := HBoxContainer.new()
@@ -297,12 +355,13 @@ func _build_chip() -> void:
 func _build_cta() -> void:
 	var anchor := Control.new()
 	anchor.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	anchor.offset_left = -16 - CTA_WIDTH
-	anchor.offset_right = -16
+	anchor.offset_left = -CTA_MARGIN - CTA_WIDTH
+	anchor.offset_right = -CTA_MARGIN
 	anchor.offset_top = -14
 	anchor.offset_bottom = -14
 	anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(anchor)
+	_cta_anchor = anchor
 	_cta = Control.new()
 	_cta.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	anchor.add_child(_cta)
@@ -389,6 +448,8 @@ func _layout_cta() -> void:
 		b.size = b.custom_minimum_size
 		b.position = Vector2(CTA_WIDTH - width, y)
 		y -= CTA_GAP
+	_cta_width = width
+	_fit_rows()
 	var main := _primary()
 	_glow.position = main.position - Vector2(22, 14)
 	_glow.size = main.size + Vector2(44, 28)
@@ -471,12 +532,12 @@ func _flat(bg: Color, border: Color, width: int, shift: int) -> StyleBoxFlat:
 func _play_intro() -> void:
 	if _intro and _intro.is_valid():
 		_intro.kill()
-	_title_box.position = Vector2(18, 8)
+	_title_box.position = Vector2(_title_x(), TITLE_AT.y)
 	_cta.position = Vector2.ZERO
 	for i: int in _rows.size():
 		_rows[i].position = _row_base[i]
 	_intro = create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_intro.tween_property(_title_box, "position:y", 8.0, 0.3).from(2.0)
+	_intro.tween_property(_title_box, "position:y", TITLE_AT.y, 0.3).from(TITLE_AT.y - 6.0)
 	_intro.tween_property(_title_box, "modulate:a", 1.0, 0.3).from(0.0)
 	_intro.tween_property(_chip, "modulate:a", 1.0, 0.3).from(0.0)
 	for i: int in _rows.size():

@@ -1,7 +1,8 @@
 extends Screen
 ## Resultados (plano 7.4 e 15.5): a "tela de escolha" depois da morte ou do amanhecer.
 ##
-## Três colunas em 678x305, sem nada cortado:
+## Três colunas proporcionais à tela (678x305 é a referência), fora do recorte da câmera e sem
+## nada cortado:
 ## - esquerda: retrato do herói (apagado e riscado de tinta vermelha na derrota, aceso com
 ##   brilho no amanhecer), título, fase/modo/lua, selo de recorde e o golpe final;
 ## - centro: 4 blocos de números (tempo, nível, abates, ryō) que contam do zero e o painel de
@@ -12,9 +13,11 @@ extends Screen
 ## A entrada é escalonada (~0,6 s) e os botões só aceitam toque depois de INPUT_GUARD, para o
 ## toque que fechou o aviso de morte não cair num botão. "Reduzir flashes" desliga os pulsos.
 
-const LEFT := Rect2(10, 10, 196, 285)
-const CENTER := Rect2(214, 10, 258, 285)
-const RIGHT := Rect2(480, 10, 188, 285)
+## Margem nas bordas e espaço entre as colunas; as colunas dividem a largura útil (já sem a área
+## segura) nestas proporções, que em 678x305 dão as larguras 196, 258 e 188 de sempre.
+const MARGIN := 10.0
+const GAP := 8.0
+const SHARES: Array[float] = [196.0, 258.0, 188.0]
 ## Entrada: atraso de cada coluna, duração do deslize e deslocamento inicial.
 const COLUMN_DELAY: Array[float] = [0.0, 0.12, 0.24]
 const COLUMN_TIME := 0.36
@@ -28,6 +31,8 @@ const INTRO_END := 1.4
 ## Tempo em que os botões ignoram toques depois que a tela aparece.
 const INPUT_GUARD := 0.4
 const PORTRAIT := 76
+## Largura mínima da coluna da esquerda (retrato e textos quebrados) ao dividir telas estreitas.
+const LEFT_MIN := 112.0
 const TILE_ICON := 24
 const ROW_HEIGHT := 33
 const PIP := Vector2(4, 4)
@@ -65,6 +70,8 @@ var _calm: bool = false
 var _t: float = 0.0
 var _guard: float = 0.0
 var _columns: Array[Control] = []
+## Retângulos das colunas (esquerda, centro, direita) para o tamanho e a área segura atuais.
+var _rects: Array[Rect2] = []
 var _portrait: TextureRect
 var _portrait_fx: Control
 var _title: Label
@@ -106,12 +113,17 @@ var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	clip_contents = true
+	_layout()
 	_columns.append(_build_left())
 	_columns.append(_build_center())
 	_columns.append(_build_right())
 	for i: int in range(_columns.size()):
 		add_child(_columns[i])
 	_rng.seed = 7
+	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
+	_layout()
 
 
 func on_show() -> void:
@@ -121,6 +133,7 @@ func on_show() -> void:
 	if is_same(r, _result):
 		# Mesmo resultado (ex.: depois de dobrar o ryō): só atualiza, sem refazer a entrada.
 		_refresh()
+		_layout()
 		return
 	_result = r
 	_victory = bool(r["victory"])
@@ -131,6 +144,7 @@ func on_show() -> void:
 	_fill_weapons(r.get("weapons", []))
 	_fill_right(r)
 	_style_panels()
+	_layout()
 	_seed_motes()
 	_t = 0.0
 	_guard = INPUT_GUARD
@@ -196,7 +210,99 @@ func _apply_timeline() -> void:
 
 
 func _column_rect(i: int) -> Rect2:
-	return [LEFT, CENTER, RIGHT][i]
+	return _rects[i]
+
+
+# --- Layout ---------------------------------------------------------------------------
+
+## Divide a largura útil (tela menos a área segura e as margens) entre as três colunas e
+## ajusta o que depende do espaço. Em telas estreitas ou baixas, compacta por etapas e só o
+## necessário: a direita e o centro recebem a largura mínima dos botões e dos blocos (tirada do
+## centro e, por último, da esquerda); sem espaço, "Jogar de novo" cai para a fonte menor e
+## depois os blocos de números escondem o ícone; sem altura, o título cai para a fonte menor e,
+## por fim, o retrato fica em escala 1.
+func _layout() -> void:
+	var view := _area()
+	var insets := MenuKit.safe_insets(self)
+	var height := view.y - MARGIN * 2.0
+	var widths := _shares(view.x - insets.x - insets.y - MARGIN * 2.0 - GAP * (SHARES.size() - 1))
+	if not _columns.is_empty():
+		var base := widths.duplicate()
+		for step: Array in [[24, true], [12, true], [12, false]]:
+			widths = base.duplicate()
+			_again.add_theme_font_size_override("font_size", step[0])
+			_set_tile_icons(step[1])
+			if _fit_widths(widths):
+				break
+		_fit_left(widths[0], height)
+		_no_weapons.custom_minimum_size.x = widths[1] - 20.0
+	_rects.clear()
+	var x := insets.x + MARGIN
+	for w: float in widths:
+		_rects.append(Rect2(x, MARGIN, w, height))
+		x += w + GAP
+	if not _columns.is_empty():
+		_apply_timeline()
+
+
+## Larguras proporcionais (SHARES) da largura útil, em pixels inteiros.
+static func _shares(width: float) -> Array[float]:
+	var total := 0.0
+	for share: float in SHARES:
+		total += share
+	var out: Array[float] = []
+	for share: float in SHARES:
+		out.append(floorf(width * share / total))
+	return out
+
+
+## Garante o mínimo do centro e da direita tirando a diferença das outras colunas (do centro
+## antes da esquerda). Falso se não couber.
+func _fit_widths(widths: Array[float]) -> bool:
+	_no_weapons.custom_minimum_size.x = 0.0
+	var mins: Array[float] = [LEFT_MIN, ceilf(_columns[1].get_combined_minimum_size().x),
+			ceilf(_columns[2].get_combined_minimum_size().x)]
+	for i: int in [2, 1]:
+		for j: int in ([1, 0] if i == 2 else [0]):
+			var need := mins[i] - widths[i]
+			if need <= 0.0:
+				break
+			var take := minf(need, maxf(widths[j] - mins[j], 0.0))
+			widths[j] -= take
+			widths[i] += take
+	for i: int in range(widths.size()):
+		if widths[i] < mins[i]:
+			return false
+	return true
+
+
+## Ícones dos blocos de números (escondidos quando o centro precisa da largura).
+func _set_tile_icons(on: bool) -> void:
+	for tile: Dictionary in _tiles:
+		(tile["icon"] as Control).visible = on
+
+
+## Quebra os textos da esquerda na largura da coluna e reduz título e retrato se não couber.
+func _fit_left(width: float, height: float) -> void:
+	for step: int in range(3):
+		_title.add_theme_font_size_override("font_size", 24 if step == 0 else 12)
+		_set_portrait(PORTRAIT if step < 2 else PORTRAIT / 2)
+		var cause_w := minf(_text_width(_cause.text, 12), width - (23.0 if _cause_icon.visible else 0.0))
+		_cause.custom_minimum_size.x = cause_w
+		# A altura dos textos quebrados vale para a largura atual: mede já na largura da coluna
+		# (e invalida o mínimo guardado, que o rótulo não refaz sozinho ao mudar de tamanho).
+		for l: Label in [_title, _subtitle, _taken, _cause]:
+			if l != _cause:
+				l.custom_minimum_size.x = width
+			l.size = Vector2(l.custom_minimum_size.x, l.size.y)
+			l.update_minimum_size()
+		if _columns[0].get_combined_minimum_size().y <= height:
+			return
+
+
+func _set_portrait(side: int) -> void:
+	_portrait_fx.custom_minimum_size = Vector2(side + 8, side + 8)
+	_portrait.size = Vector2(side, side)
 
 
 static func _ease(k: float) -> float:
@@ -214,7 +320,7 @@ func _set_buttons_armed(armed: bool) -> void:
 func _build_left() -> Control:
 	var col := VBoxContainer.new()
 	col.name = "Left"
-	col.size = LEFT.size
+	col.size = _rects[0].size
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 4)
 	var holder := CenterContainer.new()
@@ -241,11 +347,11 @@ func _build_left() -> Control:
 	_portrait_fx.set_meta("slash", slash)
 	_title = title_label("")
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_title.custom_minimum_size = Vector2(LEFT.size.x, 0)
+	_title.custom_minimum_size = Vector2(_rects[0].size.x, 0)
 	col.add_child(_title)
 	_subtitle = label("", 12, HORIZONTAL_ALIGNMENT_CENTER)
 	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_subtitle.custom_minimum_size = Vector2(LEFT.size.x, 0)
+	_subtitle.custom_minimum_size = Vector2(_rects[0].size.x, 0)
 	_subtitle.add_theme_color_override("font_color", DIM)
 	col.add_child(_subtitle)
 	var badge_row := CenterContainer.new()
@@ -269,7 +375,7 @@ func _build_left() -> Control:
 	_cause_row.add_child(_cause)
 	_taken = label("", 12, HORIZONTAL_ALIGNMENT_CENTER)
 	_taken.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_taken.custom_minimum_size = Vector2(LEFT.size.x, 0)
+	_taken.custom_minimum_size = Vector2(_rects[0].size.x, 0)
 	_taken.add_theme_color_override("font_color", DIM)
 	col.add_child(_taken)
 	return col
@@ -309,9 +415,7 @@ func _fill_left(r: Dictionary) -> void:
 	var icon := source_icon(source)
 	_cause_icon.texture = load(icon) as Texture2D if icon != "" else null
 	_cause_icon.visible = icon != ""
-	# O texto do golpe quebra dentro da coluna, descontando o ícone.
-	_cause.custom_minimum_size = Vector2(minf(_text_width(_cause.text, 12),
-			LEFT.size.x - (23.0 if _cause_icon.visible else 0.0)), 0)
+	# O texto do golpe quebra dentro da coluna, descontando o ícone (largura no _layout).
 	_taken.visible = not d.is_empty()
 	_taken.text = tr("results.taken") % Locale.format_number(roundi(float(d.get("total", 0.0))))
 
@@ -415,7 +519,7 @@ func _draw_slash(on: Control) -> void:
 func _build_center() -> Control:
 	var col := VBoxContainer.new()
 	col.name = "Center"
-	col.size = CENTER.size
+	col.size = _rects[1].size
 	col.add_theme_constant_override("separation", 6)
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -458,7 +562,7 @@ func _build_center() -> Control:
 	_weapon_scroll.add_child(_weapon_list)
 	_no_weapons = label(tr("results.no_weapons"), 12, HORIZONTAL_ALIGNMENT_CENTER)
 	_no_weapons.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_no_weapons.custom_minimum_size = Vector2(CENTER.size.x - 20, 0)
+	_no_weapons.custom_minimum_size = Vector2(_rects[1].size.x - 20.0, 0)
 	_no_weapons.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_no_weapons.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_no_weapons.add_theme_color_override("font_color", DIM)
@@ -503,7 +607,7 @@ func _make_tile(kind: String, title: String) -> PanelContainer:
 	value.add_theme_color_override("font_color", ThemeFactory.ACCENT if kind == "ryo" else ThemeFactory.TEXT)
 	texts.add_child(value)
 	_tiles.append({"kind": kind, "value": value, "from": 0.0, "to": 0.0,
-			"start": 0.0, "ticked": false, "tile": tile})
+			"start": 0.0, "ticked": false, "tile": tile, "icon": icon})
 	return tile
 
 
@@ -519,10 +623,18 @@ func _fill_tiles(r: Dictionary) -> void:
 		tile["to"] = values[tile["kind"]]
 		tile["start"] = COUNT_START + COUNT_STAGGER * i
 		tile["ticked"] = false
-		var value := tile["value"] as Label
-		# Números muito longos (ryō de Noite Sem Fim) caem para a fonte menor e cabem no bloco.
-		var final := _format_stat(String(tile["kind"]), float(tile["to"]))
-		value.add_theme_font_size_override("font_size", 24 if _text_width(final, 24) <= 88.0 else 12)
+		_size_value(tile)
+
+
+## Fonte e largura do número pelo valor final: o bloco não muda de largura durante a contagem
+## (e o _layout mede o centro já com ela). Números muito longos (ryō de Noite Sem Fim) caem
+## para a fonte menor e cabem no bloco.
+func _size_value(tile: Dictionary) -> void:
+	var value := tile["value"] as Label
+	var final := _format_stat(String(tile["kind"]), float(tile["to"]))
+	var font := 24 if _text_width(final, 24) <= 88.0 else 12
+	value.add_theme_font_size_override("font_size", font)
+	value.custom_minimum_size.x = _text_width(final, font) - 6.0
 
 
 func _format_stat(kind: String, value: float) -> String:
@@ -665,7 +777,7 @@ func _decimal(value: float) -> String:
 func _build_right() -> Control:
 	var col := VBoxContainer.new()
 	col.name = "Right"
-	col.size = RIGHT.size
+	col.size = _rects[2].size
 	col.add_theme_constant_override("separation", 6)
 	_info_scroll = ScrollContainer.new()
 	_info_scroll.name = "Info"
@@ -736,6 +848,8 @@ func _build_right() -> Control:
 	col.add_child(_again)
 	_double = button(double_text(), _on_double, Vector2(0, 22))
 	_double.name = "Double"
+	# Em colunas estreitas o texto do anúncio quebra em duas linhas em vez de alargar a coluna.
+	_double.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_double.icon = _small_coin()
 	_double.expand_icon = false
 	col.add_child(_double)
@@ -811,6 +925,7 @@ func _refresh() -> void:
 			tile["from"] = shown
 			tile["to"] = earned
 			tile["start"] = _t
+			_size_value(tile)
 	_doubled_pill.visible = bool(_result.get("doubled", false))
 	_double.text = double_text()
 	_double.visible = int(_result.get("ryo_earned", 0)) > 0 and not bool(_result.get("doubled", false)) \
@@ -910,7 +1025,6 @@ func _style_panels() -> void:
 	_again.add_theme_stylebox_override("disabled", _again_style)
 	_again.add_theme_stylebox_override("focus", _flat(Color(0, 0, 0, 0), Color.WHITE, 1, 6))
 	_again.add_theme_color_override("font_disabled_color", ThemeFactory.TEXT)
-	_again.add_theme_font_size_override("font_size", 24 if _text_width(_again.text, 24) <= RIGHT.size.x - 16 else 12)
 	var dark := _flat(Color(0, 0, 0, 0.45), GOLD.darkened(0.2), 1, 6)
 	_double.add_theme_stylebox_override("normal", dark)
 	_double.add_theme_stylebox_override("hover", _flat(Color(0, 0, 0, 0.6), ThemeFactory.ACCENT, 1, 6))
@@ -1037,7 +1151,7 @@ func _draw() -> void:
 
 
 func _draw_dawn(area: Vector2, horizon: float) -> void:
-	var sun := Vector2(LEFT.get_center().x, horizon + 6.0)
+	var sun := Vector2(_rects[0].get_center().x, horizon + 6.0)
 	for k: int in range(4):
 		draw_circle(sun, 70.0 - k * 14.0, Color(1.0, 0.85, 0.5, 0.08 + k * 0.05))
 	draw_circle(sun, 22.0, Color("ffe7a8"))

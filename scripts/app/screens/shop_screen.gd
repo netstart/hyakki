@@ -4,17 +4,20 @@ extends Screen
 ## único para a próxima partida. No fim da rolagem ficam a compra "Remover anúncio de
 ## abertura" e "Restaurar compras" (17.7).
 ##
-## Layout (viewport 678x305): fixos só o voltar, o título e a pílula do saldo de ryō no topo.
-## Todo o resto rola num ScrollContainer vertical que vai até a borda inferior, em seções
-## com cabeçalho (título, filete e subtítulo): Oferendas (vagas por anúncio), Reforços
-## (itens por ryō) e Apoie o jogo (compra e restauração, por último).
+## Layout (referência 678x305; vale para qualquer tela lógica, ver tests/device_profiles.gd):
+## fixos só o voltar, o título e a pílula do saldo de ryō no topo. Todo o resto rola num
+## ScrollContainer vertical que vai até a borda inferior, em seções com cabeçalho (título,
+## filete e subtítulo): Oferendas (vagas por anúncio), Reforços (itens por ryō) e Apoie o
+## jogo (compra e restauração, por último). Tudo respeita a área segura (furo da câmera de
+## MenuKit.safe_insets) e se refaz quando a tela muda de tamanho ou o recorte troca de lado.
 ##
-## Cartões em grade de 6 colunas de largura fixa. Cada texto fica numa caixa de altura fixa
-## calculada no idioma atual com a quebra de linha da largura real (TextParagraph): a caixa
-## cabe o texto mais longo da linha de cartões, então os cartões de uma linha têm a mesma
-## altura, sem buracos e sem reticências. Os ícones ficam num poço de tamanho único, com
-## escala inteira e corte (nunca saem do cartão). O status vira um aviso flutuante (toast)
-## sobre a parte de baixo, que some sozinho.
+## Cartões em grade: 6 colunas de até CARD_W (em 678x305, a linha única de sempre); se a
+## largura útil não dá MIN_CARD_W por cartão, vira 3 colunas (2 linhas) de até WIDE_CARD_W.
+## Cada texto fica numa caixa de altura fixa calculada no idioma atual com a quebra de linha
+## da largura real (TextParagraph): a caixa cabe o texto mais longo da grade, então todos os
+## cartões de uma grade têm a mesma altura, sem buracos e sem reticências. Os ícones ficam
+## num poço de tamanho único, com escala inteira e corte (nunca saem do cartão). O status
+## vira um aviso flutuante (toast) sobre a parte de baixo, que some sozinho.
 ##
 ## Os cartões usam MOUSE_FILTER_PASS para o arrasto chegar ao ScrollContainer, e um toque
 ## que virou arrasto não compra nem resgata nada.
@@ -22,7 +25,13 @@ extends Screen
 ## Sem anúncios (AdsManager.ads_enabled = false): as vagas viram presentes ("Receber grátis",
 ## com a mesma espera de 6 h) e a seção "Apoie o jogo" (compra e restauração) some.
 
+## Largura máxima do cartão na grade de 6 colunas e a mínima para ela ainda valer; abaixo
+## disso a grade vira 3 colunas, com cartões de até WIDE_CARD_W.
 const CARD_W := 103.0
+const MIN_CARD_W := 84.0
+const WIDE_CARD_W := 128.0
+const COLUMNS := 6
+const NARROW_COLUMNS := 3
 const GAP := 6.0
 const PAD := 4.0
 const SEP := 3.0
@@ -37,6 +46,7 @@ const CARD_TEXT_SIZE := 10
 const CHIP_MARGIN_X := 3.0
 const CHIP_MARGIN_Y := 1.0
 const PILL_HEIGHT := 16.0
+const PURCHASE_SEP := 8.0
 const SIDE_MARGIN := 10.0
 const SCROLL_TOP := 42.0
 const SCROLL_RIGHT := 4.0
@@ -68,13 +78,22 @@ const LACQUER := Color("8f2333")
 const OWNED := Color("2c4a2e")
 
 var _scroll: ScrollContainer
-var _row: HBoxContainer
-var _coin_row: HBoxContainer
+var _title: Label
+var _rule_line: ColorRect
+var _balance: PanelContainer
+var _row: GridContainer
+var _coin_row: GridContainer
+## Grade atual (colunas, largura do cartão), o recorte da câmera (esquerda, direita) e a
+## largura da tela do último layout.
+var _grid := Vector2(COLUMNS, CARD_W)
+var _insets := Vector2(-1, -1)
+var _laid_width := -1.0
 var _status: Label
 var _toast: PanelContainer
 var _ryo: Label
 var _balance_coin: TextureRect
 var _coin_time: float = 0.0
+var _purchase: BoxContainer
 var _buy: Button
 var _restore: Button
 ## Subtítulo das Oferendas (texto de anúncio ou de presente) e os nós da seção de compra.
@@ -94,31 +113,26 @@ var _toast_left: float = 0.0
 
 func _ready() -> void:
 	add_child(back_button())
-	var title := title_label(tr("shop.title"))
-	title.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	title.offset_left = -150
-	title.offset_right = 150
-	title.offset_top = 6
-	title.clip_text = true
-	add_child(title)
-	add_child(_balance_pill())
+	_title = title_label(tr("shop.title"))
+	_title.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_title.offset_top = 6
+	_title.clip_text = true
+	add_child(_title)
+	_balance = _balance_pill()
+	add_child(_balance)
 	# Filete fino separando o topo fixo do conteúdo que rola.
-	var rule := ColorRect.new()
-	rule.color = Color(ThemeFactory.ACCENT, 0.22)
-	rule.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	rule.offset_left = SIDE_MARGIN
-	rule.offset_right = -SIDE_MARGIN
-	rule.offset_top = SCROLL_TOP - 3
-	rule.offset_bottom = SCROLL_TOP - 2
-	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(rule)
+	_rule_line = ColorRect.new()
+	_rule_line.color = Color(ThemeFactory.ACCENT, 0.22)
+	_rule_line.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_rule_line.offset_top = SCROLL_TOP - 3
+	_rule_line.offset_bottom = SCROLL_TOP - 2
+	_rule_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_rule_line)
 
 	# Todo o resto rola, do topo até a borda inferior.
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"
 	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_scroll.offset_left = SIDE_MARGIN
-	_scroll.offset_right = -SCROLL_RIGHT
 	_scroll.offset_top = SCROLL_TOP
 	_scroll.offset_bottom = 0
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -149,6 +163,10 @@ func _ready() -> void:
 	col.add_child(_spacer(10))
 
 	_build_toast()
+	_apply_frame(MenuKit.safe_insets(self))
+	resized.connect(_relayout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _relayout)
 	PurchaseManager.purchase_finished.connect(func(_p: String, ok: bool) -> void:
 		var pending := bool(SaveManager.data["purchases"].get("pending", false))
 		_show_status(tr("shop.thanks") if ok else (tr("shop.pending") if pending else tr("shop.failed")))
@@ -165,7 +183,14 @@ func on_show() -> void:
 	_offer_hint.text = tr("shop.hint") if AdsManager.ads_enabled else tr("shop.hint_free")
 	for node: Control in _support:
 		node.visible = PurchaseManager.available()
-	var text_w := CARD_W - 2 * PAD
+	_insets = MenuKit.safe_insets(self)
+	_laid_width = _screen_width()
+	_apply_frame(_insets)
+	_grid = _grid_for(_insets)
+	var card_w := _grid.y
+	_row.columns = int(_grid.x)
+	_coin_row.columns = int(_grid.x)
+	var text_w := card_w - 2 * PAD
 	var chip_w := text_w - 2 * CHIP_MARGIN_X
 	# Vagas por anúncio: a caixa do nome cabe o nome mais longo da linha; a do estado, o
 	# mais longo entre "ver anúncio", "sem anúncios" e o cronômetro.
@@ -180,7 +205,7 @@ func on_show() -> void:
 	var slot_h := _card_height([_text_height(name_lines), _text_height(state_lines) + 2 * CHIP_MARGIN_Y])
 	for id: StringName in ShopManager.ad_slots():
 		var data: Dictionary = DB.shop[id]
-		var b := _card_button(slot_h, _claim.bind(id))
+		var b := _card_button(Vector2(card_w, slot_h), _claim.bind(id))
 		b.name = "Slot_%s" % id
 		_row.add_child(b)
 		var inner := _card_inner(b)
@@ -202,7 +227,7 @@ func on_show() -> void:
 			_text_height(effect_lines) + 2 * CHIP_MARGIN_Y, PILL_HEIGHT])
 	for id: StringName in ShopManager.coin_items():
 		var data: Dictionary = DB.shop[id]
-		var b := _card_button(coin_h, _buy_coin.bind(id))
+		var b := _card_button(Vector2(card_w, coin_h), _buy_coin.bind(id))
 		b.name = "Coin_%s" % id
 		_coin_row.add_child(b)
 		var inner := _card_inner(b)
@@ -235,6 +260,9 @@ func on_show() -> void:
 	var owned := PurchaseManager.owns()
 	_buy.text = tr("shop.owned") if owned else tr("shop.remove_ad") % PurchaseManager.price_text()
 	_buy.disabled = owned
+	# Tela estreita: "Restaurar compras" desce para baixo da compra em vez de alargar a linha.
+	var row_w := _buy.get_combined_minimum_size().x + PURCHASE_SEP + _restore.get_combined_minimum_size().x
+	_purchase.vertical = row_w > _content_width(_insets)
 
 
 func _process(delta: float) -> void:
@@ -307,6 +335,55 @@ func _update_coin_cards() -> void:
 			price.remove_theme_constant_override("outline_size")
 			pill.add_theme_stylebox_override("panel",
 					_flat(Color(0.05, 0.02, 0.03, 0.7), Color(SHORT if short else ThemeFactory.ACCENT, 0.5), 1, 6))
+
+
+# --- Layout pela tela e pela área segura ----------------------------------------------
+
+## Largura lógica da tela (antes do primeiro layout, a do pai).
+func _screen_width() -> float:
+	return size.x if size.x > 0.0 else get_parent_area_size().x
+
+
+## Largura útil do conteúdo rolável (sem o recorte, as margens e a barra de rolagem).
+func _content_width(insets: Vector2) -> float:
+	return _screen_width() - insets.x - insets.y - SIDE_MARGIN - SCROLL_RIGHT - BAR_WIDTH
+
+
+## Grade dos cartões para a largura útil da área rolável: (colunas, largura do cartão).
+func _grid_for(insets: Vector2) -> Vector2:
+	var avail := _content_width(insets)
+	var wide := floorf((avail - (COLUMNS - 1) * GAP) / COLUMNS)
+	if wide >= MIN_CARD_W:
+		return Vector2(COLUMNS, minf(CARD_W, wide))
+	var narrow := floorf((avail - (NARROW_COLUMNS - 1) * GAP) / NARROW_COLUMNS)
+	return Vector2(NARROW_COLUMNS, minf(WIDE_CARD_W, narrow))
+
+
+## Fixos, filete, área rolável e aviso afastados do recorte da câmera (esquerda, direita).
+func _apply_frame(insets: Vector2) -> void:
+	var shift := (insets.x - insets.y) / 2
+	_title.offset_left = -150 + shift
+	_title.offset_right = 150 + shift
+	_balance.offset_left = -SIDE_MARGIN - insets.y
+	_balance.offset_right = -SIDE_MARGIN - insets.y
+	_rule_line.offset_left = SIDE_MARGIN + insets.x
+	_rule_line.offset_right = -SIDE_MARGIN - insets.y
+	_scroll.offset_left = SIDE_MARGIN + insets.x
+	_scroll.offset_right = -SCROLL_RIGHT - insets.y
+	var toast_w := minf(TOAST_WIDTH, _screen_width() - insets.x - insets.y - 2 * SIDE_MARGIN)
+	_toast.offset_left = shift - toast_w / 2
+	_toast.offset_right = shift + toast_w / 2
+	_status.custom_minimum_size = Vector2(toast_w - 20, 0)
+
+
+## A tela mudou de tamanho ou o recorte trocou de lado (giro de 180°): refaz o layout
+## (fixos, grade e linha de compra) só quando algo mudou de fato.
+func _relayout() -> void:
+	if _cards.is_empty():
+		return
+	var insets := MenuKit.safe_insets(self)
+	if insets != _insets or not is_equal_approx(_screen_width(), _laid_width):
+		on_show()
 
 
 ## Chamada da vaga pronta: "Ver anúncio" ou, sem anúncios, "Receber grátis".
@@ -467,11 +544,13 @@ func _section(title: String, subtitle: String) -> VBoxContainer:
 	return box
 
 
-## Compra que remove o anúncio de abertura (destaque) e "Restaurar compras" (discreto).
-func _purchase_row() -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+## Compra que remove o anúncio de abertura (destaque) e "Restaurar compras" (discreto), lado a
+## lado; em tela estreita (on_show) a linha vira coluna, com a restauração embaixo à direita.
+func _purchase_row() -> BoxContainer:
+	var row := BoxContainer.new()
+	row.add_theme_constant_override("separation", int(PURCHASE_SEP))
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	_purchase = row
 	_buy = button("", _on_buy, Vector2(0, 38))
 	_buy.name = "RemoveAd"
 	_buy.clip_text = false
@@ -489,6 +568,7 @@ func _purchase_row() -> HBoxContainer:
 	_restore = button(tr("shop.restore"), _on_restore, Vector2(0, 26))
 	_restore.name = "Restore"
 	_restore.clip_text = false
+	_restore.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_restore.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_restore.mouse_filter = Control.MOUSE_FILTER_PASS
 	_restore.add_theme_font_size_override("font_size", CARD_TEXT_SIZE)
@@ -507,18 +587,21 @@ func _purchase_row() -> HBoxContainer:
 	return row
 
 
-func _card_row() -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", int(GAP))
-	row.mouse_filter = Control.MOUSE_FILTER_PASS
-	return row
+## Grade dos cartões, centrada na área rolável (as colunas vêm de _grid_for).
+func _card_row() -> GridContainer:
+	var grid := GridContainer.new()
+	grid.columns = COLUMNS
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	grid.add_theme_constant_override("h_separation", int(GAP))
+	grid.add_theme_constant_override("v_separation", int(GAP))
+	grid.mouse_filter = Control.MOUSE_FILTER_PASS
+	return grid
 
 
 ## Cartão-botão: PASS deixa o arrasto chegar ao ScrollContainer (rolar com o dedo).
-func _card_button(height: float, on_press: Callable) -> Button:
+func _card_button(card_size: Vector2, on_press: Callable) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(CARD_W, height)
+	b.custom_minimum_size = card_size
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_filter = Control.MOUSE_FILTER_PASS
 	b.add_theme_stylebox_override("normal", _card_style(CARD_BG, CARD_BORDER))

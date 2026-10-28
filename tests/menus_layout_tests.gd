@@ -1,8 +1,9 @@
 extends RefCounted
-## Guardiões, Opções e Diário do Guardião (e o botão "voltar") em 678x305 e 480x270, nos 11
-## idiomas. Chamado por tests/integration_tests.gd e por tests/menus_layout_runner.gd.
+## Guardiões, Opções e Diário do Guardião (e o botão "voltar") em cada resolução de
+## tests/device_profiles.gd, sem e com o furo da câmera de cada lado, nos 11 idiomas. Chamado
+## por tests/integration_tests.gd e por tests/menus_layout_runner.gd.
 
-const SIZES: Array[Vector2] = [Vector2(678, 305), Vector2(480, 270)]
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const SCREENS := {
 	&"heroes": "res://scripts/app/screens/hero_screen.gd",
 	&"options": "res://scripts/app/screens/options_screen.gd",
@@ -24,20 +25,35 @@ const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "u
 
 var _host: Node
 var _check: Callable
+## Recorte da câmera (esquerda, direita) do caso atual; textos e botões ficam fora dele.
+var _insets := Vector2.ZERO
+
+
+## Casos de tela: cada resolução de tests/device_profiles.gd, sem e com o furo da câmera.
+static func cases() -> Array[Dictionary]:
+	return DeviceProfiles.layout_cases()
+
+
+## Resolução de referência (os testes de comportamento rodam nela).
+static func main_view() -> Vector2:
+	return DeviceProfiles.main_view()
 
 
 func run(host: Node, check: Callable) -> void:
 	_host = host
 	_check = check
 	var original := SaveManager.data
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		for view: Vector2 in SIZES:
-			var state := "%s %dx%d" % [lang, view.x, view.y]
+	for c: Dictionary in cases():
+		use_insets(c["insets"])
+		var view: Vector2 = c["view"]
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			var state := "%s [%s]" % [lang, c["label"]]
 			SaveManager.data = SaveManager.default_profile()
 			await _test_heroes(view, state)
 			await _test_options(view, state)
 			await _test_codex(view, state)
+	use_insets(Vector2.ZERO)
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
 	await _test_hero_behaviour()
@@ -51,12 +67,23 @@ func _ok(condition: bool, label: String) -> void:
 	_check.call(condition, label)
 
 
+## Liga o recorte simulado da câmera (MenuKit.safe_insets) para as próximas telas.
+func use_insets(insets: Vector2) -> void:
+	_insets = insets
+	DeviceProfiles.simulate_insets(insets)
+
+
+## Área segura de uma tela `view` com o recorte atual.
+func _area(view: Vector2) -> Rect2:
+	return DeviceProfiles.safe_rect(view, _insets)
+
+
 # --- Verificações comuns ---------------------------------------------------------------
 
 ## Rótulos e botões visíveis: inteiros na tela (ou na área de rolagem que os contém), sem
 ## texto cortado; botões com altura de toque; o "voltar" com alvo ≥ 34 e longe do título.
 func check_common(screen: Control, view: Vector2, state: String) -> void:
-	var area := Rect2(Vector2.ZERO, view)
+	var area := _area(view)
 	var back := find_back(screen)
 	_ok(back != null and back.is_visible_in_tree(), "%s: tem o voltar" % state)
 	if back != null:
@@ -131,7 +158,7 @@ func _test_heroes(view: Vector2, state: String) -> void:
 		var rects: Array[Rect2] = []
 		for child: Node in grid.get_children():
 			var r := (child as Control).get_global_rect()
-			_ok(Rect2(Vector2.ZERO, view).encloses(r) and r.size.x >= 26.0, "%s: retrato %s inteiro" % [st, child.name])
+			_ok(_area(view).encloses(r) and r.size.x >= 26.0, "%s: retrato %s inteiro" % [st, child.name])
 			for o: Rect2 in rects:
 				_ok(not o.intersects(r), "%s: retratos sem sobrepor" % st)
 			rects.append(r)
@@ -147,8 +174,8 @@ func _test_heroes(view: Vector2, state: String) -> void:
 			var sub := "%s %s" % [st, id]
 			var panel := screen.get("_panel") as Control
 			var go := screen.get("_go") as Button
-			_ok(Rect2(Vector2.ZERO, view).encloses(panel.get_global_rect()), "%s: painel inteiro" % sub)
-			_ok(Rect2(Vector2.ZERO, view).encloses(go.get_global_rect())
+			_ok(_area(view).encloses(panel.get_global_rect()), "%s: painel inteiro" % sub)
+			_ok(_area(view).encloses(go.get_global_rect())
 					and panel.get_global_rect().end.y <= go.get_global_rect().position.y,
 					"%s: Escolher fase na base, abaixo do painel" % sub)
 			_ok(go.disabled != unlocked, "%s: Escolher fase só liberado" % sub)
@@ -168,7 +195,7 @@ func _test_heroes(view: Vector2, state: String) -> void:
 func _test_hero_behaviour() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	SaveManager.data["unlocked"]["heroes"] = ["aki", "kenta"]
-	var screen := await open_screen(_host, SIZES[0], &"heroes")
+	var screen := await open_screen(_host, main_view(), &"heroes")
 	var app := screen.get("app") as App
 	screen.call("_select", &"kenta")
 	_ok(String(app.selection["hero"]) == "kenta", "Guardiões: escolher Kenta vale")
@@ -253,10 +280,12 @@ func close_screen(screen: Control) -> void:
 
 
 ## Opções num tamanho e idioma (também usado pelo tests/ads_off_tests.gd no modo sem anúncios).
-func run_options(host: Node, check: Callable, view: Vector2, state: String) -> void:
+func run_options(host: Node, check: Callable, view: Vector2, state: String, insets := Vector2.ZERO) -> void:
 	_host = host
 	_check = check
+	use_insets(insets)
 	await _test_options(view, state)
+	use_insets(Vector2.ZERO)
 
 
 ## Chaves esperadas: sem anúncios não há "privacy" nem "restore" (o resto, inclusive a
@@ -282,7 +311,7 @@ func _test_options(view: Vector2, state: String) -> void:
 	var tabs: Array = screen.get("_tabs")
 	_ok(tabs.size() == 6, "%s: seis abas" % st)
 	for t: Button in tabs:
-		_ok(Rect2(Vector2.ZERO, view).encloses(t.get_global_rect()) and t.size.y >= 28.0, "%s: aba %s inteira" % [st, t.name])
+		_ok(_area(view).encloses(t.get_global_rect()) and t.size.y >= 28.0, "%s: aba %s inteira" % [st, t.name])
 		_ok(not t.get_global_rect().intersects(scroll.get_global_rect()), "%s: aba %s fora da rolagem" % [st, t.name])
 	_ok(rail.get_global_rect().end.y <= view.y, "%s: trilho cabe na altura" % st)
 	var controls: Array[Control] = []
@@ -318,7 +347,7 @@ func _test_options(view: Vector2, state: String) -> void:
 
 func _test_options_behaviour() -> void:
 	Locale.set_language("pt_BR", false)
-	var screen := await open_screen(_host, SIZES[0], &"options")
+	var screen := await open_screen(_host, main_view(), &"options")
 	var key := GfxQuality.changed_signal_key()
 	var preview := screen.find_child("QualityPreview", true, false) as Control
 	for mode: String in ["low", "medium", "high"]:
@@ -386,7 +415,7 @@ func _test_codex(view: Vector2, state: String) -> void:
 	var screen := await open_screen(_host, view, &"codex")
 	var st := "Diário %s" % state
 	var book := screen.get("_book") as Control
-	_ok(Rect2(Vector2.ZERO, view).encloses(book.get_global_rect()), "%s: livro inteiro" % st)
+	_ok(_area(view).encloses(book.get_global_rect()), "%s: livro inteiro" % st)
 	var left := screen.get("_left") as Control
 	var right := screen.get("_right") as Control
 	_ok(not left.get_global_rect().intersects(right.get_global_rect()), "%s: páginas lado a lado" % st)
@@ -400,7 +429,7 @@ func _test_codex(view: Vector2, state: String) -> void:
 		var cards: Array = screen.call("cards")
 		_ok(cards.size() == (screen.call("entries") as Array).size() and cards.size() > 0, "%s: um cartão por entrada" % sub)
 		for t: Button in tabs:
-			_ok(Rect2(Vector2.ZERO, view).encloses(t.get_global_rect()) and t.size.y >= 24.0
+			_ok(_area(view).encloses(t.get_global_rect()) and t.size.y >= 24.0
 					and not t.get_global_rect().intersects(chip.get_global_rect()), "%s: marcador %s inteiro" % [sub, t.name])
 		var grid_area := (screen.get("_grid_scroll") as Control).get_global_rect()
 		for c: Button in cards:
@@ -420,7 +449,7 @@ func _test_codex_behaviour() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	(SaveManager.data["stats"]["kills_by_enemy"] as Dictionary)["slime_rice"] = 150
 	(SaveManager.data["stats"]["kills_by_enemy"] as Dictionary)["bat"] = 5
-	var screen := await open_screen(_host, SIZES[0], &"codex")
+	var screen := await open_screen(_host, main_view(), &"codex")
 	var entries: Array = screen.call("entries")
 	var known: Array = entries.filter(func(e: Dictionary) -> bool: return bool(e["known"]))
 	_ok(known.size() >= 1 and known.size() < entries.size(), "Diário: só os yōkai vistos ficam conhecidos")
@@ -467,17 +496,20 @@ func _test_codex_behaviour() -> void:
 func _test_back_everywhere() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	for name: StringName in [&"heroes", &"options", &"codex", &"sanctuary", &"shop", &"credits", &"stages"]:
-		for view: Vector2 in SIZES:
+		for c: Dictionary in cases():
+			use_insets(c["insets"])
+			var view: Vector2 = c["view"]
 			var screen := await open_screen(_host, view, name)
 			var back := find_back(screen)
-			var st := "Voltar %s %dx%d" % [name, view.x, view.y]
+			var st := "Voltar %s [%s]" % [name, c["label"]]
 			_ok(back != null, "%s: usa o voltar único" % st)
 			if back == null:
 				close_screen(screen)
 				continue
 			var r := back.get_global_rect()
-			_ok(r.position.is_equal_approx(Vector2(4, 2)) and r.size.y >= 34.0 and r.size.x >= 48.0,
+			_ok(r.position.is_equal_approx(Vector2(4.0 + _insets.x, 2)) and r.size.y >= 34.0 and r.size.x >= 48.0,
 					"%s: posição e alvo de toque (%s)" % [st, r])
+			_ok(_area(view).encloses(r), "%s: voltar fora do furo da câmera (%s)" % [st, r])
 			_ok(back.text == TranslationServer.translate("menu.back"), "%s: texto Voltar" % st)
 			var font := back.get_theme_font("font")
 			var need := font.get_string_size(back.text, HORIZONTAL_ALIGNMENT_LEFT, -1, back.get_theme_font_size("font_size")).x
@@ -486,6 +518,7 @@ func _test_back_everywhere() -> void:
 			_ok(top == back, "%s: voltar por cima de tudo" % st)
 			close_screen(screen)
 			await _host.get_tree().process_frame
+	use_insets(Vector2.ZERO)
 	for lang: String in Locale.SUPPORTED:
 		Locale.set_language(lang, false)
 		var b := MenuKit.BackButton.new(TranslationServer.translate("menu.back"))
@@ -518,14 +551,18 @@ static func rich_profile() -> void:
 	d["unlocked"]["heroes"] = ["aki", "kenta", "hana", "goro", "rin"]
 
 
-## Pelo caminho real do jogo (App → go), num viewport do tamanho do aparelho: Redmi Note 14
-## Pro+ 2712x1220 com stretch "viewport" dá 678x305 (4 px por ponto); 480x270 cobre telas 16:9.
+## Pelo caminho real do jogo (App → go), num viewport de cada resolução lógica de
+## tests/device_profiles.gd (stretch "viewport", k = round(altura / 300)).
 ## Pega o que o host de tamanho fixo não pega: o App cria a tela escondida e o painel media
 ## alto antes da 1ª largura (o "Escolher fase" ficava fora da tela no aparelho).
 func _test_real_app() -> void:
-	for lang: String in ["en", "pt_BR", "ru", "ja"]:
-		Locale.set_language(lang, false)
-		for view: Vector2 in [Vector2(678, 305), Vector2(480, 270)]:
+	for c: Dictionary in cases():
+		use_insets(c["insets"])
+		var view: Vector2 = c["view"]
+		for lang: String in ["en", "pt_BR", "ru", "ja"]:
+			if lang not in c["langs"]:
+				continue
+			Locale.set_language(lang, false)
 			SaveManager.data = SaveManager.default_profile()
 			var vp := SubViewport.new()
 			vp.size = Vector2i(view)
@@ -534,8 +571,8 @@ func _test_real_app() -> void:
 			var app := App.new()
 			vp.add_child(app)
 			await _host.get_tree().process_frame
-			var st := "App %s %dx%d" % [lang, view.x, view.y]
-			var area := Rect2(Vector2.ZERO, view)
+			var st := "App %s [%s]" % [lang, c["label"]]
+			var area := _area(view)
 			for name: StringName in [&"heroes", &"options", &"codex"]:
 				app.go(name)
 				for i: int in 3:
@@ -557,4 +594,5 @@ func _test_real_app() -> void:
 			app.queue_free()
 			vp.queue_free()
 			await _host.get_tree().process_frame
+	use_insets(Vector2.ZERO)
 	Locale.set_language("pt_BR", false)

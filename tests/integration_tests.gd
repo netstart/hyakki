@@ -9,7 +9,7 @@ extends Node
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 ## Layout e rolagem da Loja (separado para o arquivo caber no limite de linhas do gdlint).
 const ShopLayoutTests := preload("res://tests/shop_layout_tests.gd")
-## Guardiões, Opções, Diário e o "voltar" em 678x305 e 480x270 nos 11 idiomas.
+## Guardiões, Opções, Diário e o "voltar" nas telas de tests/device_profiles.gd e em 480x270.
 const MenusLayoutTests := preload("res://tests/menus_layout_tests.gd")
 const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 ## Raios do céu do Raijin (separado para o arquivo caber no limite de linhas do gdlint).
@@ -30,6 +30,9 @@ const DeathSequenceTests := preload("res://tests/death_sequence_tests.gd")
 const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
 ## Título: coluna de menu, bloco de ação, selos e foco, em todos os idiomas.
 const TitleLayoutTests := preload("res://tests/title_layout_tests.gd")
+## HUD da partida: topo, botões, joystick, avisos, reviver, setas e o painel de Kami, em cada
+## resolução e com o recorte da câmera.
+const HudLayoutTests := preload("res://tests/hud_layout_tests.gd")
 ## Jornada do Guardião (seleção de fase): mapa, pontos, estados e pergaminho em cada idioma.
 const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 ## Explosão atrás do baú da fase: abertura, centro, fim sozinho, pular e novo baú.
@@ -56,6 +59,10 @@ const SurfaceTests := preload("res://tests/surface_tests.gd")
 const SkillIconTests := preload("res://tests/skill_icon_tests.gd")
 ## Modo "sem anúncios" (release sem IDs do AdMob ou --ads-off): presentes, sem abertura nem compra.
 const AdsOffTests := preload("res://tests/ads_off_tests.gd")
+## Furo da câmera trocando de lado com cada tela aberta, sem redimensionar (giro de 180°).
+const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
+## Aparelhos-alvo dos testes de layout (Redmi Note 14 Pro+, Galaxy M55, Pixel 7) e o furo da câmera.
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _count: int = 0
 var _failures: int = 0
@@ -65,6 +72,7 @@ var _real_files: Dictionary = {}
 
 func _ready() -> void:
 	_use_test_files()
+	DeviceProfiles.check_scaler(self, _check)
 	_test_data_integrity()
 	_test_assets_exist()
 	_test_i18n()
@@ -90,7 +98,7 @@ func _ready() -> void:
 	await WeaponAudioTests.new().run(self, _check)
 	await WeaponFxTests.new().run(self, _check)
 	await _test_sound_options()
-	await _test_kami_layout()
+	await HudLayoutTests.new().run(self, _check)
 	await ChestBurstTests.new().run(self, _check)
 	await LevelChestTests.new().run(self, _check)
 	await MenusLayoutTests.new().run(self, _check)
@@ -107,6 +115,7 @@ func _ready() -> void:
 	await SurfaceTests.new().run(self, _check)
 	await SkillIconTests.new().run(self, _check)
 	await CreditsScreenTests.new().run(self, _check)
+	await InsetFlipTests.new().run(self, _check)
 	await _test_shop_layout()
 	await _test_shop_scroll()
 	_remove_test_files()
@@ -148,74 +157,6 @@ func _remove_test_files() -> void:
 	SaveManager.load_profile()
 	Settings.path = Settings.PATH
 	Settings.load_settings()
-
-
-# --- Kami -------------------------------------------------------------------------
-
-## "Um Kami oferece um pacto" em cada idioma: título, os 3 cartões (ícone e texto) e
-## "Ignorar o santuário" ficam dentro de 678x305, com 4 px de folga. Cada Kami aparece em
-## cada posição, e Hachiman (bênção, especial e custo: o texto mais longo) em cada uma delas.
-func _test_kami_layout() -> void:
-	var view := Rect2(Vector2(4, 4), Vector2(670, 297))
-	var hud := Hud.new()
-	add_child(hud)
-	await get_tree().process_frame
-	# O teste roda numa janela menor que o jogo: a raiz da HUD recebe o tamanho do viewport do jogo.
-	var root := hud.get("_root") as Control
-	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	root.size = Vector2(678, 305)
-	await get_tree().process_frame
-	var ids := DB.ids("kami")
-	var count := ids.size()
-	var offers: Array = []
-	for i: int in count:
-		offers.append([ids[i], ids[(i + 1) % count], ids[(i + 2) % count]])
-	for slot: int in 3:
-		var offer: Array = [StringName("inari"), StringName("raijin"), StringName("inari")]
-		offer[slot] = StringName("hachiman")
-		offers.append(offer)
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		for offer: Array in offers:
-			var typed: Array[StringName] = []
-			typed.assign(offer)
-			hud.show_kami(typed)
-			await get_tree().process_frame
-			await get_tree().process_frame
-			var state := "%s, %s" % [lang, ", ".join(offer)]
-			var panel := hud.get("_kami_panel") as Control
-			var controls: Array[Control] = []
-			_kami_controls_in(panel, controls)
-			_check(controls.size() >= 3 + 3 + 1, "%s: o painel mostra título, cartões e botão" % state)
-			for control: Control in controls:
-				_check(control.is_visible_in_tree() and view.encloses(control.get_global_rect()),
-						"%s: %s dentro da tela (%s)" % [state, control.get_class(), control.get_global_rect()])
-				if control is Button and (control as Button).text != "":
-					var button_node := control as Button
-					var minimum := button_node.get_combined_minimum_size()
-					_check(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
-							"%s: o cartão mostra o texto inteiro (%s de %s)" % [state, minimum, button_node.size])
-			var row := hud.get("_kami_row") as HBoxContainer
-			_check(row.get_child_count() == 3, "%s: três cartões" % state)
-			for card: Node in row.get_children():
-				var icons := 0
-				for child: Node in card.get_children():
-					if child is TextureRect and (child as TextureRect).texture != null:
-						icons += 1
-						_check(view.encloses((child as Control).get_global_rect()),
-								"%s: ícone do cartão dentro da tela" % state)
-				_check(icons == 1, "%s: cada cartão mostra o ícone do Kami" % state)
-	hud.queue_free()
-	await get_tree().process_frame
-	Locale.set_language("pt_BR", false)
-
-
-## Coleta botões, textos e ícones de uma árvore de controles (o painel de Kami).
-func _kami_controls_in(node: Node, out: Array[Control]) -> void:
-	for child: Node in node.get_children():
-		if (child is BaseButton or child is Label or child is TextureRect) and not out.has(child):
-			out.append(child as Control)
-		_kami_controls_in(child, out)
 
 
 # --- Guardiões, Opções e Diário: tests/menus_layout_tests.gd ------------------------
@@ -548,7 +489,7 @@ func _test_suspended_run() -> void:
 
 
 ## Opções de som e de números de dano: padrão ligado, um CheckButton para cada uma na tela
-## de Opções (alcançável pela rolagem em 678x305) e cada uma respeitada no jogo. As
+## de Opções (alcançável pela rolagem em cada tela de tests/device_profiles.gd) e cada uma respeitada no jogo. As
 ## opções vão para o arquivo dos testes (Settings.use_test_file), nunca o do jogador.
 func _test_sound_options() -> void:
 	_check(Settings.path == Settings.TEST_PATH, "Opções: os testes gravam em %s" % Settings.TEST_PATH)
@@ -557,40 +498,14 @@ func _test_sound_options() -> void:
 		_check(Settings.DEFAULTS.get(key) == true, "opção %s existe e vem ligada" % key)
 		Settings.set_value(key, true)
 
-	# Tela de Opções: CheckButton "opt_<chave>" com o rótulo, visível depois de rolar até ele.
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305))
+	# Tela de Opções: CheckButton "opt_<chave>" com o rótulo, visível depois de rolar até ele,
+	# em cada tela de tests/device_profiles.gd.
 	Locale.set_language("pt_BR", false)
-	# Host com o tamanho do viewport do jogo, como na Loja.
-	var host := Control.new()
-	host.size = view.size
-	add_child(host)
-	var screen := (load(OPTIONS_SCREEN) as GDScript).new() as Control
-	host.add_child(screen)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var scroll := screen.get("_scroll") as ScrollContainer
-	for key: String in keys:
-		var found := screen.find_child("opt_%s" % key, true, false) as CheckButton
-		_check(found != null, "Opções: CheckButton de %s" % key)
-		if found == null:
-			continue
-		var cell_label := found.get_parent().get_child(0) as Label
-		_check(cell_label != null and cell_label.text == tr("options.%s" % key),
-				"Opções: %s tem o rótulo na mesma célula" % key)
-		_check(found.button_pressed, "Opções: %s aparece ligado" % key)
-		_check(scroll != null and scroll.is_ancestor_of(found), "Opções: %s fica dentro da rolagem" % key)
-		if scroll != null:
-			scroll.ensure_control_visible(found)
-			await get_tree().process_frame
-			await get_tree().process_frame
-			_check(found.is_visible_in_tree() and view.encloses(found.get_global_rect())
-					and scroll.get_global_rect().encloses(found.get_global_rect()),
-					"Opções: %s alcançável na tela de celular" % key)
-		found.button_pressed = false
-		_check(Settings.get_value(key) == false, "Opções: desligar %s grava a opção" % key)
-		found.button_pressed = true
-	host.queue_free()
-	await get_tree().process_frame
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		DeviceProfiles.simulate_insets(c["insets"])
+		var safe := DeviceProfiles.safe_rect(c["view"], c["insets"])
+		await _sound_options_screen(c["view"], safe, String(c["label"]), keys)
+	DeviceProfiles.clear_insets()
 
 	# No jogo: som do golpe por arma, som de dano no herói e números de dano.
 	var scene := load(GAME_SCENE) as PackedScene
@@ -716,6 +631,41 @@ func _test_revive_by_ad() -> void:
 		await get_tree().process_frame
 	AdsManager.auto_answer = false
 	GameClock.paused = true
+
+
+## Opções de som na tela de Opções numa tela `size`; `view` é a área segura (fora do furo).
+func _sound_options_screen(size: Vector2, view: Rect2, label: String, keys: Array) -> void:
+	# Host com o tamanho do viewport do jogo, como na Loja.
+	var host := Control.new()
+	host.size = size
+	add_child(host)
+	var screen := (load(OPTIONS_SCREEN) as GDScript).new() as Control
+	host.add_child(screen)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var scroll := screen.get("_scroll") as ScrollContainer
+	for key: String in keys:
+		var found := screen.find_child("opt_%s" % key, true, false) as CheckButton
+		_check(found != null, "Opções: CheckButton de %s" % key)
+		if found == null:
+			continue
+		var cell_label := found.get_parent().get_child(0) as Label
+		_check(cell_label != null and cell_label.text == tr("options.%s" % key),
+				"Opções: %s tem o rótulo na mesma célula" % key)
+		_check(found.button_pressed, "Opções: %s aparece ligado" % key)
+		_check(scroll != null and scroll.is_ancestor_of(found), "Opções: %s fica dentro da rolagem" % key)
+		if scroll != null:
+			scroll.ensure_control_visible(found)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			_check(found.is_visible_in_tree() and view.encloses(found.get_global_rect())
+					and scroll.get_global_rect().encloses(found.get_global_rect()),
+					"Opções: %s alcançável na tela de celular [%s]" % [key, label])
+		found.button_pressed = false
+		_check(Settings.get_value(key) == false, "Opções: desligar %s grava a opção" % key)
+		found.button_pressed = true
+	host.queue_free()
+	await get_tree().process_frame
 
 
 ## Intocável (ach_unscathed, 300 s sem dano): vale numa partida sem reviver por anúncio

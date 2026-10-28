@@ -2,6 +2,9 @@ class_name Hud
 extends CanvasLayer
 ## HUD e telas sobrepostas da partida (plano 7.1–7.4). Tudo nas bordas; o centro fica
 ## livre. Botões ≥ 48 dp (no Redmi, 1 pixel lógico = 4 pixels físicos ≈ 1,33 dp).
+## Textos, botões, joystick fixo e setas ficam fora do recorte da câmera
+## (MenuKit.safe_insets): _layout refaz as posições ao redimensionar e quando o recorte muda
+## (girar o aparelho troca o lado do furo).
 
 signal card_chosen(index: int)
 signal reroll_pressed
@@ -31,6 +34,13 @@ const COUNTDOWN := 1.5
 const KAMI_ICON_TOP := 8.0
 const KAMI_ICON_BOX := 32.0
 const KAMI_TEXT_TOP := 46.0
+const KAMI_CARD := 150.0
+const KAMI_GAP := 6.0
+## Folga do painel de Kami até as bordas da área segura.
+const KAMI_MARGIN := 6.0
+## Linha de base dos textos do topo e folga mínima entre eles.
+const TOP_TEXT_Y := 24.0
+const TOP_TEXT_GAP := 8.0
 ## Oferta de reviver no clima da morte: tinta clara e fria sobre a cena escurecida.
 const REVIVE_INK := Color(0.82, 0.86, 0.94)
 const REVIVE_FADE := 0.35
@@ -80,6 +90,12 @@ var _revive_left: float = 0.0
 var _revive_bar: Control
 ## HUD de jogo que some na morte (joystick, topo, botões, chefe, avisos).
 var _gameplay: Array[Control] = []
+## Recorte da câmera (esquerda, direita) usado no último _layout.
+var _insets := Vector2.ZERO
+## Colunas centralizadas das telas escuras (Kami) e faixas do reviver: acompanham a área segura.
+var _overlay_centers: Array[Control] = []
+var _revive_top: Control
+var _revive_bottom: Control
 var _gameplay_alpha: float = 1.0
 var _icons: Dictionary = {}
 var _skill_icons := SkillIconPainter.new()
@@ -186,6 +202,10 @@ func _ready() -> void:
 			_toast, _hint]
 	Settings.changed.connect(_on_setting)
 	_apply_joystick_settings()
+	_root.resized.connect(_layout)
+	# Furo da câmera que troca de lado no meio da partida (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
+	_layout()
 	start_run()
 
 
@@ -256,33 +276,69 @@ func level_cards() -> Array[Button]:
 func _draw_top() -> void:
 	if game == null or game.tracker == null:
 		return
-	var width := _top.size.x
-	var bar := Rect2(4.0, 3.0, width - 8.0, 6.0)
+	var seconds := floori(GameClock.game_time)
+	var clock := "%02d:%02d" % [floori(seconds / 60.0), seconds % 60]
+	var counters := "%s %s   %s %s" % [tr("hud.kills"), Locale.format_number(game.tracker.kills),
+			tr("hud.ryo"), Locale.format_number(game.tracker.ryo)]
+	var level := tr("hud.level") % game.level
+	var layout := top_layout(level, clock, counters)
+	var bar: Rect2 = layout["xp"]
 	_top.draw_rect(bar, Color(0.05, 0.03, 0.08, 0.75))
 	var fill := clampf(float(game.xp) / float(maxi(game.xp_needed, 1)), 0.0, 1.0)
 	_top.draw_rect(Rect2(bar.position, Vector2(bar.size.x * fill, bar.size.y)), Color("6ab7ff"))
 	_top.draw_rect(bar, Color(1, 1, 1, 0.35), false, 1.0)
-	var seconds := floori(GameClock.game_time)
-	_text(Vector2(6.0, 24.0), tr("hud.level") % game.level, HORIZONTAL_ALIGNMENT_LEFT, 80.0)
-	var clock := "%02d:%02d" % [floori(seconds / 60.0), seconds % 60]
-	_text(Vector2(width * 0.5 - 50.0, 24.0), clock, HORIZONTAL_ALIGNMENT_CENTER, 100.0,
-			Color("ffd166") if game.endless_phase else Color.WHITE)
-	var right := width - 2.0 * (CORNER_BUTTON.x + 4.0) - 12.0
-	_text(Vector2(right - 170.0, 24.0), "%s %s   %s %s" % [tr("hud.kills"), Locale.format_number(game.tracker.kills),
-			tr("hud.ryo"), Locale.format_number(game.tracker.ryo)], HORIZONTAL_ALIGNMENT_RIGHT, 170.0)
+	_text(layout["level_at"], level)
+	_text(layout["clock_at"], clock, Color("ffd166") if game.endless_phase else Color.WHITE)
+	_text(layout["counters_at"], counters)
 	# Armas na 1ª fileira, passivas na 2ª: ícones 24x24 sem escala (pixel perfeito).
 	var now := Time.get_ticks_msec() / 1000.0
-	var x := 5.0
+	var step := SkillIconPainter.ICON + 3.0
+	var at: Vector2 = layout["weapons_at"]
 	for weapon: Weapon in game.weapons:
-		_draw_icon(Vector2(x, 28.0), String(weapon.data.get("icon", "")), weapon.level, weapon.is_evolved(),
+		_draw_icon(at, String(weapon.data.get("icon", "")), weapon.level, weapon.is_evolved(),
 				"w:%s" % weapon.id, weapon.max_level, now)
-		x += SkillIconPainter.ICON + 3.0
-	x = 5.0
+		at.x += step
+	at = layout["passives_at"]
 	for id: StringName in game.level_up.passive_levels:
-		_draw_icon(Vector2(x, 28.0 + SkillIconPainter.ICON + 3.0), String(DB.passives[id]["icon"]),
+		_draw_icon(at, String(DB.passives[id]["icon"]),
 				int(game.level_up.passive_levels[id]), false, "p:%s" % id, int(DB.passives[id].get("max", 5)), now)
-		x += SkillIconPainter.ICON + 3.0
+		at.x += step
 	_draw_offscreen_arrows()
+
+
+## Posições do topo dentro da área segura: barra de XP ("xp"), retângulos dos textos de nível,
+## relógio e abates/ryō ("level", "clock", "counters"), a base onde cada um é escrito ("*_at")
+## e o início das fileiras de ícones ("weapons_at", "passives_at"). O relógio fica no centro
+## da tela; se o nível ou os contadores chegarem nele (tela estreita com recorte), vai para o
+## meio do vão entre os dois, e se nem assim couber os contadores descem para baixo dos botões
+## do canto. _draw_top desenha aqui; os testes de layout conferem.
+func top_layout(level_text: String, clock_text: String, counters_text: String) -> Dictionary:
+	var width := _top.size.x
+	var left := _insets.x
+	var right := width - _insets.y
+	var font := Locale.font
+	var ascent := font.get_ascent(12)
+	var height := font.get_height(12)
+	var level_w := font.get_string_size(level_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var clock_w := font.get_string_size(clock_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var counters_w := font.get_string_size(counters_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var level := Rect2(left + 6.0, TOP_TEXT_Y - ascent, level_w, height)
+	var counters_end := right - 2.0 * (CORNER_BUTTON.x + 4.0) - 12.0
+	var counters := Rect2(counters_end - counters_w, TOP_TEXT_Y - ascent, counters_w, height)
+	var clock := Rect2(roundf(width * 0.5 - clock_w * 0.5), TOP_TEXT_Y - ascent, clock_w, height)
+	if clock.position.x < level.end.x + TOP_TEXT_GAP or clock.end.x > counters.position.x - TOP_TEXT_GAP:
+		clock.position.x = roundf((level.end.x + counters.position.x - clock_w) * 0.5)
+	if clock.position.x < level.end.x + TOP_TEXT_GAP or clock.end.x > counters.position.x - TOP_TEXT_GAP:
+		clock.position.x = roundf(width * 0.5 - clock_w * 0.5)
+		counters = Rect2(right - 4.0 - counters_w, 12.0 + CORNER_BUTTON.y + 4.0, counters_w, height)
+	return {
+		"xp": Rect2(left + 4.0, 3.0, right - left - 8.0, 6.0),
+		"level": level, "level_at": Vector2(level.position.x, TOP_TEXT_Y),
+		"clock": clock, "clock_at": Vector2(clock.position.x, TOP_TEXT_Y),
+		"counters": counters, "counters_at": Vector2(counters.position.x, counters.position.y + ascent),
+		"weapons_at": Vector2(left + 5.0, 28.0),
+		"passives_at": Vector2(left + 5.0, 28.0 + SkillIconPainter.ICON + 3.0),
+	}
 
 
 ## Ícone de habilidade com moldura, selo de nível e (Média/Alta) brilho das evoluídas e
@@ -301,23 +357,31 @@ func _draw_offscreen_arrows() -> void:
 		if String(item["effect"]) == "chest":
 			targets.append([item["pos"], Color("ff9f43")])
 	var view := game.view_size()
-	var center := view * 0.5
 	for entry: Array in targets:
 		var rel: Vector2 = (entry[0] as Vector2) - game.player.position
 		if absf(rel.x) < view.x * 0.5 - 10.0 and absf(rel.y) < view.y * 0.5 - 10.0:
 			continue
 		var dir := rel.normalized()
-		var edge := center + dir * minf((view.x * 0.5 - 18.0) / maxf(absf(dir.x), 0.001),
-				(view.y * 0.5 - 18.0) / maxf(absf(dir.y), 0.001))
+		var edge := arrow_point(dir, view)
 		var color: Color = entry[1]
 		var tip := edge + dir * 7.0
 		var side := dir.orthogonal() * 5.0
 		_top.draw_colored_polygon(PackedVector2Array([tip, edge - dir * 3.0 + side, edge - dir * 3.0 - side]), color)
 
 
-func _text(at: Vector2, value: String, align: HorizontalAlignment, width: float, color: Color = Color.WHITE) -> void:
-	_top.draw_string_outline(Locale.font, at, value, align, width, 12, 3, Color(0.0, 0.0, 0.0, 0.85))
-	_top.draw_string(Locale.font, at, value, align, width, 12, color)
+## Base da seta que aponta na direção `dir`: na borda da tela, com 18 px de folga, e do lado
+## de dentro do recorte da câmera.
+func arrow_point(dir: Vector2, view: Vector2) -> Vector2:
+	var center := view * 0.5
+	var edge := center + dir * minf((view.x * 0.5 - 18.0) / maxf(absf(dir.x), 0.001),
+			(view.y * 0.5 - 18.0) / maxf(absf(dir.y), 0.001))
+	edge.x = clampf(edge.x, _insets.x + 18.0, view.x - _insets.y - 18.0)
+	return edge
+
+
+func _text(at: Vector2, value: String, color: Color = Color.WHITE) -> void:
+	_top.draw_string_outline(Locale.font, at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0.0, 0.0, 0.0, 0.85))
+	_top.draw_string(Locale.font, at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, color)
 
 
 func _icon(path: String) -> Texture2D:
@@ -443,7 +507,7 @@ func show_kami(offer: Array[StringName]) -> void:
 	for id: StringName in offer:
 		var data: Dictionary = DB.kami[id]
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(150, 150)
+		button.custom_minimum_size = Vector2(_kami_card_width(), KAMI_CARD)
 		button.focus_mode = Control.FOCUS_NONE
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		# Moldura com um leve tom da cor do Kami e margem no topo para o ícone.
@@ -469,6 +533,15 @@ func show_kami(offer: Array[StringName]) -> void:
 			_kami_panel.visible = false
 			kami_chosen.emit(id))
 		_kami_row.add_child(button)
+
+
+## Largura dos cartões de Kami: 150, ou o que couber (3 cartões e as folgas) entre as bordas
+## da área segura numa tela estreita com recorte da câmera.
+func _kami_card_width() -> float:
+	if _root.size.x <= 0.0:
+		return KAMI_CARD
+	var room := _root.size.x - _insets.x - _insets.y - KAMI_MARGIN * 2.0 - KAMI_GAP * 2.0
+	return minf(KAMI_CARD, floorf(room / 3.0))
 
 
 ## Ícone do Kami em escala inteira (pixel-perfect), centralizado na faixa do topo do cartão.
@@ -498,7 +571,7 @@ func _build_kami_panel() -> void:
 	box.add_child(_label(tr("kami.title"), HORIZONTAL_ALIGNMENT_CENTER))
 	_kami_row = HBoxContainer.new()
 	_kami_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_kami_row.add_theme_constant_override("separation", 6)
+	_kami_row.add_theme_constant_override("separation", int(KAMI_GAP))
 	box.add_child(_kami_row)
 	box.add_child(_menu_button(tr("kami.ignore"), func() -> void:
 		_kami_panel.visible = false
@@ -571,6 +644,7 @@ func _build_revive_panel() -> void:
 	var top := VBoxContainer.new()
 	top.anchor_right = 1.0
 	top.offset_top = 30.0
+	_revive_top = top
 	top.add_theme_constant_override("separation", 2)
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_revive_panel.add_child(top)
@@ -594,6 +668,7 @@ func _build_revive_panel() -> void:
 	bottom.offset_top = -92.0
 	bottom.offset_bottom = -12.0
 	_revive_panel.add_child(bottom)
+	_revive_bottom = bottom
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 6)
 	bottom.add_child(box)
@@ -885,17 +960,44 @@ func _on_setting(key: String) -> void:
 func _apply_joystick_settings() -> void:
 	joystick.fixed = String(Settings.get_value("joystick_mode")) == "fixed"
 	joystick.left_side = String(Settings.get_value("joystick_side")) == "left"
-	# Botão do golpe vai para o lado oposto do joystick (canhotos, plano 4.1).
+	_layout_ultimate()
+
+
+## Botão do golpe no canto oposto ao joystick (canhotos, plano 4.1), fora do recorte da câmera.
+func _layout_ultimate() -> void:
 	if joystick.left_side:
 		_ult_button.anchor_left = 1.0
 		_ult_button.anchor_right = 1.0
-		_ult_button.offset_left = -ULT_SIZE - 10.0
-		_ult_button.offset_right = -10.0
+		_ult_button.offset_left = -ULT_SIZE - 10.0 - _insets.y
+		_ult_button.offset_right = -10.0 - _insets.y
 	else:
 		_ult_button.anchor_left = 0.0
 		_ult_button.anchor_right = 0.0
-		_ult_button.offset_left = 10.0
-		_ult_button.offset_right = ULT_SIZE + 10.0
+		_ult_button.offset_left = 10.0 + _insets.x
+		_ult_button.offset_right = ULT_SIZE + 10.0 + _insets.x
+
+
+## Posições que dependem da área segura (recorte da câmera): botões dos cantos, golpe,
+## joystick fixo, textos de largura cheia, telas de Kami e do reviver e o topo.
+func _layout() -> void:
+	_insets = MenuKit.safe_insets(_root)
+	for slot: int in 2:
+		var button := _pause_button if slot == 0 else _speed_button
+		var right := -4.0 - slot * (CORNER_BUTTON.x + 4.0) - _insets.y
+		button.offset_right = right
+		button.offset_left = right - CORNER_BUTTON.x
+	_layout_ultimate()
+	joystick.insets = _insets
+	joystick.queue_redraw()
+	var wide: Array[Control] = [_boss_label, _boss_line, _hint, _revive_top, _revive_bottom]
+	for control: Control in wide + _overlay_centers:
+		control.offset_left = _insets.x
+		control.offset_right = -_insets.y
+	_debug.position.x = 4.0 + _insets.x
+	var card_w := _kami_card_width()
+	for card: Node in _kami_row.get_children():
+		(card as Control).custom_minimum_size.x = card_w
+	_top.queue_redraw()
 
 
 ## Tela escura por cima do jogo com uma coluna centralizada; devolve a coluna.
@@ -909,6 +1011,7 @@ func _overlay_box() -> VBoxContainer:
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(center)
+	_overlay_centers.append(center)
 	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", 6)

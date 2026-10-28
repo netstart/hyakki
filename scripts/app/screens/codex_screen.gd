@@ -71,6 +71,8 @@ func _ready() -> void:
 	_build_right()
 	add_child(back_button())
 	resized.connect(_layout)
+	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
+	MenuKit.on_insets_change(self, _layout)
 
 
 func on_show() -> void:
@@ -352,7 +354,10 @@ func _build_chip() -> void:
 	chip.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	chip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	chip.offset_right = -MARGIN
-	chip.ready.connect(func() -> void: chip.offset_right = -MARGIN - MenuKit.safe_insets(chip).y)
+	var place := func() -> void: chip.offset_right = -MARGIN - MenuKit.safe_insets(chip).y
+	chip.ready.connect(func() -> void:
+		place.call()
+		MenuKit.on_insets_change(chip, place), CONNECT_ONE_SHOT)
 	chip.offset_top = HEADER_H + 5
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var row := HBoxContainer.new()

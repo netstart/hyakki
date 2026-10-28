@@ -4,11 +4,14 @@ extends Node
 ## user://e2e.txt com o nome do roteiro; o tools\run_e2e.ps1 escreve o arquivo, abre o jogo e
 ## lê o logcat. O piloto não "aperta" nada por dentro: pede ao PC toques reais no emulador
 ## (adb input) e confere o efeito de cada um. Protocolo, uma linha por evento no logcat:
-##   E2E BEGIN <roteiro> | E2E STEP <etapa> | E2E OK <texto> | E2E FALHOU <texto>
-##   E2E HOST tap X Y | swipe X1 Y1 X2 Y2 MS | key BACK | home | shot NOME | relaunch ROTEIRO
-##   E2E END <verificações> <falhas>
+##   E2E #N BEGIN <roteiro> | E2E #N STEP <etapa> | E2E #N OK <texto> | E2E #N FALHOU <texto>
+##   E2E #N HOST tap X Y | swipe X1 Y1 X2 Y2 MS | key BACK | home | shot NOME | relaunch ROTEIRO
+##   E2E #N END <verificações> <falhas>
+## N numera as linhas: o logcat às vezes perde mensagens, e as mesmas linhas vão para
+## user://e2e_log.txt, de onde o PC lê as que faltaram.
 
 const FILE := "user://e2e.txt"
+const LOG_FILE := "user://e2e_log.txt"
 ## Tempo para o PC ler o logcat e executar um pedido (adb é lento no emulador).
 const HOST_DELAY := 1.2
 const WAIT := 12.0
@@ -18,6 +21,8 @@ var suite: String = ""
 
 var _count: int = 0
 var _failures: int = 0
+var _seq: int = 0
+var _log: FileAccess
 
 
 static func requested() -> bool:
@@ -28,6 +33,7 @@ func _init(owner_app: App) -> void:
 	app = owner_app
 	suite = FileAccess.get_file_as_string(FILE).strip_edges()
 	DirAccess.remove_absolute(FILE)
+	_log = FileAccess.open(LOG_FILE, FileAccess.WRITE)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
@@ -62,7 +68,9 @@ func _suite_full() -> void:
 		return
 	_shot("consentimento")
 	await _tap_text("consent.accept")
-	_check(bool(SaveManager.data["consent"]["asked"]), "resposta do consentimento fica salva")
+	# O PC tira a captura antes do toque (lenta no emulador): espera o toque chegar.
+	_check(await _wait_for(func() -> bool: return bool(SaveManager.data["consent"]["asked"]), WAIT),
+			"resposta do consentimento fica salva")
 
 	_step("introdução")
 	if await _expect_screen(&"story", "introdução abre na 1ª vez"):
@@ -108,7 +116,12 @@ func _suite_full() -> void:
 	var from := _to_screen(Vector2(view.x * 0.22, view.y * 0.7))
 	var to := _to_screen(Vector2(view.x * 0.22 + 60.0, view.y * 0.7))
 	_host("swipe %d %d %d %d 1500" % [from.x, from.y, to.x, to.y])
-	await _seconds(HOST_DELAY + 1.8)
+	# O PC faz antes a captura da partida (1 a 2 s no emulador) e o "adb input" demora a subir:
+	# espera o dedo chegar ao joystick e soltar, em vez de um tempo fixo que cortava o arrasto.
+	var joystick := game.hud.joystick
+	_check(await _wait_for(func() -> bool: return joystick.vector != Vector2.ZERO, WAIT),
+			"arrastar o dedo liga o joystick")
+	await _wait_for(func() -> bool: return joystick.vector == Vector2.ZERO, WAIT)
 	_check(game.player.sim_pos.distance_to(before) > 20.0,
 			"arrastar o dedo move o herói (%.0f px)" % game.player.sim_pos.distance_to(before))
 
@@ -179,7 +192,10 @@ func _suite_full() -> void:
 	_check(is_equal_approx(frozen, GameClock.game_time), "tempo parado na pausa")
 	await _tap_text("pause.resume", true)
 	_check(await _wait_for(func() -> bool: return not game.hud.pause_open(), 4.0), "continuar fecha a pausa")
-	_check(await _wait_for(func() -> bool: return GameClock.game_time > frozen + 0.5, 8.0), "tempo volta a correr")
+	var runs := await _wait_for(func() -> bool: return GameClock.game_time > frozen + 0.5, 8.0)
+	# Na falha, o estado que segura o relógio (para investigar pelo relatório).
+	_check(runs, "tempo volta a correr" + ("" if runs else " (pausado %s, sobreposição %s, partida %s, contagem %.2f)" % [
+			GameClock.paused, game.hud.overlay_open(), game.running, float(game.hud.get("_countdown_left"))]))
 
 	_step("derrota")
 	game.player.god_mode = false
@@ -378,10 +394,34 @@ func _boss_entrance(game: HyakkiGame) -> void:
 			"barra de vida do chefe fica no topo")
 	for boss: Dictionary in game.bosses.bosses.duplicate():
 		game.enemies.damage(int(boss["index"]), 1e9, Vector2.ZERO, 0.0)
-	_check(await _wait_for(func() -> bool: return game.bosses.active_count() == 0, 4.0), "chefe vencido sai de cena")
+	_check(await _wait_for(func() -> bool: return game.bosses.active_count() == 0, WAIT), "chefe vencido sai de cena")
 	await _seconds(0.6)
 	_shot("chefe_morte")
-	await _wait_for(func() -> bool: return not game.hud.overlay_open() and not GameClock.paused, 6.0)
+	# O baú do chefe cai onde ele morreu e abre quando a guardiã passa por cima: com o emulador lento
+	# o chefe morria colado nela e o baú abria no meio da etapa da pausa (relógio parado). Leva o
+	# baú até ela, confere que abre e fecha aqui, e espera o campo assentar.
+	for item: Dictionary in game.pickups.items:
+		if item["id"] == &"chest":
+			item["pos"] = game.player.sim_pos
+	_check(await _wait_for(func() -> bool: return game.hud.chest_open(), WAIT), "baú do chefe abre")
+	await _settle(game)
+
+
+## Fecha as telas sobrepostas que a partida abrir sozinha (baú, nível novo) até o jogo correr
+## 1 s seguido sem nenhuma, ou o tempo acabar.
+func _settle(game: HyakkiGame) -> void:
+	var clear := 0.0
+	var left := WAIT
+	while left > 0.0 and clear < 1.0:
+		if game.hud.overlay_open():
+			game.hud.bot_answer()
+			clear = 0.0
+		elif GameClock.paused:
+			clear = 0.0
+		else:
+			clear += 0.1
+		await _seconds(0.1)
+		left -= 0.1
 
 
 func _thunder_weapons(game: HyakkiGame) -> void:
@@ -421,6 +461,9 @@ func _shop_coin_item() -> void:
 	var to := _to_screen(Vector2(area.get_center().x, area.position.y + 12.0))
 	_host("swipe %d %d %d %d 600" % [from.x, from.y, to.x, to.y])
 	await _seconds(HOST_DELAY + 1.0)
+	# Emulador lento: o arrasto pode chegar depois; aí espera ele e a rolagem assentar.
+	if scroll.scroll_vertical == 0 and await _wait_for(func() -> bool: return scroll.scroll_vertical > 0, WAIT):
+		await _seconds(1.0)
 	_check(scroll.scroll_vertical > 0, "arrastar o dedo rola a loja (%d px)" % scroll.scroll_vertical)
 	var card := (screen.get("_coin_cards")[item] as Dictionary)["button"] as Button
 	if not area.encloses(card.get_global_rect()):
@@ -592,4 +635,9 @@ func _check(condition: bool, label: String) -> void:
 
 
 func _emit(line: String) -> void:
-	print("E2E " + line)
+	_seq += 1
+	var text := "E2E #%d %s" % [_seq, line]
+	print(text)
+	if _log != null:
+		_log.store_line(text)
+		_log.flush()

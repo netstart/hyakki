@@ -2,7 +2,11 @@ extends RefCounted
 ## Loja (scripts/app/screens/shop_screen.gd): layout em cada idioma e rolagem.
 ## Chamado por tests/integration_tests.gd, que passa o nó da cena e o _check.
 ##
-## O que vale para a tela: fixos só o voltar, o título e o saldo (dentro de 678x305 com 8 px
+## Layout em cada resolução de tests/device_profiles.gd, sem e com o furo da câmera de cada
+## lado; a Loja já aberta refeita ao mudar de tamanho e de recorte; a rolagem na resolução de
+## referência. Cartões em grade uniforme de 6 ou 3 colunas (linha única de 6 em 678x305).
+##
+## O que vale para a tela: fixos só o voltar, o título e o saldo (dentro da área segura com 8 px
 ## de folga embaixo e fora da área rolável); a área rolável vai até a borda inferior; os
 ## cartões, os cabeçalhos e, por último, "Remover anúncio" e "Restaurar compras" ficam
 ## dentro do conteúdo rolável; textos inteiros nas caixas; ícones do mesmo tamanho de poço e
@@ -10,69 +14,115 @@ extends RefCounted
 ## é um aviso flutuante que aparece e some.
 
 const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
-const SCREEN := Rect2(Vector2.ZERO, Vector2(678, 305))
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 ## Contraste mínimo (WCAG AA) entre o texto e o fundo do cartão.
 const MIN_CONTRAST := 4.5
 
 var _host: Node
 var _check: Callable
+## Tela lógica do caso atual (tamanho do anfitrião) e a área segura (fora do furo da câmera).
+var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 
 
 ## Loja em cada idioma: ao abrir, depois de um resgate, com cada status e sem anúncio.
 func run_layout(host: Node, check: Callable) -> void:
 	_host = host
 	_check = check
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
 	AdsManager.auto_answer = true
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		AdsManager.mock_fill = true
-		var screen := await _open()
-		var status := screen.get("_status") as Label
-		var toast := screen.get("_toast") as Control
-		check.call(toast.modulate.a == 0.0, "%s: o aviso começa escondido" % lang)
-		check_layout(screen, view, "%s, ao abrir" % lang)
-		_check_cards(screen, lang)
-
-		# Resgate bem-sucedido (anúncio simulado até o fim): a vaga volta a ficar em cronômetro.
-		screen.call("_claim", &"slot_ryo")
-		var waited := 0.0
-		while ShopManager.is_ready(&"slot_ryo") and waited < 10.0:
-			await host.get_tree().create_timer(0.1).timeout
-			waited += 0.1
-		await host.get_tree().process_frame
-		await host.get_tree().process_frame
-		check.call(not ShopManager.is_ready(&"slot_ryo"), "%s: o resgate põe a vaga em cronômetro" % lang)
-		check.call(status.text == tr("shop.received") % tr("shop.slot_ryo.name"),
-				"%s: o status mostra o recebido" % lang)
-		check.call(toast.modulate.a > 0.9, "%s: o aviso aparece com o recebido" % lang)
-		check_layout(screen, view, "%s, depois do resgate" % lang)
-
-		# Status (o texto mais longo de cada caso), escrito direto no Label: o aviso acompanha.
-		var long_reward := tr("shop.received") % tr("shop.slot_lantern.name")
-		for text: String in [tr("shop.failed"), tr("shop.pending"), tr("shop.watch_full"), long_reward]:
-			status.text = text
-			await host.get_tree().process_frame
-			await host.get_tree().process_frame
-			check.call(toast.modulate.a > 0.9, "%s: o aviso mostra \"%s\"" % [lang, text])
-			check_layout(screen, view, "%s, status \"%s\"" % [lang, text])
-		# O aviso some sozinho depois do tempo dele.
-		screen.call("_update_toast", 3.0)
-		check.call(toast.modulate.a == 0.0, "%s: o aviso some depois de ~2,5 s" % lang)
-
-		# Sem anúncio disponível: as vagas prontas ficam desativadas com o aviso.
-		SaveManager.data = SaveManager.default_profile()
-		AdsManager.mock_fill = false
-		screen.call("on_show")
-		await host.get_tree().process_frame
-		await host.get_tree().process_frame
-		check_layout(screen, view, "%s, sem anúncio" % lang)
-		AdsManager.mock_fill = true
-		screen.get_parent().queue_free()
-		await host.get_tree().process_frame
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		use_case(c["view"], c["insets"])
+		for lang: String in c["langs"]:
+			await _layout_lang(host, check, lang, "%s [%s]" % [lang, c["label"]])
+	await _relayout_cases()
+	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
 	AdsManager.auto_answer = false
 	Locale.set_language("pt_BR", false)
+
+
+## Tela lógica e recorte da câmera (esquerda, direita) usados por _open e check_layout.
+func use_case(view: Vector2, insets: Vector2) -> void:
+	_view = Rect2(Vector2.ZERO, view)
+	_safe = DeviceProfiles.safe_rect(view, insets)
+	DeviceProfiles.simulate_insets(insets)
+
+
+## Área dos fixos: a área segura com 8 px de folga embaixo.
+func fixed_area() -> Rect2:
+	return Rect2(_safe.position, _safe.size - Vector2(0, 8))
+
+
+func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) -> void:
+	var view := fixed_area()
+	Locale.set_language(lang_code, false)
+	SaveManager.data = SaveManager.default_profile()
+	AdsManager.mock_fill = true
+	var screen := await _open()
+	var status := screen.get("_status") as Label
+	var toast := screen.get("_toast") as Control
+	check.call(toast.modulate.a == 0.0, "%s: o aviso começa escondido" % lang)
+	check_layout(screen, view, "%s, ao abrir" % lang)
+	_check_cards(screen, lang)
+
+	# Resgate bem-sucedido (anúncio simulado até o fim): a vaga volta a ficar em cronômetro.
+	screen.call("_claim", &"slot_ryo")
+	var waited := 0.0
+	while ShopManager.is_ready(&"slot_ryo") and waited < 10.0:
+		await host.get_tree().create_timer(0.1).timeout
+		waited += 0.1
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	check.call(not ShopManager.is_ready(&"slot_ryo"), "%s: o resgate põe a vaga em cronômetro" % lang)
+	check.call(status.text == tr("shop.received") % tr("shop.slot_ryo.name"),
+			"%s: o status mostra o recebido" % lang)
+	check.call(toast.modulate.a > 0.9, "%s: o aviso aparece com o recebido" % lang)
+	check_layout(screen, view, "%s, depois do resgate" % lang)
+
+	# Status (o texto mais longo de cada caso), escrito direto no Label: o aviso acompanha.
+	var long_reward := tr("shop.received") % tr("shop.slot_lantern.name")
+	for text: String in [tr("shop.failed"), tr("shop.pending"), tr("shop.watch_full"), long_reward]:
+		status.text = text
+		await host.get_tree().process_frame
+		await host.get_tree().process_frame
+		check.call(toast.modulate.a > 0.9, "%s: o aviso mostra \"%s\"" % [lang, text])
+		check_layout(screen, view, "%s, status \"%s\"" % [lang, text])
+	# O aviso some sozinho depois do tempo dele.
+	screen.call("_update_toast", 3.0)
+	check.call(toast.modulate.a == 0.0, "%s: o aviso some depois de ~2,5 s" % lang)
+
+	# Sem anúncio disponível: as vagas prontas ficam desativadas com o aviso.
+	SaveManager.data = SaveManager.default_profile()
+	AdsManager.mock_fill = false
+	screen.call("on_show")
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	check_layout(screen, view, "%s, sem anúncio" % lang)
+	AdsManager.mock_fill = true
+	screen.get_parent().queue_free()
+	await host.get_tree().process_frame
+
+
+## Loja já aberta: a tela muda de tamanho (resized) e o recorte troca de lado (giro de 180°,
+## avisado por PixelScaler.safe_insets_changed) e o layout se refaz sozinho, íntegro em cada caso.
+func _relayout_cases() -> void:
+	Locale.set_language("pt_BR", false)
+	SaveManager.data = SaveManager.default_profile()
+	AdsManager.mock_fill = true
+	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
+	var screen := await _open()
+	var host := screen.get_parent() as Control
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		if c["view"] == DeviceProfiles.main_view() and c["insets"] == Vector2.ZERO:
+			continue
+		use_case(c["view"], c["insets"])
+		host.size = c["view"]
+		await _host.get_tree().process_frame
+		await _host.get_tree().process_frame
+		var tag := "pt_BR, refeita para %s" % c["label"]
+		check_layout(screen, fixed_area(), tag)
+		_check_cards(screen, tag)
+	screen.get_parent().queue_free()
+	await _host.get_tree().process_frame
 
 
 ## Rolagem: o conteúdo rola só na vertical, o arrasto chega ao ScrollContainer, os botões de
@@ -84,13 +134,14 @@ func run_scroll(host: Node, check: Callable) -> void:
 	Locale.set_language("pt_BR", false)
 	SaveManager.data = SaveManager.default_profile()
 	AdsManager.mock_fill = true
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
+	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
+	var view := fixed_area()
 	var screen := await _open()
 	var scroll := screen.get("_scroll") as ScrollContainer
 	var content := scroll.get_child(0) as Control
 	check.call(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
 			and scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED, "Loja: rola só na vertical")
-	check.call(is_equal_approx(scroll.get_global_rect().end.y, SCREEN.end.y),
+	check.call(is_equal_approx(scroll.get_global_rect().end.y, _view.end.y),
 			"Loja: a área rolável vai até a borda inferior (%s)" % scroll.get_global_rect())
 	check.call(content.size.y > scroll.size.y, "Loja: conteúdo (%.0f) mais alto que a área (%.0f) rola" % [
 			content.size.y, scroll.size.y])
@@ -177,7 +228,8 @@ func check_layout(screen: Control, view: Rect2, state: String) -> void:
 	var scroll_rect := scroll.get_global_rect()
 	var content := scroll.get_child(0) as Control
 	var content_rect := content.get_global_rect()
-	_check.call(SCREEN.encloses(scroll_rect), "%s: a área rolável fica dentro da tela (%s)" % [state, scroll_rect])
+	_check.call(_safe.encloses(scroll_rect), "%s: a área rolável fica dentro da tela (%s em %s)" % [state, scroll_rect,
+			_safe])
 	_check.call(content.get_combined_minimum_size().x <= content.size.x + 0.5
 			and content_rect.end.x <= scroll_rect.end.x + 0.5,
 			"%s: o conteúdo rolável não estoura na horizontal (%s em %s)" % [state,
@@ -237,16 +289,10 @@ func _check_cards(screen: Control, lang: String) -> void:
 	for key: String in ["_cards", "_coin_cards"]:
 		var cards: Dictionary = screen.get(key)
 		_check.call(cards.size() == 6, "%s: 6 cartões em %s" % [lang, key])
-		var card_size := Vector2.ZERO
-		var top := -1.0
+		_check_grid(cards, "%s, %s" % [lang, key])
 		for id: StringName in cards:
 			var b := cards[id]["button"] as Button
 			var rect := b.get_global_rect()
-			if card_size == Vector2.ZERO:
-				card_size = rect.size
-				top = rect.position.y
-			_check.call(rect.size.is_equal_approx(card_size) and is_equal_approx(rect.position.y, top),
-					"%s: cartão %s do mesmo tamanho e na mesma linha (%s)" % [lang, id, rect])
 			var icons: Array[Control] = []
 			_icons_in(b, icons)
 			_check.call(icons.size() == 1, "%s: cartão %s mostra um ícone" % [lang, id])
@@ -271,10 +317,43 @@ func _check_cards(screen: Control, lang: String) -> void:
 				_check.call(hover.border_color == ThemeFactory.ACCENT, "%s: hover de %s com borda dourada" % [lang, id])
 
 
+## Grade uniforme (generaliza a antiga "linha única de 6 cartões", que só cabia em 678x305):
+## todos do mesmo tamanho, em ordem de leitura, linhas completas de 6 ou 3 colunas, cada
+## coluna na mesma x em todas as linhas, mesmo passo entre colunas e entre linhas, sem
+## sobreposição. Na tela de referência sem recorte continua exigida a linha única de 6.
+func _check_grid(cards: Dictionary, tag: String) -> void:
+	var rects: Array[Rect2] = []
+	for id: StringName in cards:
+		rects.append((cards[id]["button"] as Control).get_global_rect())
+	if rects.is_empty():
+		return
+	var first := rects[0]
+	var cols := 0
+	for rect: Rect2 in rects:
+		if is_equal_approx(rect.position.y, first.position.y):
+			cols += 1
+	_check.call(cols in [6, 3] and rects.size() % cols == 0,
+			"%s: cartões em linhas completas de 6 ou 3 colunas (%d por linha)" % [tag, cols])
+	if _view.size == DeviceProfiles.main_view() and _safe.size == _view.size:
+		_check.call(cols == 6, "%s: na tela de referência os 6 cartões ficam numa linha só" % tag)
+	if cols <= 0:
+		return
+	var step_x := rects[1].position.x - first.position.x if cols > 1 else 0.0
+	var step_y := rects[cols].position.y - first.position.y if rects.size() > cols else 0.0
+	_check.call(cols == 1 or step_x >= first.size.x, "%s: colunas sem sobreposição (passo %.1f)" % [tag, step_x])
+	_check.call(rects.size() == cols or step_y >= first.size.y,
+			"%s: linhas sem sobreposição (passo %.1f)" % [tag, step_y])
+	for i: int in rects.size():
+		var expected := first.position + Vector2((i % cols) * step_x, floori(i / float(cols)) * step_y)
+		_check.call(rects[i].size.is_equal_approx(first.size) and rects[i].position.is_equal_approx(expected),
+				"%s: cartão %d do mesmo tamanho e no lugar da grade (%s, esperado em %s)" % [tag, i,
+				rects[i], expected])
+
+
 func _open() -> Control:
 	# Host com o tamanho do viewport do jogo: a tela sozinha na árvore de testes não tem esse tamanho.
 	var host := Control.new()
-	host.size = SCREEN.size
+	host.size = _view.size
 	_host.add_child(host)
 	var screen := (load(SHOP_SCREEN) as GDScript).new() as Control
 	host.add_child(screen)

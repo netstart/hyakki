@@ -20,6 +20,8 @@ const MARGIN_LEFT := 26.0
 const MARGIN_RIGHT := 26.0
 const MARGIN_TOP := 52.0
 const MARGIN_BOTTOM := 30.0
+## Começo do título (depois do botão "voltar", que acompanha o mapa no recorte da câmera).
+const TITLE_LEFT := 96.0
 ## Passes de Chaikin na costa das quatro ilhas grandes.
 const COAST_SMOOTHING := 2
 const SEAL_FONT := "res://assets/fonts/fusion_pixel_12_ja.woff2"
@@ -99,6 +101,7 @@ func _ready() -> void:
 	_title.add_theme_constant_override("outline_size", 6)
 	_title.add_theme_color_override("font_outline_color", Color("120c1e"))
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_title)
 	resized.connect(_layout)
@@ -310,8 +313,10 @@ func _node_tooltip(id: StringName) -> String:
 func _layout() -> void:
 	if size.x < 10.0 or size.y < 10.0 or nodes.is_empty():
 		return
-	var area := Rect2(Vector2(MARGIN_LEFT, MARGIN_TOP),
-			size - Vector2(MARGIN_LEFT + MARGIN_RIGHT, MARGIN_TOP + MARGIN_BOTTOM))
+	_layout_title()
+	# Título em duas linhas (mapa estreito) empurra os pontos para baixo.
+	var top := maxf(MARGIN_TOP, _title.position.y + _title.size.y + 16.0)
+	var area := Rect2(Vector2(MARGIN_LEFT, top), size - Vector2(MARGIN_LEFT + MARGIN_RIGHT, top + MARGIN_BOTTOM))
 	var projected: Array[Vector2] = []
 	for id: StringName in nodes:
 		projected.append(JourneyGeo.project(JourneyGeo.STAGES.get(id, Vector2(135, 35))))
@@ -340,12 +345,17 @@ func _layout() -> void:
 	_snow.append(_land[0])
 	_build_roads()
 	_build_waves()
-	var title_left := 96.0
-	_title.position = Vector2(title_left, 6)
-	_title.size = Vector2(size.x - title_left - 8.0, 30)
 	_laid_out_size = size
 	_place_hero(false)
 	queue_redraw()
+
+
+## Título no topo, à direita do "voltar" (que fica a TITLE_LEFT da borda do mapa em qualquer
+## recorte); se não couber numa linha, quebra em duas.
+func _layout_title() -> void:
+	_title.position = Vector2(TITLE_LEFT, 6)
+	_title.size = Vector2(size.x - TITLE_LEFT - 8.0, 0)
+	_title.size.y = maxf(30.0, _title.get_minimum_size().y)
 
 
 func _build_roads() -> void:

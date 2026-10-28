@@ -10,13 +10,15 @@ extends RefCounted
 const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
 const RESULTS_SCREEN := "res://scripts/app/screens/results_screen.gd"
 const GAME_SCENE := "res://scenes/game/Game.tscn"
-const SCREEN := Rect2(Vector2.ZERO, Vector2(678, 305))
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const ShopLayoutTests := preload("res://tests/shop_layout_tests.gd")
 const MenusLayoutTests := preload("res://tests/menus_layout_tests.gd")
 const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
 
 var _host: Node
 var _check: Callable
+## Resolução de referência (a primeira de tests/device_profiles.gd).
+var _screen := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 
 
 func run(host: Node, check: Callable) -> void:
@@ -122,47 +124,54 @@ func _test_purchase() -> void:
 	SaveManager.data = SaveManager.default_profile()
 
 
-## Loja em cada idioma: "Receber grátis" nas vagas, subtítulo de presente, sem "Apoie o
-## jogo" e layout íntegro; um toque entrega na hora.
+## Loja em cada idioma e em cada tela de tests/device_profiles.gd: "Receber grátis" nas
+## vagas, subtítulo de presente, sem "Apoie o jogo" e layout íntegro; um toque entrega na hora.
 func _test_shop_screen() -> void:
 	var layout := ShopLayoutTests.new()
 	layout.set("_host", _host)
 	layout.set("_check", _check)
-	var view := Rect2(Vector2.ZERO, Vector2(678, 305 - 8))
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		var screen := await _open_shop()
-		var cards: Dictionary = screen.get("_cards")
-		var all_free := true
-		for id: StringName in cards:
-			var state := cards[id]["state"] as Label
-			var b := cards[id]["button"] as Button
-			all_free = all_free and not b.disabled and state.text == "> %s" % tr("shop.claim_free")
-		_check.call(all_free, "%s: sem anúncios as vagas dizem \"%s\"" % [lang, tr("shop.claim_free")])
-		var hint := screen.get("_offer_hint") as Label
-		_check.call(hint.text == tr("shop.hint_free"), "%s: subtítulo das Oferendas fala de presente" % lang)
-		var buy := screen.get("_buy") as Button
-		var restore := screen.get("_restore") as Button
-		_check.call(not buy.is_visible_in_tree() and not restore.is_visible_in_tree(),
-				"%s: sem anúncios a compra e a restauração somem da Loja" % lang)
-		layout.check_layout(screen, view, "%s, sem anúncios" % lang)
-		if lang == "pt_BR":
-			var before := SaveManager.ryo()
-			screen.call("_claim", &"slot_ryo")
-			await _host.get_tree().process_frame
-			_check.call(SaveManager.ryo() > before and not ShopManager.is_ready(&"slot_ryo"),
-					"Loja sem anúncios: tocar na vaga entrega na hora e põe em espera")
-			_check.call((screen.get("_status") as Label).text == tr("shop.received") % tr("shop.slot_ryo.name"),
-					"Loja sem anúncios: o aviso mostra o recebido")
-		screen.get_parent().queue_free()
-		await _host.get_tree().process_frame
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		layout.use_case(c["view"], c["insets"])
+		for lang: String in c["langs"]:
+			await _shop_lang(layout, lang, "%s [%s]" % [lang, c["label"]], c["view"])
+	layout.use_case(_screen.size, Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 
 
-func _open_shop() -> Control:
+func _shop_lang(layout: ShopLayoutTests, lang_code: String, lang: String, size: Vector2) -> void:
+	var view := layout.fixed_area()
+	Locale.set_language(lang_code, false)
+	SaveManager.data = SaveManager.default_profile()
+	var screen := await _open_shop(size)
+	var cards: Dictionary = screen.get("_cards")
+	var all_free := true
+	for id: StringName in cards:
+		var state := cards[id]["state"] as Label
+		var b := cards[id]["button"] as Button
+		all_free = all_free and not b.disabled and state.text == "> %s" % tr("shop.claim_free")
+	_check.call(all_free, "%s: sem anúncios as vagas dizem \"%s\"" % [lang, tr("shop.claim_free")])
+	var hint := screen.get("_offer_hint") as Label
+	_check.call(hint.text == tr("shop.hint_free"), "%s: subtítulo das Oferendas fala de presente" % lang)
+	var buy := screen.get("_buy") as Button
+	var restore := screen.get("_restore") as Button
+	_check.call(not buy.is_visible_in_tree() and not restore.is_visible_in_tree(),
+			"%s: sem anúncios a compra e a restauração somem da Loja" % lang)
+	layout.check_layout(screen, view, "%s, sem anúncios" % lang)
+	if lang_code == "pt_BR":
+		var before := SaveManager.ryo()
+		screen.call("_claim", &"slot_ryo")
+		await _host.get_tree().process_frame
+		_check.call(SaveManager.ryo() > before and not ShopManager.is_ready(&"slot_ryo"),
+				"Loja sem anúncios: tocar na vaga entrega na hora e põe em espera")
+		_check.call((screen.get("_status") as Label).text == tr("shop.received") % tr("shop.slot_ryo.name"),
+				"Loja sem anúncios: o aviso mostra o recebido")
+	screen.get_parent().queue_free()
+	await _host.get_tree().process_frame
+
+
+func _open_shop(size: Vector2) -> Control:
 	var host := Control.new()
-	host.size = SCREEN.size
+	host.size = size
 	_host.add_child(host)
 	var screen := (load(SHOP_SCREEN) as GDScript).new() as Control
 	host.add_child(screen)
@@ -177,31 +186,35 @@ func _test_results() -> void:
 	var layout := ResultsLayoutTests.new()
 	layout.set("_host", _host)
 	layout.set("_check", _check)
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		SaveManager.data = SaveManager.default_profile()
-		var r := ResultsLayoutTests.make_result("victory", 3)
-		var screen := await _open_results(r)
-		var double := screen.get("_double") as Button
-		_check.call(double.is_visible_in_tree() and double.text == tr("results.double_free"),
-				"%s: sem anúncios o botão é \"%s\"" % [lang, tr("results.double_free")])
-		layout.check_layout(screen, "%s, Dobrar ryō de presente" % lang)
-		if lang == "pt_BR":
-			var before := SaveManager.ryo()
-			var earned := int(r["ryo_earned"])
-			double.pressed.emit()
+	for c: Dictionary in DeviceProfiles.layout_cases():
+		layout.use_case(c["view"], c["insets"])
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
+			var tag := "%s [%s]" % [lang, c["label"]]
+			SaveManager.data = SaveManager.default_profile()
+			var r := ResultsLayoutTests.make_result("victory", 3)
+			var screen := await _open_results(r, c["view"])
+			var double := screen.get("_double") as Button
+			_check.call(double.is_visible_in_tree() and double.text == tr("results.double_free"),
+					"%s: sem anúncios o botão é \"%s\"" % [tag, tr("results.double_free")])
+			layout.check_layout(screen, "%s, Dobrar ryō de presente" % tag)
+			if lang == "pt_BR":
+				var before := SaveManager.ryo()
+				var earned := int(r["ryo_earned"])
+				double.pressed.emit()
+				await _host.get_tree().process_frame
+				_check.call(bool(r.get("doubled", false)) and SaveManager.ryo() == before + earned
+						and int(r["ryo_earned"]) == earned * 2, "Resultados sem anúncios: dobra o ryō na hora")
+				_check.call(not double.visible, "Resultados sem anúncios: o botão some depois de usado")
+			_close_results(screen)
 			await _host.get_tree().process_frame
-			_check.call(bool(r.get("doubled", false)) and SaveManager.ryo() == before + earned
-					and int(r["ryo_earned"]) == earned * 2, "Resultados sem anúncios: dobra o ryō na hora")
-			_check.call(not double.visible, "Resultados sem anúncios: o botão some depois de usado")
-		_close_results(screen)
-		await _host.get_tree().process_frame
+	layout.use_case(_screen.size, Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 
 
-func _open_results(r: Dictionary) -> Control:
+func _open_results(r: Dictionary, size: Vector2) -> Control:
 	var host := Control.new()
-	host.size = SCREEN.size
+	host.size = size
 	host.theme = ThemeFactory.build()
 	_host.add_child(host)
 	var app := ResultsLayoutTests.StubApp.new()
@@ -227,7 +240,7 @@ func _close_results(screen: Control) -> void:
 func _test_options() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	var menus := MenusLayoutTests.new()
-	var screen := await menus.open_screen(_host, SCREEN.size, &"options")
+	var screen := await menus.open_screen(_host, _screen.size, &"options")
 	_check.call(screen.find_child("opt_privacy", true, false) == null,
 			"Opções sem anúncios: sem \"Privacidade e anúncios\"")
 	_check.call(screen.find_child("opt_restore", true, false) == null,
@@ -245,11 +258,11 @@ func _test_options() -> void:
 	menus.close_screen(screen)
 	await _host.get_tree().process_frame
 	# Layout completo (sem as duas linhas) em cada idioma e tamanho, com a política visível.
-	for lang: String in Locale.SUPPORTED:
-		Locale.set_language(lang, false)
-		for view: Vector2 in MenusLayoutTests.SIZES:
+	for c: Dictionary in MenusLayoutTests.cases():
+		for lang: String in c["langs"]:
+			Locale.set_language(lang, false)
 			SaveManager.data = SaveManager.default_profile()
-			await menus.run_options(_host, _check, view, "sem anúncios %s %dx%d" % [lang, view.x, view.y])
+			await menus.run_options(_host, _check, c["view"], "sem anúncios %s [%s]" % [lang, c["label"]], c["insets"])
 	Locale.set_language("pt_BR", false)
 
 
@@ -261,7 +274,7 @@ func _test_boot() -> void:
 		SaveManager.data["open_ads_seen"] = 9
 		SaveManager.data["story"]["intro_seen"] = intro_seen
 		var vp := SubViewport.new()
-		vp.size = Vector2i(SCREEN.size)
+		vp.size = Vector2i(_screen.size)
 		vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_host.add_child(vp)
 		var app := App.new()

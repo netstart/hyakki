@@ -7,6 +7,7 @@ extends RefCounted
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "goro", "stage": "bamboo", "moon": 0, "mode": "normal", "seed": 23, "speed": 1}
+const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _host: Node
 var _check: Callable
@@ -113,9 +114,10 @@ func _test_framing(game: HyakkiGame) -> void:
 	# Em frações da tela (a janela dos testes não tem o tamanho do jogo).
 	_check.call(absf(corpse_y / view.y - DeathSequence.FOCUS_Y) < 0.03,
 			"o corpo fica a %.0f%% da altura (%.2f)" % [DeathSequence.FOCUS_Y * 100.0, corpse_y / view.y])
-	var game_h := HyakkiGame.FALLBACK_VIEW.y
-	_check.call(game_h * DeathSequence.FOCUS_Y + 16.0 < game_h * DeathSequence.BAND_Y - DeathSequence.BAND_HALF,
-			"em 678x305 o corpo fica acima da faixa do aviso")
+	for screen: Vector2 in [HyakkiGame.FALLBACK_VIEW] + DeviceProfiles.views():
+		var game_h := screen.y
+		_check.call(game_h * DeathSequence.FOCUS_Y + 16.0 < game_h * DeathSequence.BAND_Y - DeathSequence.BAND_HALF,
+				"em %dx%d o corpo fica acima da faixa do aviso" % [screen.x, screen.y])
 
 
 ## Reviver aceito e recompensado: levanta, a cor, a câmera, a música e a HUD voltam.
