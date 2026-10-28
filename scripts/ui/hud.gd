@@ -601,9 +601,10 @@ func show_revive_offer() -> void:
 	create_tween().tween_property(_revive_panel, "modulate:a", 1.0, REVIVE_FADE)
 
 
-## "Reviver (anúncio)" ou, sem anúncios (AdsManager.ads_enabled = false), "(presente)".
+## "Reviver (anúncio)" ou, de presente (sem anúncios ou com "Apoie o jogo",
+## AdsManager.rewards_are_gifts()), "(presente)".
 func revive_text() -> String:
-	return tr("revive.watch") if AdsManager.ads_enabled else tr("revive.free")
+	return tr("revive.free") if AdsManager.rewards_are_gifts() else tr("revive.watch")
 
 
 ## Sem a tela escura das outras: a cena da morte já vem cinza e escura, e o corpo da guardiã

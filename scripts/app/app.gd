@@ -119,10 +119,11 @@ func _scenario_from_args(args: PackedStringArray) -> bool:
 	return false
 
 
-## Sequência da abertura a frio.
+## Sequência da abertura a frio: consentimento (onde exigido) → introdução (1ª vez) → título.
+## Não há anúncio de abertura: nada de tela em branco esperando anúncio.
 func _boot() -> void:
 	if not AdsManager.ads_enabled:
-		# Sem anúncios: nada a consentir (nenhum ID de publicidade é usado) e sem abertura.
+		# Sem anúncios: nada a consentir (nenhum ID de publicidade é usado).
 		AdsManager.start(after_consent)
 		return
 	if AdsManager.uses_google_consent():
@@ -137,14 +138,6 @@ func _boot() -> void:
 
 
 func after_consent() -> void:
-	if AdsManager.should_show_app_open():
-		_show_blank()
-		AdsManager.show_app_open(_after_open_ad)
-	else:
-		_after_open_ad()
-
-
-func _after_open_ad() -> void:
 	if not bool(SaveManager.data["story"]["intro_seen"]):
 		play_story(&"intro", func() -> void:
 			SaveManager.data["story"]["intro_seen"] = true
@@ -152,12 +145,6 @@ func _after_open_ad() -> void:
 			go(&"title"))
 		return
 	go(&"title")
-	# Oferta discreta de remover o anúncio de abertura, uma única vez (17.7).
-	if int(SaveManager.data["open_ads_seen"]) >= 5 and not bool(SaveManager.data["remove_ad_offer_shown"]) \
-			and PurchaseManager.available() and not PurchaseManager.owns():
-		SaveManager.data["remove_ad_offer_shown"] = true
-		SaveManager.save_profile()
-		go(&"shop")
 
 
 func _show_blank() -> void:

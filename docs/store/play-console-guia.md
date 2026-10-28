@@ -18,7 +18,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 | Política de privacidade | https://netstart.github.io/privacy-policy.html |
 | targetSdk / minSdk | 36 (Android 16) / 24 (Android 7.0) |
 | Preço | gratuito |
-| Anúncios / compras | anúncio de abertura (removível com compra única) + anúncios premiados opcionais; compras `remove_open_ad` e `unlock_speed` (Ampulheta de Fūjin, velocidade 2x/3x) |
+| Anúncios / compras | só anúncios premiados opcionais (sem anúncio de abertura); compras `remove_open_ad` ("Apoiar o jogo": Lanterna Dourada + recompensas sem anúncio) e `unlock_speed` (Ampulheta de Fūjin, velocidade 2x/3x) |
 | AdMob | app `ca-app-pub-6552169828297838~1237111269`; editor `pub-6552169828297838` |
 
 Visão geral do caminho (conta pessoal nova):
@@ -101,12 +101,12 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
   inválido). Antes de abrir o APK de release, cadastre o aparelho como **dispositivo de teste** no
   AdMob ([seção 8.1](#81-conta-admob)); aí os anúncios vêm marcados como "Test Ad".
 - Antes de enviar, abra o APK de release no aparelho de teste e confira:
-  - o **anúncio de abertura** aparece ao abrir o jogo (com o aparelho cadastrado como teste);
+  - o jogo abre **sem anúncio**: consentimento (onde exigido), introdução na 1ª vez e o título;
   - os **anúncios premiados** (Loja, Reviver, Dobrar ryō) entregam a recompensa depois de assistidos;
   - nenhum anúncio aparece no meio de uma partida;
   - em Opções existem **"Privacidade e anúncios"** (reabre o formulário de consentimento) e
     **"Restaurar compras"**;
-  - a compra "Remover anúncio de abertura" mostra o **preço da loja** (só depois que o produto existir
+  - a compra "Apoiar o jogo" mostra o **preço da loja** (só depois que o produto existir
     na Play e o app vier instalado pela Play Store; no APK lateral ela pode aparecer indisponível).
 
 ### Chave de envio e Assinatura de apps do Google Play
@@ -169,7 +169,7 @@ Declarar errado é violação de política.
 | Humor grosseiro | **Não** | |
 | Interação entre usuários / chat / conteúdo gerado | **Não** | jogo offline, um jogador |
 | Compartilha localização do usuário | **Não** | |
-| Compras digitais | **Sim** | duas compras únicas, não consumíveis: `remove_open_ad` (remove o anúncio de abertura) e `unlock_speed` (Ampulheta de Fūjin: libera a velocidade 2x/3x; também pode ser liberada com ryō ganho jogando); não há caixa de itens aleatórios à venda |
+| Compras digitais | **Sim** | duas compras únicas, não consumíveis: `remove_open_ad` ("Apoiar o jogo": dá a Lanterna Dourada e entrega as recompensas opcionais sem assistir anúncio) e `unlock_speed` (Ampulheta de Fūjin: libera a velocidade 2x/3x; também pode ser liberada com ryō ganho jogando); não há caixa de itens aleatórios à venda |
 | Navegador ou busca na web | **Não** | |
 | NFT / blockchain | **Não** | |
 
@@ -203,7 +203,7 @@ ficam só no aparelho.
 
 O pacote inclui o **SDK de anúncios do Google (GMA Next-Gen SDK 1.4.0)**, o **Play Billing 9.1.0** e o
 manifesto final recebe a permissão `AD_ID`. Na 1ª versão o SDK de anúncios **é iniciado** e pede
-anúncios (abertura e premiados), então a coleta abaixo é real: declare **os tipos que o Google
+anúncios (só premiados; não há anúncio de abertura), então a coleta abaixo é real: declare **os tipos que o Google
 documenta para o SDK de anúncios**. Ela também precisa bater com a declaração de ID de publicidade
 (5.12) e com os SDKs que a Play encontra no pacote; declarar a menos é violação.
 
@@ -345,20 +345,23 @@ Os IDs reais **já estão no projeto**; não há nada para colar no código:
 | Onde | Valor |
 |---|---|
 | `project.godot` › `admob/general/android/app_id` | `ca-app-pub-6552169828297838~1237111269` |
-| `scripts/ads/admob_provider.gd` › `RELEASE_UNITS["app_open"]` | `ca-app-pub-6552169828297838/9118848597` |
 | `scripts/ads/admob_provider.gd` › `RELEASE_UNITS["rewarded"]` | `ca-app-pub-6552169828297838/5734137356` |
-| `scripts/autoload/purchase_manager.gd` › `PRODUCT` | `remove_open_ad` (preço de referência `PRICE_TEXT`: US$ 2,99) |
+| `scripts/autoload/purchase_manager.gd` › `PRODUCT` | `remove_open_ad` — "Apoiar o jogo" (preço de referência `PRICE_TEXT`: US$ 2,99) |
 | `scripts/autoload/purchase_manager.gd` › `SPEED_PRODUCT` | `unlock_speed` (preço de referência `SPEED_PRICE_USD`: US$ 1,99; `SPEED_PRICE_BRL`: R$ 4,99 em pt_BR) |
 | `scripts/autoload/purchase_manager.gd` › `SPEED_RYO_PRICE` | 3.000 ryō (a mesma Ampulheta, comprada com a moeda do jogo) |
 
-Com isso o build de release liga: anúncio de abertura (removível pela compra), anúncios premiados
-opcionais (Loja, Reviver, Dobrar ryō), o formulário de consentimento UMP e as linhas
+Com isso o build de release liga: anúncios premiados opcionais (Loja, Reviver, Dobrar ryō; com
+"Apoiar o jogo" eles viram presentes, sem anúncio), o formulário de consentimento UMP e as linhas
 "Privacidade e anúncios" e "Restaurar compras" em Opções. Nenhum anúncio interrompe uma partida.
 A Ampulheta de Fūjin (`unlock_speed`) não depende de anúncios: o Play Billing conecta sempre e
 "Restaurar compras" aparece mesmo num build sem anúncios.
 
 ### 8.1 Conta AdMob
-Em <https://admob.google.com>, com a mesma conta Google (o app e os dois blocos já existem nela):
+Em <https://admob.google.com>, com a mesma conta Google (o app e os blocos já existem nela):
+
+0. **Bloco de abertura sem uso:** o jogo não carrega mais o bloco *App open*
+   `ca-app-pub-6552169828297838/9118848597`. Ele pode ficar como está (sem pedidos, sem efeito) ou
+   ser arquivado em **Apps › Hyakki › Blocos de anúncios**; não reaproveite o ID.
 
 1. **Pagamentos** (*Payments*): preencha endereço e dados de pagamento e, em **Informações
    fiscais**, o formulário **W-8BEN** (pessoa física residente no Brasil, sem negócio nos EUA). Sem
@@ -386,7 +389,7 @@ Perfil de pagamentos** (*Payments profile*), crie ou associe o perfil e preencha
 brasileiros** (CPF e endereço) e a conta bancária para receber. Sem ele o menu de produtos fica
 bloqueado.
 
-### 8.3 Produto `remove_open_ad` (só depois do 1º AAB)
+### 8.3 Produto `remove_open_ad` — "Apoiar o jogo" (só depois do 1º AAB)
 A Play **só deixa criar produto no app depois que um AAB com a permissão `BILLING` foi enviado para
 alguma faixa**. O teste interno serve. A ordem é:
 
@@ -395,13 +398,19 @@ alguma faixa**. O teste interno serve. A ordem é:
    - ID do produto: **`remove_open_ad`** (a constante `PRODUCT`; o ID **não pode ser mudado** nem
      reaproveitado depois);
    - tipo: **único, não consumível** (*one-time*);
-   - nome: "Remover anúncio de abertura";
-   - descrição: "Remove o anúncio que aparece ao abrir o jogo. Os anúncios premiados continuam
-     opcionais.";
+   - nome: "Apoiar o jogo";
+   - descrição: "Compra única de apoio: a Lanterna Dourada é sua e as recompensas opcionais (Loja,
+     Reviver, Dobrar ryō) chegam de presente, sem assistir anúncio.";
    - preço: **US$ 2,99** como base (o `PRICE_TEXT` de referência), deixando a Play converter para as
      outras moedas; o jogo mostra o preço real que vem da loja;
    - traduções de nome e descrição para os **10 idiomas** da ficha (mesma lista da seção 7);
    - **Salvar** e **Ativar**.
+
+   **Produto já criado com o nome antigo** ("Remover anúncio de abertura"): o ID continua
+   `remove_open_ad`, então só edite o produto em **Monetizar › Produtos › Produtos no app ›
+   remove_open_ad**: troque o **nome** e a **descrição** pelos acima, nos 11 idiomas (os textos do
+   jogo estão em `tools/i18n/ui.py`: `shop.support` sem o preço e `shop.support_hint`), e salve. Quem
+   já comprou não precisa fazer nada: a restauração ao abrir o jogo entrega as recompensas sem anúncio.
 3. **Configurações › Teste de licença** (*License testing*): adicione a sua conta Google (e a de quem
    for testar a compra). Contas de teste de licença compram com cartão de teste, **sem cobrança**.
 
@@ -451,16 +460,16 @@ conteúdo regional). Se algum país pedir documentação extra, remova só ele.
 4. Notas da versão: as da [seção 9.5](#95-notas-da-versão-1-versão).
 5. Em **Testadores**, crie uma lista de e-mails com a sua conta, salve e abra o **link de inscrição**
    (*opt-in URL*) no celular. A versão aparece em minutos.
-6. Agora crie o produto e o teste de licença ([seção 8.3](#83-produto-remove_open_ad-só-depois-do-1-aab)).
+6. Agora crie o produto e o teste de licença ([seção 8.3](#83-produto-remove_open_ad--apoiar-o-jogo-só-depois-do-1-aab)).
 7. Instale pela Play Store, no aparelho cadastrado como teste no AdMob, e confira:
    - o **formulário de consentimento** aparece na primeira abertura quando você estiver numa região
      com mensagem (no Brasil, em geral não aparece; Opções › "Privacidade e anúncios" abre o
      formulário quando houver);
-   - o **anúncio de abertura** e os **premiados** aparecem como anúncio de teste (ou não aparecem
+   - o jogo abre **sem anúncio** e os **premiados** aparecem como anúncio de teste (ou não aparecem
      ainda, se o AdMob estiver limitando a veiculação) e o jogo segue normalmente nos dois casos;
    - os premiados entregam a recompensa; nenhum anúncio aparece no meio da partida;
    - a compra mostra o preço da loja e, com a conta de teste de licença, conclui **sem cobrança** e
-     remove o anúncio de abertura; desinstale, reinstale e use **"Restaurar compras"** para conferir
+     as recompensas passam a vir de presente ("Receber grátis", "Reviver (presente)"); desinstale, reinstale e use **"Restaurar compras"** para conferir
      que ela volta.
 
 ### 9.3 Teste fechado (obrigatório para contas pessoais novas)
@@ -571,11 +580,12 @@ O jogo não precisa de credenciais de login para o robô.
 - [ ] AdMob: mensagem GDPR publicada (estados dos EUA opcional)
 - [ ] AdMob: aparelho cadastrado como dispositivo de teste
 - [ ] Play Console: perfil de pagamentos (comerciante) com dados fiscais
-- [ ] AAB `1.7.0` gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abertura,
-      premiados, consentimento, "Privacidade e anúncios", "Restaurar compras")
+- [ ] AAB `1.7.0` gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
+      anúncio, premiados, consentimento, "Privacidade e anúncios", "Restaurar compras")
 - [ ] Assinatura de apps do Google Play aceita
 - [ ] Teste interno enviado (1º AAB com `BILLING`)
-- [ ] Produto `remove_open_ad` criado depois do 1º AAB: único, US$ 2,99, 10 traduções, **ativo**
+- [ ] Produto `remove_open_ad` ("Apoiar o jogo") criado depois do 1º AAB, ou nome e descrição
+      trocados se já existia: único, US$ 2,99, 10 traduções, **ativo**
 - [ ] Produto `unlock_speed` (Ampulheta de Fūjin) criado: único, US$ 1,99 com **R$ 4,99 manual no
       Brasil**, 10 traduções, **ativo**; compra, restauração e velocidade 2x/3x testadas
 - [ ] Conta em **Teste de licença**; compra e "Restaurar compras" testadas sem cobrança

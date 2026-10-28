@@ -1,6 +1,10 @@
 extends Node
 ## Compras únicas (plano 17.7), ambas permanentes (não consumíveis):
-## - "remove_open_ad" (PRODUCT): remove o anúncio de abertura; só existe com anúncios;
+## - "remove_open_ad" (PRODUCT): "Apoie o jogo". O id é o da Play Console (não pode mudar) e vem
+##   do tempo em que a compra removia o anúncio de abertura, que saiu do jogo. Dá a Lanterna
+##   Dourada e faz as recompensas opcionais (Loja, Reviver, Dobrar ryō) chegarem de presente,
+##   sem assistir anúncio (AdsManager.rewards_are_gifts()). Quem já tinha comprado recebe tudo
+##   pela restauração, sem fazer nada. Só existe com anúncios;
 ## - "unlock_speed" (SPEED_PRODUCT): Ampulheta de Fūjin, libera a velocidade 2x/3x. Vale com ou
 ##   sem anúncios e pode ser comprada de dois jeitos: com ryō (SPEED_RYO_PRICE) ou com dinheiro.
 ## Dois provedores de dinheiro:
@@ -9,8 +13,9 @@ extends Node
 ## Regras: confirmação (acknowledge) após a entrega, restauração ao abrir, estado pendente
 ## (por produto) não libera, reembolso revoga. A velocidade guarda a origem da posse
 ## ("ryo" | "play"): o reembolso só revoga a posse que veio da Play; quem pagou com ryō nunca perde.
-## No modo "sem anúncios" (AdsManager.ads_enabled = false) "remove_open_ad" fica indisponível
-## (available() = false) e as telas a escondem; o Play Billing conecta assim mesmo, pela Ampulheta.
+## No modo "sem anúncios" (AdsManager.ads_enabled = false) "Apoie o jogo" fica indisponível
+## (available() = false; as recompensas já são presentes) e as telas a escondem; o Play Billing
+## conecta assim mesmo, pela Ampulheta.
 
 signal purchase_finished(product: String, ok: bool)
 ## A Ampulheta passou a valer (compra com ryō, Play ou restauração): a partida libera 2x/3x na hora.
@@ -54,7 +59,7 @@ func _ready() -> void:
 	restore()
 
 
-## A compra "Remover anúncio de abertura" existe só enquanto há anúncios.
+## "Apoie o jogo" existe só enquanto há anúncios (sem eles as recompensas já são presentes).
 func available() -> bool:
 	return AdsManager.ads_enabled
 
@@ -199,7 +204,7 @@ func mock_refund(product: String = PRODUCT) -> void:
 		speed_revoked.emit()
 
 
-## Chave do estado pendente de cada produto ("pending" é a do anúncio, mantida dos saves antigos).
+## Chave do estado pendente de cada produto ("pending" é a de "Apoie o jogo", nome dos saves antigos).
 func _pending_key(product: String) -> String:
 	return "pending" if product == PRODUCT else "%s_pending" % product
 

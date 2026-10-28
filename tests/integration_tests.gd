@@ -57,8 +57,10 @@ const WeatherTests := preload("res://tests/weather_tests.gd")
 const SurfaceTests := preload("res://tests/surface_tests.gd")
 ## Ícones de habilidade (arquivos, pintor da HUD, 3 níveis): tests/skill_icon_tests.gd.
 const SkillIconTests := preload("res://tests/skill_icon_tests.gd")
-## Modo "sem anúncios" (release sem IDs do AdMob ou --ads-off): presentes, sem abertura nem compra.
+## Modo "sem anúncios" (release sem IDs do AdMob ou --ads-off): presentes, sem consentimento nem compra.
+## Sem anúncio de abertura e "Apoie o jogo" (recompensas de presente com a compra).
 const AdsOffTests := preload("res://tests/ads_off_tests.gd")
+const SupportPackTests := preload("res://tests/support_pack_tests.gd")
 ## Furo da câmera trocando de lado com cada tela aberta, sem redimensionar (giro de 180°).
 const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
 ## Ampulheta de Fūjin: velocidade 2x/3x como compra (ryō ou dinheiro), posse, reembolso e partida.
@@ -88,13 +90,13 @@ func _ready() -> void:
 	_test_sanctuary()
 	_test_shop_clock()
 	_test_shop_coin_items()
-	_test_ads_rules()
 	_test_unscathed_achievement()
 	_test_frozen_tint()
 	await _test_suspended_run()
 	await _test_revive_by_ad()
 	await DeathSequenceTests.new().run(self, _check)
 	await AdsOffTests.new().run(self, _check)
+	await SupportPackTests.new().run(self, _check)
 	await SpeedUnlockTests.new().run(self, _check)
 	await _test_thunder_weapons()
 	await _test_raijin_bolts()
@@ -326,7 +328,7 @@ func _test_i18n() -> void:
 				"%s tem todas as %d chaves" % [lang, Locale.keys.size()])
 	var formats := {"hud.level": [7], "results.summary": ["12:00", 30, "1.234", "500"],
 			"codex.kill_more": [3, 100], "licenses.dates": ["2026-10-21", "2026-10-21"],
-			"stat.might": ["+10%"], "shop.remove_ad": ["US$ 2,99"]}
+			"stat.might": ["+10%"], "shop.support": ["US$ 2,99"]}
 	for lang: String in Locale.SUPPORTED:
 		Locale.set_language(lang, false)
 		_check(tr("title.play") != "title.play", "%s traduz title.play" % lang)
@@ -433,19 +435,6 @@ func _test_shop_clock() -> void:
 	_check(is_equal_approx(float(bonus["modifiers"]["reroll"]), 2.0), "bônus da próxima partida aplica rerolagens")
 	_check(int(bonus["ult_start"]) == 50, "Lanterna Abençoada carrega o golpe")
 	_check(ShopManager.pending_next_run().is_empty(), "bônus é consumido uma vez")
-
-
-func _test_ads_rules() -> void:
-	SaveManager.data = SaveManager.default_profile()
-	SaveManager.data["launches"] = 1
-	_check(not AdsManager.should_show_app_open(), "sem anúncio de abertura na 1ª abertura")
-	SaveManager.data["launches"] = 3
-	_check(AdsManager.should_show_app_open(), "anúncio de abertura a partir da 2ª abertura")
-	SaveManager.data["last_open_ad_unix"] = int(Time.get_unix_time_from_system()) - 60
-	_check(not AdsManager.should_show_app_open(), "respeita o intervalo de 4 h")
-	SaveManager.data["last_open_ad_unix"] = 0
-	SaveManager.data["purchases"]["remove_open_ad"] = true
-	_check(not AdsManager.should_show_app_open(), "compra remove o anúncio de abertura")
 
 
 ## Partida suspensa (plano 10.11): snapshot → nova partida → restaurar dá o mesmo estado.

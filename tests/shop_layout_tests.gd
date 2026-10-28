@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## O que vale para a tela: fixos só o voltar, o título e o saldo (dentro da área segura com 8 px
 ## de folga embaixo e fora da área rolável); a área rolável vai até a borda inferior; os
-## cartões, os cabeçalhos e, por último, "Remover anúncio" e "Restaurar compras" ficam
+## cartões, os cabeçalhos e, por último, "Apoiar o jogo" e "Restaurar compras" ficam
 ## dentro do conteúdo rolável; textos inteiros nas caixas; ícones do mesmo tamanho de poço e
 ## sempre dentro do cartão; hover escuro e legível (nada do painel quase branco); o status
 ## é um aviso flutuante que aparece e some.
@@ -17,6 +17,9 @@ extends RefCounted
 ## resolução e idioma nos estados sem saldo, com saldo (não comprada) e liberada: ícone, textos e
 ## botões inteiros no cartão, sem sobreposição; preço em ryō em vermelho e apagado sem saldo;
 ## liberada, só o selo dourado.
+##
+## "Apoie o jogo" comprado (com anúncios ligados): as vagas dizem "Receber grátis", o subtítulo
+## fala de presente, a compra vira o agradecimento e o layout continua íntegro.
 
 const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
@@ -104,6 +107,29 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 	await host.get_tree().process_frame
 	check_layout(screen, view, "%s, sem anúncio" % lang)
 	AdsManager.mock_fill = true
+
+	# "Apoie o jogo" comprado: recompensas de presente, compra vira o agradecimento.
+	SaveManager.data["purchases"]["remove_open_ad"] = true
+	screen.call("on_show")
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	check_layout(screen, view, "%s, Apoie o jogo comprado" % lang)
+	var gifts := true
+	var cards: Dictionary = screen.get("_cards")
+	for id: StringName in cards:
+		var state_text := (cards[id]["state"] as Label).text
+		gifts = gifts and not (cards[id]["button"] as Button).disabled and state_text == "> %s" % tr("shop.claim_free")
+	check.call(gifts, "%s: com Apoie o jogo as vagas dizem \"%s\"" % [lang, tr("shop.claim_free")])
+	check.call((screen.get("_offer_hint") as Label).text == tr("shop.hint_free"),
+			"%s: com Apoie o jogo o subtítulo das Oferendas fala de presente" % lang)
+	var buy := screen.get("_buy") as Button
+	check.call(buy.is_visible_in_tree() and buy.disabled and buy.text == tr("shop.owned"),
+			"%s: com Apoie o jogo a compra mostra \"%s\"" % [lang, tr("shop.owned")])
+	SaveManager.data = SaveManager.default_profile()
+	screen.call("on_show")
+	await host.get_tree().process_frame
+	check.call((screen.get("_buy") as Button).text == tr("shop.support") % PurchaseManager.price_text(),
+			"%s: sem a compra o botão é \"Apoiar o jogo\" com o preço" % lang)
 	screen.get_parent().queue_free()
 	await host.get_tree().process_frame
 

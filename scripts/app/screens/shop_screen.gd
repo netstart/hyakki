@@ -1,8 +1,8 @@
 extends Screen
 ## Loja de recompensas (plano 17.3): 6 vagas, cada uma libera uma recompensa ao assistir
 ## um anúncio até o fim e volta em 6 h. Uma segunda seção vende, com ryō, reforços de uso
-## único para a próxima partida. No fim da rolagem ficam a compra "Remover anúncio de
-## abertura" e "Restaurar compras" (17.7).
+## único para a próxima partida. No fim da rolagem ficam a compra "Apoie o jogo" (Lanterna
+## Dourada e recompensas de presente, sem anúncio) e "Restaurar compras" (17.7).
 ##
 ## Layout (referência 678x305; vale para qualquer tela lógica, ver tests/device_profiles.gd):
 ## fixos só o voltar, o título e a pílula do saldo de ryō no topo. Todo o resto rola num
@@ -23,8 +23,9 @@ extends Screen
 ## Os cartões usam MOUSE_FILTER_PASS para o arrasto chegar ao ScrollContainer, e um toque
 ## que virou arrasto não compra nem resgata nada.
 ##
-## Sem anúncios (AdsManager.ads_enabled = false): as vagas viram presentes ("Receber grátis",
-## com a mesma espera de 6 h) e a seção "Apoie o jogo" (compra e restauração) some.
+## De presente (AdsManager.rewards_are_gifts(): sem anúncios ou com "Apoie o jogo" comprado): as
+## vagas viram presentes ("Receber grátis", com a mesma espera de 6 h). Sem anúncios a seção
+## "Apoie o jogo" (compra e restauração) some.
 
 ## Largura máxima do cartão na grade de 6 colunas e a mínima para ela ainda valer; abaixo
 ## disso a grade vira 3 colunas, com cartões de até WIDE_CARD_W.
@@ -209,7 +210,7 @@ func on_show() -> void:
 		child.queue_free()
 	_cards.clear()
 	_coin_cards.clear()
-	_offer_hint.text = tr("shop.hint") if AdsManager.ads_enabled else tr("shop.hint_free")
+	_offer_hint.text = tr("shop.hint_free") if AdsManager.rewards_are_gifts() else tr("shop.hint")
 	for node: Control in _support:
 		node.visible = PurchaseManager.available()
 	_insets = MenuKit.safe_insets(self)
@@ -288,7 +289,7 @@ func on_show() -> void:
 	_update_cards()
 	_layout_speed()
 	var owned := PurchaseManager.owns()
-	_buy.text = tr("shop.owned") if owned else tr("shop.remove_ad") % PurchaseManager.price_text()
+	_buy.text = tr("shop.owned") if owned else tr("shop.support") % PurchaseManager.price_text()
 	_buy.disabled = owned
 	# Tela estreita: "Restaurar compras" desce para baixo da compra em vez de alargar a linha.
 	var row_w := _buy.get_combined_minimum_size().x + PURCHASE_SEP + _restore.get_combined_minimum_size().x
@@ -419,9 +420,9 @@ func _relayout() -> void:
 		on_show()
 
 
-## Chamada da vaga pronta: "Ver anúncio" ou, sem anúncios, "Receber grátis".
+## Chamada da vaga pronta: "Ver anúncio" ou, de presente, "Receber grátis".
 func claim_text() -> String:
-	return tr("shop.watch") if AdsManager.ads_enabled else tr("shop.claim_free")
+	return tr("shop.claim_free") if AdsManager.rewards_are_gifts() else tr("shop.watch")
 
 
 func _claim(id: StringName) -> void:
@@ -599,7 +600,7 @@ func _section(title: String, subtitle: String) -> VBoxContainer:
 	return box
 
 
-## Compra que remove o anúncio de abertura (destaque) e "Restaurar compras" (discreto), lado a
+## Compra "Apoie o jogo" (destaque) e "Restaurar compras" (discreto), lado a
 ## lado; em tela estreita (on_show) a linha vira coluna, com a restauração embaixo à direita.
 func _purchase_row() -> BoxContainer:
 	var row := BoxContainer.new()
@@ -607,7 +608,7 @@ func _purchase_row() -> BoxContainer:
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	_purchase = row
 	_buy = button("", _on_buy, Vector2(0, 38))
-	_buy.name = "RemoveAd"
+	_buy.name = "Support"
 	_buy.clip_text = false
 	_buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_buy.mouse_filter = Control.MOUSE_FILTER_PASS

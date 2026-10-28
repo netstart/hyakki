@@ -262,7 +262,7 @@ func _suite_resume() -> void:
 	if splash:
 		await _seconds(0.8)
 		await _tap_control(_find(SplashScreen) as Control)
-	if not await _expect_screen(&"title", "título na 2ª abertura (anúncio de abertura simulado)", 20.0):
+	if not await _expect_screen(&"title", "título direto na 2ª abertura (sem anúncio de abertura)", WAIT):
 		return
 	_check(app.has_suspended_run(), "partida suspensa disponível")
 	_shot("titulo_continuar")

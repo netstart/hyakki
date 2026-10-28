@@ -6,11 +6,12 @@ extends Node
 ##
 ## IDs: em build de debug usa os IDs de TESTE oficiais do Google, que nunca geram receita
 ## nem infringem a política de cliques. Em build de release sem IDs reais o jogo fica no modo
-## "sem anúncios" (AdsManager.ads_enabled = false): o SDK e o UMP nunca são iniciados, não há
-## anúncio de abertura e as recompensas são entregues de presente, sem anúncio.
+## "sem anúncios" (AdsManager.ads_enabled = false): o SDK e o UMP nunca são iniciados e as
+## recompensas são entregues de presente, sem anúncio. Só há o bloco recompensado: o jogo não
+## tem anúncio de abertura (App Open).
 ##
 ## A conta de produção está configurada em `RELEASE_UNITS` e em
-## `admob/general/android/app_id` no project.godot. Para mudar de conta, atualize os três IDs;
+## `admob/general/android/app_id` no project.godot. Para mudar de conta, atualize os dois IDs;
 ## o exportador do Poing grava o ID do app no AndroidManifest.
 
 signal ready_changed
@@ -18,12 +19,10 @@ signal ready_changed
 const SINGLETON := "PoingGodotAdMob"
 ## Blocos de anúncio de teste do Google (developers.google.com/admob/android/test-ads).
 const TEST_UNITS := {
-	"app_open": "ca-app-pub-3940256099942544/9257395921",
 	"rewarded": "ca-app-pub-3940256099942544/5224354917",
 }
 ## IDs de produção dos blocos AdMob (plano 17.1).
 const RELEASE_UNITS := {
-	"app_open": "ca-app-pub-6552169828297838/9118848597",
 	"rewarded": "ca-app-pub-6552169828297838/5734137356",
 }
 const RETRY_SECONDS := 20.0
@@ -35,8 +34,6 @@ const TEST_PUBLISHER := "ca-app-pub-3940256099942544"
 var initialized: bool = false
 var _rewarded: RewardedAd
 var _rewarded_loader: RewardedAdLoader
-var _app_open: AppOpenAd
-var _app_open_loader: AppOpenAdLoader
 var _loading_rewarded: bool = false
 
 
@@ -102,7 +99,6 @@ func _initialize(done: Callable) -> void:
 	listener.on_initialization_complete = func(_status: InitializationStatus) -> void:
 		initialized = true
 		load_rewarded()
-		load_app_open()
 		done.call()
 	var config := RequestConfiguration.new()
 	# Jogo para público geral (13+): conteúdo de anúncio limitado a "T" (plano 17.5).
@@ -166,42 +162,3 @@ func show_rewarded(done: Callable) -> void:
 	var reward := OnUserEarnedRewardListener.new()
 	reward.on_user_earned_reward = func(_item: RewardedItem) -> void: state["earned"] = true
 	ad.show(reward)
-
-
-# --- Abertura -----------------------------------------------------------------------
-
-func app_open_ready() -> bool:
-	return _app_open != null
-
-
-func load_app_open() -> void:
-	if _app_open != null or not initialized:
-		return
-	_app_open_loader = AppOpenAdLoader.new()
-	var callback := AppOpenAdLoadCallback.new()
-	callback.on_ad_loaded = func(ad: AppOpenAd) -> void:
-		_app_open = ad
-		ready_changed.emit()
-	callback.on_ad_failed_to_load = func(error: LoadAdError) -> void:
-		push_warning("AdMob: abertura não carregou (%d) %s" % [error.code, error.message])
-	_app_open_loader.load(unit("app_open"), AdRequest.new(), callback)
-
-
-func show_app_open(done: Callable) -> void:
-	if _app_open == null:
-		done.call()
-		return
-	var ad := _app_open
-	_app_open = null
-	var state := {"finished": false}
-	var finish := func() -> void:
-		if bool(state["finished"]):
-			return
-		state["finished"] = true
-		ad.destroy()
-		done.call()
-	var callbacks := FullScreenContentCallback.new()
-	callbacks.on_ad_dismissed_full_screen_content = finish
-	callbacks.on_ad_failed_to_show_full_screen_content = func(_error: AdError) -> void: finish.call()
-	ad.full_screen_content_callback = callbacks
-	ad.show()

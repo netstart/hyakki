@@ -18,8 +18,8 @@ controlador dos dados descritos aqui. Contato de privacidade: **netstart@gmail.c
 
 **Resumo.** O jogo não tem conta, login, chat nem conteúdo enviado por jogadores, e não pede sua
 localização, contatos, fotos, microfone ou câmera. Não temos servidor: não recebemos nenhum dado seu.
-O jogo mostra um anúncio na abertura, removível por uma compra única, e anúncios premiados
-opcionais. Nenhum anúncio interrompe uma partida. O jogo pede seu consentimento onde a lei exige.
+O jogo mostra apenas anúncios premiados opcionais, que você escolhe assistir; não há anúncio ao
+abrir o jogo. Nenhum anúncio interrompe uma partida. O jogo pede seu consentimento onde a lei exige.
 
 **O que fica no seu aparelho.** O progresso (ryō, desbloqueios, conquistas, configurações), uma
 partida suspensa e um registro local das partidas, usado só para equilibrar o jogo dentro do próprio
@@ -32,8 +32,9 @@ para os anúncios e para a compra pelo Google Play; a vibração é usada nos ef
 jogo e pode ser desligada em Opções. As bibliotecas do Google incluídas no app também declaram as
 permissões de ID de publicidade (`AD_ID`) e de faturamento do Google Play (`BILLING`).
 
-**Anúncios.** O jogo usa o Google AdMob para mostrar um anúncio ao abrir o jogo (removível com uma compra) e anúncios premiados que você escolhe
-assistir; nenhum anúncio interrompe uma partida. O SDK do Google Mobile Ads, operado pelo Google,
+**Anúncios.** O jogo usa o Google AdMob apenas para anúncios premiados que você escolhe
+assistir; não há anúncio ao abrir o jogo e nenhum anúncio interrompe uma partida. Quem fez a compra "Apoiar o jogo"
+recebe as recompensas sem assistir anúncio. O SDK do Google Mobile Ads, operado pelo Google,
 pode coletar e compartilhar com o Google, de forma criptografada (TLS): o endereço IP (para estimar a
 localização aproximada), o ID de publicidade do Android e o ID do conjunto de apps, interações com os
 anúncios (aberturas, toques, vídeos vistos) e dados de diagnóstico (desempenho do app e do SDK), para
@@ -45,7 +46,7 @@ Android. O jogo só solicita anúncios quando há conexão com a internet. Como 
 <https://policies.google.com/privacy> e
 <https://policies.google.com/technologies/partner-sites>.
 
-**Compras.** As compras únicas (não consumíveis) "Remover anúncio de abertura" e "Ampulheta de Fūjin" (velocidade 2x/3x) são processadas pelo Google
+**Compras.** As compras únicas (não consumíveis) "Apoiar o jogo" e "Ampulheta de Fūjin" (velocidade 2x/3x) são processadas pelo Google
 Play, segundo os termos e a política de privacidade do Google. Não recebemos seu nome, e-mail nem
 dados de pagamento; o jogo só confere as compras no próprio aparelho, sem servidor próprio, e guarda
 no aparelho apenas se cada uma foi feita. Para recuperar as compras (por exemplo, após reinstalar o jogo),
@@ -79,8 +80,8 @@ described here. Privacy contact: **netstart@gmail.com**.
 
 **Summary.** The game has no account, login, chat or user-generated content, and does not ask for
 your location, contacts, photos, microphone or camera. We run no server and receive no data from
-you. The game shows an ad when it opens, removable with a one-time purchase, and optional rewarded
-ads. No ad interrupts a run. The game asks for your consent where the law requires it.
+you. The game shows only optional rewarded ads that you choose to watch; there is no ad when the game
+opens. No ad interrupts a run. The game asks for your consent where the law requires it.
 
 **What stays on your device.** Progress (ryō, unlocks, achievements, settings), a suspended run and
 a local log of runs, used only to balance the game on the device itself, are stored only in the
@@ -93,9 +94,9 @@ and for purchases through Google Play; vibration is used for game effects and ca
 turned off in Options. The Google libraries bundled with the app also declare the advertising ID
 (`AD_ID`) and Google Play billing (`BILLING`) permissions.
 
-**Ads.** The game uses Google AdMob to show
-one ad when the game opens (removable with a purchase) and rewarded ads that you choose to watch; no
-ad ever interrupts a run. The Google Mobile Ads SDK, operated by Google, may collect and share with
+**Ads.** The game uses Google AdMob only for
+rewarded ads that you choose to watch; there is no ad when the game opens and no ad ever interrupts a
+run. If you made the "Support the game" purchase, you get the rewards without watching an ad. The Google Mobile Ads SDK, operated by Google, may collect and share with
 Google, encrypted in transit (TLS): the IP address (to estimate approximate location), the Android
 advertising ID and app set ID, ad interactions (launches, taps, video views) and diagnostics (app and
 SDK performance), for advertising, analytics and fraud prevention. Where the law requires it (for
@@ -105,7 +106,7 @@ choice in Options › Privacy and ads, and reset or delete the advertising ID in
 The game only requests ads when an internet connection is available. How Google uses this data: <https://policies.google.com/privacy> and
 <https://policies.google.com/technologies/partner-sites>.
 
-**Purchases.** The one-time (non-consumable) purchases "Remove opening ad" and "Fūjin's Hourglass" (2x/3x speed) are processed by Google
+**Purchases.** The one-time (non-consumable) purchases "Support the game" and "Fūjin's Hourglass" (2x/3x speed) are processed by Google
 Play under Google's terms and privacy policy. We do not receive your name, email or payment data; the
 game checks the purchases only on the device, with no server of our own, and stores on the device only
 whether each one was made. To recover the purchases (for example, after reinstalling the game), use

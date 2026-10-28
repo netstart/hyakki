@@ -10,8 +10,11 @@ verdadeiras sobre o conteúdo. Números conferidos com o README em 25/10/2026: 7
 (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos, 37 yōkai, 12 chefes, 15 Kami,
 40 conquistas. Nomes de modos iguais aos do jogo (`i18n/strings.csv`).
 
-**Atenção:** a versão 1.7.0 adiciona anúncios premiados opcionais e um anúncio na abertura,
-removível por compra única. Mantenha a última linha dos 11 idiomas alinhada a essa monetização.
+**Atenção:** o jogo tem só anúncios premiados opcionais (o anúncio na abertura saiu do
+jogo) e duas compras únicas: "Apoiar o jogo", que dá a Lanterna Dourada e entrega as
+recompensas sem anúncio, e a Ampulheta de Fūjin (velocidade 2x/3x), que também pode ser
+liberada com 3.000 ryō. Mantenha o item de velocidade e a última linha dos 11 idiomas
+alinhados a essa monetização.
 
 Tradução revisada em 25/10/2026; ainda vale revisar com falantes nativos (plano 7.7.3).
 
@@ -31,11 +34,11 @@ Hyakki é um roguelike no estilo survivors, em pixel art e inspirado no folclore
 • Pactos com 15 Kami: bênçãos poderosas que cobram um preço.
 • Santuário com melhorias permanentes, 40 conquistas que desbloqueiam conteúdo e o Diário do Guardião, onde a história se revela aos poucos.
 • Lua Vermelha (I a V), Noite Sem Fim e Desafio Diário para quem quer mais.
-• Velocidade 1x, 2x e 3x, e o modo Brisa para jogar a história com calma.
+• Modo Brisa para jogar a história com calma, e velocidade 2x e 3x com a Ampulheta de Fūjin, liberada com ryō do jogo ou por compra única.
 • Acessibilidade: modo daltônico, redução de flashes e tremor, números de dano opcionais.
 • 11 idiomas e jogo offline: sem conta, com o progresso salvo no próprio aparelho.
 
-Anúncios premiados opcionais e um anúncio ao abrir o jogo, removível com uma compra única. Nenhum anúncio interrompe uma partida.
+Só anúncios premiados opcionais, e nenhum interrompe uma partida. Duas compras únicas: o apoio ao jogo, que dá a Lanterna Dourada e entrega as recompensas sem anúncio, e a Ampulheta de Fūjin, que também sai com ryō.
 <!-- /LISTING -->
 
 <!-- LISTING:en -->
@@ -54,11 +57,11 @@ Hyakki is a survivors-style roguelike in pixel art, inspired by Japanese folklor
 • Pacts with 15 Kami: powerful blessings that come at a price.
 • A Sanctuary of permanent upgrades, 40 achievements that unlock content and the Guardian's Journal, where the story unfolds bit by bit.
 • Red Moon (I to V), Endless Night and a Daily Challenge for those who want more.
-• 1x, 2x and 3x speed, plus Breeze mode to enjoy the story at your own pace.
+• Breeze mode to enjoy the story at your own pace, plus 2x and 3x speed with Fūjin's Hourglass, unlocked with in-game ryō or a one-time purchase.
 • Accessibility: colorblind mode, reduced flashes and shake, optional damage numbers.
 • 11 languages and offline play: no account, progress saved on your own device.
 
-Optional rewarded ads and an ad when the game opens, removable with a one-time purchase. No ad interrupts a run.
+Only optional rewarded ads, and none interrupts a run. Two one-time purchases: supporting the game gives the Golden Lantern and delivers the rewards with no ads, and Fūjin's Hourglass can also be earned with ryō.
 <!-- /LISTING -->
 
 <!-- LISTING:es -->
@@ -77,11 +80,11 @@ Hyakki es un roguelike de estilo survivors en pixel art, inspirado en el folclor
 • Pactos con 15 kami: bendiciones poderosas que tienen un precio.
 • Santuario con mejoras permanentes, 40 logros que desbloquean contenido y el Diario del guardián, donde la historia se revela poco a poco.
 • Luna Roja (I a V), Noche Sin Fin y Desafío diario para quien quiera más.
-• Velocidad 1x, 2x y 3x, y el modo Brisa para disfrutar la historia con calma.
+• Modo Brisa para disfrutar la historia con calma, y velocidad 2x y 3x con el Reloj de arena de Fūjin, que se libera con ryō del juego o con una compra única.
 • Accesibilidad: modo daltónico, menos destellos y temblor, números de daño opcionales.
 • 11 idiomas y juego sin conexión: sin cuenta y con el progreso guardado en tu dispositivo.
 
-Hay anuncios con recompensa opcionales y un anuncio al abrir el juego, que puedes eliminar con una compra única. Ningún anuncio interrumpe una partida.
+Solo hay anuncios con recompensa opcionales, y ninguno interrumpe una partida. Dos compras únicas: el apoyo al juego, que da la Linterna Dorada y entrega las recompensas sin anuncios, y el Reloj de arena de Fūjin, que también se consigue con ryō.
 <!-- /LISTING -->
 
 <!-- LISTING:de -->
@@ -100,11 +103,11 @@ Hyakki ist ein Roguelike im Survivors-Stil, in Pixel-Art und inspiriert von japa
 • Pakte mit 15 Kami: mächtige Segen, die ihren Preis haben.
 • Ein Heiligtum mit dauerhaften Verbesserungen, 40 Erfolge, die Inhalte freischalten, und das Wächtertagebuch, in dem sich die Geschichte Stück für Stück enthüllt.
 • Blutmond (I bis V), Endlose Nacht und Tägliche Herausforderung für alle, die mehr wollen.
-• Tempo 1x, 2x und 3x, dazu der Brise-Modus, um die Geschichte entspannt zu erleben.
+• Brise-Modus, um die Geschichte entspannt zu erleben, und Tempo 2x und 3x mit Fūjins Sanduhr, freigeschaltet mit Ryō aus dem Spiel oder per Einmalkauf.
 • Barrierefreiheit: Farbenblind-Modus, weniger Blitze und Wackeln, optionale Schadenszahlen.
 • 11 Sprachen und offline spielbar: kein Konto, der Fortschritt bleibt auf deinem Gerät.
 
-Es gibt optionale Anzeigen mit Belohnung und eine Anzeige beim Öffnen des Spiels, die du mit einem einmaligen Kauf entfernen kannst. Keine Anzeige unterbricht einen Lauf.
+Es gibt nur optionale Anzeigen mit Belohnung, und keine unterbricht einen Lauf. Zwei Einmalkäufe: Die Unterstützung des Spiels bringt die Goldene Laterne und liefert die Belohnungen ohne Anzeigen, und Fūjins Sanduhr gibt es auch für Ryō.
 <!-- /LISTING -->
 
 <!-- LISTING:fr -->
@@ -123,11 +126,11 @@ Hyakki est un roguelike de type survivors en pixel art, inspiré du folklore jap
 • Pactes avec 15 kami : des bénédictions puissantes, mais qui ont un prix.
 • Un Sanctuaire d'améliorations permanentes, 40 succès qui débloquent du contenu et le Journal du gardien, où l'histoire se révèle peu à peu.
 • Lune rouge (I à V), Nuit sans fin et Défi du jour pour aller plus loin.
-• Vitesse 1x, 2x et 3x, et le mode Brise pour profiter de l'histoire tranquillement.
+• Le mode Brise pour profiter de l'histoire tranquillement, et la vitesse 2x et 3x avec le Sablier de Fūjin, débloqué avec les ryō du jeu ou par un achat unique.
 • Accessibilité : mode daltonien, flashs et secousses réduits, chiffres de dégâts optionnels.
 • 11 langues et jeu hors ligne : sans compte, avec la progression enregistrée sur ton appareil.
 
-Des annonces récompensées facultatives sont proposées, ainsi qu'une annonce à l'ouverture du jeu, supprimable avec un achat unique. Aucune publicité n'interrompt une partie.
+Seules des annonces récompensées facultatives sont proposées, et aucune n'interrompt une partie. Deux achats uniques : le soutien au jeu, qui donne la Lanterne dorée et les récompenses sans publicité, et le Sablier de Fūjin, aussi disponible contre des ryō.
 <!-- /LISTING -->
 
 <!-- LISTING:ru -->
@@ -146,11 +149,11 @@ Des annonces récompensées facultatives sont proposées, ainsi qu'une annonce �
 • Договоры с 15 ками: сильные благословения, за которые придётся платить.
 • Святилище с постоянными улучшениями, 40 достижений, открывающих контент, и Дневник стража, где история раскрывается постепенно.
 • Красная луна (I–V), Бесконечная ночь и Ежедневное испытание для тех, кому мало.
-• Скорость 1x, 2x и 3x и режим «Бриз», чтобы спокойно пройти сюжет.
+• Режим «Бриз», чтобы спокойно пройти сюжет, и скорость 2x и 3x с Песочными часами Фудзина: их можно открыть за рё из игры или разовой покупкой.
 • Доступность: режим для дальтоников, меньше вспышек и тряски, отключаемые числа урона.
 • 11 языков и игра без интернета: без аккаунта, прогресс хранится на твоём устройстве.
 
-Реклама за награду показывается только по желанию. Рекламу при запуске игры можно убрать разовой покупкой. Реклама не прерывает забег.
+Только реклама за награду, по желанию, и она не прерывает забег. Две разовые покупки: поддержка игры даёт Золотой фонарь и награды без рекламы, а Песочные часы Фудзина можно получить и за рё.
 <!-- /LISTING -->
 
 <!-- LISTING:id -->
@@ -169,11 +172,11 @@ Hyakki adalah roguelike bergaya survivors dengan pixel art, terinspirasi cerita 
 • Perjanjian dengan 15 Kami: berkah kuat yang ada harganya.
 • Kuil dengan peningkatan permanen, 40 pencapaian yang membuka konten, dan Jurnal Penjaga tempat cerita terungkap sedikit demi sedikit.
 • Bulan Merah (I–V), Malam Tanpa Akhir, dan Tantangan Harian untuk yang ingin lebih.
-• Kecepatan 1x, 2x, dan 3x, serta Mode Semilir untuk menikmati cerita dengan santai.
+• Mode Semilir untuk menikmati cerita dengan santai, serta kecepatan 2x dan 3x lewat Jam Pasir Fūjin, yang terbuka dengan ryō dari game atau pembelian sekali.
 • Aksesibilitas: mode buta warna, kurangi kilatan dan guncangan, angka damage opsional.
 • 11 bahasa dan bisa dimainkan offline: tanpa akun, progres tersimpan di perangkatmu.
 
-Iklan berhadiah bersifat opsional. Iklan saat game dibuka dapat dihapus dengan satu kali pembelian. Iklan tidak mengganggu permainan.
+Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. Dua pembelian sekali: dukungan untuk game memberi Lentera Emas dan hadiah tanpa iklan, dan Jam Pasir Fūjin juga bisa didapat dengan ryō.
 <!-- /LISTING -->
 
 <!-- LISTING:ja -->
@@ -192,11 +195,11 @@ Iklan berhadiah bersifat opsional. Iklan saat game dibuka dapat dihapus dengan s
 • 15柱の神との契り：強力な加護には代償がある。
 • 永続強化の神社、コンテンツを解放する実績40種、物語が少しずつ明かされる「守り人の日記」。
 • 紅月（I〜V）、終わらぬ夜、デイリーチャレンジでさらなる挑戦を。
-• 1倍・2倍・3倍速。物語をゆっくり楽しめる「そよ風」モード。
+• 物語をゆっくり楽しめる「そよ風」モード。2倍・3倍速は「風神の砂時計」で解放。ゲーム内の両でも、一度の購入でも手に入る。
 • アクセシビリティ：色覚サポート、点滅と揺れの軽減、ダメージ表示の切り替え。
 • 11言語対応、オフラインで遊べる：アカウント不要、進行状況は端末内に保存。
 
-リワード広告は任意で視聴できます。起動時の広告は一度の購入で削除でき、プレイ中に広告が中断することはありません。
+広告は任意で視聴するリワード広告のみで、プレイ中に広告が中断することはありません。買い切りは2つ：金の灯籠が手に入り報酬を広告なしで受け取れる応援購入と、両でも解放できる「風神の砂時計」です。
 <!-- /LISTING -->
 
 <!-- LISTING:ko -->
@@ -215,11 +218,11 @@ Iklan berhadiah bersifat opsional. Iklan saat game dibuka dapat dihapus dengan s
 • 15신과의 계약: 강력한 축복에는 대가가 따릅니다.
 • 영구 강화를 위한 신사, 콘텐츠를 해금하는 업적 40개, 이야기가 조금씩 드러나는 수호자의 일지.
 • 붉은 달(I~V), 끝없는 밤, 일일 도전으로 더 높은 난이도에 도전하세요.
-• 1배·2배·3배속, 그리고 이야기를 편하게 즐기는 산들바람 모드.
+• 이야기를 편하게 즐기는 산들바람 모드, 그리고 후진의 모래시계로 여는 2배·3배속: 게임 속 료 또는 1회 구매로 해제됩니다.
 • 접근성: 색각 보조 모드, 번쩍임과 흔들림 줄이기, 피해 숫자 표시 선택.
 • 11개 언어, 오프라인 플레이: 계정 없이, 진행 상황은 기기에 저장됩니다.
 
-보상형 광고는 선택해서 볼 수 있습니다. 실행 시 광고는 1회 구매로 제거할 수 있으며, 플레이 도중에는 광고가 나오지 않습니다.
+광고는 선택해서 보는 보상형 광고뿐이며, 플레이 도중에는 광고가 나오지 않습니다. 1회 구매는 두 가지입니다: 황금 등불과 광고 없는 보상을 주는 후원 구매, 그리고 료로도 해제할 수 있는 후진의 모래시계.
 <!-- /LISTING -->
 
 <!-- LISTING:zh_TW -->
@@ -238,11 +241,11 @@ Iklan berhadiah bersifat opsional. Iklan saat game dibuka dapat dihapus dengan s
 • 與15位神明締結契約：強大的祝福也有代價。
 • 提供永久強化的神社、可解鎖內容的40項成就，以及逐步揭曉故事的「守護者日誌」。
 • 紅月（I～V）、無盡之夜與每日挑戰，滿足想要更多挑戰的玩家。
-• 1倍、2倍、3倍速，以及讓你輕鬆享受劇情的「微風」模式。
+• 讓你輕鬆享受劇情的「微風」模式；2倍、3倍速則由「風神沙漏」解鎖，可用遊戲內的兩或單次購買取得。
 • 無障礙設定：色盲模式、減少閃光與震動、可開關的傷害數字。
 • 支援11種語言，可離線遊玩：無須帳號，進度保存在你的裝置上。
 
-獎勵型廣告可自行選擇觀看。啟動時的廣告可透過單次購買移除，遊玩途中不會出現廣告。
+只有可自行選擇觀看的獎勵型廣告，遊玩途中不會出現廣告。兩項單次購買：支持購買可獲得黃金燈籠，不用看廣告即可獲得獎勵；「風神沙漏」也能用兩解鎖。
 <!-- /LISTING -->
 
 <!-- LISTING:zh_CN -->
@@ -261,9 +264,9 @@ Iklan berhadiah bersifat opsional. Iklan saat game dibuka dapat dihapus dengan s
 • 与15位神明缔结契约：强大的祝福也有代价。
 • 提供永久强化的神社、可解锁内容的40项成就，以及逐步揭晓故事的“守护者日志”。
 • 红月（I～V）、无尽之夜与每日挑战，满足想要更多挑战的玩家。
-• 1倍、2倍、3倍速，以及让你轻松享受剧情的“微风”模式。
+• 让你轻松享受剧情的“微风”模式；2倍、3倍速则由“风神沙漏”解锁，可用游戏内的两或一次性购买获得。
 • 无障碍设置：色盲模式、减少闪光与震动、可开关的伤害数字。
 • 支持11种语言，可离线游玩：无需账号，进度保存在你的设备上。
 
-奖励广告可自行选择观看。启动时的广告可通过一次性购买移除，游戏过程中不会出现广告。
+只有可自行选择观看的奖励广告，游戏过程中不会出现广告。两项一次性购买：支持购买可获得黄金灯笼，不用看广告即可获得奖励；“风神沙漏”也能用两解锁。
 <!-- /LISTING -->

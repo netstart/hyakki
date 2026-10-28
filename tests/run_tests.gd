@@ -37,13 +37,14 @@ func _check(condition: bool, label: String) -> void:
 ## Modo "sem anúncios": só liga os anúncios de release com todos os IDs reais preenchidos.
 func _test_ads_config() -> void:
 	var app_id := "ca-app-pub-1234567890123456~1234567890"
-	var real := {"app_open": "ca-app-pub-1234567890123456/1111111111",
-			"rewarded": "ca-app-pub-1234567890123456/2222222222"}
+	var real := {"rewarded": "ca-app-pub-1234567890123456/2222222222"}
 	_check(AdMobProvider.ids_configured(real, app_id), "IDs reais + ID do app: anúncios de release ligados")
-	_check(not AdMobProvider.ids_configured({"app_open": "", "rewarded": ""}, app_id),
-			"blocos vazios: sem anúncios")
-	_check(not AdMobProvider.ids_configured({"app_open": real["app_open"], "rewarded": ""}, app_id),
+	_check(not AdMobProvider.ids_configured({"rewarded": ""}, app_id), "bloco vazio: sem anúncios")
+	_check(not AdMobProvider.ids_configured({"rewarded": real["rewarded"], "extra": ""}, app_id),
 			"um bloco vazio basta para ficar sem anúncios")
+	# Sem anúncio de abertura: o único bloco é o recompensado (teste e produção).
+	_check(AdMobProvider.RELEASE_UNITS.keys() == ["rewarded"] and AdMobProvider.TEST_UNITS.keys() == ["rewarded"],
+			"AdMob: só o bloco recompensado, nenhum de abertura")
 	_check(not AdMobProvider.ids_configured(real, ""), "sem o ID do app: sem anúncios")
 	_check(not AdMobProvider.ids_configured(real, "ca-app-pub-3940256099942544~3347511713"),
 			"ID de app de teste do Google não conta como real")

@@ -944,9 +944,10 @@ func _on_menu() -> void:
 	app.go(&"title")
 
 
-## "Dobrar ryō (anúncio)" ou, sem anúncios (AdsManager.ads_enabled = false), "(presente)".
+## "Dobrar ryō (anúncio)" ou, de presente (sem anúncios ou com "Apoie o jogo",
+## AdsManager.rewards_are_gifts()), "(presente)".
 func double_text() -> String:
-	return tr("results.double") if AdsManager.ads_enabled else tr("results.double_free")
+	return tr("results.double_free") if AdsManager.rewards_are_gifts() else tr("results.double")
 
 
 ## Dobra só o ryō desta partida, uma vez (plano 17.6).

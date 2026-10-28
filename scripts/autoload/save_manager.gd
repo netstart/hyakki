@@ -12,6 +12,9 @@ const TEMP_PATH := "user://save.tmp"
 ## Arquivos dos testes de integração (use_test_files): o save do jogador nunca é tocado.
 const TEST_PATHS := ["user://test_save.json", "user://test_save.bak", "user://test_save.tmp"]
 const VERSION := 1
+## Campos de saves antigos que não existem mais (o anúncio de abertura saiu do jogo): a
+## migração os apaga, sem mexer no resto.
+const OBSOLETE_KEYS := ["last_open_ad_unix", "open_ads_seen", "remove_ad_offer_shown"]
 
 var data: Dictionary = {}
 ## Arquivos em uso: os do jogo (PATH, BACKUP_PATH, TEMP_PATH) ou os dos testes.
@@ -45,11 +48,9 @@ static func default_profile() -> Dictionary:
 		"story": {"intro_seen": false, "ending_seen": false, "secret_ending_seen": false},
 		"tutorial_done": false,
 		"launches": 0,
-		"last_open_ad_unix": 0,
-		"open_ads_seen": 0,
-		"remove_ad_offer_shown": false,
 		"shop": {"slots": {}, "max_seen_unix": 0, "next_run": {}},
-		# "pending" é o pendente do remove_open_ad (nome dos saves antigos); a Ampulheta de Fūjin
+		# "remove_open_ad" é a posse de "Apoie o jogo" (id do produto na Play, que não muda) e
+		# "pending" o seu pendente (nome dos saves antigos); a Ampulheta de Fūjin
 		# (velocidade 2x/3x) guarda a posse, a origem ("ryo" | "play") e o próprio pendente.
 		"purchases": {"remove_open_ad": false, "pending": false, "unlock_speed": false,
 				"unlock_speed_source": "", "unlock_speed_pending": false},
@@ -98,6 +99,8 @@ func _reapply_achievement_unlocks() -> void:
 static func migrate(old: Dictionary) -> Dictionary:
 	var fresh := default_profile()
 	_fill_missing(old, fresh)
+	for key: String in OBSOLETE_KEYS:
+		old.erase(key)
 	old["version"] = VERSION
 	return old
 

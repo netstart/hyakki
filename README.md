@@ -15,8 +15,8 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   dinheiro (Google Play, produto `unlock_speed`, R$ 4,99 / US$ 1,99). O bot e o `--speed=N` dos testes
   aceleram sem a compra.
 - **11 idiomas** (pt-BR, en, es, de, fr, ru, id, ja, ko, zh-TW, zh-CN) com a fonte Fusion Pixel.
-- Monetização do plano 17: anúncio de abertura, Loja com recompensas a cada 6 h, reviver e dobrar ryō,
-  compra para remover o anúncio de abertura e a Ampulheta de Fūjin (velocidade 2x/3x, com ryō ou dinheiro). **Hoje com provedores simulados** (sem SDK do AdMob/Billing).
+- Monetização do plano 17: só anúncios premiados opcionais (sem anúncio de abertura), Loja com recompensas a
+  cada 6 h, reviver e dobrar ryō, a compra "Apoiar o jogo" (Lanterna Dourada e recompensas sem anúncio) e a Ampulheta de Fūjin (velocidade 2x/3x, com ryō ou dinheiro). **Hoje com provedores simulados** (sem SDK do AdMob/Billing).
 - Telas Licenças e Créditos geradas do registro de licenças.
 
 ## Rodar no PC
@@ -144,7 +144,7 @@ emulador, abre o jogo e falha se houver erro do Godot no logcat. Opções: `-Ver
   (se perder, dá para pedir a troca).
 - **Anúncios:** enquanto `AdMobProvider.RELEASE_UNITS` e `admob/general/android/app_id` não tiverem os IDs
   da sua conta AdMob, a build de release fica **sem anúncios**: o SDK não é iniciado, as recompensas viram
-  presente e a compra "remover anúncio" some. Preenchidos os IDs, tudo volta sozinho.
+  presente e a compra "Apoiar o jogo" some. Preenchidos os IDs, tudo volta sozinho.
 - **Compras:** Google Play Billing real; só funciona com o app publicado na Play Console (teste interno) e
   um aparelho com Play Store. No emulador sem Play Store a compra responde "não concluída".
 

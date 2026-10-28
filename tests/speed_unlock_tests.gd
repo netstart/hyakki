@@ -2,7 +2,7 @@ extends RefCounted
 ## Ampulheta de Fūjin (velocidade 2x/3x como compra única, PurchaseManager.SPEED_PRODUCT):
 ## - compra com ryō: debita e libera; sem saldo falha sem debitar; não compra duas vezes;
 ## - compra com dinheiro (simulada): libera; pendente não libera e não mistura com o pendente do
-##   "Remover anúncio"; restaurar entrega o pendente confirmado;
+##   "Apoie o jogo"; restaurar entrega o pendente confirmado;
 ## - reembolso da Play revoga só a posse que veio da Play (a do ryō fica); ryō + Play vira Play;
 ## - Play Billing com vários produtos: preço, compra e reembolso por produto;
 ## - save antigo (sem as chaves novas) carrega sem erro e sem a posse;
@@ -93,7 +93,7 @@ func _test_money_purchase() -> void:
 	_check.call(not PurchaseManager.owns_speed() and PurchaseManager.is_pending(PurchaseManager.SPEED_PRODUCT)
 			and answers == [[PurchaseManager.SPEED_PRODUCT, false]], "Ampulheta: pagamento pendente não libera")
 	_check.call(not PurchaseManager.is_pending(PurchaseManager.PRODUCT),
-			"Ampulheta: o pendente dela não vira pendente do Remover anúncio")
+			"Ampulheta: o pendente dela não vira pendente do Apoie o jogo")
 	PurchaseManager.restore()
 	_check.call(not PurchaseManager.owns_speed(), "Ampulheta: restaurar com o pagamento ainda pendente não libera")
 	PurchaseManager.mock_pending = false
@@ -101,7 +101,7 @@ func _test_money_purchase() -> void:
 	_check.call(PurchaseManager.owns_speed() and PurchaseManager.speed_source() == "play"
 			and not PurchaseManager.is_pending(PurchaseManager.SPEED_PRODUCT),
 			"Ampulheta: pagamento confirmado é entregue ao restaurar (origem Play)")
-	_check.call(not PurchaseManager.owns(), "Ampulheta: liberar a velocidade não remove o anúncio de abertura")
+	_check.call(not PurchaseManager.owns(), "Ampulheta: liberar a velocidade não entrega o Apoie o jogo")
 	_fresh()
 	answers.clear()
 	PurchaseManager.purchase(PurchaseManager.SPEED_PRODUCT)
@@ -135,12 +135,12 @@ func _test_refund() -> void:
 	_check.call(SaveManager.ryo() == 0, "Ampulheta: a confirmação da Play não devolve nem cobra ryō")
 	PurchaseManager.call("_on_play_state", PurchaseManager.SPEED_PRODUCT, "pending")
 	_check.call(PurchaseManager.owns_speed(), "Ampulheta: um pendente depois da posse não revoga")
-	# O "Remover anúncio" segue com a regra de antes (reembolso faz o anúncio voltar).
+	# O "Apoie o jogo" segue com a regra de antes (reembolso faz as recompensas voltarem a pedir anúncio).
 	_fresh()
 	PurchaseManager.purchase(PurchaseManager.PRODUCT)
 	PurchaseManager.call("_on_play_state", PurchaseManager.PRODUCT, "refunded")
 	_check.call(not PurchaseManager.owns() and not PurchaseManager.owns_speed(),
-			"reembolso do Remover anúncio não mexe na Ampulheta")
+			"reembolso do Apoie o jogo não mexe na Ampulheta")
 	PurchaseManager.speed_revoked.disconnect(on_revoke)
 	_fresh()
 
@@ -186,7 +186,7 @@ func _test_migration() -> void:
 			and String(purchases["unlock_speed_source"]) == "" and not bool(purchases["unlock_speed_pending"]),
 			"migração: save antigo ganha a Ampulheta sem posse e sem pendente")
 	_check.call(bool(purchases["remove_open_ad"]) and bool(purchases["pending"]) and int(migrated["ryo"]) == 1234,
-			"migração: compra e pendente antigos do Remover anúncio ficam")
+			"migração: compra e pendente antigos do Apoie o jogo ficam")
 	SaveManager.data = migrated
 	_check.call(not PurchaseManager.owns_speed() and PurchaseManager.speed_source() == ""
 			and not PurchaseManager.is_pending(PurchaseManager.SPEED_PRODUCT), "migração: sem posse da velocidade")

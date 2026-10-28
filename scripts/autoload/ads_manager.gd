@@ -1,24 +1,23 @@
 extends Node
-## Anúncios (plano 17): abertura (App Open) e recompensados (Loja, Reviver, Dobrar ryō).
+## Anúncios (plano 17): só recompensados e opcionais (Loja, Reviver, Dobrar ryō). Não há
+## anúncio de abertura: a abertura a frio vai do consentimento (onde exigido) direto para a
+## introdução ou o título.
 ## O jogo só conversa com este autoload (plano 17.1). Dois provedores:
 ## - "admob": Google Mobile Ads + UMP (AdMobProvider), no Android com o plugin nativo;
 ## - "mock": overlay de teste, no PC, nos testes automáticos e se o plugin faltar.
 ##
 ## Modo "sem anúncios" (`ads_enabled = false`): build de release sem os IDs reais do AdMob
 ## (AdMobProvider.has_release_ids()), ou forçado com `--ads-off`. Nele o SDK e o UMP nunca são
-## iniciados (sem consentimento, sem pedido de anúncio, sem ID de publicidade), não há anúncio
-## de abertura e cada recompensado entrega a recompensa na hora, de presente, sem mostrar nada.
-## As telas trocam "ver anúncio" por textos de presente e escondem a compra "Remover anúncio
-## de abertura" e "Privacidade e anúncios". Ao preencher os IDs reais tudo volta sozinho.
+## iniciados (sem consentimento, sem pedido de anúncio, sem ID de publicidade) e cada
+## recompensado entrega a recompensa na hora, de presente, sem mostrar nada. As telas trocam
+## "ver anúncio" por textos de presente e escondem "Apoie o jogo" e "Privacidade e anúncios".
+## Ao preencher os IDs reais tudo volta sozinho.
 ##
-## Regras do anúncio de abertura (17.2): nunca na 1ª abertura; só no início a frio; no
-## mínimo 4 h entre um e outro; não aparece para quem comprou "Remover anúncio de
-## abertura"; se não carregar em 4 s, o jogo libera do mesmo jeito.
+## "Apoie o jogo" (PurchaseManager.PRODUCT): quem comprou recebe as recompensas de presente
+## do mesmo jeito (rewards_are_gifts()), sem assistir anúncio, mesmo com os anúncios ligados.
 
 signal ad_finished(placement: String, rewarded: bool)
 
-const OPEN_AD_MIN_INTERVAL := 4 * 3600
-const OPEN_AD_TIMEOUT := 4.0
 const MOCK_AD_SECONDS := 3.0
 
 var provider: String = "mock"
@@ -86,66 +85,25 @@ func open_privacy_options(done: Callable) -> bool:
 	return true
 
 
-## Sem anúncios a recompensa é sempre um presente disponível.
+## Recompensas entregues de presente, sem anúncio: modo "sem anúncios" ou quem comprou
+## "Apoie o jogo" (PurchaseManager.PRODUCT, inclusive restaurado).
+func rewards_are_gifts() -> bool:
+	return not ads_enabled or PurchaseManager.owns(PurchaseManager.PRODUCT)
+
+
+## De presente a recompensa está sempre disponível.
 func rewarded_available() -> bool:
-	if not ads_enabled:
+	if rewards_are_gifts():
 		return true
 	if provider == "admob":
 		return _admob.rewarded_ready()
 	return mock_fill
 
 
-func should_show_app_open() -> bool:
-	if not ads_enabled:
-		return false
-	var data := SaveManager.data
-	if int(data["launches"]) < 2:
-		return false
-	if bool(data["purchases"]["remove_open_ad"]):
-		return false
-	var now := int(Time.get_unix_time_from_system())
-	return now - int(data["last_open_ad_unix"]) >= OPEN_AD_MIN_INTERVAL
-
-
-## Mostra o anúncio de abertura e chama `done` quando o jogador pode jogar.
-func show_app_open(done: Callable) -> void:
-	if not ads_enabled:
-		done.call()
-		return
-	if provider == "admob":
-		var waited := 0.0
-		while not _admob.app_open_ready() and waited < OPEN_AD_TIMEOUT:
-			await get_tree().create_timer(0.1, true).timeout
-			waited += 0.1
-		if not _admob.app_open_ready():
-			done.call()
-			return
-		_mark_open_ad_seen()
-		_muted(true)
-		_admob.show_app_open(func() -> void:
-			_muted(false)
-			ad_finished.emit("open", false)
-			done.call())
-		return
-	if not mock_fill:
-		# Não carregou dentro do tempo: libera o jogo do mesmo jeito.
-		await get_tree().create_timer(minf(OPEN_AD_TIMEOUT, 0.5)).timeout
-		done.call()
-		return
-	_mark_open_ad_seen()
-	_show_mock("open", false, func(_rewarded: bool) -> void: done.call())
-
-
-func _mark_open_ad_seen() -> void:
-	SaveManager.data["last_open_ad_unix"] = int(Time.get_unix_time_from_system())
-	SaveManager.data["open_ads_seen"] = int(SaveManager.data["open_ads_seen"]) + 1
-	SaveManager.save_profile()
-
-
 ## Anúncio recompensado. `done(rewarded)` só recebe true se assistido até o fim (17.3).
-## Sem anúncios: entrega na hora (done(true)), sem tela nenhuma.
+## De presente (rewards_are_gifts()): entrega na hora (done(true)), sem tela nenhuma.
 func show_rewarded(placement: String, done: Callable) -> void:
-	if not ads_enabled:
+	if rewards_are_gifts():
 		ad_finished.emit(placement, true)
 		done.call(true)
 		return
@@ -163,7 +121,7 @@ func show_rewarded(placement: String, done: Callable) -> void:
 			ad_finished.emit(placement, rewarded)
 			done.call(rewarded))
 		return
-	_show_mock(placement, true, done)
+	_show_mock(placement, done)
 
 
 func _muted(on: bool) -> void:
@@ -172,7 +130,7 @@ func _muted(on: bool) -> void:
 		AudioManager.apply_volumes()
 
 
-func _show_mock(placement: String, rewarded_kind: bool, done: Callable) -> void:
+func _show_mock(placement: String, done: Callable) -> void:
 	AudioServer.set_bus_mute(AudioServer.get_bus_index("Master"), true)
 	var tree := get_tree()
 	var was_paused := tree.paused
@@ -206,14 +164,13 @@ func _show_mock(placement: String, rewarded_kind: bool, done: Callable) -> void:
 		counter.add_theme_font_override("font", Locale.font)
 	box.add_child(counter)
 	var close_full := Button.new()
-	close_full.text = tr("ads.continue") if not rewarded_kind else tr("ads.claim")
+	close_full.text = tr("ads.claim")
 	close_full.disabled = true
 	close_full.custom_minimum_size = Vector2(160, 32)
 	box.add_child(close_full)
 	var close_early := Button.new()
 	close_early.text = tr("ads.close_early")
 	close_early.custom_minimum_size = Vector2(160, 28)
-	close_early.visible = rewarded_kind
 	box.add_child(close_early)
 	var state := {"done": false}
 	var finish := func(rewarded: bool) -> void:

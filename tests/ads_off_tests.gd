@@ -1,9 +1,9 @@
 extends RefCounted
 ## Modo "sem anúncios" (AdsManager.ads_enabled = false): build de release sem os IDs reais
-## do AdMob, ou `--ads-off` no PC. Confere que o SDK/UMP não é usado, que não há anúncio de
-## abertura nem consentimento, que cada recompensado entrega na hora sem tela nenhuma (Loja
-## com a mesma espera de 6 h, Reviver e Dobrar ryō), que a compra "Remover anúncio de
-## abertura" e "Privacidade e anúncios" somem, que a Ampulheta de Fūjin (velocidade 2x/3x) segue
+## do AdMob, ou `--ads-off` no PC. Confere que o SDK/UMP não é usado, que não há
+## consentimento, que cada recompensado entrega na hora sem tela nenhuma (Loja com a mesma
+## espera de 6 h, Reviver e Dobrar ryō), que a compra "Apoie o jogo" e "Privacidade e
+## anúncios" somem, que a Ampulheta de Fūjin (velocidade 2x/3x) segue
 ## à venda (ryō e dinheiro) e que os textos não prometem anúncio.
 ## Ao religar (`ads_enabled = true`) tudo volta ao comportamento com anúncios.
 ## Chamado por tests/integration_tests.gd, que passa o nó da cena e o _check.
@@ -67,14 +67,8 @@ func _test_manager() -> void:
 	var started := {"done": false}
 	AdsManager.start(func() -> void: started["done"] = true)
 	_check.call(bool(started["done"]), "sem anúncios: start libera na hora (SDK não é iniciado)")
-	SaveManager.data["launches"] = 9
-	SaveManager.data["last_open_ad_unix"] = 0
-	_check.call(not AdsManager.should_show_app_open(), "sem anúncios: nunca há anúncio de abertura")
 	var layers := _ad_layers()
-	var opened := {"done": false}
-	AdsManager.show_app_open(func() -> void: opened["done"] = true)
-	_check.call(bool(opened["done"]) and _ad_layers() == layers and int(SaveManager.data["open_ads_seen"]) == 0,
-			"sem anúncios: show_app_open libera na hora, sem tela e sem contar anúncio visto")
+	_check.call(AdsManager.rewards_are_gifts(), "sem anúncios: as recompensas são presentes")
 	_check.call(AdsManager.rewarded_available(), "sem anúncios: a recompensa está sempre disponível")
 	var got := {"rewarded": false, "calls": 0}
 	AdsManager.show_rewarded("test", func(rewarded: bool) -> void:
@@ -108,10 +102,10 @@ func _test_shop_rewards() -> void:
 	SaveManager.data = SaveManager.default_profile()
 
 
-## A compra "Remover anúncio de abertura" fica indisponível e nunca entrega.
+## A compra "Apoie o jogo" fica indisponível e nunca entrega.
 func _test_purchase() -> void:
 	SaveManager.data = SaveManager.default_profile()
-	_check.call(not PurchaseManager.available(), "sem anúncios: a compra de remover anúncio não existe")
+	_check.call(not PurchaseManager.available(), "sem anúncios: a compra Apoie o jogo não existe")
 	var answers: Array = []
 	var listener := func(_p: String, ok: bool) -> void: answers.append(ok)
 	PurchaseManager.purchase_finished.connect(listener)
@@ -121,7 +115,7 @@ func _test_purchase() -> void:
 			"sem anúncios: comprar não cobra nem entrega")
 	SaveManager.data["purchases"]["pending"] = true
 	PurchaseManager.restore()
-	_check.call(not PurchaseManager.owns(), "sem anúncios: restaurar não entrega o remover anúncio")
+	_check.call(not PurchaseManager.owns(), "sem anúncios: restaurar não entrega o Apoie o jogo")
 	# A Ampulheta de Fūjin (velocidade 2x/3x) não depende de anúncios: dinheiro e ryō seguem.
 	SaveManager.data = SaveManager.default_profile()
 	_check.call(PurchaseManager.speed_available_for_money(),
@@ -286,12 +280,11 @@ func _test_options() -> void:
 	Locale.set_language("pt_BR", false)
 
 
-## Abertura a frio: sem tela de consentimento e sem anúncio de abertura.
+## Abertura a frio: sem tela de consentimento, direto para a introdução ou o título.
 func _test_boot() -> void:
 	for intro_seen: bool in [false, true]:
 		SaveManager.data = SaveManager.default_profile()
 		SaveManager.data["launches"] = 9
-		SaveManager.data["open_ads_seen"] = 9
 		SaveManager.data["story"]["intro_seen"] = intro_seen
 		var vp := SubViewport.new()
 		vp.size = Vector2i(_screen.size)
@@ -307,11 +300,8 @@ func _test_boot() -> void:
 		_check.call(app.current == expected,
 				"abertura sem anúncios (introdução vista: %s): vai direto para %s (foi %s)" % [
 				intro_seen, expected, app.current])
-		_check.call(not bool(SaveManager.data["consent"]["asked"]) and _ad_layers() == layers
-				and int(SaveManager.data["open_ads_seen"]) == 9,
-				"abertura sem anúncios: sem consentimento e sem anúncio de abertura")
-		_check.call(not bool(SaveManager.data["remove_ad_offer_shown"]),
-				"abertura sem anúncios: não oferece remover o anúncio de abertura")
+		_check.call(not bool(SaveManager.data["consent"]["asked"]) and _ad_layers() == layers,
+				"abertura sem anúncios: sem consentimento e sem tela de anúncio")
 		app.queue_free()
 		vp.queue_free()
 		await _host.get_tree().process_frame
@@ -355,7 +345,6 @@ func _test_revive() -> void:
 ## Religando os anúncios (IDs reais preenchidos): tudo volta ao comportamento de antes.
 func _test_back_to_ads() -> void:
 	SaveManager.data = SaveManager.default_profile()
-	SaveManager.data["launches"] = 3
-	_check.call(AdsManager.should_show_app_open(), "com anúncios: o anúncio de abertura volta")
-	_check.call(PurchaseManager.available(), "com anúncios: a compra de remover anúncio volta")
+	_check.call(not AdsManager.rewards_are_gifts(), "com anúncios: as recompensas voltam a pedir anúncio")
+	_check.call(PurchaseManager.available(), "com anúncios: a compra Apoie o jogo volta")
 	SaveManager.data = SaveManager.default_profile()
