@@ -19,6 +19,10 @@ const SAFE_RADIUS := 90.0
 ## Grade dos obstáculos para resolve(): célula de 32 px e folga para o maior raio móvel.
 const SOLID_CELL := 32.0
 const SOLID_PAD := 24.0
+## free_point(): empurrões de resolve() antes da busca em anéis, passo e alcance da busca (px).
+const FREE_PUSHES := 6
+const FREE_STEP := 6.0
+const FREE_REACH := 240.0
 ## Densidade máxima de decoração (GfxQuality "decor_density" na Alta): scatter() gera para ela.
 const MAX_DENSITY := 1.25
 const LAVA_LIGHT := Color(1.0, 0.45, 0.15)
@@ -297,6 +301,59 @@ func _resolve_wide(p: Vector2, r: float) -> Vector2:
 						d2 = 1.0
 					p = center + d / sqrt(d2) * min_dist
 	return p
+
+
+## Se um círculo de raio `r` em `p` encosta em algum obstáculo (folga de 0,01 px para o ponto
+## que resolve() deixou exatamente na borda não contar como dentro).
+func overlaps_solid(p: Vector2, r: float) -> bool:
+	if r > SOLID_PAD:
+		var c := chunk_of(p)
+		for cy: int in range(c.y - 1, c.y + 2):
+			for cx: int in range(c.x - 1, c.x + 2):
+				for solid: Array in chunk_data(Vector2i(cx, cy))["solids"]:
+					if _hits(p, r, solid):
+						return true
+		return false
+	var cc := chunk_of(p)
+	if not _solid_ready.has(cc):
+		_index_solids_around(cc)
+	var cell := Vector2i(floori(p.x / SOLID_CELL), floori(p.y / SOLID_CELL))
+	for solid: Array in _solid_cells.get(cell, []):
+		if _hits(p, r, solid):
+			return true
+	return false
+
+
+static func _hits(p: Vector2, r: float, solid: Array) -> bool:
+	var min_dist: float = float(solid[1]) + r - 0.01
+	return p.distance_squared_to(solid[0]) < min_dist * min_dist
+
+
+## Ponto livre mais perto de `p` onde cabe um círculo de raio `r` (sem obstáculo e dentro dos
+## limites). Para o que nasce no chão (baús, moedas, brasas): uma casa é vários círculos
+## sobrepostos, e sair de um pode cair no vizinho (ou escorregar até a ponta da fileira). Empurra
+## com resolve() algumas vezes e procura em anéis crescentes ao redor de `p`, mais perto que o
+## empurrão; fica o mais perto dos dois. Determinístico (sem sorteio).
+func free_point(p: Vector2, r: float) -> Vector2:
+	var q := clamp_to_bounds(p)
+	if not overlaps_solid(q, r):
+		return q
+	var reach := FREE_REACH
+	for _k: int in range(FREE_PUSHES):
+		q = clamp_to_bounds(resolve(q, r))
+		if not overlaps_solid(q, r):
+			reach = minf(reach, q.distance_to(p) - 0.01)
+			break
+	# Anéis a cada FREE_STEP px; no anel, amostras a cada ~FREE_STEP px de arco, a partir de cima.
+	var ring := FREE_STEP
+	while ring <= reach:
+		var n := maxi(8, ceili(TAU * ring / FREE_STEP))
+		for k: int in range(n):
+			var cand := p + Vector2.from_angle(-PI * 0.5 + TAU * float(k) / float(n)) * ring
+			if clamp_to_bounds(cand) == cand and not overlaps_solid(cand, r):
+				return cand
+		ring += FREE_STEP
+	return q
 
 
 ## Garante que os obstáculos do chunk e dos 8 vizinhos estão na grade.

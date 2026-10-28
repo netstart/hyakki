@@ -11,6 +11,9 @@ const COLLECT_RADIUS := 8.0
 const ITEM_RADIUS := 10.0
 const ATTRACT_ACCEL := 600.0
 const ATTRACT_MAX_SPEED := 420.0
+## Folga de quem nasce no chão: o corpo da guardiã (Player.RADIUS + 1 no resolve) e mais um
+## pouco, para não cair numa fresta entre os círculos de uma casa onde ela não chega.
+const SPAWN_CLEARANCE := Player.RADIUS + 4.0
 ## Escala pentatônica japonesa "in" (miyako-bushi), em semitons a partir da tônica.
 const SCALE := [0, 1, 5, 7, 8, 12, 13, 17, 19, 20, 24]
 const SCALE_RESET_MS := 1500
@@ -67,6 +70,7 @@ func spawn(at: Vector2, amount: int) -> void:
 		if target >= 0:
 			value[target] += amount
 		return
+	at = _place(at)
 	var i: int = _free.pop_back()
 	pos[i] = at
 	prev[i] = at
@@ -81,10 +85,18 @@ func spawn_item(id: StringName, at: Vector2, extra: Dictionary = {}) -> void:
 	var data: Dictionary = DB.items.get(id, {})
 	if data.is_empty():
 		return
-	var item := {"id": id, "pos": at, "effect": String(data["effect"]), "value": data["value"],
+	var item := {"id": id, "pos": _place(at), "effect": String(data["effect"]), "value": data["value"],
 			"phase": game.rng.randf() * TAU}
 	item.merge(extra, true)
 	items.append(item)
+
+
+## Ponto do chão onde a guardiã alcança: fora de casas, muros e estátuas e dentro dos limites.
+## Sem mapa (testes isolados), fica onde pediram.
+func _place(at: Vector2) -> Vector2:
+	if game == null or game.world == null:
+		return at
+	return game.world.free_point(at, SPAWN_CLEARANCE)
 
 
 ## Sorteia um item de lanterna destrutível pelos pesos de items.json.
@@ -136,13 +148,16 @@ func magnet_all() -> void:
 			attracted[i] = 1
 
 
-## Puxa brasas para um ponto (Furacão de Fūjin).
+## Puxa brasas para um ponto (Furacão de Fūjin). Elas deslizam pela borda dos obstáculos em vez
+## de atravessar: puxadas para dentro de uma casa, ficariam fora do alcance do ímã.
 func pull_gems(center: Vector2, r: float, strength: float, dt: float) -> void:
+	var world: WorldMap = game.world if game != null else null
 	for i: int in range(CAPACITY):
 		if alive[i] == 1 and attracted[i] == 0:
 			var d := center - pos[i]
 			if d.length() < r and d.length() > 2.0:
-				pos[i] = pos[i] + d.normalized() * strength * dt
+				var next := pos[i] + d.normalized() * strength * dt
+				pos[i] = world.resolve(next, SPAWN_CLEARANCE) if world != null else next
 
 
 func total_value() -> int:

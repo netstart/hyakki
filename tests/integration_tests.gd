@@ -110,6 +110,7 @@ func _ready() -> void:
 	await PauseMenuTests.new().run(self, _check)
 	await GfxQualityTests.new().run(self, _check)
 	await (load("res://tests/terrain_tests.gd") as GDScript).new().run(self, _check)
+	await (load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run(self, _check)
 	await EnemyFxTests.new().run(self, _check)
 	await WeatherTests.new().run(self, _check)
 	await SurfaceTests.new().run(self, _check)
