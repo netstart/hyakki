@@ -17,6 +17,12 @@ static var _data: Dictionary = {}
 var type_names: Array[String] = []
 ## Parâmetros por índice: {"slow", "ease_in", "ease_out", "accel", "resist_by_size", "sound"}.
 var types: Array[Dictionary] = []
+## Os mesmos parâmetros em arrays por índice (lidos pelo SurfaceSystem uma vez por inimigo/passo).
+var slow_by_type := PackedFloat64Array()
+var ease_in_by_type := PackedFloat64Array()
+var ease_out_by_type := PackedFloat64Array()
+var accel_by_type := PackedFloat64Array()
+var resist_by_type := PackedByteArray()
 var stage_id: String = ""
 var seed_value: int = 0
 var weather: WeatherModel
@@ -37,7 +43,14 @@ func _init(p_stage: String, p_seed: int, p_weather: WeatherModel = null, p_bound
 	var all_types: Dictionary = d.get("types", {})
 	for name: String in all_types:
 		type_names.append(name)
-		types.append(all_types[name])
+		var p: Dictionary = all_types[name]
+		types.append(p)
+		# Mesmos float() dos Dictionary, guardados em 64 bits: resultado idêntico, sem busca por passo.
+		slow_by_type.append(float(p.get("slow", 1.0)))
+		ease_in_by_type.append(float(p.get("ease_in", 0.25)))
+		ease_out_by_type.append(float(p.get("ease_out", 0.4)))
+		accel_by_type.append(float(p.get("accel", 1.0)))
+		resist_by_type.append(1 if bool(p.get("resist_by_size", false)) else 0)
 	_rules = (d.get("stages", {}) as Dictionary).get(p_stage, [])
 
 
@@ -53,7 +66,7 @@ func type_index(name: String) -> int:
 
 
 func slow_of(type: int) -> float:
-	return float(types[type].get("slow", 1.0))
+	return slow_by_type[type]
 
 
 ## Tipos que aparecem nesta fase.
@@ -135,7 +148,9 @@ func scale_of(patch: Dictionary, t: float) -> float:
 ## Tipo da superfície em `p` no tempo `t` (-1 = chão normal).
 func type_at(p: Vector2, t: float) -> int:
 	var c := Vector2i(floori(p.x / CHUNK), floori(p.y / CHUNK))
-	var list: Array = patches(c)
+	# Uma busca só no cache (a maioria dos chunks já foi gerada e não tem mancha).
+	var cached: Variant = _cache.get(c)
+	var list: Array = cached if cached != null else patches(c)
 	if list.is_empty():
 		return -1
 	var level := -1.0

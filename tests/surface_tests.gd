@@ -27,6 +27,7 @@ func run(host: Node, check: Callable) -> void:
 	_check = check
 	_test_data()
 	_test_placement()
+	_test_caches()
 	var game := (load(GAME_SCENE) as PackedScene).instantiate() as HyakkiGame
 	game.config = {"hero": "aki", "stage": "village", "moon": 0, "mode": "normal", "seed": 5, "speed": 1}
 	_host.add_child(game)
@@ -42,6 +43,7 @@ func run(host: Node, check: Callable) -> void:
 		_test_sequence(game, actor)
 	_test_oil_slide(game)
 	_test_speed_integration(game)
+	_test_model_fast_path(game)
 	game.queue_free()
 	await _host.get_tree().process_frame
 	await _test_hash_low_high()
@@ -102,6 +104,124 @@ func _test_placement() -> void:
 		_check.call(count > 0, "solo: %s tem manchas (%d)" % [stage_id, count])
 		_check.call(safe_ok, "solo: %s sem superfície na zona do nascimento" % stage_id)
 		_check.call(bounds_ok, "solo: %s com manchas dentro dos limites da fase" % stage_id)
+
+
+## Caches do passo (desempenho) dão o mesmo resultado bit a bit que a regra sem cache:
+## lama por tempo (trocar o tempo invalida), parâmetros por tipo em arrays e advance sem Array.
+func _test_caches() -> void:
+	var cached := WeatherModel.new("village", 31)
+	var times: Array[float] = [120.0, 120.0, 340.5, 120.0, 900.25, 900.25, 0.0]
+	var mud_ok := true
+	for t: float in times:
+		var fresh := WeatherModel.new("village", 31)
+		var ref := clampf(inverse_lerp(float(fresh.profile.get("mud_from", 0.3)),
+				float(fresh.profile.get("mud_full", 0.85)), fresh.wetness_at(t)), 0.0, 1.0)
+		mud_ok = mud_ok and cached.mud_level_at(t) == ref
+	_check.call(mud_ok, "solo: cache da lama por tempo igual à conta sem cache (e invalida ao mudar t)")
+	var f := SurfaceField.new("village", 31, WeatherModel.new("village", 31, {}, WeatherModel.State.STORM))
+	var arrays_ok := true
+	for t: int in range(f.types.size()):
+		var p: Dictionary = f.types[t]
+		arrays_ok = arrays_ok and f.slow_by_type[t] == float(p.get("slow", 1.0)) \
+				and f.ease_in_by_type[t] == float(p.get("ease_in", 0.25)) \
+				and f.ease_out_by_type[t] == float(p.get("ease_out", 0.4)) \
+				and f.accel_by_type[t] == float(p.get("accel", 1.0)) \
+				and (f.resist_by_type[t] == 1) == bool(p.get("resist_by_size", false))
+	_check.call(arrays_ok and f.types.size() > 0, "solo: parâmetros por tipo em arrays iguais aos do JSON")
+	var s := SurfaceSystem.new()
+	s.field = f
+	var rule_ok := true
+	for t: int in range(f.types.size()):
+		for radius: float in [8.0, 14.0, 40.0, 90.0]:
+			var m := 1.0
+			var remembered := -1
+			var ref_m := 1.0
+			var ref_rem := -1
+			# Entra 40 passos, sai 60 (recuperação até 1.0 e o tipo esquecido).
+			for k: int in range(100):
+				var here := t if k < 40 else -1
+				var arr := s.advance(m, remembered, here, radius, STEP)
+				var r := _reference_advance(f, ref_m, ref_rem, here, radius, STEP)
+				ref_m = r[0]
+				ref_rem = r[1]
+				var next := s.advance_mult(m, remembered, here, radius, STEP)
+				remembered = s.next_type(next, remembered, here)
+				m = next
+				rule_ok = rule_ok and m == ref_m and remembered == ref_rem and float(arr[0]) == ref_m \
+						and int(arr[1]) == ref_rem \
+						and s.accel_for(m, remembered, radius) == _reference_accel(f, ref_m, ref_rem, radius)
+	s.free()
+	_check.call(rule_ok, "solo: advance_mult/next_type/accel_for iguais bit a bit à regra com Dictionary")
+
+
+## A regra antiga (Array e Dictionary a cada passo), só para comparar nos testes.
+func _reference_slow(f: SurfaceField, type: int, radius: float) -> float:
+	var slow := float(f.types[type].get("slow", 1.0))
+	if bool(f.types[type].get("resist_by_size", false)):
+		var resist := clampf((radius - 10.0) / 60.0, 0.0, 0.3)
+		slow = 1.0 - (1.0 - slow) * (1.0 - resist)
+	return slow
+
+
+func _reference_recover(f: SurfaceField, m: float, target: float, type: int, radius: float, dt: float) -> float:
+	var depth := maxf(1.0 - _reference_slow(f, type, radius), SurfaceSystem.EPS * 2.0)
+	var k := log(depth / SurfaceSystem.EPS) / maxf(float(f.types[type].get("ease_out", 0.4)), 0.01)
+	m = target - (target - m) * exp(-k * dt)
+	if absf(target - m) < SurfaceSystem.EPS * 1.5:
+		m = target
+	return m
+
+
+func _reference_advance(f: SurfaceField, m: float, remembered: int, here: int, radius: float, dt: float) -> Array:
+	if here >= 0:
+		var target := _reference_slow(f, here, radius)
+		if m > target:
+			m = move_toward(m, target, (1.0 - target) / maxf(float(f.types[here].get("ease_in", 0.25)), 0.01) * dt)
+		else:
+			m = _reference_recover(f, m, target, here, radius, dt)
+		return [m, here]
+	if remembered < 0 or m >= 1.0:
+		return [1.0, -1]
+	m = _reference_recover(f, m, 1.0, remembered, radius, dt)
+	return [m, remembered if m < 1.0 else -1]
+
+
+func _reference_accel(f: SurfaceField, m: float, type: int, radius: float) -> float:
+	if type < 0 or m >= 1.0:
+		return 1.0
+	var depth := clampf((1.0 - m) / maxf(1.0 - _reference_slow(f, type, radius), SurfaceSystem.EPS), 0.0, 1.0)
+	return lerpf(1.0, float(f.types[type].get("accel", 1.0)), depth)
+
+
+## Caminho rápido do WeatherSystem.ensure_model: mesmo modelo enquanto a chave não muda; refaz
+## ao trocar o estado forçado, a semente ou a instância de game.stage (Kakuriyo).
+func _test_model_fast_path(game: HyakkiGame) -> void:
+	_restart(game, "village")
+	var weather := WeatherSystem.of(game)
+	var first := weather.ensure_model()
+	_check.call(weather.ensure_model() == first, "solo: ensure_model reaproveita o modelo com a mesma chave")
+	weather.force_state("drizzle")
+	var drizzle := weather.ensure_model()
+	_check.call(drizzle != first and drizzle.forced == WeatherModel.State.DRIZZLE,
+			"solo: ensure_model refaz ao trocar o estado forçado")
+	var old_seed := game.world.seed_value
+	game.world.seed_value = old_seed + 1
+	var reseeded := weather.ensure_model()
+	_check.call(reseeded != drizzle and reseeded.seed_value == old_seed + 1,
+			"solo: ensure_model refaz ao trocar a semente")
+	game.world.seed_value = old_seed
+	weather.ensure_model()
+	var old_stage := game.stage
+	var other := DB.stage(&"dunes")
+	game.stage = other
+	var dunes := weather.ensure_model()
+	_check.call(dunes.stage_id == String(other.get("weather", other.get("id", "")))
+			and weather.surfaces.field.weather == dunes,
+			"solo: ensure_model refaz ao trocar a fase (instância de game.stage)")
+	game.stage = old_stage
+	weather.force_state("")
+	_check.call(weather.ensure_model().stage_id == String(old_stage.get("weather", old_stage.get("id", ""))),
+			"solo: ensure_model volta à fase original")
 
 
 func _restart(game: HyakkiGame, stage_id: String) -> void:

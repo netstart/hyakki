@@ -40,6 +40,10 @@ var surfaces: SurfaceSystem
 var _ground: WeatherGround
 var _sky: WeatherSky
 var _model_key: Array = []
+## Chave do caminho rápido do ensure_model (instância de game.stage, semente, estado forçado).
+var _key_stage: Dictionary = {}
+var _key_seed: int = 0
+var _key_forced: int = -1
 var _last_t: float = -1.0
 var _rain_player: AudioStreamPlayer
 var _wind_player: AudioStreamPlayer
@@ -97,6 +101,11 @@ func apply_quality() -> void:
 func ensure_model() -> WeatherModel:
 	if game == null:
 		game = get_parent() as HyakkiGame
+	# Caminho rápido (chamado por inimigo a cada passo): mesma instância de game.stage (nunca é
+	# alterada no lugar; o Kakuriyo troca o dicionário), mesma semente e mesmo estado forçado.
+	if model != null and game != null and game.world != null and is_same(game.stage, _key_stage) \
+			and game.world.seed_value == _key_seed and forced_state == _key_forced:
+		return model
 	var stage_id := "village"
 	var run_seed := 0
 	var stage_data: Dictionary = {}
@@ -106,6 +115,9 @@ func ensure_model() -> WeatherModel:
 		stage_id = String(stage_data.get("weather", stage_data.get("id", "village")))
 		run_seed = game.world.seed_value
 	var key := [stage_id, run_seed, forced_state]
+	_key_stage = stage_data
+	_key_seed = run_seed
+	_key_forced = forced_state
 	if model == null or key != _model_key:
 		_model_key = key
 		model = WeatherModel.new(stage_id, run_seed, stage_data, forced_state)

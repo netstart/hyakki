@@ -532,7 +532,44 @@ func _test_sound_options() -> void:
 		_check(game.last_hit_sound == "hit_thunder", "golpe do raijin toca hit_thunder")
 		game.deal_damage(&"kami_test", enemy, 0.1, Vector2.RIGHT, 0.0)
 		_check(game.last_hit_sound == "hit", "golpe sem arma toca hit")
+		# Agrupado por passo: N golpes da mesma arma no mesmo passo tocam um som só (e um crit só).
+		game.step_index += 1
+		var sounds := game.hit_sounds.played
+		var crits := game.hit_sounds.crit_played
+		for _k: int in range(40):
+			game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0, true)
+		_check(game.hit_sounds.played - sounds == 1, "40 golpes da katana no mesmo passo: um som só (%d)"
+				% (game.hit_sounds.played - sounds))
+		_check(game.hit_sounds.crit_played - crits == 1, "40 críticos no mesmo passo: um crit só (%d)"
+				% (game.hit_sounds.crit_played - crits))
+		_check(game.last_hit_sound == "hit_blade", "golpe agrupado ainda marca hit_blade")
+		for _k: int in range(10):
+			game.deal_damage(&"raijin", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(game.hit_sounds.played - sounds == 2, "outra arma no mesmo passo tem seu próprio som")
+		game.step_index += 1
+		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0, true)
+		_check(game.hit_sounds.played - sounds == 3 and game.hit_sounds.crit_played - crits == 2,
+				"passo seguinte: a katana e o crit soam de novo")
 		Settings.set_value("damage_sounds", false)
+		sounds = game.hit_sounds.played
+		for _k: int in range(5):
+			game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
+		game.step_index += 1
+		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
+		_check(game.hit_sounds.played == sounds, "damage_sounds desligado: nenhum som de golpe")
+		# Impactos por passo: o primeiro é completo; além da cota, uma faísca por acerto.
+		game.fx.step(0.0)
+		var alive := game.fx.particles_alive()
+		game.fx.impact(&"katana", Vector2(10, 10), Vector2.RIGHT)
+		var one := game.fx.particles_alive() - alive
+		_check(one == int(FxLayer.IMPACT_COUNT[FxLayer.wfx]), "impacto sozinho completo (%d faíscas)" % one)
+		alive = game.fx.particles_alive()
+		for _k: int in range(200):
+			game.fx.impact(&"katana", Vector2(10, 10), Vector2.RIGHT)
+		var many := game.fx.particles_alive() - alive
+		var budget := (FxLayer.IMPACTS_PER_STEP - 1) * int(FxLayer.IMPACT_COUNT[FxLayer.wfx]) \
+				+ 200 - (FxLayer.IMPACTS_PER_STEP - 1)
+		_check(many <= budget, "200 impactos no mesmo passo ficam na cota (%d <= %d)" % [many, budget])
 		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
 		_check(game.last_hit_sound == "", "damage_sounds desligado silencia o golpe")
 		var n_before := int(game.fx.get("_n_next"))

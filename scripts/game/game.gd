@@ -66,9 +66,12 @@ var stress_count: int = 0
 var no_revive: bool = false
 var chest_min: int = 1
 var extra_choices: int = 0
-var last_hit_sound: String = ""
+## Som do golpe agrupado por passo (HitSoundGate); `last_hit_sound` é o último (testes).
+var hit_sounds: HitSoundGate = HitSoundGate.new()
+var last_hit_sound: String:
+	get:
+		return hit_sounds.last
 var _tag_amount: Dictionary = {}
-var _hit_sound_cache: Dictionary = {}
 
 var _choices: Array[Dictionary] = []
 var _pending_levels: int = 0
@@ -728,21 +731,7 @@ func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2,
 		return
 	tracker.on_damage(weapon_id, amount)
 	fx.on_hit(weapon_id, at, amount, crit, dir, dot, enemy)
-	_play_hit_sound(weapon_id, crit)
-
-
-## Som do golpe pelo tipo de ataque (HitSounds), em cache por arma. O crítico soma "crit".
-## Desligado pela opção "damage_sounds". `last_hit_sound` guarda o último tocado (testes).
-func _play_hit_sound(weapon_id: StringName, crit: bool) -> void:
-	if not bool(Settings.get_value("damage_sounds")):
-		last_hit_sound = ""
-		return
-	if not _hit_sound_cache.has(weapon_id):
-		_hit_sound_cache[weapon_id] = HitSounds.for_weapon(DB.weapon(weapon_id))
-	last_hit_sound = _hit_sound_cache[weapon_id]
-	HitSounds.play(last_hit_sound)
-	if crit:
-		AudioManager.play("crit", 1.0, 0.08, -10.0)
+	hit_sounds.hit(weapon_id, crit, step_index)
 
 
 # --- XP, itens e baús --------------------------------------------------------

@@ -94,6 +94,14 @@ var _recent_next: int = 0
 ## Inimigo → vaga + 1 do número que ainda soma (comum e contínuo).
 var _merge_hit := PackedInt32Array()
 var _merge_dot := PackedInt32Array()
+## Texto, tamanho e largura recalculados uma vez só (no passo, no desenho ou ao ler), não a cada
+## golpe: com dezenas de golpes somando no mesmo passo, medir o texto a cada um custava caro.
+## `_dirty[i]` = 1 se a vaga está na lista `_dirty_list` (primeiros `_dirty_count`).
+var _dirty := PackedByteArray()
+var _dirty_list := PackedInt32Array()
+var _dirty_count: int = 0
+## Prioridade anti-poluição por tipo (DamagePalette.priority), sem ler o dicionário a cada vaga.
+var _prio := PackedInt32Array()
 
 
 func _ready() -> void:
@@ -105,6 +113,12 @@ func _ready() -> void:
 		array.resize(CAPACITY)
 		set(packed, array)
 	_life.fill(0.0)
+	_dirty.resize(CAPACITY)
+	_dirty.fill(0)
+	_dirty_list.resize(CAPACITY)
+	_prio.resize(DamagePalette.NORMAL.size())
+	for kind: int in range(DamagePalette.NORMAL.size()):
+		_prio[kind] = DamagePalette.priority(kind)
 	_recent.resize(DamagePalette.SPREAD_CHECK)
 	_recent.fill(-1)
 	_merge_hit.resize(EnemyManager.CAPACITY)
@@ -119,6 +133,8 @@ func reset() -> void:
 	_merge_hit.fill(0)
 	_merge_dot.fill(0)
 	_recent.fill(-1)
+	_dirty.fill(0)
+	_dirty_count = 0
 	live = 0
 	live_kind.resize(DamagePalette.Kind.size())
 	live_kind.fill(0)
@@ -137,6 +153,7 @@ func set_colorblind(on: bool) -> void:
 
 ## Pressão e nível fixos (testes e capturas); `on` falso volta ao cálculo ao vivo.
 func force_level(new_level: int, new_pressure: float, on: bool = true) -> void:
+	_flush_text()
 	lock_pressure = on
 	level = new_level
 	pressure = new_pressure
@@ -154,12 +171,17 @@ func add(at: Vector2, amount: float, kind: int, ref: float = 0.0, target: int = 
 		return
 	if level > 0 and _fold(at + Vector2(0.0, -8.0), amount, kind):
 		return
-	var priority := DamagePalette.priority(kind)
+	var priority := _prio[kind]
 	if kind == DamagePalette.Kind.CRIT and live_kind.size() > kind and live_kind[kind] >= DamagePalette.MAX_CRITS:
+		return
+	var full := live >= int(DamagePalette.LEVEL_CAP[level])
+	# Tela cheia e golpe de prioridade 0: _evict recusaria de qualquer jeito (atalho antes de
+	# _crowded, que não muda nada; o resultado é o mesmo).
+	if full and priority == 0:
 		return
 	if DamagePalette.is_enemy(kind) and _crowded(at + Vector2(0.0, -8.0), priority):
 		return
-	if live >= int(DamagePalette.LEVEL_CAP[level]) and not _evict(priority):
+	if full and not _evict(priority):
 		return
 	var big := kind == DamagePalette.Kind.CRIT and _big_crits() < DamagePalette.CRIT_BIG_MAX
 	var i := _free_slot()
@@ -178,7 +200,7 @@ func add(at: Vector2, amount: float, kind: int, ref: float = 0.0, target: int = 
 	_kind[i] = kind
 	_count[i] = 1
 	_target[i] = target
-	_set_text(i)
+	_mark_text(i)
 	live += 1
 	live_kind[kind] += 1
 	events += 1
@@ -194,6 +216,7 @@ func add(at: Vector2, amount: float, kind: int, ref: float = 0.0, target: int = 
 
 ## Último número criado, somado ou juntado (testes): {"kind", "text", "fill", "size", ...} ou vazio.
 func last() -> Dictionary:
+	_flush_text()
 	if _last_slot < 0 or _life[_last_slot] <= _age[_last_slot]:
 		return {}
 	var i := _last_slot
@@ -212,6 +235,7 @@ func count(kind: int = -1) -> int:
 
 ## Área (px lógicos²) coberta pelos números vivos, contorno incluído (testes de cobertura da tela).
 func screen_area() -> float:
+	_flush_text()
 	var area := 0.0
 	for i: int in range(CAPACITY):
 		if _life[i] > 0.0:
@@ -221,6 +245,8 @@ func screen_area() -> float:
 
 
 func step(delta: float) -> void:
+	# Antes de o nível mudar: o tamanho sai do nível em que o golpe chegou.
+	_flush_text()
 	rate = lerpf(rate, _attempts / maxf(delta, 0.001), clampf(delta / DamagePalette.RATE_SMOOTH, 0.0, 1.0))
 	_attempts = 0
 	if not lock_pressure:
@@ -263,25 +289,54 @@ func _merge(amount: float, kind: int, target: int) -> bool:
 	_amount[i] += amount
 	_last[i] = _age[i]
 	_life[i] = maxf(_life[i], _age[i] + float(DamagePalette.NORMAL[kind]["life"]) * DamagePalette.level_life(kind, level))
-	_set_text(i)
+	_mark_text(i)
 	events += 1
 	_last_slot = i
 	return true
 
 
 ## Com pressão: número do mesmo tipo, perto e de valor parecido, vira "×N" num vivo recente.
+## (DamagePalette.should_fold aberto aqui: mesmas regras, sem chamada nem raiz por vaga.)
 func _fold(at: Vector2, amount: float, kind: int) -> bool:
+	if level <= 0 or (kind != DamagePalette.Kind.HIT and kind != DamagePalette.Kind.HIGH
+			and kind != DamagePalette.Kind.DOT):
+		return false
+	var radius := float(DamagePalette.FOLD_RADIUS[level])
+	var r2 := radius * radius
+	var share := float(DamagePalette.FOLD_SHARE[level])
 	for k: int in range(_recent.size()):
 		var j := _recent[k]
 		if j < 0 or _life[j] <= 0.0 or _kind[j] != kind:
 			continue
-		if DamagePalette.should_fold(kind, level, _pos[j].distance_to(at), _amount[j], amount):
+		if _pos[j].distance_squared_to(at) > r2:
+			continue
+		var a := _amount[j]
+		if absf(a - amount) <= share * maxf(a, amount):
 			_count[j] += 1
 			folded += 1
 			events += 1
 			_last_slot = j
 			return true
 	return false
+
+
+## Marca a vaga para recalcular texto, tamanho e largura no próximo _flush_text().
+func _mark_text(i: int) -> void:
+	if _dirty[i] == 1:
+		return
+	_dirty[i] = 1
+	_dirty_list[_dirty_count] = i
+	_dirty_count += 1
+
+
+## Recalcula o texto das vagas marcadas (vivas) com o nível atual.
+func _flush_text() -> void:
+	for k: int in range(_dirty_count):
+		var i := _dirty_list[k]
+		_dirty[i] = 0
+		if _life[i] > 0.0:
+			_set_text(i)
+	_dirty_count = 0
 
 
 func _set_text(i: int) -> void:
@@ -310,7 +365,7 @@ func _crowded(at: Vector2, priority: int) -> bool:
 	var r2 := DamagePalette.LOCAL_RADIUS * DamagePalette.LOCAL_RADIUS
 	for k: int in range(_recent.size()):
 		var j := _recent[k]
-		if j < 0 or _life[j] <= 0.0 or DamagePalette.priority(_kind[j]) < priority:
+		if j < 0 or _life[j] <= 0.0 or _prio[_kind[j]] < priority:
 			continue
 		if _pos[j].distance_squared_to(at) < r2:
 			near += 1
@@ -338,7 +393,7 @@ func _evict(priority: int) -> bool:
 	for i: int in range(CAPACITY):
 		if _life[i] <= 0.0:
 			continue
-		var p := DamagePalette.priority(_kind[i])
+		var p := _prio[_kind[i]]
 		var aged := _age[i] / _life[i]
 		if p < best_priority or (p == best_priority and aged > best_age):
 			victim = i
@@ -384,6 +439,7 @@ func _place(at: Vector2, kind: int) -> Vector2:
 func _draw() -> void:
 	if live <= 0:
 		return
+	_flush_text()
 	# Faixa da HUD em coordenadas do mundo (a camada segue a câmera).
 	var ct := get_viewport().get_canvas_transform()
 	var hud_y := (ct.affine_inverse() * Vector2(0.0, DamagePalette.HUD_TOP)).y

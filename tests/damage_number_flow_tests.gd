@@ -104,6 +104,11 @@ func _test_merge(n: DamageNumbers) -> void:
 	n.add(Vector2.ZERO, 5.0, K.HIT, 10.0, 7)
 	n.add(Vector2.ZERO, 5.0, K.HIT, 10.0, 7)
 	_check.call(n.live == 1 and float(n.last()["amount"]) == 10.0, "soma: golpes seguidos no mesmo inimigo somam")
+	# Muitos golpes no mesmo passo: o texto (recalculado uma vez só) mostra a soma toda.
+	for _k: int in range(30):
+		n.add(Vector2.ZERO, 1.0, K.HIT, 10.0, 7)
+	_check.call(String(n.last()["text"]) == "40" and n.live == 1,
+			"soma: 30 golpes no mesmo passo mostram o total (%s)" % n.last()["text"])
 	n.add(Vector2.ZERO, 5.0, K.HIT, 10.0, 8)
 	_check.call(n.live == 2, "soma: outro inimigo tem seu número")
 	n.step(DamagePalette.MERGE_WINDOW + 0.05)

@@ -122,6 +122,89 @@ func _test_spatial_hash() -> void:
 	grid.clear()
 	grid.query(Vector2(0.0, 0.0), 20.0, found)
 	_check(found.is_empty(), "clear esvazia a grade")
+	_test_spatial_hash_reference()
+
+
+## A grade plana devolve exatamente o que a grade antiga (dicionário de listas) devolvia:
+## mesma ordem (linha a linha, ordem de inserção na célula) e mesmo corte em max_results.
+func _test_spatial_hash_reference() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1234
+	var grid := SpatialHash.new(24.0)
+	var found: Array[int] = []
+	var expected: Array[int] = []
+	var mismatches := 0
+	var queries := 0
+	for round_i: int in range(40):
+		var capacity := 64 + rng.randi_range(0, 200)
+		# Uns rodadas espalhadas (inclui o modo dicionário), outras num aglomerado negativo.
+		var spread := 3000.0 if round_i % 5 == 0 else (8000000.0 if round_i % 13 == 0 else 400.0)
+		var offset := Vector2(rng.randf_range(-600.0, 200.0), rng.randf_range(-600.0, 200.0))
+		var points := PackedVector2Array()
+		var alive := PackedByteArray()
+		points.resize(capacity)
+		alive.resize(capacity)
+		for i: int in range(capacity):
+			points[i] = offset + Vector2(rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
+			# Alguns exatamente na borda da célula (inclusive negativa).
+			if rng.randi_range(0, 9) == 0:
+				points[i] = Vector2(24.0 * rng.randi_range(-20, 20), -24.0 * rng.randi_range(0, 20))
+			alive[i] = 1 if rng.randf() < 0.8 else 0
+		var cells := {}
+		var cell_order: Array[Vector2i] = []
+		if round_i % 2 == 0:
+			grid.rebuild(points, alive, capacity)
+		else:
+			grid.clear()
+		for i: int in range(capacity):
+			if alive[i] == 0:
+				continue
+			if round_i % 2 == 1:
+				grid.insert(i, points[i])
+			var key := grid.cell_of(points[i])
+			if not cells.has(key):
+				cells[key] = []
+				cell_order.append(key)
+			(cells[key] as Array).append(i)
+		for q: int in range(60):
+			var center := offset + Vector2(rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
+			if q % 7 == 0:
+				center = Vector2(-0.0001 * q, -24.0 * q)
+			var radius := rng.randf_range(0.0, 90.0) if q % 9 != 0 else 1500.0
+			var max_results := 0 if q % 3 == 0 else rng.randi_range(1, 12)
+			grid.query(center, radius, found, max_results)
+			_naive_query(cells, grid, center, radius, expected, max_results)
+			queries += 1
+			if found != expected:
+				mismatches += 1
+	_check(mismatches == 0, "grade plana = grade de referência (%d consultas, %d diferentes)" % [queries, mismatches])
+	# Inserir depois de consultar remonta a grade com o ponto novo no fim da célula.
+	grid.clear()
+	grid.insert(5, Vector2(-1.0, -1.0))
+	grid.query(Vector2(-10.0, -10.0), 5.0, found)
+	grid.insert(2, Vector2(-23.0, -2.0))
+	grid.insert(9, Vector2(30.0, 30.0))
+	grid.query(Vector2(0.0, 0.0), 30.0, found)
+	_check(found == [5, 2, 9], "insert após query entra na ordem de inserção")
+	grid.query(Vector2(0.0, 0.0), 30.0, found, 2)
+	_check(found == [5, 2], "max_results corta na mesma ordem")
+
+
+## Consulta da grade antiga: células linha a linha (Y fora, X dentro), ids na ordem de inserção.
+func _naive_query(cells: Dictionary, grid: SpatialHash, center: Vector2, radius: float,
+		out: Array[int], max_results: int) -> void:
+	out.clear()
+	var min_cell := grid.cell_of(center - Vector2(radius, radius))
+	var max_cell := grid.cell_of(center + Vector2(radius, radius))
+	for cy: int in range(min_cell.y, max_cell.y + 1):
+		for cx: int in range(min_cell.x, max_cell.x + 1):
+			var cell: Variant = cells.get(Vector2i(cx, cy))
+			if cell == null:
+				continue
+			for id: int in cell as Array:
+				out.append(id)
+				if max_results > 0 and out.size() >= max_results:
+					return
 
 
 func _test_segment_hit() -> void:

@@ -99,8 +99,8 @@ func _step_index() -> int:
 
 ## "slow" efetivo do tipo para um ator de raio `radius` (chefes grandes resistem até 30%).
 func slow_for(type: int, radius: float) -> float:
-	var slow := field.slow_of(type)
-	if bool(field.types[type].get("resist_by_size", false)):
+	var slow := field.slow_by_type[type]
+	if field.resist_by_type[type] == 1:
 		var resist := clampf((radius - 10.0) / 60.0, 0.0, 0.3)
 		slow = 1.0 - (1.0 - slow) * (1.0 - resist)
 	return slow
@@ -108,24 +108,37 @@ func slow_for(type: int, radius: float) -> float:
 
 ## Um passo de `dt` do multiplicador `m`: entra linear (ease_in), sai em ease-out exponencial
 ## que chega a exatamente 1.0 em até ease_out segundos. Devolve [m, tipo lembrado].
+## (Os passos por inimigo usam advance_mult + next_type, sem alocar o Array.)
 func advance(m: float, remembered: int, here: int, radius: float, dt: float) -> Array:
+	var next := advance_mult(m, remembered, here, radius, dt)
+	return [next, next_type(next, remembered, here)]
+
+
+## Só o multiplicador de advance().
+func advance_mult(m: float, remembered: int, here: int, radius: float, dt: float) -> float:
 	if here >= 0:
 		var target := slow_for(here, radius)
-		var p: Dictionary = field.types[here]
 		if m > target:
-			m = move_toward(m, target, (1.0 - target) / maxf(float(p.get("ease_in", 0.25)), 0.01) * dt)
+			m = move_toward(m, target, (1.0 - target) / maxf(field.ease_in_by_type[here], 0.01) * dt)
 		else:
 			m = _recover_toward(m, target, here, radius, dt)
-		return [m, here]
+		return m
 	if remembered < 0 or m >= 1.0:
-		return [1.0, -1]
-	m = _recover_toward(m, 1.0, remembered, radius, dt)
-	return [m, remembered if m < 1.0 else -1]
+		return 1.0
+	return _recover_toward(m, 1.0, remembered, radius, dt)
+
+
+## Só o tipo lembrado de advance(), dado o multiplicador `next` que advance_mult devolveu.
+func next_type(next: float, remembered: int, here: int) -> int:
+	if here >= 0:
+		return here
+	# Sem tipo lembrado (ou já em 1.0) advance_mult devolve 1.0, então cai no -1 também.
+	return remembered if next < 1.0 else -1
 
 
 func _recover_toward(m: float, target: float, type: int, radius: float, dt: float) -> float:
 	var depth := maxf(1.0 - slow_for(type, radius), EPS * 2.0)
-	var k := log(depth / EPS) / maxf(float(field.types[type].get("ease_out", 0.4)), 0.01)
+	var k := log(depth / EPS) / maxf(field.ease_out_by_type[type], 0.01)
 	m = target - (target - m) * exp(-k * dt)
 	if absf(target - m) < EPS * 1.5:
 		m = target
@@ -138,7 +151,7 @@ func accel_for(m: float, type: int, radius: float) -> float:
 	if type < 0 or m >= 1.0:
 		return 1.0
 	var depth := clampf((1.0 - m) / maxf(1.0 - slow_for(type, radius), EPS), 0.0, 1.0)
-	return lerpf(1.0, float(field.types[type].get("accel", 1.0)), depth)
+	return lerpf(1.0, field.accel_by_type[type], depth)
 
 
 # --- Guardiã -----------------------------------------------------------------------------
@@ -152,9 +165,9 @@ func player_factor(p: Vector2) -> float:
 		_player_step = step
 		var here := field.type_at(p, GameClock.game_time)
 		player_inside = here >= 0
-		var r := advance(player_mult, player_type, here, Player.RADIUS, GameClock.STEP)
-		player_mult = r[0]
-		player_type = r[1]
+		var m := advance_mult(player_mult, player_type, here, Player.RADIUS, GameClock.STEP)
+		player_type = next_type(m, player_type, here)
+		player_mult = m
 	return player_mult
 
 
@@ -187,9 +200,9 @@ func enemy_factor(i: int, p: Vector2, radius: float) -> float:
 	var m := _mult[i]
 	var remembered := _type[i]
 	for _k: int in range(mini(gap, MAX_CATCH_UP)):
-		var r := advance(m, remembered, here, radius, GameClock.STEP)
-		m = r[0]
-		remembered = r[1]
+		var next := advance_mult(m, remembered, here, radius, GameClock.STEP)
+		remembered = next_type(next, remembered, here)
+		m = next
 	_mult[i] = m
 	_type[i] = remembered
 	return m

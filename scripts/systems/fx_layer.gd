@@ -27,6 +27,13 @@ const MAX_RINGS := 40
 const MAX_WAVES := 3
 ## Clarões novos por passo de simulação (centenas de acertos não viram um borrão branco).
 const FLASHES_PER_STEP := 6
+## Impactos completos por passo: além disto (um corte de área em centenas de inimigos), cada
+## acerto solta só uma faísca e o crítico não ganha o "X" (o número de dano aparece igual).
+const IMPACTS_PER_STEP := 16
+## "X" do crítico por passo (o resto dos críticos do mesmo passo fica só com o número e as faíscas).
+const CRIT_ANIMS_PER_STEP := 4
+## Faíscas por acerto em cada nível gráfico.
+const IMPACT_COUNT := [1, 3, 5]
 const RING_LIFETIME := 0.4
 ## Camada dos números: acima da escuridão da lanterna (5), do clarão do relâmpago (7) e do tom
 ## da noite (CanvasModulate só pinta a camada 0), abaixo da HUD (10). Cores fiéis à paleta.
@@ -133,6 +140,11 @@ var _rings: Array[Dictionary] = []
 var _flashes: Array[Dictionary] = []
 var _waves: Array[Dictionary] = []
 var _flashes_this_step: int = 0
+var _impacts_this_step: int = 0
+var _crit_anims_this_step: int = 0
+## Números visíveis por tipo (DamagePalette.Kind): "damage_numbers" e a opção do tipo juntas, em
+## cache (relidas a cada quadro e quando uma opção muda), sem consultar o Settings a cada acerto.
+var _show_kind := PackedByteArray()
 ## Golpe da lanterna: {"pos", "color", "t", "strength"} ou vazio.
 var _cine: Dictionary = {}
 var _slow_left: float = 0.0
@@ -184,6 +196,7 @@ func _ready() -> void:
 	_showcase = WeaponShowcase.new()
 	refresh_quality()
 	_apply_quality()
+	_refresh_number_settings()
 	Settings.changed.connect(_on_setting)
 	reset()
 
@@ -192,6 +205,15 @@ func _on_setting(key: String) -> void:
 	if key == GfxQuality.changed_signal_key():
 		refresh_quality()
 		_apply_quality()
+	_refresh_number_settings()
+
+
+## Relê "damage_numbers" e as opções por tipo (DamagePalette.SETTING_KEYS) para o cache.
+func _refresh_number_settings() -> void:
+	var all := bool(Settings.get_value("damage_numbers"))
+	_show_kind.resize(DamagePalette.SETTING_KEYS.size())
+	for kind: int in range(DamagePalette.SETTING_KEYS.size()):
+		_show_kind[kind] = 1 if all and bool(Settings.get_value(DamagePalette.SETTING_KEYS[kind])) else 0
 
 
 ## Lê o nível gráfico atual para as variáveis estáticas (também chamado pelos testes).
@@ -448,7 +470,13 @@ func impact(weapon_id: StringName, at: Vector2, dir: Vector2, crit: bool = false
 	var s := style(weapon_id)
 	var color: Color = s["color"]
 	var hot: Color = s["hot"]
-	var n: int = [1, 3, 5][wfx]
+	_impacts_this_step += 1
+	if _impacts_this_step > IMPACTS_PER_STEP:
+		# Além da cota do passo: uma faísca só, da cor quente da arma (sem clarão nem animação).
+		var a := (dir.angle() if dir != Vector2.ZERO else randf() * TAU) + randf_range(-0.9, 0.9)
+		_emit(P.STREAK, at, Vector2.from_angle(a) * randf_range(60.0, 120.0), randf_range(0.12, 0.2), hot)
+		return
+	var n: int = IMPACT_COUNT[wfx]
 	if crit:
 		n += 3
 		flash(at, 14.0, Color(1.0, 0.85, 0.4, 0.8))
@@ -480,7 +508,8 @@ func impact(weapon_id: StringName, at: Vector2, dir: Vector2, crit: bool = false
 			embers(at, color, n)
 		_:
 			burst(at, hot, n)
-	if crit and wfx > 0:
+	if crit and wfx > 0 and _crit_anims_this_step < CRIT_ANIMS_PER_STEP:
+		_crit_anims_this_step += 1
 		play_anim("cut_x", at, 0.45, randf() * TAU, Color(1.0, 0.92, 0.6), 24.0, false, true)
 
 
@@ -521,6 +550,8 @@ func step(dt: float) -> void:
 	if _showcase and _showcase.active():
 		_showcase.step(game)
 	_flashes_this_step = 0
+	_impacts_this_step = 0
+	_crit_anims_this_step = 0
 	if _slow_left > 0.0:
 		_slow_left -= dt
 		time_scale = 0.35
@@ -583,6 +614,7 @@ func _age(list: Array[Dictionary], dt: float) -> void:
 
 func _process(delta: float) -> void:
 	_calm = bool(Settings.get_value("reduce_flashes"))
+	_refresh_number_settings()
 	numbers.set_colorblind(bool(Settings.get_value("colorblind")))
 	numbers.low = wfx == 0
 	if game and game.player:
@@ -601,12 +633,10 @@ func _process(delta: float) -> void:
 ## Número de dano ou cura em `at` (DamagePalette.Kind). `ref`: média móvel (dano causado) ou
 ## HP máximo (recebido e cura), para o tamanho; `target`: inimigo (soma golpes seguidos).
 ## Desligado pela opção "damage_numbers" e, por tipo, pelas opções DamagePalette.SETTING_KEYS
-## (lidas na hora: a troca nas Opções vale na mesma partida).
+## (em cache, relidas a cada quadro e na troca: a troca nas Opções vale na mesma partida).
 func add_number(at: Vector2, amount: float, kind: int = DamagePalette.Kind.HIT, ref: float = 0.0,
 		target: int = -1) -> void:
-	if not bool(Settings.get_value("damage_numbers")):
-		return
-	if not bool(Settings.get_value(DamagePalette.SETTING_KEYS[kind])):
+	if _show_kind[kind] == 0:
 		return
 	numbers.add(global_position + at, amount, kind, ref, target)
 

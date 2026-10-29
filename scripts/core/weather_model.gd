@@ -52,6 +52,10 @@ var _strikes_until: float = 0.0
 var _puddle_cache: Dictionary = {}
 var _phase := PackedFloat32Array()
 var _hazard: Dictionary = {}
+## Último mud_level_at: tempo, valor e se já há valor.
+var _mud_t: float = 0.0
+var _mud_level: float = 0.0
+var _mud_valid: bool = false
 
 
 func _init(p_stage: String = "village", p_seed: int = 0, stage_data: Dictionary = {}, p_forced: int = -1) -> void:
@@ -255,9 +259,15 @@ func wetness_at(t: float) -> float:
 
 
 ## Quanto o chão encharcado vira lama 0..1 (as superfícies "rain" do SurfaceField crescem com ele).
+## Guarda o último `t` (função pura de t: os ~500 inimigos de um passo pedem o mesmo valor).
 func mud_level_at(t: float) -> float:
-	return clampf(inverse_lerp(float(profile.get("mud_from", 0.3)), float(profile.get("mud_full", 0.85)),
+	if _mud_valid and t == _mud_t:
+		return _mud_level
+	_mud_level = clampf(inverse_lerp(float(profile.get("mud_from", 0.3)), float(profile.get("mud_full", 0.85)),
 			wetness_at(t)), 0.0, 1.0)
+	_mud_t = t
+	_mud_valid = true
+	return _mud_level
 
 
 ## Poças 0..1: crescem com a chuva e secam depois.

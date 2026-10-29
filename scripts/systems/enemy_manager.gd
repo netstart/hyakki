@@ -254,10 +254,8 @@ func is_prop(i: int) -> bool:
 
 func step(dt: float) -> void:
 	prev = pos.duplicate()
-	spatial.clear()
-	for i: int in range(CAPACITY):
-		if alive[i] == 1:
-			spatial.insert(i, pos[i])
+	# Mesmo resultado de clear() + insert(i, pos[i]) para cada vivo em ordem crescente.
+	spatial.rebuild(pos, alive, CAPACITY)
 	if freeze_time > 0.0:
 		freeze_time -= dt
 	var frozen := freeze_time > 0.0
@@ -401,14 +399,18 @@ func _separation(i: int, p: Vector2, r: float) -> Vector2:
 	var acc := Vector2.ZERO
 	var touching := 0
 	var checked := 0
+	# Referências locais (só leitura): evita buscar o membro a cada vizinho.
+	var alive_l := alive
+	var pos_l := pos
+	var radius_l := radius
 	for j: int in _near:
-		if j == i or alive[j] == 0:
+		if j == i or alive_l[j] == 0:
 			continue
 		checked += 1
 		if checked > MAX_NEIGHBORS_CHECKED:
 			break
-		var d: Vector2 = p - pos[j]
-		var min_dist: float = r + radius[j]
+		var d: Vector2 = p - pos_l[j]
+		var min_dist: float = r + radius_l[j]
 		var d2 := d.length_squared()
 		if d2 >= min_dist * min_dist:
 			continue
@@ -427,8 +429,11 @@ func _separation(i: int, p: Vector2, r: float) -> Vector2:
 func query_circle(center: Vector2, r: float, out: Array[int]) -> void:
 	spatial.query(center, r + 30.0, _near)
 	out.clear()
+	var alive_l := alive
+	var pos_l := pos
+	var radius_l := radius
 	for j: int in _near:
-		if alive[j] == 1 and center.distance_to(pos[j]) <= r + radius[j]:
+		if alive_l[j] == 1 and center.distance_to(pos_l[j]) <= r + radius_l[j]:
 			out.append(j)
 
 
