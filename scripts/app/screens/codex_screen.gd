@@ -9,6 +9,12 @@ extends Screen
 ## Bestiário: lore liberada com 100 abates (MetaProgress.CODEX_KILLS); chefes ao vencer;
 ## armas base sempre, evoluções e uniões ao descobrir; relíquias e guardiões pelo
 ## desbloqueio; kami sempre; conquistas e história conforme o progresso.
+##
+## Receitas: armas e relíquias mostram, abaixo da descrição, com o que combinam e no que viram
+## ("Com [ícone] Saquê, evolui em: [ícone] Lâmina da Aurora"), montadas dos dados (evolution,
+## evolves_with, from, requires) com o modelo traduzido de cada idioma (cada %s vira um chip, na
+## ordem do idioma). Cada item é um chip com o ícone 1:1 e o nome; tocar nele abre a entrada do
+## item. O que ainda não se conhece segue a regra do Diário: chip em silhueta com "?" e "???".
 
 const HEADER_H := 40.0
 const TAB_H := 26.0
@@ -30,6 +36,17 @@ const TAB_ICONS := {
 }
 const STORY_ICON := "res://assets/art/items/object/Book.png"
 const DAWN_ICON := "res://assets/art/ui/icons/meteo/Sun.png"
+## Chip das receitas: 18x18 em escala 1 (pixel perfeito), da altura da linha da fonte 12 (16 px)
+## mais a moldura. O miolo são os 16x16 centrais do ícone de habilidade 24x24 e a moldura de 1 px
+## vem do bisel do próprio ícone (cor da categoria: arma, relíquia, evolução, união).
+const CHIP := 18
+## Chip de item desconhecido: as cores da silhueta dos cartões, com "?" no meio.
+const CHIP_UNKNOWN_FILL := Color(0.3, 0.2, 0.13)
+const CHIP_UNKNOWN_RIM := Color(0.55, 0.38, 0.24)
+const CHIP_UNKNOWN_INK := Color("f0d9a8")
+const CHIP_QUESTION: Array[String] = [".###.", "#...#", "....#", "..##.", "..#..", ".....", "..#.."]
+
+static var _chips: Dictionary = {}
 
 var _tabs: Array[Button] = []
 var _chip: Label
@@ -45,6 +62,7 @@ var _name: Label
 var _kind: Label
 var _detail_scroll: ScrollContainer
 var _lore: Label
+var _recipe: RichTextLabel
 var _stats: Label
 var _actions: HBoxContainer
 var _hint: Label
@@ -53,6 +71,8 @@ var _entries: Array[Dictionary] = []
 var _selected := -1
 var _cards: Array[Button] = []
 var _flip: Tween
+## Entrada a abrir quando a página virar (toque num chip de receita de outra categoria).
+var _pending := &""
 
 
 func _ready() -> void:
@@ -128,6 +148,7 @@ func open_entry(index: int) -> void:
 	_kind.text = String(e.get("kind", ""))
 	_kind.visible = _kind.text != ""
 	_lore.text = String(e["text"])
+	_fill_recipe(e.get("recipe", []) as Array)
 	_stats.text = "\n".join(e.get("stats", []) as Array) if known else ""
 	_stats.visible = _stats.text != ""
 	for child: Node in _actions.get_children():
@@ -153,6 +174,30 @@ func open_entry(index: int) -> void:
 
 func category() -> StringName:
 	return _category
+
+
+## Pula para a entrada `id` da categoria `cat` (toque num chip de receita); outra categoria
+## vira a página e abre a entrada quando ela chega.
+func open_item(cat: StringName, id: StringName) -> void:
+	if cat == _category:
+		var index := index_of(id)
+		if index >= 0:
+			open_entry(index)
+		return
+	_pending = id
+	open_category(cat)
+
+
+## Índice da entrada `id` na categoria atual; -1 se não houver.
+func index_of(id: StringName) -> int:
+	for i: int in _entries.size():
+		if StringName(String(_entries[i].get("id", ""))) == id:
+			return i
+	return -1
+
+
+func selected() -> int:
+	return _selected
 
 
 func entries() -> Array[Dictionary]:
@@ -208,20 +253,28 @@ func _fill_page() -> void:
 	_name.text = ""
 	_kind.visible = false
 	_lore.text = ""
+	_recipe.visible = false
 	_stats.visible = false
 	_actions.visible = false
 	_hint.visible = true
-	# Abre a primeira conhecida (ou a primeira) para a página da direita nunca ficar vazia.
+	# Abre a primeira conhecida (ou a primeira) para a página da direita nunca ficar vazia; vindo
+	# de um chip de receita, abre o item tocado.
 	var first := 0
 	for i: int in _entries.size():
 		if bool(_entries[i]["known"]):
 			first = i
 			break
+	if _pending != &"":
+		var wanted := index_of(_pending)
+		_pending = &""
+		if wanted >= 0:
+			first = wanted
 	if not _entries.is_empty():
 		open_entry(first)
 
 
-## Entradas de uma categoria: {title, known, icon, face, sprite, text, stats, kind, replay}.
+## Entradas de uma categoria: {title, known, icon, face, sprite, text, stats, kind, replay}; armas
+## e relíquias também têm id e recipe (linhas de _recipe_line).
 func entries_for(id: StringName) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	match id:
@@ -262,9 +315,10 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 		&"relics":
 			for p: StringName in DB.ids("passives"):
 				var data: Dictionary = DB.passives[p]
-				var known := MetaProgress.is_content_available("passives", p, data)
+				var known := _passive_known(p)
 				var effect := tr("codex.per_level") % LevelUpSystem.describe_stats(data["per_level"])
 				out.append({"title": tr("passive.%s.name" % p), "known": known, "icon": UiIcons.skill_path("passives", p),
+						"id": String(p), "recipe": _relic_recipe(p) if known else [],
 						"text": effect if known else tr("heroes.locked") % tr("achievement.%s.desc" % data["unlock"])})
 		&"kami":
 			for k: StringName in DB.ids("kami"):
@@ -306,20 +360,166 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 
 func _weapon_entries() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	var evolved: Array = SaveManager.data["stats"]["evolved"]
-	var unions: Array = SaveManager.data["stats"].get("unions", [])
+	var kinds := {"base": tr("codex.kind_base"), "evolution": tr("codex.kind_evolution"), "union": tr("codex.kind_union")}
+	for w: StringName in DB.ids("weapons"):
+		var kind := String(DB.weapon(w).get("kind", "base"))
+		var known := _weapon_known(w)
+		out.append({"title": tr("weapon.%s.name" % w), "known": known, "icon": UiIcons.skill_path("weapons", w),
+				"id": String(w), "recipe": _weapon_recipe(w), "kind": String(kinds.get(kind, "")),
+				"text": tr("weapon.%s.desc" % w) if known else tr("codex.weapon_locked")})
+	return out
+
+
+# --- Receitas (combinações) ------------------------------------------------------------
+
+## Arma conhecida pelo Diário: base sempre; evolução e união depois de descobertas.
+func _weapon_known(w: StringName) -> bool:
+	var stats: Dictionary = SaveManager.data["stats"]
+	return String(DB.weapon(w).get("kind", "base")) == "base" or (stats["evolved"] as Array).has(String(w)) \
+			or (stats.get("unions", []) as Array).has(String(w))
+
+
+## Relíquia conhecida pelo Diário: liberada (as sem condição desde o início).
+func _passive_known(p: StringName) -> bool:
+	return MetaProgress.is_content_available("passives", p, DB.passives.get(p, {}) as Dictionary)
+
+
+## Item citado numa receita: {category, id, known, icon, name}; desconhecido sai como "???".
+func recipe_ref(cat: StringName, id: String) -> Dictionary:
+	var weapon := cat == &"weapons"
+	var known := _weapon_known(StringName(id)) if weapon else _passive_known(StringName(id))
+	var name_key := ("weapon.%s.name" if weapon else "passive.%s.name") % id
+	return {"category": cat, "id": id, "known": known,
+			"icon": UiIcons.skill_path("weapons" if weapon else "passives", id), "name": tr(name_key) if known else "???"}
+
+
+## Linha de receita: o modelo traduzido (cada %s vira um chip, na ordem do idioma) e os itens.
+func _recipe_line(template: String, refs: Array[Dictionary]) -> Dictionary:
+	return {"text": template, "refs": refs}
+
+
+## Receitas de uma arma: a base diz com que relíquia evolui e no quê; a evolução, de onde nasce
+## e com que outra evolução se une; a união, de que par nasce.
+func _weapon_recipe(w: StringName) -> Array[Dictionary]:
+	var lines: Array[Dictionary] = []
+	var data := DB.weapon(w)
+	match String(data.get("kind", "base")):
+		"base":
+			if data.has("evolution"):
+				lines.append(_recipe_line(tr("codex.evolves"), [recipe_ref(&"relics", String(data.get("evolves_with", ""))),
+						recipe_ref(&"weapons", String(data["evolution"]))]))
+		"evolution":
+			var base := String(data.get("from", ""))
+			lines.append(_recipe_line(tr("codex.evolved_from"), [recipe_ref(&"weapons", base),
+					recipe_ref(&"relics", String(DB.weapon(StringName(base)).get("evolves_with", "")))]))
+			for u: StringName in DB.ids("weapons"):
+				var parts: Array = DB.weapon(u).get("requires", [])
+				if String(DB.weapon(u).get("kind", "")) == "union" and parts.size() >= 2 and parts.has(String(w)):
+					var other := String(parts[1] if String(parts[0]) == String(w) else parts[0])
+					lines.append(_recipe_line(tr("codex.unites_into"), [recipe_ref(&"weapons", other),
+							recipe_ref(&"weapons", String(u))]))
+		"union":
+			var parts: Array = data.get("requires", [])
+			if parts.size() >= 2:
+				lines.append(_recipe_line(tr("codex.union_of"), [recipe_ref(&"weapons", String(parts[0])),
+						recipe_ref(&"weapons", String(parts[1]))]))
+	return lines
+
+
+## Receitas de uma relíquia: cada arma base que ela faz evoluir, e no quê.
+func _relic_recipe(p: StringName) -> Array[Dictionary]:
+	var lines: Array[Dictionary] = []
 	for w: StringName in DB.ids("weapons"):
 		var data := DB.weapon(w)
-		var kind := String(data.get("kind", "base"))
-		var known := kind == "base" or evolved.has(String(w)) or unions.has(String(w))
-		var text := tr("weapon.%s.desc" % w)
-		if kind == "base" and data.has("evolution"):
-			text += "\n\n" + tr("codex.evolves") % [tr("passive.%s.name" % data.get("evolves_with", "")),
-					tr("weapon.%s.name" % data.get("evolution", "")) if evolved.has(String(data.get("evolution", ""))) else "???"]
-		var kinds := {"base": tr("codex.kind_base"), "evolution": tr("codex.kind_evolution"), "union": tr("codex.kind_union")}
-		out.append({"title": tr("weapon.%s.name" % w), "known": known, "icon": UiIcons.skill_path("weapons", w),
-				"kind": String(kinds.get(kind, "")), "text": text if known else tr("codex.weapon_locked")})
+		if String(data.get("kind", "base")) == "base" and data.has("evolution") \
+				and String(data.get("evolves_with", "")) == String(p):
+			lines.append(_recipe_line(tr("codex.relic_evolves"), [recipe_ref(&"weapons", String(w)),
+					recipe_ref(&"weapons", String(data["evolution"]))]))
+	return lines
+
+
+## Escreve as receitas na página: o texto do idioma entre os chips (ícone + nome), uma por linha.
+func _fill_recipe(lines: Array) -> void:
+	_recipe.clear()
+	_recipe.visible = not lines.is_empty()
+	for i: int in lines.size():
+		if i > 0:
+			_recipe.newline()
+		var line: Dictionary = lines[i]
+		var refs: Array = line["refs"]
+		var parts := String(line["text"]).split("%s")
+		for j: int in parts.size():
+			if parts[j] != "":
+				_recipe.add_text(parts[j])
+			if j < refs.size():
+				_add_chip(refs[j] as Dictionary)
+
+
+## Chip de um item: ícone 18x18 centrado na linha e o nome em tinta vermelha (marrom se
+## desconhecido), num link só (tocar no ícone ou no nome abre a entrada).
+func _add_chip(ref: Dictionary) -> void:
+	var known := bool(ref["known"])
+	var label := String(ref["name"])
+	_recipe.push_meta({"category": ref["category"], "id": ref["id"]}, RichTextLabel.META_UNDERLINE_NEVER, label)
+	_recipe.add_image(recipe_chip(String(ref["icon"]), known), CHIP, CHIP, Color.WHITE, INLINE_ALIGNMENT_CENTER,
+			Rect2(), null, false, label)
+	_recipe.push_color(ThemeFactory.RED_INK if known else ThemeFactory.PAPER_INK_SOFT)
+	# Espaço fino inquebrável: o nome não se separa do ícone na quebra de linha.
+	_recipe.add_text(" " + label)
+	_recipe.pop()
+	_recipe.pop()
+
+
+func _on_recipe_meta(meta: Variant) -> void:
+	if meta is Dictionary:
+		AudioManager.play_ui("ui_accept")
+		open_item(StringName(String(meta["category"])), StringName(String(meta["id"])))
+
+
+## Textura do chip (em cache): conhecido, miolo 16x16 do ícone com a moldura do bisel dele e os
+## cantos vazados; desconhecido (ou sem ícone), silhueta de papel escuro com "?".
+static func recipe_chip(path: String, known: bool) -> Texture2D:
+	var key := "%s|%s" % [path, known]
+	if _chips.has(key):
+		return _chips[key]
+	var src: Image = null
+	if known and ResourceLoader.exists(path):
+		var tex := load(path) as Texture2D
+		src = tex.get_image() if tex != null else null
+		if src != null:
+			if src.is_compressed():
+				src.decompress()
+			src.convert(Image.FORMAT_RGBA8)
+	var img := Image.create_empty(CHIP, CHIP, false, Image.FORMAT_RGBA8)
+	var last := CHIP - 1
+	for y: int in CHIP:
+		for x: int in CHIP:
+			var edge := x == 0 or y == 0 or x == last or y == last
+			if (x == 0 or x == last) and (y == 0 or y == last):
+				continue
+			if src != null:
+				img.set_pixel(x, y, src.get_pixel(_chip_src(x, src.get_width()), _chip_src(y, src.get_height())))
+			else:
+				img.set_pixel(x, y, CHIP_UNKNOWN_RIM if edge else CHIP_UNKNOWN_FILL)
+	if src == null:
+		var at := Vector2i((CHIP - CHIP_QUESTION[0].length()) / 2, (CHIP - CHIP_QUESTION.size()) / 2)
+		for row: int in CHIP_QUESTION.size():
+			for col: int in CHIP_QUESTION[row].length():
+				if CHIP_QUESTION[row][col] == "#":
+					img.set_pixel(at.x + col, at.y + row, CHIP_UNKNOWN_INK)
+	var out := ImageTexture.create_from_image(img)
+	_chips[key] = out
 	return out
+
+
+## Pixel do ícone (lado `side`, 24) para a coordenada `c` do chip: a borda pega o bisel (1 px
+## para dentro da borda do ícone) e o miolo 1..16 pega os 16 pixels centrais (4..19).
+static func _chip_src(c: int, side: int) -> int:
+	if c == 0:
+		return 1
+	if c == CHIP - 1:
+		return side - 2
+	return c + (side - CHIP) / 2
 
 
 func _story_entries() -> Array[Dictionary]:
@@ -509,6 +709,23 @@ func _build_right() -> void:
 	_lore.name = "Lore"
 	_lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_lore)
+	_recipe = RichTextLabel.new()
+	_recipe.name = "Recipe"
+	_recipe.fit_content = true
+	_recipe.scroll_active = false
+	_recipe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_recipe.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_recipe.mouse_filter = Control.MOUSE_FILTER_PASS
+	_recipe.meta_underlined = false
+	_recipe.add_theme_color_override("default_color", ThemeFactory.PAPER_INK)
+	_recipe.add_theme_constant_override("outline_size", 0)
+	_recipe.add_theme_color_override("font_shadow_color", Color(1, 1, 1, 0.25))
+	_recipe.add_theme_constant_override("shadow_offset_x", 0)
+	_recipe.add_theme_constant_override("shadow_offset_y", 1)
+	_recipe.add_theme_constant_override("line_separation", 2)
+	_recipe.meta_clicked.connect(_on_recipe_meta)
+	_recipe.visible = false
+	body.add_child(_recipe)
 	_stats = _ink("", 12, Color("2f5a22"))
 	_stats.name = "Stats"
 	_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -631,6 +848,10 @@ class Card extends Button:
 	var _pair: Array[Texture2D] = []
 	var _shape: SpriteSheet
 	var _selected := false
+	## O cartão inteiro fica assado numa textura (StaticBake), refeita só quando muda (toque,
+	## foco, seleção, tamanho): a grade rolando desenha um retângulo por cartão em vez de ~6
+	## trocas de textura cada (caixa, silhueta, aro, "?").
+	var _bake: StaticBake
 
 	func setup(p_entry: Dictionary) -> void:
 		entry = p_entry
@@ -653,33 +874,39 @@ class Card extends Button:
 			_pair = MenuKit.silhouette_pair(_shape.texture, Color(0.3, 0.2, 0.13), Color(0.55, 0.38, 0.24, 0.9))
 		elif _tex != null and not bool(entry["known"]) and not bool(entry.get("show_locked", false)):
 			_pair = MenuKit.silhouette_pair(_tex, Color(0.3, 0.2, 0.13), Color(0.55, 0.38, 0.24, 0.9))
-		mouse_entered.connect(queue_redraw)
-		mouse_exited.connect(queue_redraw)
-		focus_entered.connect(queue_redraw)
-		focus_exited.connect(queue_redraw)
+		if _bake == null:
+			_bake = StaticBake.new(_paint)
+			_bake.name = "Bake"
+			add_child(_bake)
+		_bake.invalidate()
+		mouse_entered.connect(_bake.invalidate)
+		mouse_exited.connect(_bake.invalidate)
+		focus_entered.connect(_bake.invalidate)
+		focus_exited.connect(_bake.invalidate)
 
 	func set_selected(on: bool) -> void:
 		_selected = on
-		queue_redraw()
+		if _bake != null:
+			_bake.invalidate()
 
 	func is_selected() -> bool:
 		return _selected
 
-	func _draw() -> void:
+	func _paint(c: CanvasItem) -> void:
 		var r := Rect2(Vector2.ZERO, size)
 		var known := bool(entry["known"])
 		var hot := is_hovered() or has_focus()
 		var border := ThemeFactory.RED_INK if _selected else Color("6b4a2a", 0.9 if hot else 0.55)
 		var bg := Color("f6ead0") if known else Color("dcc79b")
-		draw_style_box(ThemeFactory.flat_box(bg, border, 2 if _selected else 1, 3), r)
+		c.draw_style_box(ThemeFactory.flat_box(bg, border, 2 if _selected else 1, 3), r)
 		if _shape != null:
 			var cell := _shape.frame_size
 			var k := maxf(1.0, floorf((size.x - 8.0) / maxf(cell.x, cell.y))) if cell.x <= 32.0 else (size.x - 8.0) / cell.x
 			var dest := Rect2(r.get_center() - cell * k * 0.5, cell * k)
 			dest.position = dest.position.round()
 			var src := _shape.region(0, SpriteSheet.Dir.DOWN)
-			draw_texture_rect_region(_pair[0], dest, src)
-			draw_texture_rect_region(_pair[1], dest, src)
+			c.draw_texture_rect_region(_pair[0], dest, src)
+			c.draw_texture_rect_region(_pair[1], dest, src)
 		elif _tex != null:
 			var inner := r.grow(-4)
 			var fs := _tex.get_size()
@@ -695,20 +922,20 @@ class Card extends Button:
 				dest = Rect2(inner.get_center() - fs * s * 0.5, fs * s).abs()
 				dest.position = dest.position.round()
 			if not _pair.is_empty():
-				draw_texture_rect_region(_pair[0], dest, src)
-				draw_texture_rect_region(_pair[1], dest, src)
+				c.draw_texture_rect_region(_pair[0], dest, src)
+				c.draw_texture_rect_region(_pair[1], dest, src)
 			else:
 				var tint := Color.WHITE if known else Color(0.45, 0.4, 0.38, 0.7)
-				draw_texture_rect_region(_tex, dest, src, tint)
+				c.draw_texture_rect_region(_tex, dest, src, tint)
 		if not known:
 			var font := get_theme_default_font()
 			var q := "?"
 			var at := Vector2(size.x - 9, size.y - 4)
-			draw_string_outline(font, at, q, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color("2a1a10"))
-			draw_string(font, at, q, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f0d9a8"))
+			c.draw_string_outline(font, at, q, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color("2a1a10"))
+			c.draw_string(font, at, q, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f0d9a8"))
 		elif bool(entry.get("show_locked", false)):
-			draw_rect(Rect2(size.x - 9, 3, 6, 6), Color("2f7d4a"))
-			draw_rect(Rect2(size.x - 9, 3, 6, 6), ThemeFactory.GOLD, false, 1.0)
+			c.draw_rect(Rect2(size.x - 9, 3, 6, 6), Color("2f7d4a"))
+			c.draw_rect(Rect2(size.x - 9, 3, 6, 6), ThemeFactory.GOLD, false, 1.0)
 
 
 ## Retrato ampliado da entrada, num disco de tinta: o sprite anima (inimigos e chefes), os
@@ -721,10 +948,18 @@ class EntryView extends Control:
 	var _pair: Array[Texture2D] = []
 	var _time := 0.0
 	var _color := Color(0.62, 0.17, 0.12)
+	var _disc: Control
+	var _drawn_frame := -1
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_disc = Control.new()
+		_disc.show_behind_parent = true
+		_disc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_disc.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_disc.draw.connect(_draw_disc.bind(_disc))
+		add_child(_disc)
 
 	func setup(entry: Dictionary, known: bool) -> void:
 		_known = known
@@ -756,18 +991,29 @@ class EntryView extends Control:
 					_pair = MenuKit.silhouette_pair(_tex, Color(0.24, 0.17, 0.12), Color(0.45, 0.3, 0.2, 0.9))
 		set_process(_sheet != null and MenuKit.ui_fx() >= 1)
 		queue_redraw()
+		_disc.queue_redraw()
 
+	## O sprite anda a 6 quadros/s: só redesenha quando o quadro muda, e espera enquanto uma lista
+	## rola pelo dedo (TouchScroll.busy).
 	func _process(delta: float) -> void:
 		_time += delta
-		queue_redraw()
+		if int(_time * 6.0) != _drawn_frame and not TouchScroll.busy():
+			queue_redraw()
+
+	## Disco de tinta e aros, fixos, numa camada atrás (os aros são polígonos: não são refeitos a
+	## cada quadro do sprite).
+	func _draw_disc(layer: Control) -> void:
+		var c := size * 0.5
+		var rad := minf(size.x, size.y) * 0.5
+		layer.draw_circle(c + Vector2(0, 1), rad, Color(0.3, 0.18, 0.08, 0.35))
+		layer.draw_circle(c, rad, Color("e3cfa2"))
+		layer.draw_arc(c, rad - 1.0, 0.0, TAU, 40, Color(_color, 0.8), 2.0)
+		layer.draw_arc(c, rad - 4.0, 0.0, TAU, 40, Color(_color, 0.3), 1.0)
 
 	func _draw() -> void:
 		var c := size * 0.5
 		var rad := minf(size.x, size.y) * 0.5
-		draw_circle(c + Vector2(0, 1), rad, Color(0.3, 0.18, 0.08, 0.35))
-		draw_circle(c, rad, Color("e3cfa2"))
-		draw_arc(c, rad - 1.0, 0.0, TAU, 40, Color(_color, 0.8), 2.0)
-		draw_arc(c, rad - 4.0, 0.0, TAU, 40, Color(_color, 0.3), 1.0)
+		_drawn_frame = int(_time * 6.0)
 		if _sheet != null:
 			var cell := _sheet.frame_size
 			var k := maxf(1.0, floorf((rad * 1.5) / maxf(cell.x, cell.y)))

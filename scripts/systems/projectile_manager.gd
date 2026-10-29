@@ -305,7 +305,7 @@ func _draw_trail(i: int, head_at: Vector2, n: int, color: Color, width: float) -
 	var colors := PackedColorArray()
 	for k: int in range(line.size()):
 		colors.append(Color(color, 0.8 * (1.0 - k / float(line.size()))))
-	draw_polyline_colors(line, colors, width)
+	Stroke.polyline(self, line, colors, width)
 
 
 ## Corrente da Kusarigama: elos da mão da guardiã até o gancho (em todos os níveis).

@@ -57,7 +57,7 @@ func _screenshots(dir: String) -> void:
 			for lang: String in extra.trim_prefix("--langs=").split(","):
 				cases.append(["progress", lang])
 	var native := get_window().size
-	for target: Vector2 in DeviceProfiles.views():
+	for target: Vector2 in DeviceProfiles.shot_views():
 		var view: Vector2 = await DeviceProfiles.set_window_view(self, target)
 		tests.use_case({"view": view, "insets": Vector2.ZERO, "label": "%dx%d" % [view.x, view.y]})
 		for item: Array in cases:

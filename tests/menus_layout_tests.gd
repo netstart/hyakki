@@ -16,11 +16,13 @@ const SCREENS := {
 }
 ## Variantes das capturas: "tela" ou "tela:estado".
 const SHOT_VARIANTS: Array[String] = ["heroes", "heroes:locked", "options", "options:display",
-		"codex", "codex:detail", "codex:bosses", "codex:kami"]
+		"codex", "codex:detail", "codex:bosses", "codex:kami", "codex:recipe", "codex:evolution", "codex:relic"]
 
 const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds",
 		"hurt_sounds", "joystick_mode", "joystick_side", "vibration", "fps", "graphics_quality", "colorblind",
-		"reduce_flashes", "damage_numbers", "hp_bar_below", "notifications", "privacy", "restore", "credits",
+		"reduce_flashes", "damage_numbers", "damage_show_hit", "damage_show_high", "damage_show_crit",
+		"damage_show_dot", "damage_show_taken", "damage_show_taken_heavy", "damage_show_heal", "hp_bar_below",
+		"notifications", "privacy", "restore", "credits",
 		"licenses", "privacy_policy", "reset", "version"]
 
 var _host: Node
@@ -59,6 +61,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_hero_behaviour()
 	await _test_options_behaviour()
 	await _test_codex_behaviour()
+	await _test_codex_recipes()
 	await _test_back_everywhere()
 	await _test_real_app()
 
@@ -264,6 +267,12 @@ func prepare_variant(host: Node, screen: Control, variant: String) -> void:
 		"detail":
 			if screen.has_method("open_entry"):
 				screen.call("open_entry", 0)
+		"recipe", "evolution", "relic":
+			# Receitas com ícones: Katana (base), Lâmina da Aurora (evolução e união) e Jade (relíquia de duas armas).
+			var target: Array = {"recipe": [&"weapons", &"katana"], "evolution": [&"weapons", &"dawn_blade"],
+					"relic": [&"relics", &"jade"]}[state]
+			screen.call("open_category", target[0], false)
+			screen.call("open_entry", screen.call("index_of", target[1]))
 	await host.get_tree().process_frame
 
 
@@ -441,6 +450,8 @@ func _test_codex(view: Vector2, state: String) -> void:
 			screen.call("open_entry", i)
 			await _host.get_tree().process_frame
 			check_common(screen, view, "%s entrada %d" % [sub, i])
+		if id in [&"weapons", &"relics"]:
+			await _test_codex_recipe_layout(screen, view, sub)
 	close_screen(screen)
 	await _host.get_tree().process_frame
 
@@ -487,6 +498,233 @@ func _test_codex_behaviour() -> void:
 	GfxQuality.clear_override()
 	close_screen(screen)
 	await _host.get_tree().process_frame
+
+
+# --- Diário: receitas com ícones --------------------------------------------------------
+
+## Tamanho do chip das receitas, lido do script do Diário.
+static func recipe_chip_size() -> int:
+	return int((load(SCREENS[&"codex"]) as GDScript).get_script_constant_map()["CHIP"])
+
+
+## Comprimento aproximado de uma receita na tela (modelo + nomes + chips), para escolher as
+## mais longas de cada idioma.
+static func recipe_length(entry: Dictionary) -> int:
+	var total := 0
+	for line: Dictionary in entry.get("recipe", []):
+		total += String(line["text"]).length() + 4
+		for ref: Dictionary in line["refs"]:
+			total += String(ref["name"]).length() + 3
+	return total
+
+
+## Entradas da categoria atual com receita, das mais longas para as mais curtas (até `count`).
+static func longest_recipes(entries: Array, count: int) -> Array[int]:
+	var idx: Array[int] = []
+	for i: int in entries.size():
+		if not (entries[i].get("recipe", []) as Array).is_empty():
+			idx.append(i)
+	idx.sort_custom(func(a: int, b: int) -> bool: return recipe_length(entries[a]) > recipe_length(entries[b]))
+	return idx.slice(0, count)
+
+
+## Layout das receitas na categoria aberta (armas ou relíquias): as mais longas com o perfil do
+## caso (há itens desconhecidos, chip "?") e com tudo descoberto (todos os nomes, os mais longos).
+func _test_codex_recipe_layout(screen: Control, view: Vector2, sub: String) -> void:
+	var stats: Dictionary = SaveManager.data["stats"]
+	var evolved: Array = (stats["evolved"] as Array).duplicate()
+	var unions: Array = (stats.get("unions", []) as Array).duplicate()
+	var unlocked: Array = (SaveManager.data["unlocked"].get("passives", []) as Array).duplicate()
+	for full: bool in [false, true]:
+		if full:
+			for w: StringName in DB.ids("weapons"):
+				var kind := String(DB.weapon(w).get("kind", "base"))
+				if kind == "evolution":
+					(stats["evolved"] as Array).append(String(w))
+				elif kind == "union":
+					if not stats.has("unions"):
+						stats["unions"] = []
+					(stats["unions"] as Array).append(String(w))
+			for p: StringName in DB.ids("passives"):
+				(SaveManager.data["unlocked"]["passives"] as Array).append(String(p))
+		screen.call("_fill_page")
+		var entries: Array = screen.call("entries")
+		for i: int in longest_recipes(entries, 2 if full else 1):
+			screen.call("open_entry", i)
+			await _host.get_tree().process_frame
+			await _host.get_tree().process_frame
+			check_recipe(screen, view, "%s receita %s%s" % [sub, entries[i]["id"], " (tudo descoberto)" if full else ""])
+	stats["evolved"] = evolved
+	stats["unions"] = unions
+	SaveManager.data["unlocked"]["passives"] = unlocked
+	screen.call("_fill_page")
+
+
+## A receita (texto rico com chips) inteira na página: dentro da largura da área de rolagem e
+## fora do recorte, sem linha cortada (fit_content), cada linha com a altura do chip, abaixo da
+## descrição e acima dos números, sem sobrepor; e o resto da página continua sem corte.
+func check_recipe(screen: Control, view: Vector2, st: String) -> void:
+	var recipe := screen.get("_recipe") as RichTextLabel
+	_ok(recipe != null and recipe.is_visible_in_tree() and recipe.get_line_count() >= 1, "%s: receita visível" % st)
+	if recipe == null or not recipe.is_visible_in_tree():
+		return
+	var scroll := screen.get("_detail_scroll") as Control
+	var clip := scroll.get_global_rect().intersection(_area(view))
+	var r := recipe.get_global_rect()
+	_ok(r.position.x >= clip.position.x - 0.5 and r.end.x <= clip.end.x + 0.5,
+			"%s: receita dentro da largura (%s em %s)" % [st, r, clip])
+	_ok(recipe.get_content_width() <= r.size.x + 0.5,
+			"%s: nenhuma linha da receita passa da largura (%d de %.0f)" % [st, recipe.get_content_width(), r.size.x])
+	_ok(recipe.get_content_height() <= r.size.y + 0.5,
+			"%s: receita com todas as linhas (%d de %.0f)" % [st, recipe.get_content_height(), r.size.y])
+	var chip := recipe_chip_size()
+	_ok(recipe.get_content_height() >= recipe.get_line_count() * chip,
+			"%s: cada linha comporta o chip de %d px (%d linhas, %d px)" % [st, chip, recipe.get_line_count(),
+			recipe.get_content_height()])
+	var lore := screen.get("_lore") as Label
+	_ok(lore.get_global_rect().end.y <= r.position.y + 0.5, "%s: receita abaixo da descrição" % st)
+	var stats := screen.get("_stats") as Label
+	if stats.is_visible_in_tree():
+		_ok(r.end.y <= stats.get_global_rect().position.y + 0.5, "%s: receita acima dos números" % st)
+	check_common(screen, view, st)
+
+
+## Receitas: toda arma base com evolução mostra a relíquia e a evolução; toda evolução, a base,
+## a relíquia e as uniões de que participa; toda união, o par; toda relíquia, as armas que faz
+## evoluir. Ícones existem e viram chips de 18x18 pixel perfeitos; o desconhecido sai em
+## silhueta com "???"; tocar num chip abre a entrada do item (mesma categoria ou virando a página).
+func _test_codex_recipes() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	GfxQuality.set_override(GfxQuality.LOW)
+	var screen := await open_screen(_host, main_view(), &"codex")
+	var script := screen.get_script() as GDScript
+	var chip := recipe_chip_size()
+	screen.call("open_category", &"weapons", false)
+	await _host.get_tree().process_frame
+	var entries: Array = screen.call("entries")
+	_ok(entries.size() == DB.ids("weapons").size(), "Receitas: uma entrada por arma")
+	var bad_icons: Array[String] = []
+	var wrong: Array[String] = []
+	var unknown_named: Array[String] = []
+	for e: Dictionary in entries:
+		var w := StringName(String(e["id"]))
+		var expected := _expected_recipe(w)
+		var got: Array = []
+		for line: Dictionary in e["recipe"]:
+			var pair: Array = []
+			for ref: Dictionary in line["refs"]:
+				pair.append([String(ref["category"]), String(ref["id"])])
+				var path := String(ref["icon"])
+				var tex: Texture2D = script.call("recipe_chip", path, bool(ref["known"]))
+				if not ResourceLoader.exists(path) or tex == null or tex.get_size() != Vector2(chip, chip):
+					bad_icons.append(path)
+				var known := _ref_known(String(ref["category"]), String(ref["id"]))
+				if bool(ref["known"]) != known or (String(ref["name"]) == "???") == known:
+					unknown_named.append("%s→%s" % [w, ref["id"]])
+			_ok(String(line["text"]).count("%s") == pair.size(), "Receitas %s: um %%s por chip" % w)
+			got.append(pair)
+		if got != expected:
+			wrong.append("%s: %s != %s" % [w, got, expected])
+	_ok(wrong.is_empty(), "Receitas: parceiro e resultado certos em toda arma %s" % [wrong])
+	_ok(bad_icons.is_empty(), "Receitas: todo ícone citado existe e vira chip de %d px %s" % [chip, bad_icons])
+	_ok(unknown_named.is_empty(), "Receitas: desconhecido como ???, conhecido com nome %s" % [unknown_named])
+	var katana := int(screen.call("index_of", &"katana"))
+	var dawn := TranslationServer.translate("weapon.dawn_blade.name")
+	screen.call("open_entry", katana)
+	await _host.get_tree().process_frame
+	var recipe := screen.get("_recipe") as RichTextLabel
+	var text := recipe.get_parsed_text()
+	_ok(recipe.is_visible_in_tree() and text.contains(TranslationServer.translate("passive.sake.name"))
+			and text.contains("???") and not text.contains(dawn),
+			"Receitas: Katana mostra Saquê e a evolução ainda desconhecida como ??? (%s)" % text)
+	_ok(not (screen.get("_lore") as Label).text.contains("???"), "Receitas: a descrição fica só com a descrição")
+	(SaveManager.data["stats"]["evolved"] as Array).append("dawn_blade")
+	screen.call("_fill_page")
+	screen.call("open_entry", katana)
+	await _host.get_tree().process_frame
+	_ok(recipe.get_parsed_text().contains(dawn) and not recipe.get_parsed_text().contains("???"),
+			"Receitas: evolução descoberta mostra o nome")
+	# Chips: conhecido copia o miolo do ícone 1:1; desconhecido é a silhueta com "?".
+	var icon_path := UiIcons.skill_path("weapons", "katana")
+	var icon := (load(icon_path) as Texture2D).get_image()
+	icon.decompress()
+	icon.convert(Image.FORMAT_RGBA8)
+	var known_chip := (script.call("recipe_chip", icon_path, true) as Texture2D).get_image()
+	var unknown_chip := (script.call("recipe_chip", icon_path, false) as Texture2D).get_image()
+	var same := true
+	for y: int in range(1, chip - 1):
+		for x: int in range(1, chip - 1):
+			same = same and known_chip.get_pixel(x, y).is_equal_approx(icon.get_pixel(x + 3, y + 3))
+	_ok(same and known_chip.get_pixel(0, 0).a == 0.0, "Receitas: chip conhecido é o miolo do ícone em escala 1")
+	var ink := 0
+	for y: int in chip:
+		for x: int in chip:
+			ink += int(unknown_chip.get_pixel(x, y).is_equal_approx(script.get_script_constant_map()["CHIP_UNKNOWN_INK"]))
+	_ok(ink >= 8 and not unknown_chip.get_pixel(9, 9).is_equal_approx(known_chip.get_pixel(9, 9)),
+			"Receitas: chip desconhecido em silhueta com \"?\" (%d px de tinta)" % ink)
+	# Relíquia bloqueada: a receita da arma esconde o nome dela; a página da relíquia não mostra receita.
+	var raijin := int(screen.call("index_of", &"raijin"))
+	var rosary_ref: Dictionary = (entries[raijin]["recipe"] as Array)[0]["refs"][0]
+	_ok(String(rosary_ref["id"]) == "rosary" and not bool(rosary_ref["known"]) and String(rosary_ref["name"]) == "???",
+			"Receitas: relíquia bloqueada (Rosário) aparece como ???")
+	# Tocar num chip: outra categoria vira a página e abre o item; na mesma, abre direto.
+	screen.call("_on_recipe_meta", {"category": &"relics", "id": "sake"})
+	await _host.get_tree().process_frame
+	_ok(screen.call("category") == &"relics" and int(screen.call("selected")) == int(screen.call("index_of", &"sake"))
+			and (screen.get("_name") as Label).text == TranslationServer.translate("passive.sake.name"),
+			"Receitas: tocar em Saquê abre a relíquia")
+	var relics: Array = screen.call("entries")
+	var sake: Dictionary = relics[int(screen.call("index_of", &"sake"))]
+	var sake_lines: Array = sake["recipe"]
+	_ok(sake_lines.size() == 1 and String(sake_lines[0]["refs"][0]["id"]) == "katana"
+			and String(sake_lines[0]["refs"][1]["id"]) == "dawn_blade", "Receitas: Saquê evolui Katana em Lâmina da Aurora")
+	var multi := 0
+	for r: Dictionary in relics:
+		multi = maxi(multi, (r.get("recipe", []) as Array).size())
+	_ok(multi >= 2 and recipe.is_visible_in_tree(), "Receitas: relíquia de várias armas lista todas (%d)" % multi)
+	var rosary: Dictionary = relics[int(screen.call("index_of", &"rosary"))]
+	_ok(not bool(rosary["known"]) and (rosary["recipe"] as Array).is_empty(), "Receitas: relíquia bloqueada sem receita")
+	screen.call("_on_recipe_meta", {"category": &"weapons", "id": "katana"})
+	await _host.get_tree().process_frame
+	_ok(screen.call("category") == &"weapons" and int(screen.call("selected")) == katana, "Receitas: e volta à Katana")
+	screen.call("_on_recipe_meta", {"category": &"weapons", "id": "dawn_blade"})
+	_ok(int(screen.call("selected")) == int(screen.call("index_of", &"dawn_blade")),
+			"Receitas: na mesma categoria abre direto")
+	screen.call("open_category", &"enemies", false)
+	await _host.get_tree().process_frame
+	_ok(not recipe.is_visible_in_tree(), "Receitas: yōkai não têm receita")
+	GfxQuality.clear_override()
+	close_screen(screen)
+	await _host.get_tree().process_frame
+
+
+## Receita esperada de uma arma, direto dos dados: [[[categoria, id], [categoria, id]], ...].
+func _expected_recipe(w: StringName) -> Array:
+	var data := DB.weapon(w)
+	var out: Array = []
+	match String(data.get("kind", "base")):
+		"base":
+			if data.has("evolution"):
+				out.append([["relics", String(data["evolves_with"])], ["weapons", String(data["evolution"])]])
+		"evolution":
+			var base := String(data["from"])
+			out.append([["weapons", base], ["relics", String(DB.weapon(StringName(base))["evolves_with"])]])
+			for u: StringName in DB.ids("weapons"):
+				var parts: Array = DB.weapon(u).get("requires", [])
+				if parts.has(String(w)):
+					out.append([["weapons", String(parts[0] if String(parts[1]) == String(w) else parts[1])],
+							["weapons", String(u)]])
+		"union":
+			out.append([["weapons", String(data["requires"][0])], ["weapons", String(data["requires"][1])]])
+	return out
+
+
+func _ref_known(category: String, id: String) -> bool:
+	if category == "relics":
+		return MetaProgress.is_content_available("passives", StringName(id), DB.passives[StringName(id)])
+	var stats: Dictionary = SaveManager.data["stats"]
+	return String(DB.weapon(StringName(id)).get("kind", "base")) == "base" or (stats["evolved"] as Array).has(id) \
+			or (stats.get("unions", []) as Array).has(id)
 
 
 # --- Voltar --------------------------------------------------------------------------

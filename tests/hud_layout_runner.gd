@@ -74,7 +74,7 @@ func _screenshots(dir: String, langs: PackedStringArray, views: PackedStringArra
 		node.get_parent().queue_free()
 	for lang: String in langs:
 		Locale.set_language(lang, false)
-		for r: Dictionary in DeviceProfiles.RESOLUTIONS:
+		for r: Dictionary in DeviceProfiles.shot_resolutions():
 			if not views.is_empty() and not views.has(String(r["label"])):
 				continue
 			var view: Vector2 = await DeviceProfiles.set_window_view(self, r["view"])

@@ -54,7 +54,7 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	var original := SaveManager.data
 	var native := get_window().size
-	for target: Vector2 in DeviceProfiles.views():
+	for target: Vector2 in DeviceProfiles.shot_views():
 		var view: Vector2 = await DeviceProfiles.set_window_view(self, target)
 		for c: Dictionary in DeviceProfiles.layout_cases():
 			if c["view"] != target:

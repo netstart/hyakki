@@ -175,14 +175,20 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	_update_dawn()
+	# Lista rolando pelo dedo (TouchScroll.busy): lanternas e pétalas (só decorativas) esperam
+	# paradas, sem redesenhar; o sol do amanhecer segue a rolagem.
+	if TouchScroll.busy():
+		return
 	_clock += delta
 	var frame := int(_clock * LANTERN_FPS) % 4
 	for i: int in _lanterns.size():
 		var lantern := _lanterns[i]
 		lantern.position.y = 6.0 + sin(_clock * 1.7 + i * 1.3) * 2.5
-		_lantern_frames[i].region.position.y = ((frame + i * 2) % 4) * LANTERN_FRAME
+		var region_y := ((frame + i * 2) % 4) * LANTERN_FRAME
+		if _lantern_frames[i].region.position.y != region_y:
+			_lantern_frames[i].region.position.y = region_y
 	_petals.step(delta)
-	_update_dawn()
 	if not _auto:
 		return
 	if _auto_wait > 0.0:

@@ -54,7 +54,7 @@ func _screenshots(dir: String) -> void:
 	var cases := [["pt_BR", "defeat", 6], ["pt_BR", "victory", 6], ["pt_BR", "gave_up", 0],
 			["de", "defeat", 10], ["ru", "victory", 4], ["ja", "defeat", 5], ["fr", "victory", 6]]
 	var native := get_window().size
-	for target: Vector2 in DeviceProfiles.views():
+	for target: Vector2 in DeviceProfiles.shot_views():
 		var view: Vector2 = await DeviceProfiles.set_window_view(self, target)
 		tests.use_case(view, Vector2.ZERO)
 		for item: Array in cases:

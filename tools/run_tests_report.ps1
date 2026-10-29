@@ -3,23 +3,20 @@
 #   relatorio.md     o mesmo resumo em texto
 #   *.log            saída completa de cada etapa
 #
-#   powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1 [-NoOpen] [-SkipStress] [-E2E]
+#   powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1 [-NoOpen] [-SkipStress]
 #
 # Etapas: importação (sintaxe), lint, regras puras, textos/i18n, licenças, ficha da loja,
-# integração, determinismo (1x/2x/3x), estresse (500 inimigos) e, com -E2E, ponta a ponta no
-# emulador. Mesmas de run_checks.ps1, mas com cada verificação listada (testes GDScript rodam com
+# integração, determinismo (1x/2x/3x) e estresse (500 inimigos), tudo no Godot do PC. Mesmas de
+# run_checks.ps1, mas com cada verificação listada (testes GDScript rodam com
 # --verbose) e o relatório salvo.
 #
 # Opções:
 #   -NoOpen       não abre o relatório no navegador no fim
 #   -SkipStress   pula o teste de estresse (o mais lento)
-#   -E2E          também roda os testes de ponta a ponta no emulador (tools\run_e2e.ps1; apaga o save
-#                 do emulador e leva alguns minutos a mais)
 
 param(
     [switch]$NoOpen,
     [switch]$SkipStress,
-    [switch]$E2E,
     [string]$Godot = $(if ($env:GODOT) { $env:GODOT } else { 'C:\src\tools\godot\Godot_v4.7.2-stable_win64_console.exe' })
 )
 
@@ -129,27 +126,6 @@ if ($SkipStress) {
     $errs = @($run.Lines | Where-Object { $_ -match 'SCRIPT ERROR' })
     $summary = if ($perf) { ($perf | Select-Object -Last 1) } else { 'sem linha de DESEMPENHO' }
     Add-Result 'estresse' 'Estresse' $(if ($errs -or -not $perf) { 'falhou' } else { 'ok' }) $run $summary $perf $errs
-}
-
-Step '8. Ponta a ponta no emulador (E2E)'
-if ($E2E) {
-    # -NoChecks: as verificações já rodaram nas etapas acima.
-    $run = Invoke-Logged 'e2e' { powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'run_e2e.ps1') -NoOpen -NoChecks }
-    $e2eDir = Get-ChildItem (Join-Path $project 'build\e2e-report') -Directory -ErrorAction SilentlyContinue |
-        Sort-Object Name | Select-Object -Last 1
-    $resumo = if ($e2eDir) { Join-Path $e2eDir.FullName 'resumo.json' }
-    if ($resumo -and (Test-Path $resumo) -and $e2eDir.LastWriteTime -ge $started) {
-        $e = Get-Content $resumo -Raw -Encoding UTF8 | ConvertFrom-Json
-        $passed = @($e.checks | Where-Object { $_.ok } | ForEach-Object { $_.text })
-        $failures = @($e.checks | Where-Object { -not $_.ok } | ForEach-Object { $_.text }) + @($e.errors)
-        Add-Result 'e2e' 'Ponta a ponta (emulador)' $(if ($e.ok) { 'ok' } else { 'falhou' }) $run `
-            "$($e.summary) · relatório: $($e.report)" $passed $failures
-    } else {
-        Add-Result 'e2e' 'Ponta a ponta (emulador)' 'falhou' $run 'o roteiro não gerou resumo (veja o log)' @() `
-            @($run.Lines | Where-Object { $_ -match 'FALHOU' })
-    }
-} else {
-    Add-Result 'e2e' 'Ponta a ponta (emulador)' 'pulado' @{ Seconds = 0; Lines = @() } 'use -E2E para rodar no emulador'
 }
 
 # --- Relatório -----------------------------------------------------------------------

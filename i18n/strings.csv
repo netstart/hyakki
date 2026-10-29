@@ -168,6 +168,7 @@ codex.cost,Preço do pacto,Pact cost,Precio del pacto,Preis des Pakts,Prix du pa
 codex.discovered,%d/%d descobertos,%d/%d discovered,%d/%d descubiertos,%d/%d entdeckt,%d/%d découverts,Открыто %d/%d,%d/%d ditemukan,%d/%d 発見,%d/%d 발견,已發現 %d/%d,已发现 %d/%d
 codex.done,Conquistada,Earned,Conseguido,Erreicht,Obtenu,Получено,Diraih,達成,달성,已達成,已达成
 codex.enemies,Yōkai,Yōkai,Yōkai,Yōkai,Yōkai,Ёкаи,Yōkai,妖怪,요괴,妖怪,妖怪
+codex.evolved_from,Nasce de %s com %s,Born from %s with %s,Nace de %s con %s,Entsteht aus %s mit %s,Naît de %s avec %s,Рождается из %s с %s,Lahir dari %s dengan %s,%sと%sから進化,%s 와(과) %s 로 진화,由%s搭配%s進化而來,由%s搭配%s进化而来
 codex.evolves,"Com %s, evolui em: %s","With %s, evolves into: %s","Con %s, evoluciona en: %s",Mit %s entwickelt sich zu: %s,"Avec %s, évolue en : %s",С %s превращается в: %s,"Dengan %s, berevolusi jadi: %s",%sで進化: %s,%s 와(과) 함께 진화: %s,搭配%s進化為：%s,搭配%s进化为：%s
 codex.heroes,Guardiões,Guardians,Guardianes,Wächter,Gardiens,Стражи,Penjaga,守り人,수호자,守護者,守护者
 codex.kami,Kami,Kami,Kami,Kami,Kami,Ками,Kami,神々,신,神明,神明
@@ -178,6 +179,7 @@ codex.kind_evolution,Evolução,Evolution,Evolución,Entwicklung,Évolution,Эв
 codex.kind_union,União,Union,Unión,Vereinigung,Union,Союз,Penyatuan,合体,합체,合體,合体
 codex.per_level,A cada nível: %s,Each level: %s,Cada nivel: %s,Pro Stufe: %s,Par niveau : %s,За уровень: %s,Tiap level: %s,レベルごと: %s,레벨마다: %s,每級：%s,每级：%s
 codex.pick_hint,Toque numa página do diário para lê-la.,Tap a journal entry to read it.,Toca una entrada del diario para leerla.,"Tippe auf einen Eintrag, um ihn zu lesen.",Touche une entrée du journal pour la lire.,"Нажми на запись, чтобы прочитать.",Ketuk entri jurnal untuk membacanya.,項目に触れて読む。,항목을 눌러 읽기.,點選條目閱讀。,点选条目阅读。
+codex.relic_evolves,Evolui %s em: %s,Evolves %s into: %s,Evoluciona %s en: %s,Entwickelt %s zu: %s,Fait évoluer %s en : %s,Превращает %s в: %s,Mengevolusi %s jadi: %s,%sを進化: %s,%s 진화: %s,讓%s進化為：%s,让%s进化为：%s
 codex.relics,Relíquias,Relics,Reliquias,Relikte,Reliques,Реликвии,Relik,遺物,유물,遺物,遗物
 codex.replay_ending,Rever o final,Replay the ending,Volver a ver el final,Ende erneut ansehen,Revoir la fin,Пересмотреть финал,Putar ulang akhir,結末をもう一度,결말 다시 보기,重看結局,重看结局
 codex.replay_intro,Rever a introdução,Replay the intro,Volver a ver la introducción,Intro erneut ansehen,Revoir l'introduction,Пересмотреть пролог,Putar ulang pembuka,序章をもう一度,서장 다시 보기,重看序章,重看序章
@@ -189,6 +191,8 @@ codex.story_intro,O Despertar,The Awakening,El Despertar,Das Erwachen,L'Éveil,�
 codex.story_locked,Esta página ainda não foi escrita. Siga até o amanhecer.,This page is not yet written. Keep going until dawn.,Esta página aún no se ha escrito. Sigue hasta el amanecer.,Diese Seite ist noch leer. Halte durch bis zum Morgen.,Cette page n'est pas encore écrite. Tiens jusqu'à l'aube.,Эта страница ещё не написана. Дойди до рассвета.,Halaman ini belum ditulis. Bertahanlah sampai fajar.,この頁はまだ白紙だ。夜明けまで進め。,이 쪽은 아직 비어 있다. 새벽까지 나아가라.,這一頁尚未寫下。撐到黎明吧。,这一页尚未写下。撑到黎明吧。
 codex.story_secret,O Final Verdadeiro,The True Ending,El Final Verdadero,Das wahre Ende,La Vraie Fin,Истинный финал,Akhir Sejati,真の結末,진정한 결말,真正的結局,真正的结局
 codex.title,Diário do Guardião,Guardian's Journal,Diario del guardián,Wächtertagebuch,Journal du gardien,Дневник стража,Jurnal Penjaga,守り人の日記,수호자의 일지,守護者日誌,守护者日志
+codex.union_of,União de %s e %s,Union of %s and %s,Unión de %s y %s,Vereinigung von %s und %s,Union de %s et %s,Союз %s и %s,Penyatuan %s dan %s,%sと%sの合体,%s 와(과) %s 의 합체,%s與%s合體,%s与%s合体
+codex.unites_into,"Com %s, une-se em: %s","With %s, unites into: %s","Con %s, se une en: %s",Mit %s vereint zu: %s,"Avec %s, s'unit en : %s",С %s объединяется в: %s,"Dengan %s, bersatu jadi: %s",%sと合体: %s,%s 와(과) 합체: %s,搭配%s合體為：%s,搭配%s合体为：%s
 codex.weapon_locked,Descubra esta arma evoluindo ou unindo armas,Discover this weapon by evolving or uniting weapons,Descubre esta arma evolucionando o uniendo armas,Entdecke diese Waffe durch Entwicklung oder Vereinigung,Découvre cette arme en faisant évoluer ou en unissant des armes,Открой это оружие через эволюцию или союз,Temukan senjata ini lewat evolusi atau penyatuan,進化か合体で見つかる武器,진화나 합체로 발견할 수 있는 무기,透過進化或合體發現此武器,通过进化或合体发现此武器
 codex.weapons,Armas,Weapons,Armas,Waffen,Armes,Оружие,Senjata,武器,무기,武器,武器
 consent.accept,Aceitar anúncios personalizados,Accept personalized ads,Aceptar anuncios personalizados,Personalisierte Werbung erlauben,Accepter les pubs personnalisées,Разрешить персонализацию,Terima iklan personal,パーソナライズ広告を許可,맞춤 광고 허용,接受個人化廣告,接受个性化广告
@@ -466,6 +470,13 @@ moon.rule5,Lua V: os Kami oferecem só 2 pactos.,Moon V: Kami offer only 2 pacts
 options.about,Sobre,About,Acerca de,Über,À propos,Об игре,Tentang,情報,정보,關於,关于
 options.colorblind,Modo daltônico,Colorblind mode,Modo daltónico,Farbenblind-Modus,Mode daltonien,Режим для дальтоников,Mode buta warna,色覚サポート,색각 보조 모드,色盲模式,色盲模式
 options.damage_numbers,Números de dano,Damage numbers,Números de daño,Schadenszahlen,Chiffres de dégâts,Числа урона,Angka damage,ダメージ表示,피해 숫자,傷害數字,伤害数字
+options.damage_show_crit,Dano crítico,Critical damage,Daño crítico,Kritischer Schaden,Dégâts critiques,Критический урон,Damage kritis,クリティカル,치명타 피해,暴擊傷害,暴击伤害
+options.damage_show_dot,Dano contínuo (áreas),Damage over time (areas),Daño continuo (áreas),Schaden über Zeit (Flächen),Dégâts sur la durée (zones),Периодический урон (зоны),Damage berkala (area),継続ダメージ（範囲）,지속 피해 (범위),持續傷害（範圍）,持续伤害（范围）
+options.damage_show_heal,Cura,Healing,Curación,Heilung,Soins,Лечение,Penyembuhan,回復,회복,治療,治疗
+options.damage_show_high,Dano alto,High damage,Daño alto,Hoher Schaden,Dégâts élevés,Высокий урон,Damage tinggi,大ダメージ,높은 피해,高傷害,高伤害
+options.damage_show_hit,Dano normal,Normal damage,Daño normal,Normaler Schaden,Dégâts normaux,Обычный урон,Damage normal,通常ダメージ,일반 피해,一般傷害,普通伤害
+options.damage_show_taken,Dano recebido,Damage taken,Daño recibido,Erlittener Schaden,Dégâts subis,Полученный урон,Damage diterima,被ダメージ,받은 피해,受到的傷害,受到的伤害
+options.damage_show_taken_heavy,Dano recebido pesado,Heavy damage taken,Daño recibido fuerte,Schwerer erlittener Schaden,Gros dégâts subis,Сильный полученный урон,Damage berat diterima,大きな被ダメージ,큰 받은 피해,受到的重擊,受到的重击
 options.damage_sounds,Sons de dano nos inimigos,Enemy hit sounds,Sonidos de golpe a enemigos,Treffergeräusche bei Gegnern,Sons des coups sur les ennemis,Звуки ударов по врагам,Suara serangan ke musuh,敵への攻撃音,적 타격음,敵人受擊音效,敌人受击音效
 options.fps,Quadros por segundo,Frame rate,Fotogramas por segundo,Bildrate,Images par seconde,Частота кадров,Frame rate,フレームレート,프레임 속도,畫面更新率,画面帧率
 options.fps120,120 (usa mais bateria),120 (uses more battery),120 (más batería),120 (mehr Akku),120 (plus de batterie),120 (больше заряда),120 (lebih boros),120（電池消費大）,120 (배터리 많이 사용),120（較耗電）,120（较耗电）

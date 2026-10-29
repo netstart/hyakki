@@ -66,7 +66,7 @@ func _screenshots(dir: String) -> void:
 		for level: int in [GfxQuality.LOW, GfxQuality.HIGH]:
 			GfxQuality.set_override(level)
 			var tag := "low" if level == GfxQuality.LOW else "high"
-			for view: Vector2 in DeviceProfiles.views():
+			for view: Vector2 in DeviceProfiles.shot_views():
 				for variant: String in variants:
 					var screen_name := variant.get_slice(":", 0)
 					if only != "" and screen_name != only:

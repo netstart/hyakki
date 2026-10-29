@@ -464,7 +464,7 @@ func _draw_flash() -> void:
 	if _quality >= GfxQuality.MEDIUM and _flash_age < 0.24 and not _calm() and _bolt.size() > 1:
 		var a := clampf(1.0 - _flash_age / 0.24, 0.0, 1.0) * lerpf(1.0, 0.45, dist)
 		if _quality == GfxQuality.HIGH:
-			_flash_node.draw_polyline(_bolt, Color(color, a * 0.35), 3.0)
-		_flash_node.draw_polyline(_bolt, Color(1, 1, 1, a), 1.0)
+			Stroke.line(_flash_node, _bolt, Color(color, a * 0.35), 3.0)
+		Stroke.line(_flash_node, _bolt, Color(1, 1, 1, a), 1.0)
 		if _branch.size() > 1:
-			_flash_node.draw_polyline(_branch, Color(color, a * 0.7), 1.0)
+			Stroke.line(_flash_node, _branch, Color(color, a * 0.7), 1.0)

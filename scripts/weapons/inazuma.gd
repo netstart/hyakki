@@ -76,8 +76,8 @@ func draw(canvas: CanvasItem) -> void:
 	for b: Dictionary in bolts:
 		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0)
 		var points: PackedVector2Array = b["points"]
-		canvas.draw_polyline(points, Color(tint.r, tint.g, tint.b, 0.5 * a), wide)
-		canvas.draw_polyline(points, Color(1.0, 1.0, 1.0, a), 1.0)
+		Stroke.line(canvas, points, Color(tint.r, tint.g, tint.b, 0.5 * a), wide)
+		Stroke.line(canvas, points, Color(1.0, 1.0, 1.0, a), 1.0)
 
 
 func draw_glow(canvas: CanvasItem) -> void:

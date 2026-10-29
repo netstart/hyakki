@@ -22,6 +22,14 @@ const DEFAULTS := {
 	"colorblind": false,
 	"reduce_flashes": false,
 	"damage_numbers": true,
+	## Números por tipo (DamagePalette.SETTING_KEYS); a opção geral acima vale por cima.
+	"damage_show_hit": true,
+	"damage_show_high": true,
+	"damage_show_crit": true,
+	"damage_show_dot": true,
+	"damage_show_taken": true,
+	"damage_show_taken_heavy": true,
+	"damage_show_heal": true,
 	"damage_sounds": true,
 	"hurt_sounds": true,
 	"hp_bar_below": false,
@@ -82,8 +90,9 @@ func set_value(key: String, value: Variant) -> void:
 	changed.emit(key)
 
 
+## Limite de FPS pela opção, sem brigar com o VSync quando ela pede a taxa da tela (FramePacing).
 func apply_engine_settings() -> void:
-	Engine.max_fps = int(get_value("fps"))
+	FramePacing.apply(int(get_value("fps")))
 
 
 ## Vibração curta, respeitando a opção e um intervalo mínimo de 80 ms reais (plano 4.14).

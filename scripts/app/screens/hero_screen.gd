@@ -446,11 +446,16 @@ class HeroStage extends Control:
 	var _alpha := 1.0
 	var _tween: Tween
 	var _silhouette: Array[Texture2D] = []
+	var _kanji_layer: Control
+	var _back: Control
+	var _pedestal: Control
+	var _ring: Control
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		clip_contents = true
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_make_layers()
 
 	func show_hero(id: StringName, data: Dictionary, unlocked: bool, look: Dictionary, direction: float) -> void:
 		var path := String(data.get("sprite", ""))
@@ -479,10 +484,20 @@ class HeroStage extends Control:
 			_tween.tween_property(self, "_slide", 0.0, 0.26).from(26.0 * direction)
 			_tween.tween_property(self, "_alpha", 1.0, 0.2).from(0.0)
 		queue_redraw()
+		_back.queue_redraw()
+		_kanji_layer.queue_redraw()
+		_pedestal.queue_redraw()
+		_ring.queue_redraw()
+		_sync_layers()
 
 	func _process(delta: float) -> void:
 		_time += delta
+		# Lista de informações rolando pelo dedo: o palco espera (TouchScroll.busy).
+		if TouchScroll.busy():
+			return
 		queue_redraw()
+		_back.queue_redraw()
+		_sync_layers()
 
 	func scale_factor() -> float:
 		return clampf(floorf(size.y / 42.0), 3.0, 5.0)
@@ -494,26 +509,45 @@ class HeroStage extends Control:
 		var feet := Vector2(roundf(size.x * 0.5), roundf(size.y * 0.76))
 		return Rect2(feet.x - cell.x * k * 0.5, feet.y - cell.y * k, cell.x * k, cell.y * k)
 
-	func _draw() -> void:
+	## Camadas atrás do guardião (show_behind_parent, na ordem): fundo animado (kanji, aura e raios),
+	## pedestal fixo e o aro interno (fixo; o pulso é só o modulate). Assim nada com polígono é
+	## refeito a cada quadro (cada polígono vira um buffer novo na GPU) e o pedestal só é redesenhado
+	## quando o guardião ou o tamanho mudam.
+	func _make_layers() -> void:
+		_kanji_layer = _layer(_draw_kanji)
+		_back = _layer(_draw_back)
+		_pedestal = _layer(_draw_pedestal)
+		_ring = _layer(_draw_ring)
+
+	func _layer(painter: Callable) -> Control:
+		var layer := Control.new()
+		layer.show_behind_parent = true
+		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+		layer.draw.connect(painter.bind(layer))
+		add_child(layer)
+		return layer
+
+	func _pulse() -> float:
+		return 0.5 + 0.5 * sin(_time * 2.2) if fx >= 1 else 0.5
+
+	func _light() -> Color:
+		return _color if _unlocked else Color(0.55, 0.5, 0.75)
+
+	func _feet() -> Vector2:
+		return Vector2(roundf(size.x * 0.5), roundf(size.y * 0.76))
+
+	func _draw_back(c: Control) -> void:
 		if _sheet == null:
 			return
-		var w := size.x
 		var h := size.y
-		var k := scale_factor()
-		var feet := Vector2(roundf(w * 0.5), roundf(h * 0.76))
-		var pulse := 0.5 + 0.5 * sin(_time * 2.2) if fx >= 1 else 0.5
-		var light := _color if _unlocked else Color(0.55, 0.5, 0.75)
-		# Kanji gigante ao fundo.
-		var font := MenuKit.ja_font()
-		var ks := 96 if h >= 170.0 else 72
-		var kw := font.get_string_size(_kanji, HORIZONTAL_ALIGNMENT_LEFT, -1, ks).x
-		var kanji_alpha := 0.07 + (0.03 * pulse if fx >= 2 else 0.0)
-		draw_string(font, Vector2(roundf((w - kw) * 0.5), roundf(h * 0.18 + ks * 0.8)), _kanji,
-				HORIZONTAL_ALIGNMENT_LEFT, -1, ks, Color(light, kanji_alpha))
+		var feet := _feet()
+		var pulse := _pulse()
+		var light := _light()
 		# Aura e raios (aditivos no desenho com alfa baixo).
 		var glow := MenuKit.glow_texture()
 		var aura := 70.0 + 6.0 * pulse
-		draw_texture_rect(glow, Rect2(feet.x - aura, feet.y - aura * 1.15, aura * 2.0, aura * 1.8), false,
+		c.draw_texture_rect(glow, Rect2(feet.x - aura, feet.y - aura * 1.15, aura * 2.0, aura * 1.8), false,
 				Color(light, 0.28 + 0.1 * pulse))
 		if fx >= 2 and _unlocked and h > 80.0:
 			for i: int in 7:
@@ -521,17 +555,53 @@ class HeroStage extends Control:
 				var tip := feet + Vector2(cos(ang), sin(ang)) * (h * 0.85)
 				var perp := Vector2(-sin(ang), cos(ang))
 				var a := 0.05 + 0.03 * sin(_time * 1.3 + i * 1.7)
-				draw_colored_polygon(PackedVector2Array([feet + perp * 2.0, feet - perp * 2.0, tip - perp * 10.0,
-						tip + perp * 10.0]), Color(light, maxf(a, 0.0)))
-		# Pedestal: disco de pedra com aro dourado e sombra.
-		var ped := Rect2(feet.x - 46, feet.y - 6, 92, 18)
-		_ellipse(ped.grow(3).position + Vector2(0, 4), ped.grow(3).size, Color(0, 0, 0, 0.45))
-		_ellipse(ped.position + Vector2(0, 5), ped.size, Color("2a2030"))
-		_ellipse(ped.position, ped.size, Color("4a3c4e"))
-		_ellipse(ped.position + Vector2(6, 2), ped.size - Vector2(12, 5), Color("5c4c5e"))
-		_ellipse_outline(ped.position, ped.size, Color(ThemeFactory.ACCENT, 0.75))
-		_ellipse_outline(ped.position + Vector2(10, 3), ped.size - Vector2(20, 6),
-				Color(light, 0.35 + 0.25 * pulse))
+				# Quadrilátero como primitiva (sem buffer de polígono), cor única: mesmos pixels.
+				c.draw_primitive(PackedVector2Array([feet + perp * 2.0, feet - perp * 2.0, tip - perp * 10.0,
+						tip + perp * 10.0]), PackedColorArray([Color(light, maxf(a, 0.0))]), PackedVector2Array())
+
+	## Kanji gigante ao fundo, opaco: a transparência (e o pulso) vem do modulate (_sync_layers),
+	## então o texto não é moldado de novo a cada quadro.
+	func _draw_kanji(c: Control) -> void:
+		if _sheet == null:
+			return
+		var font := MenuKit.ja_font()
+		var ks := 96 if size.y >= 170.0 else 72
+		var kw := font.get_string_size(_kanji, HORIZONTAL_ALIGNMENT_LEFT, -1, ks).x
+		c.draw_string(font, Vector2(roundf((size.x - kw) * 0.5), roundf(size.y * 0.18 + ks * 0.8)), _kanji,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, ks, Color(_light(), 1.0))
+
+	## Pedestal: disco de pedra com aro dourado e sombra (fixo).
+	func _draw_pedestal(c: Control) -> void:
+		if _sheet == null:
+			return
+		var ped := _ped_rect()
+		_ellipse(c, ped.grow(3).position + Vector2(0, 4), ped.grow(3).size, Color(0, 0, 0, 0.45))
+		_ellipse(c, ped.position + Vector2(0, 5), ped.size, Color("2a2030"))
+		_ellipse(c, ped.position, ped.size, Color("4a3c4e"))
+		_ellipse(c, ped.position + Vector2(6, 2), ped.size - Vector2(12, 5), Color("5c4c5e"))
+		_ellipse_outline(c, ped.position, ped.size, Color(ThemeFactory.ACCENT, 0.75))
+
+	## Aro interno na cor do guardião, opaco: o pulso vem do modulate da camada (_sync_layers).
+	func _draw_ring(c: Control) -> void:
+		if _sheet == null:
+			return
+		var ped := _ped_rect()
+		_ellipse_outline(c, ped.position + Vector2(10, 3), ped.size - Vector2(20, 6), Color(_light(), 1.0))
+
+	func _ped_rect() -> Rect2:
+		var feet := _feet()
+		return Rect2(feet.x - 46, feet.y - 6, 92, 18)
+
+	## Pulso do aro interno sem redesenhar (alfa 0,35 + 0,25 × pulso, como antes).
+	func _sync_layers() -> void:
+		_ring.modulate.a = 0.35 + 0.25 * _pulse()
+		_kanji_layer.modulate.a = 0.07 + (0.03 * _pulse() if fx >= 2 else 0.0)
+
+	func _draw() -> void:
+		if _sheet == null:
+			return
+		var k := scale_factor()
+		var feet := _feet()
 		# Guardião.
 		var bob := 0.0 if fx == 0 else (1.0 if fposmod(_time, 1.2) >= 0.6 else 0.0)
 		var cell := _side if _side != Vector2.ZERO else Vector2(16, 16)
@@ -580,21 +650,21 @@ class HeroStage extends Control:
 			return SpriteSheet.Dir.RIGHT
 		return SpriteSheet.Dir.DOWN
 
-	func _ellipse(at: Vector2, box: Vector2, color: Color) -> void:
+	func _ellipse(c_item: CanvasItem, at: Vector2, box: Vector2, color: Color) -> void:
 		var pts := PackedVector2Array()
 		var c := at + box * 0.5
 		for i: int in 20:
 			var a := TAU * i / 20.0
 			pts.append(c + Vector2(cos(a) * box.x * 0.5, sin(a) * box.y * 0.5))
-		draw_colored_polygon(pts, color)
+		c_item.draw_colored_polygon(pts, color)
 
-	func _ellipse_outline(at: Vector2, box: Vector2, color: Color) -> void:
+	func _ellipse_outline(c_item: CanvasItem, at: Vector2, box: Vector2, color: Color) -> void:
 		var pts := PackedVector2Array()
 		var c := at + box * 0.5
 		for i: int in 25:
 			var a := TAU * i / 24.0
 			pts.append(c + Vector2(cos(a) * box.x * 0.5, sin(a) * box.y * 0.5))
-		draw_polyline(pts, color, 1.0)
+		c_item.draw_polyline(pts, color, 1.0)
 
 
 ## Retrato do guardião na fila: moldura de laca com o rosto em 1:1 (pixel nítido). Escolhido:

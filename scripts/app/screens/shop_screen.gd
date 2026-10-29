@@ -113,6 +113,8 @@ var _offer_hint: Label
 var _support: Array[Control] = []
 ## Ampulheta de Fūjin: cartão, linha de cima (ícone + textos), compras e selo de liberada.
 var _speed_card: PanelContainer
+## Último estado aplicado ao cartão da Ampulheta (_update_speed_card).
+var _speed_look := ""
 var _speed_body: VBoxContainer
 var _speed_top: HBoxContainer
 var _speed_texts: VBoxContainer
@@ -301,6 +303,9 @@ func _process(delta: float) -> void:
 		return
 	_update_toast(delta)
 	_coin_time += delta
+	# Lista rolando pelo dedo: moedas e relógios esperam (TouchScroll.busy).
+	if TouchScroll.busy():
+		return
 	var frame := floori(_coin_time * COIN_FPS) % 4
 	(_balance_coin.texture as AtlasTexture).region = Rect2(frame * COIN_FRAME, 0, COIN_FRAME, COIN_FRAME)
 	if _speed_ryo.visible:
@@ -323,19 +328,27 @@ func _update_cards() -> void:
 			b.disabled = not AdsManager.rewarded_available()
 		else:
 			b.disabled = true
-		if is_ready and not b.disabled:
-			# Chamada para ação: pílula dourada com texto escuro.
+		var claim := is_ready and not b.disabled
+		if claim:
 			state.text = "> %s" % claim_text()
-			state.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
-			state.add_theme_constant_override("outline_size", 0)
-			pill.add_theme_stylebox_override("panel", _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 3))
 		else:
 			var left := ShopManager.seconds_left(id)
 			state.text = tr("shop.no_ads") if is_ready else "%02d:%02d:%02d" % [
 					floori(left / 3600.0), floori(fmod(left, 3600) / 60.0), left % 60]
-			state.add_theme_color_override("font_color", MUTED if is_ready else CLOCK)
-			state.remove_theme_constant_override("outline_size")
-			pill.add_theme_stylebox_override("panel", _flat(Color(0, 0, 0, 0.35), Color(CLOCK, 0.3), 1, 3))
+		# Cores e caixas só quando o estado muda: trocar um override (mesmo igual) avisa o tema e
+		# refaz o layout da Loja inteira, o que dava um tranco por segundo na rolagem.
+		var look := "claim" if claim else ("no_ads" if is_ready else "clock")
+		if card.get("look", "") != look:
+			card["look"] = look
+			if claim:
+				# Chamada para ação: pílula dourada com texto escuro.
+				state.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
+				state.add_theme_constant_override("outline_size", 0)
+				pill.add_theme_stylebox_override("panel", _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 3))
+			else:
+				state.add_theme_color_override("font_color", MUTED if is_ready else CLOCK)
+				state.remove_theme_constant_override("outline_size")
+				pill.add_theme_stylebox_override("panel", _flat(Color(0, 0, 0, 0.35), Color(CLOCK, 0.3), 1, 3))
 		for node: CanvasItem in card["dim"]:
 			node.modulate = Color(1, 1, 1, 0.5) if b.disabled else Color.WHITE
 	_update_coin_cards()
@@ -352,19 +365,23 @@ func _update_coin_cards() -> void:
 		var queued := ShopManager.is_queued(id)
 		b.disabled = not ShopManager.can_buy_coin(id)
 		var short := b.disabled and not queued
-		b.add_theme_stylebox_override("disabled", _queued_style() if queued else _dim_style())
 		for node: CanvasItem in card["dim"]:
 			node.modulate = Color(1, 1, 1, 0.45) if short else Color.WHITE
 		var price: Label = card["price"]
 		var pill: PanelContainer = card["pill"]
 		(card["coin"] as Control).visible = not queued
+		price.text = tr("shop.coin.queued") if queued else Locale.format_number(ShopManager.coin_price(id))
+		# Overrides só quando o estado muda (ver _update_cards).
+		var look := "queued" if queued else ("short" if short else "buy")
+		if card.get("look", "") == look:
+			continue
+		card["look"] = look
+		b.add_theme_stylebox_override("disabled", _queued_style() if queued else _dim_style())
 		if queued:
-			price.text = tr("shop.coin.queued")
 			price.add_theme_color_override("font_color", ThemeFactory.TEXT_DARK)
 			price.add_theme_constant_override("outline_size", 0)
 			pill.add_theme_stylebox_override("panel", _flat(ThemeFactory.ACCENT, Color("fff1c4"), 1, 6))
 		else:
-			price.text = Locale.format_number(ShopManager.coin_price(id))
 			price.add_theme_color_override("font_color", SHORT if short else ThemeFactory.ACCENT)
 			price.remove_theme_constant_override("outline_size")
 			pill.add_theme_stylebox_override("panel",
@@ -435,7 +452,7 @@ func _claim(id: StringName) -> void:
 		_update_cards())
 
 
-## Compra um reforço com ryō (devolve se comprou; o teste e o E2E chamam direto).
+## Compra um reforço com ryō (devolve se comprou; os testes chamam direto).
 func _buy_coin(id: StringName) -> bool:
 	if _was_drag():
 		return false
@@ -454,7 +471,7 @@ func _on_buy() -> void:
 	PurchaseManager.purchase()
 
 
-## Ampulheta de Fūjin com ryō (devolve se comprou; o teste e o E2E chamam direto). O aviso de
+## Ampulheta de Fūjin com ryō (devolve se comprou; os testes chamam direto). O aviso de
 ## obrigado vem de purchase_finished; sem saldo, avisa e não debita.
 func _buy_speed_ryo() -> bool:
 	if _was_drag() or PurchaseManager.owns_speed():
@@ -840,6 +857,7 @@ func _text_height(lines: int) -> float:
 ## moeda que gira e o preço da loja) ou, depois da compra, o selo dourado "Liberado".
 func _speed_section() -> PanelContainer:
 	_speed_card = PanelContainer.new()
+	_speed_look = ""
 	_speed_card.name = "SpeedCard"
 	_speed_card.mouse_filter = Control.MOUSE_FILTER_PASS
 	_speed_body = VBoxContainer.new()
@@ -951,6 +969,11 @@ func _update_speed_card() -> void:
 	_speed_seal.visible = owned
 	_speed_money.text = PurchaseManager.speed_price_text()
 	var short := not owned and not PurchaseManager.can_buy_speed_with_ryo()
+	# Caixas e cores só quando o estado muda (ver _update_cards): roda a cada segundo.
+	var look := "%s|%s" % [owned, short]
+	if _speed_look == look:
+		return
+	_speed_look = look
 	var tone := SHORT if short else ThemeFactory.ACCENT
 	var pill := _flat(Color(0.05, 0.02, 0.03, 0.7), Color(tone, 0.5), 1, 6)
 	pill.content_margin_left = 8

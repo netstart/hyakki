@@ -390,7 +390,7 @@ func _draw() -> void:
 			Kind.RING:
 				var r := _size[i] * (1.0 - t * t)
 				c.a *= t
-				draw_arc(p, r, 0.0, TAU, 20, c, 1.0 + t)
+				Stroke.arc(self, p, r, 0.0, TAU, 20, c, 1.0 + t)
 			_:
 				if not glow:
 					c.a *= t

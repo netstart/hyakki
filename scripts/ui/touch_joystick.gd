@@ -74,5 +74,5 @@ func _draw() -> void:
 			return
 		center = _fixed_center()
 	draw_circle(center, RADIUS, Color(1.0, 1.0, 1.0, 0.1))
-	draw_arc(center, RADIUS, 0.0, TAU, 32, Color(1.0, 1.0, 1.0, 0.35), 1.0)
+	Stroke.arc(self, center, RADIUS, 0.0, TAU, 32, Color(1.0, 1.0, 1.0, 0.35), 1.0)
 	draw_circle(center + vector * RADIUS, KNOB_RADIUS, Color(1.0, 1.0, 1.0, 0.45))

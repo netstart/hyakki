@@ -401,7 +401,7 @@ func draw_over(canvas: CanvasItem) -> void:
 			var pulse := 0.5 + 0.5 * sin(time * 25.0)
 			canvas.draw_line(foot, foot + dir * reach, Color(1.0, 0.2, 0.15, 0.25 + 0.25 * pulse), 4.0)
 			var tip := foot + dir * reach
-			canvas.draw_colored_polygon(PackedVector2Array([tip + dir * 5.0, tip + dir.orthogonal() * 4.0,
+			Stroke.convex(canvas, PackedVector2Array([tip + dir * 5.0, tip + dir.orthogonal() * 4.0,
 					tip - dir.orthogonal() * 4.0]), Color(1.0, 0.3, 0.2, 0.5 + 0.3 * pulse))
 		if m.elite[i] == 1 and detail >= 2:
 			var glint := 0.5 + 0.5 * sin(time * 3.0 + i * 1.7)

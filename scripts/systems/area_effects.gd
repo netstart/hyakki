@@ -113,13 +113,14 @@ func lava(at: Vector2, r: float, damage: float) -> void:
 
 
 ## Dano instantâneo em círculo (explosões, sino, golpe da lanterna).
+## `dot`: tique de área contínua (poça, furacão), para o número de dano.
 func blast(weapon: StringName, at: Vector2, r: float, damage: float, knockback: float,
-		stun: float = 0.0) -> int:
+		stun: float = 0.0, dot: bool = false) -> int:
 	game.enemies.query_circle(at, r, _near)
 	var hits := 0
 	for j: int in _near.duplicate():
 		var away := (game.enemies.pos[j] - at).normalized()
-		game.deal_damage(weapon, j, damage, away, knockback)
+		game.deal_damage(weapon, j, damage, away, knockback, false, dot)
 		if stun > 0.0 and game.enemies.alive[j] == 1:
 			game.enemies.stun[j] = maxf(game.enemies.stun[j], stun)
 		hits += 1
@@ -228,7 +229,7 @@ func _step_pool(e: Dictionary, dt: float) -> void:
 	if float(e["tick_left"]) > 0.0:
 		return
 	e["tick_left"] = float(e["tick"])
-	blast(e["weapon"], e["pos"], float(e["radius"]), float(e["damage"]), 5.0)
+	blast(e["weapon"], e["pos"], float(e["radius"]), float(e["damage"]), 5.0, 0.0, true)
 
 
 func _step_ring(e: Dictionary, dt: float) -> void:
@@ -282,7 +283,7 @@ func _step_hurricane(e: Dictionary, dt: float) -> void:
 	e["tick_left"] = float(e["tick_left"]) - dt
 	if float(e["tick_left"]) <= 0.0:
 		e["tick_left"] = float(e["tick"])
-		blast(e["weapon"], at, r, float(e["damage"]), 0.0)
+		blast(e["weapon"], at, r, float(e["damage"]), 0.0, 0.0, true)
 		if int(e["kind"]) == Kind.TYPHOON:
 			var j := game.enemies.random_alive(at, r * 1.5)
 			if j >= 0:
@@ -356,12 +357,12 @@ func _draw() -> void:
 				var t := 1.0 - clampf(float(e["life"]) / maxf(float(e["max_life"]), 0.001), 0.0, 1.0)
 				var tint: Color = e["tint"]
 				draw_circle(at, float(e["radius"]), Color(tint.r, tint.g, tint.b, 0.12 + 0.25 * t))
-				draw_arc(at, float(e["radius"]), 0.0, TAU, 32, Color(tint.r, tint.g, tint.b, 0.8), 1.0)
+				Stroke.arc(self, at, float(e["radius"]), 0.0, TAU, 32, Color(tint.r, tint.g, tint.b, 0.8), 1.0)
 				draw_circle(at, float(e["radius"]) * t, Color(tint.r, tint.g, tint.b, 0.18))
 			Kind.HAZARD_POOL:
 				var windup := float(e["life"]) > float(e["max_life"])
 				draw_circle(at, float(e["radius"]), Color(0.35, 0.6, 1.0, 0.18 if windup else 0.38))
-				draw_arc(at, float(e["radius"]), 0.0, TAU, 32, Color(0.5, 0.75, 1.0, 0.7), 1.0)
+				Stroke.arc(self, at, float(e["radius"]), 0.0, TAU, 32, Color(0.5, 0.75, 1.0, 0.7), 1.0)
 			Kind.BEAM:
 				var active := float(e["life"]) <= float(e["max_life"])
 				var angle := float(e.get("current", e["angle"]))
@@ -423,7 +424,7 @@ func _draw_field(at: Vector2, r: float, tint: Color, fade: float) -> void:
 		for _s: int in range(3):
 			p += Vector2.from_angle(_look.randf() * TAU) * _look.randf_range(3.0, 7.0)
 			line.append(p.round())
-		draw_polyline(line, Color(tint.lerp(Color.WHITE, 0.5), 0.9 * fade), 1.0)
+		Stroke.line(self, line, Color(tint.lerp(Color.WHITE, 0.5), 0.9 * fade), 1.0)
 
 
 ## Onda do Taiko: frente grossa na cor da arma, borda clara por dentro e rastro de pó.
@@ -432,15 +433,15 @@ func _draw_ring(e: Dictionary, at: Vector2) -> void:
 	var r := float(e["radius"])
 	var color: Color = game.fx.style(e["weapon"])["color"] if game.fx else Color(1.0, 0.85, 0.5)
 	var a := 1.0 - t
-	draw_arc(at, r, 0.0, TAU, 48, Color(color, a), 3.0)
-	draw_arc(at, maxf(0.0, r - 3.0), 0.0, TAU, 48, Color(1.0, 1.0, 0.9, a * 0.7), 1.0)
+	Stroke.arc(self, at, r, 0.0, TAU, 48, Color(color, a), 3.0)
+	Stroke.arc(self, at, maxf(0.0, r - 3.0), 0.0, TAU, 48, Color(1.0, 1.0, 0.9, a * 0.7), 1.0)
 	if FxLayer.wfx > 0:
-		draw_arc(at, maxf(0.0, r - 8.0), 0.0, TAU, 48, Color(color, a * 0.25), 5.0)
+		Stroke.arc(self, at, maxf(0.0, r - 8.0), 0.0, TAU, 48, Color(color, a * 0.25), 5.0)
 		if float(e["stun"]) > 0.0:
 			# Trovão Ritual: arcos elétricos correndo na frente da onda.
 			for k: int in range(4):
 				var s := t * 9.0 + k * TAU / 4.0
-				draw_arc(at, r + 1.0, s, s + 0.35, 6, Color(1.0, 1.0, 0.75, a), 1.0)
+				Stroke.arc(self, at, r + 1.0, s, s + 0.35, 6, Color(1.0, 1.0, 0.75, a), 1.0)
 
 
 ## Furacão (Fūjin) e tufão (Fūjin-Raijin): espiral de faixas de vento em várias alturas,
@@ -461,7 +462,7 @@ func _draw_storm(e: Dictionary, at: Vector2, time: float) -> void:
 		var u := k / float(bands)
 		var start := spin * (1.0 + 0.3 * u) + k * 2.4
 		var rr := r * (0.3 + 0.75 * u)
-		draw_arc(at + Vector2(0, -3.0 * u), rr, start, start + 1.6 + u, 14,
+		Stroke.arc(self, at + Vector2(0, -3.0 * u), rr, start, start + 1.6 + u, 14,
 				Color(color.lerp(Color.WHITE, 0.4 * (1.0 - u)), (0.75 - 0.4 * u) * fade), 2.0 if k % 2 == 0 else 1.0)
 	var debris: int = [4, 8, 14][FxLayer.wfx]
 	for k: int in range(debris):
@@ -472,6 +473,6 @@ func _draw_storm(e: Dictionary, at: Vector2, time: float) -> void:
 		draw_rect(Rect2(p.round(), Vector2(2, 1) if k % 2 else Vector2.ONE), c)
 	if typhoon and fmod(time * 3.7 + spin, 1.0) < 0.15:
 		var a := spin * 2.0
-		draw_polyline(PackedVector2Array([at + Vector2.from_angle(a) * r * 0.2,
+		Stroke.line(self, PackedVector2Array([at + Vector2.from_angle(a) * r * 0.2,
 				at + Vector2.from_angle(a + 0.4) * r * 0.55, at + Vector2.from_angle(a + 0.2) * r * 0.9]),
 				Color(1.0, 1.0, 0.7, 0.9 * fade), 1.0)

@@ -71,10 +71,17 @@ var _seal_font: Font
 var _hero: MapHero
 var _title: Label
 var _laid_out_size := Vector2.ZERO
+## Textura onde o mapa fixo é desenhado (ver _draw) e o CanvasItem dela durante o desenho.
+var _bake: StaticBake
+var _c: CanvasItem
 
 
 func _ready() -> void:
 	clip_contents = true
+	_bake = StaticBake.new(_paint_map, true)
+	_bake.name = "MapBake"
+	_bake.show_behind_parent = true
+	add_child(_bake)
 	_seal_font = load(SEAL_FONT) as Font if ResourceLoader.exists(SEAL_FONT) else null
 	for id: StringName in DB.ids("stages"):
 		var node := MapNode.new()
@@ -453,28 +460,38 @@ func _hero_spot(id: StringName) -> Vector2:
 
 # --- Desenho ------------------------------------------------------------------------
 
+## O mapa é fixo entre uma atualização e outra (refresh, tamanho): os ~500 comandos de desenho
+## (mar, ondas, ilhas, estradas, bússola, moldura) ficam assados numa textura (StaticBake) e a
+## tela só desenha um retângulo por quadro, em vez de reenviar tudo à GPU em todo quadro.
 func _draw() -> void:
 	if _laid_out_size != size:
 		_layout()
+	if _bake != null:
+		_bake.invalidate()
+
+
+## Desenho do mapa, feito dentro da textura do StaticBake (`canvas`) quando ela é refeita.
+func _paint_map(canvas: CanvasItem) -> void:
+	_c = canvas
 	var w := size.x
 	var h := size.y
 	# Mar em tinta índigo: mais claro no alto, quase preto nos cantos de baixo.
-	draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(w, 0), Vector2(w, h), Vector2(0, h)]),
+	_c.draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(w, 0), Vector2(w, h), Vector2(0, h)]),
 			PackedColorArray([SEA_LIGHT, SEA_LIGHT.darkened(0.15), SEA_DARK, SEA_DARK.lightened(0.05)]))
 	for k: int in range(0, int(h), 6):
-		draw_line(Vector2(0, k), Vector2(w, k), Color(0, 0, 0, 0.06), 1.0)
+		_c.draw_line(Vector2(0, k), Vector2(w, k), Color(0, 0, 0, 0.06), 1.0)
 	for p: Vector2 in _waves:
 		for r: float in [5.0, 3.0, 1.2]:
-			draw_arc(p, r, PI, TAU, 8, WAVE, 1.0)
+			_c.draw_arc(p, r, PI, TAU, 8, WAVE, 1.0)
 	_draw_land(_korea, false)
 	for i: int in range(_land.size()):
 		_draw_land(_land[i], i >= 4)
 	for poly: PackedVector2Array in _snow:
-		draw_colored_polygon(poly, Color(SNOW, 0.72))
+		_c.draw_colored_polygon(poly, Color(SNOW, 0.72))
 	_draw_regions()
 	for i: int in range(_land.size()):
-		draw_polyline(_closed(_land[i]), INK, 1.0)
-	draw_polyline(_closed(_korea), Color(INK, 0.6), 1.0)
+		_c.draw_polyline(_closed(_land[i]), INK, 1.0)
+	_c.draw_polyline(_closed(_korea), Color(INK, 0.6), 1.0)
 	_draw_mountains()
 	_draw_fuji(_at(JourneyGeo.FUJI))
 	# Faixas de névoa dourada (kasumi), como nos mapas e biombos antigos.
@@ -507,9 +524,9 @@ func _draw_land(poly: PackedVector2Array, small: bool) -> void:
 	for p: Vector2 in poly:
 		shadow.append(p + Vector2(2, 3))
 		cliff.append(p + Vector2(0.5, 1.5))
-	draw_colored_polygon(shadow, Color(0.03, 0.03, 0.1, 0.45))
-	draw_colored_polygon(cliff, CLIFF)
-	draw_colored_polygon(poly, LAND_DARK if small else LAND)
+	_c.draw_colored_polygon(shadow, Color(0.03, 0.03, 0.1, 0.45))
+	_c.draw_colored_polygon(cliff, CLIFF)
+	_c.draw_colored_polygon(poly, LAND_DARK if small else LAND)
 
 
 func _draw_regions() -> void:
@@ -517,18 +534,18 @@ func _draw_regions() -> void:
 	var dune := _at(JourneyGeo.TOTTORI_SAND)
 	_draw_blob(dune, Vector2(11, 4), SAND)
 	for k: int in range(3):
-		draw_line(dune + Vector2(-7 + k * 4, -1 + k), dune + Vector2(-3 + k * 4, -2 + k), Color("b89a5a"), 1.0)
+		_c.draw_line(dune + Vector2(-7 + k * 4, -1 + k), dune + Vector2(-3 + k * 4, -2 + k), Color("b89a5a"), 1.0)
 	# Unzen: terra queimada e fumaça do vulcão.
 	var unzen := _at(Vector2(130.3, 32.76))
 	_draw_blob(unzen, Vector2(9, 6), Color(EMBER, 0.75))
 	for k: int in range(3):
-		draw_circle(unzen + Vector2(4 + k * 3, -6 - k * 5), 2.5 + k, Color(0.45, 0.42, 0.45, 0.55 - k * 0.12))
+		_c.draw_circle(unzen + Vector2(4 + k * 3, -6 - k * 5), 2.5 + k, Color(0.45, 0.42, 0.45, 0.55 - k * 0.12))
 	# Bosques (pontinhos de tinta verde) em Honshu central.
 	for lon_lat: Vector2 in [Vector2(137.2, 35.9), Vector2(136.4, 35.2), Vector2(139.2, 37.0),
 			Vector2(140.4, 38.2), Vector2(133.2, 35.0), Vector2(131.0, 32.4), Vector2(133.5, 33.6)]:
 		var p := _at(lon_lat)
 		for k: int in range(4):
-			draw_circle(p + Vector2((k % 2) * 4 - 2, floorf(k / 2.0) * 3), 1.5, Color("6f7a3e"))
+			_c.draw_circle(p + Vector2((k % 2) * 4 - 2, floorf(k / 2.0) * 3), 1.5, Color("6f7a3e"))
 
 
 func _draw_blob(at: Vector2, radius: Vector2, color: Color) -> void:
@@ -536,7 +553,7 @@ func _draw_blob(at: Vector2, radius: Vector2, color: Color) -> void:
 	for k: int in range(12):
 		var a := TAU * k / 12.0
 		pts.append(at + Vector2(cos(a) * radius.x, sin(a) * radius.y) * (1.0 + 0.12 * sin(a * 3.0)))
-	draw_colored_polygon(pts, color)
+	_c.draw_colored_polygon(pts, color)
 
 
 ## Nuvem de névoa (kasumi) suave: um só polígono translúcido, com bolhas em cima.
@@ -547,27 +564,27 @@ func _draw_kasumi(c: Vector2, width: float) -> void:
 		var up := sin(a) < 0.0
 		var puff := 1.0 + (0.9 * absf(sin(a * 3.0)) if up else 0.0)
 		pts.append(c + Vector2(cos(a) * width * 0.5, sin(a) * 4.0 * puff))
-	draw_colored_polygon(pts, Color(0.95, 0.88, 0.7, 0.16))
+	_c.draw_colored_polygon(pts, Color(0.95, 0.88, 0.7, 0.16))
 
 
 func _draw_mountains() -> void:
 	for lon_lat: Vector2 in JourneyGeo.MOUNTAINS:
 		var p := _at(lon_lat)
 		var base := 5.0
-		draw_colored_polygon(PackedVector2Array([p + Vector2(-base, 2), p + Vector2(0, -5), p + Vector2(base, 2)]),
+		_c.draw_colored_polygon(PackedVector2Array([p + Vector2(-base, 2), p + Vector2(0, -5), p + Vector2(base, 2)]),
 				Color("8a7a4a"))
 		if lon_lat.y > 37.0:
-			draw_colored_polygon(PackedVector2Array([p + Vector2(-2, -2), p + Vector2(0, -5), p + Vector2(2, -2)]), SNOW)
-		draw_polyline(PackedVector2Array([p + Vector2(-base, 2), p + Vector2(0, -5), p + Vector2(base, 2)]),
+			_c.draw_colored_polygon(PackedVector2Array([p + Vector2(-2, -2), p + Vector2(0, -5), p + Vector2(2, -2)]), SNOW)
+		_c.draw_polyline(PackedVector2Array([p + Vector2(-base, 2), p + Vector2(0, -5), p + Vector2(base, 2)]),
 				Color(INK, 0.8), 1.0)
 
 
 func _draw_fuji(p: Vector2) -> void:
 	var peak := PackedVector2Array([p + Vector2(-9, 4), p + Vector2(-2, -8), p + Vector2(2, -8), p + Vector2(9, 4)])
-	draw_colored_polygon(peak, Color("5b6a8f"))
-	draw_colored_polygon(PackedVector2Array([p + Vector2(-5, -2), p + Vector2(-2, -8), p + Vector2(2, -8),
+	_c.draw_colored_polygon(peak, Color("5b6a8f"))
+	_c.draw_colored_polygon(PackedVector2Array([p + Vector2(-5, -2), p + Vector2(-2, -8), p + Vector2(2, -8),
 			p + Vector2(5, -2), p + Vector2(2, -3), p + Vector2(0, -1.5), p + Vector2(-2, -3)]), SNOW)
-	draw_polyline(peak, INK, 1.0)
+	_c.draw_polyline(peak, INK, 1.0)
 
 
 func _draw_roads() -> void:
@@ -575,61 +592,61 @@ func _draw_roads() -> void:
 		var line: PackedVector2Array = _roads[id]
 		match node_state(id):
 			&"cleared":
-				draw_polyline(line, Color(INK, 0.7), 3.0)
-				draw_polyline(line, ROAD_RED, 2.0)
+				_c.draw_polyline(line, Color(INK, 0.7), 3.0)
+				_c.draw_polyline(line, ROAD_RED, 2.0)
 			&"open":
 				var dash := JourneyGeo.dashes(line, 4.0, 3.0)
 				for k: int in range(0, dash.size() - 1, 2):
-					draw_line(dash[k] + Vector2(0, 1), dash[k + 1] + Vector2(0, 1), Color(INK, 0.6), 2.0)
-				draw_multiline(dash, ROAD_OPEN, 2.0)
+					_c.draw_line(dash[k] + Vector2(0, 1), dash[k + 1] + Vector2(0, 1), Color(INK, 0.6), 2.0)
+				_c.draw_multiline(dash, ROAD_OPEN, 2.0)
 			_:
-				draw_multiline(JourneyGeo.dashes(line, 2.0, 4.0), Color(ROAD_OPEN, 0.35), 1.0)
+				_c.draw_multiline(JourneyGeo.dashes(line, 2.0, 4.0), Color(ROAD_OPEN, 0.35), 1.0)
 
 
 func _draw_torii() -> void:
 	# Grande Santuário de Izumo, terra adentro e a sudoeste do ponto (que fica na costa).
 	var p := _at(JourneyGeo.IZUMO_TORII)
 	var red := Color("c8402e")
-	draw_rect(Rect2(p + Vector2(-5, -5), Vector2(1.5, 9)), red)
-	draw_rect(Rect2(p + Vector2(3.5, -5), Vector2(1.5, 9)), red)
-	draw_rect(Rect2(p + Vector2(-7, -7), Vector2(14, 2)), Color("2a1a14"))
-	draw_rect(Rect2(p + Vector2(-6, -5), Vector2(12, 1.5)), red)
-	draw_rect(Rect2(p + Vector2(-5, -2.5), Vector2(10, 1)), red)
+	_c.draw_rect(Rect2(p + Vector2(-5, -5), Vector2(1.5, 9)), red)
+	_c.draw_rect(Rect2(p + Vector2(3.5, -5), Vector2(1.5, 9)), red)
+	_c.draw_rect(Rect2(p + Vector2(-7, -7), Vector2(14, 2)), Color("2a1a14"))
+	_c.draw_rect(Rect2(p + Vector2(-6, -5), Vector2(12, 1.5)), red)
+	_c.draw_rect(Rect2(p + Vector2(-5, -2.5), Vector2(10, 1)), red)
 
 
 func _draw_compass(c: Vector2) -> void:
-	draw_circle(c, 13.0, Color(0.05, 0.06, 0.15, 0.4))
-	draw_arc(c, 13.0, 0.0, TAU, 24, Color(GOLD, 0.6), 1.0)
-	draw_arc(c, 9.0, 0.0, TAU, 20, Color(GOLD, 0.3), 1.0)
+	_c.draw_circle(c, 13.0, Color(0.05, 0.06, 0.15, 0.4))
+	_c.draw_arc(c, 13.0, 0.0, TAU, 24, Color(GOLD, 0.6), 1.0)
+	_c.draw_arc(c, 9.0, 0.0, TAU, 20, Color(GOLD, 0.3), 1.0)
 	# Norte de verdade: o mapa está girado, então a agulha também.
 	var north := Vector2.UP.rotated(deg_to_rad(JourneyGeo.TILT_DEG))
 	var side := north.orthogonal()
-	draw_colored_polygon(PackedVector2Array([c + north * 12.0, c + side * 3.0, c - side * 3.0]), VERMILION)
-	draw_colored_polygon(PackedVector2Array([c - north * 11.0, c + side * 3.0, c - side * 3.0]), Color("e8dcc0"))
-	draw_colored_polygon(PackedVector2Array([c + side * 8.0, c + north * 2.0, c - north * 2.0]), Color(GOLD, 0.7))
-	draw_colored_polygon(PackedVector2Array([c - side * 8.0, c + north * 2.0, c - north * 2.0]), Color(GOLD, 0.7))
+	_c.draw_colored_polygon(PackedVector2Array([c + north * 12.0, c + side * 3.0, c - side * 3.0]), VERMILION)
+	_c.draw_colored_polygon(PackedVector2Array([c - north * 11.0, c + side * 3.0, c - side * 3.0]), Color("e8dcc0"))
+	_c.draw_colored_polygon(PackedVector2Array([c + side * 8.0, c + north * 2.0, c - north * 2.0]), Color(GOLD, 0.7))
+	_c.draw_colored_polygon(PackedVector2Array([c - side * 8.0, c + north * 2.0, c - north * 2.0]), Color(GOLD, 0.7))
 	if _seal_font:
-		draw_string(_seal_font, c + north * 15.0 + Vector2(-6, 4), "北", HORIZONTAL_ALIGNMENT_CENTER, 12, 12,
+		_c.draw_string(_seal_font, c + north * 15.0 + Vector2(-6, 4), "北", HORIZONTAL_ALIGNMENT_CENTER, 12, 12,
 				Color(GOLD, 0.9))
 
 
 ## Carimbo vermelho "日本" (escrito na vertical, como num mapa antigo).
 func _draw_country_seal(p: Vector2) -> void:
 	var rect := Rect2(p, Vector2(18, 32))
-	draw_rect(rect, Color(VERMILION, 0.85))
-	draw_rect(rect.grow(-1.5), Color("f3e1c2", 0.9), false, 1.0)
+	_c.draw_rect(rect, Color(VERMILION, 0.85))
+	_c.draw_rect(rect.grow(-1.5), Color("f3e1c2", 0.9), false, 1.0)
 	if _seal_font:
-		draw_string(_seal_font, p + Vector2(3, 14), "日", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f3e1c2"))
-		draw_string(_seal_font, p + Vector2(3, 28), "本", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f3e1c2"))
+		_c.draw_string(_seal_font, p + Vector2(3, 14), "日", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f3e1c2"))
+		_c.draw_string(_seal_font, p + Vector2(3, 28), "本", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("f3e1c2"))
 
 
 func _draw_frame() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r.grow(-1.0), Color("120c1e"), false, 2.0)
-	draw_rect(r.grow(-3.5), Color(GOLD, 0.55), false, 1.0)
+	_c.draw_rect(r.grow(-1.0), Color("120c1e"), false, 2.0)
+	_c.draw_rect(r.grow(-3.5), Color(GOLD, 0.55), false, 1.0)
 	for corner: Vector2 in [Vector2(3, 3), Vector2(size.x - 3, 3), Vector2(3, size.y - 3), size - Vector2(3, 3)]:
-		draw_rect(Rect2(corner - Vector2(3, 3), Vector2(6, 6)), Color(GOLD, 0.8))
-		draw_rect(Rect2(corner - Vector2(1.5, 1.5), Vector2(3, 3)), Color("120c1e"))
+		_c.draw_rect(Rect2(corner - Vector2(3, 3), Vector2(6, 6)), Color(GOLD, 0.8))
+		_c.draw_rect(Rect2(corner - Vector2(1.5, 1.5), Vector2(3, 3)), Color("120c1e"))
 
 
 # --- Ponto de luta --------------------------------------------------------------------
@@ -657,7 +674,9 @@ class MapNode:
 	var glow: float = 0.0:
 		set(value):
 			glow = value
-			queue_redraw()
+			# Brilho decorativo: espera enquanto uma lista rola pelo dedo (TouchScroll.busy).
+			if not TouchScroll.busy():
+				queue_redraw()
 	var _pulse: Tween
 
 	func set_glowing(on: bool) -> void:
@@ -690,7 +709,7 @@ class MapNode:
 				draw_circle(c, RADIUS + 2.0 + k * 2.0 + glow * 3.0, Color(1.0, 0.72, 0.3, 0.1 + 0.06 * glow))
 		if selected:
 			draw_circle(c, RADIUS + 4.5, Color(1.0, 0.95, 0.75, 0.35))
-			draw_arc(c, RADIUS + 3.5, 0.0, TAU, 32, Color.WHITE, 1.5)
+			Stroke.arc(self, c, RADIUS + 3.5, 0.0, TAU, 32, Color.WHITE, 1.5)
 		draw_circle(c + Vector2(1, 2), RADIUS + 1.0, Color(0, 0, 0, 0.5))
 		var rim := {&"cleared": GOLD, &"open": Color("e0a050"), &"locked": Color("6a6672")}
 		draw_circle(c, RADIUS + 1.0, rim.get(state, Color.GRAY))
@@ -699,7 +718,7 @@ class MapNode:
 		if state == &"cleared":
 			if face:
 				draw_texture_rect(face, Rect2(c - Vector2(FACE, FACE) * 0.5, Vector2(FACE, FACE)), false)
-			draw_arc(c, RADIUS - 1.0, 0.0, TAU, 32, Color("8a5a12"), 1.0)
+			Stroke.arc(self, c, RADIUS - 1.0, 0.0, TAU, 32, Color("8a5a12"), 1.0)
 			var seal := Rect2(c + Vector2(4, 3), Vector2(13, 13))
 			draw_rect(seal.grow(1.0), PAPER)
 			draw_rect(seal, VERMILION)
@@ -724,7 +743,7 @@ class MapNode:
 				draw_circle(at, 2.5, Color(0, 0, 0, 0.6))
 				draw_circle(at, 2.0, Color("e8432f"))
 		if has_focus() and not selected:
-			draw_arc(c, RADIUS + 3.0, 0.0, TAU, 32, Color(GOLD, 0.8), 1.0)
+			Stroke.arc(self, c, RADIUS + 3.0, 0.0, TAU, 32, Color(GOLD, 0.8), 1.0)
 
 	## Fiapos de névoa translúcidos por cima da silhueta.
 	func _draw_mist(c: Vector2) -> void:
@@ -740,13 +759,13 @@ class MapNode:
 		for k: int in range(9):
 			var t := k / 8.0
 			rope.append(c + Vector2(-RADIUS - 1.0 + t * (RADIUS * 2.0 + 2.0), 8.0 + sin(t * PI) * 3.0))
-		draw_polyline(rope, Color("3a2a12"), 4.0)
-		draw_polyline(rope, Color("d6b25e"), 2.0)
+		Stroke.line(self, rope, Color("3a2a12"), 4.0)
+		Stroke.line(self, rope, Color("d6b25e"), 2.0)
 		for k: int in range(1, 8, 2):
 			draw_line(rope[k] + Vector2(-1, -1), rope[k] + Vector2(1, 1), Color("7a5a22"), 1.0)
 		for k: int in [3, 5]:
 			var top := rope[k] + Vector2(0, 1)
-			draw_polyline(PackedVector2Array([top, top + Vector2(2, 2), top + Vector2(0, 4), top + Vector2(2, 6)]),
+			Stroke.line(self, PackedVector2Array([top, top + Vector2(2, 2), top + Vector2(0, 4), top + Vector2(2, 6)]),
 					Color("fdfbf2"), 1.5)
 
 
@@ -762,7 +781,8 @@ class MapHero:
 	var bob: float = 0.0:
 		set(value):
 			bob = value
-			queue_redraw()
+			if not TouchScroll.busy():
+				queue_redraw()
 	var walking: bool = false
 	var _move: Tween
 	var _bob: Tween

@@ -54,7 +54,7 @@ func _screenshots(dir: String) -> void:
 	var native := window.size
 	# Janela 2x de cada resolução de tests/device_profiles.gd (k = 2 dá a mesma tela lógica).
 	var items: Array = []
-	for view: Vector2 in DeviceProfiles.views():
+	for view: Vector2 in DeviceProfiles.shot_views():
 		for lang: String in ["pt_BR", "de", "ru", "ja"]:
 			items.append([lang, Vector2i(view) * 2])
 	for item: Array in items:

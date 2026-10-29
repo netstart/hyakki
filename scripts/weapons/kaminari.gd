@@ -133,17 +133,17 @@ func draw(canvas: CanvasItem) -> void:
 		var r := float(s["radius"])
 		var t := 1.0 - clampf(float(s["left"]) / float(s["delay"]), 0.0, 1.0)
 		canvas.draw_circle(at, r, Color(MARK_COLOR.r, MARK_COLOR.g, MARK_COLOR.b, 0.08 + 0.17 * t))
-		canvas.draw_arc(at, r, 0.0, TAU, 40, Color(MARK_COLOR.r, MARK_COLOR.g, MARK_COLOR.b, 0.85), 1.0)
-		canvas.draw_arc(at, r * (1.0 - t), 0.0, TAU, 32, Color(1.0, 1.0, 0.85, 0.6), 1.0)
+		Stroke.arc(canvas, at, r, 0.0, TAU, 40, Color(MARK_COLOR.r, MARK_COLOR.g, MARK_COLOR.b, 0.85), 1.0)
+		Stroke.arc(canvas, at, r * (1.0 - t), 0.0, TAU, 32, Color(1.0, 1.0, 0.85, 0.6), 1.0)
 		canvas.draw_line(at - Vector2(5, 0), at + Vector2(5, 0), Color(1, 1, 1, 0.7), 1.0)
 		canvas.draw_line(at - Vector2(0, 5), at + Vector2(0, 5), Color(1, 1, 1, 0.7), 1.0)
 	var tint := fx_color()
 	for b: Dictionary in bolts:
 		var a := clampf(float(b["life"]) / BOLT_LIFE, 0.0, 1.0)
 		var points: PackedVector2Array = b["points"]
-		canvas.draw_polyline(points, Color(tint, 0.55 * a), 7.0)
-		canvas.draw_polyline(points, Color(tint.lerp(Color.WHITE, 0.6), 0.9 * a), 3.0)
-		canvas.draw_polyline(points, Color(1.0, 1.0, 1.0, a), 1.0)
+		Stroke.line(canvas, points, Color(tint, 0.55 * a), 7.0)
+		Stroke.line(canvas, points, Color(tint.lerp(Color.WHITE, 0.6), 0.9 * a), 3.0)
+		Stroke.line(canvas, points, Color(1.0, 1.0, 1.0, a), 1.0)
 	if _flash > 0.0 and game.player:
 		var view := game.view_size()
 		var alpha := (0.05 if calm else 0.2) * _flash / FLASH_LIFE

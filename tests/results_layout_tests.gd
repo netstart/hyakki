@@ -137,7 +137,7 @@ func check_layout(screen: Control, state: String) -> void:
 			var overlap := a.get_global_rect().grow(-0.5).intersects(b.get_global_rect().grow(-0.5))
 			_check.call(not overlap, "%s: \"%s\" e \"%s\" não se sobrepõem (%s, %s)" % [state, _text(a),
 					_text(b), a.get_global_rect(), b.get_global_rect()])
-	# Botões: o principal e o menu visíveis, ativos, inteiros e com os textos que o E2E toca.
+	# Botões: o principal e o menu visíveis, ativos, inteiros e com os textos esperados.
 	var again := screen.get("_again") as Button
 	var menu := screen.get("_menu") as Button
 	for b: Button in [again, menu]:
@@ -369,7 +369,7 @@ func _test_actions() -> void:
 	for node: Node in screen.find_children("*", "Button", true, false):
 		if (node as Button).text == tr("results.again") and (node as Button).is_visible_in_tree():
 			found += 1
-	_check.call(found == 1, "um único botão results.again visível (E2E)")
+	_check.call(found == 1, "um único botão results.again visível")
 	_close(screen)
 
 

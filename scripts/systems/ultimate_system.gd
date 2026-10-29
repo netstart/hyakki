@@ -92,7 +92,7 @@ func activate() -> bool:
 			player.clone_time = float(ult.get("duration", 8.0))
 			game.fx.play_anim("smoke", player.clone_position(), 1.2)
 		"kagura":
-			player.heal(player.max_hp() * float(ult.get("heal_pct", 0.5)))
+			player.heal(player.max_hp() * float(ult.get("heal_pct", 0.5)), true)
 			game.enemies.push_from(at, float(ult.get("radius", 160)), float(ult.get("force", 420)))
 			game.fx.add_ring(at, float(ult.get("radius", 160)), Color(0.7, 1.0, 0.8))
 		"temple_bell":

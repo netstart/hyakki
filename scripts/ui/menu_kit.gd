@@ -272,6 +272,8 @@ static func draw_lock(ci: CanvasItem, at: Vector2, color: Color = ThemeFactory.A
 
 
 ## Contorno de 1 px de uma textura (silhuetas de bloqueados): devolve [silhueta, aro].
+## Em cache por textura e cores. Monta direto nos bytes RGBA (sem get_pixel/set_pixel, que criam
+## uma Color por pixel): o Diário abre dezenas destas na 1ª vez, e era o maior custo da abertura.
 static func silhouette_pair(tex: Texture2D, fill: Color, rim: Color) -> Array[Texture2D]:
 	var key := "%s|%s|%s" % [tex.resource_path if tex.resource_path != "" else str(tex.get_instance_id()), fill, rim]
 	if _textures.has(key):
@@ -280,23 +282,78 @@ static func silhouette_pair(tex: Texture2D, fill: Color, rim: Color) -> Array[Te
 	if src.is_compressed():
 		src.decompress()
 	src.convert(Image.FORMAT_RGBA8)
-	var w := src.get_width()
-	var h := src.get_height()
-	var body := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	var edge := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	for y: int in h:
-		for x: int in w:
-			if src.get_pixel(x, y).a > 0.3:
-				body.set_pixel(x, y, fill)
-				continue
-			for o: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				var p := Vector2i(x, y) + o
-				if p.x >= 0 and p.y >= 0 and p.x < w and p.y < h and src.get_pixelv(p).a > 0.3:
-					edge.set_pixel(x, y, rim)
-					break
-	var pair: Array[Texture2D] = [ImageTexture.create_from_image(body), ImageTexture.create_from_image(edge)]
+	var images := silhouette_images(src, fill, rim)
+	var pair: Array[Texture2D] = [ImageTexture.create_from_image(images[0]),
+			ImageTexture.create_from_image(images[1])]
 	_textures[key] = pair
 	return pair
+
+
+## [silhueta, aro] de uma imagem RGBA8: silhueta = `fill` onde o alfa passa de 0,3; aro = `rim`
+## nos pixels vazios que encostam (4 vizinhos) num pixel cheio. Pixel art (alfa só 0/255) sai por
+## cópia com máscara nativa (sem laço por pixel); alfa parcial vai pelo laço nos bytes.
+static func silhouette_images(src: Image, fill: Color, rim: Color) -> Array[Image]:
+	if src.detect_alpha() == Image.ALPHA_BLEND:
+		return _silhouette_bytes(src, fill, rim)
+	var w := src.get_width()
+	var h := src.get_height()
+	var full := Rect2i(0, 0, w, h)
+	var body := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	body.blit_rect_mask(SpriteSheet._solid(w, h, fill), src, full, Vector2i.ZERO)
+	var edge := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var paint := SpriteSheet._solid(w, h, rim)
+	for offset: Vector2i in SpriteSheet.NEIGHBORS:
+		edge.blit_rect_mask(paint, src, full, offset)
+	# O aro fica só fora do corpo.
+	edge.blit_rect_mask(Image.create_empty(w, h, false, Image.FORMAT_RGBA8), src, full, Vector2i.ZERO)
+	return [body, edge]
+
+
+static func _silhouette_bytes(src: Image, fill: Color, rim: Color) -> Array[Image]:
+	var w := src.get_width()
+	var h := src.get_height()
+	var data := src.get_data()
+	# O mesmo corte do alfa (> 0,3) e a mesma conversão de cor que get_pixel/set_pixel fariam.
+	var solid_alpha := PackedByteArray()
+	solid_alpha.resize(256)
+	for v: int in 256:
+		solid_alpha[v] = 1 if Color(0, 0, 0, v / 255.0).a > 0.3 else 0
+	var fill_px := _rgba8(fill)
+	var rim_px := _rgba8(rim)
+	var solid := PackedByteArray()
+	solid.resize(w * h)
+	for i: int in w * h:
+		solid[i] = solid_alpha[data[i * 4 + 3]]
+	var body := PackedByteArray()
+	body.resize(w * h * 4)
+	var edge := PackedByteArray()
+	edge.resize(w * h * 4)
+	for y: int in h:
+		var row := y * w
+		for x: int in w:
+			var i := row + x
+			var o := i * 4
+			if solid[i] == 1:
+				body[o] = fill_px[0]
+				body[o + 1] = fill_px[1]
+				body[o + 2] = fill_px[2]
+				body[o + 3] = fill_px[3]
+				continue
+			var touches := (x + 1 < w and solid[i + 1] == 1) or (x > 0 and solid[i - 1] == 1)
+			if touches or (y + 1 < h and solid[i + w] == 1) or (y > 0 and solid[i - w] == 1):
+				edge[o] = rim_px[0]
+				edge[o + 1] = rim_px[1]
+				edge[o + 2] = rim_px[2]
+				edge[o + 3] = rim_px[3]
+	return [Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, body),
+			Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, edge)]
+
+
+## Bytes RGBA8 de uma cor, convertidos como o Image.set_pixel converte.
+static func _rgba8(c: Color) -> PackedByteArray:
+	var one := Image.create_empty(1, 1, false, Image.FORMAT_RGBA8)
+	one.set_pixel(0, 0, c)
+	return one.get_data()
 
 
 ## Brilho radial (branco → transparente), para auras e halos com modulate.
@@ -451,7 +508,7 @@ class BackButton extends Button:
 		face.draw_colored_polygon(arrow, Color("fff4e0"))
 		if _ring < 1.0:
 			var a := 1.0 - _ring
-			face.draw_arc(c, rad + 2.0 + _ring * 10.0, 0.0, TAU, 24, Color(ThemeFactory.ACCENT, a * 0.8), 1.0)
+			Stroke.arc(face, c, rad + 2.0 + _ring * 10.0, 0.0, TAU, 24, Color(ThemeFactory.ACCENT, a * 0.8), 1.0)
 		if has_focus():
 			face.draw_style_box(ThemeFactory.focus_ring(), r)
 
@@ -655,7 +712,8 @@ class Motes extends Control:
 					p.x = -4.0
 					p.y = _rng.randf() * h
 			_p[i] = p
-		queue_redraw()
+		if not TouchScroll.busy():
+			queue_redraw()
 
 	func _draw() -> void:
 		for i: int in count:

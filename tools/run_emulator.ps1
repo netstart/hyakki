@@ -1,4 +1,5 @@
-﻿# Teste manual no emulador: exporta o APK de debug, liga o emulador (se preciso), instala e abre o
+﻿# Teste MANUAL no emulador (uma pessoa joga e confere; testes automatizados no emulador são
+# proibidos, veja AGENTS.md): exporta o APK de debug, liga o emulador (se preciso), instala e abre o
 # jogo, e depois mostra o log do Godot até a janela ser fechada.
 #
 #   Dois cliques em "Testar no emulador.bat" (raiz do projeto), ou:
@@ -8,17 +9,15 @@
 #   -NoBuild     reinstala o último APK (build\hyakki-debug.apk) sem exportar de novo
 #   -Scenario X  abre direto num cenário de teste: chest, kami, revive, dawn, ending, secret, hero:yuki
 #   -NoLog       não fica mostrando o log depois de abrir
-#   -NoLaunch    só compila e instala (usado por run_e2e.ps1)
-#   -BuildOnly   só liga o emulador (sem esperar o boot) e compila o APK (usado por run_e2e.ps1)
-#   -Avd nome    emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G; também Galaxy_M55_5G e Pixel_7,
-#                criados por tools\create_test_avds.ps1). Outro emulador ligado é desligado antes.
+#   -NoLaunch    só compila e instala
+#   -Avd nome    emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G; AVD criado no Device Manager do
+#                Android Studio). Outro emulador ligado é desligado antes.
 
 param(
     [switch]$NoBuild,
     [string]$Scenario = '',
     [switch]$NoLog,
     [switch]$NoLaunch,
-    [switch]$BuildOnly,
     [string]$Avd = 'Redmi_Note_14_Pro_Plus_5G',
     [string]$Godot = $(if ($env:GODOT) { $env:GODOT } else { 'C:\src\tools\godot\Godot_v4.7.2-stable_win64_console.exe' }),
     [string]$AndroidSdk = 'C:\android-sdk'
@@ -34,8 +33,8 @@ $package = 'io.github.netstart.hyakki'
 function Step([string]$text) { Write-Host "== $text" -ForegroundColor Cyan }
 function Fail([string]$text) { Write-Host "FALHOU: $text" -ForegroundColor Red; exit 1 }
 
-# AVDs dos aparelhos-alvo, troca de emulador e recorte de câmera (tools\test_devices.ps1).
-. (Join-Path $PSScriptRoot 'test_devices.ps1')
+# Ligar o AVD, troca de emulador e recorte de câmera (tools\emulator_common.ps1).
+. (Join-Path $PSScriptRoot 'emulator_common.ps1')
 
 # --- 1. Emulador (boot em paralelo com o export) -------------------------------------
 # Processo independente (WMI); se outro AVD estiver ligado, ele é desligado antes.
@@ -75,13 +74,15 @@ if (-not $NoBuild) {
 } elseif (-not (Test-Path $apk)) {
     Fail "não existe $apk; rode sem -NoBuild"
 }
-if ($BuildOnly) { exit 0 }
 
 # --- 3. Instalar e abrir -------------------------------------------------------------
 Step 'Esperando o emulador'
-# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez (AGENTS.md, "Emulador travado").
+# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez.
 $serial = Wait-EmulatorReady $adb $AndroidSdk $Avd 8
-if (-not $serial) { Fail "o emulador $Avd não ficou pronto em 8 minutos nem depois de reiniciado" }
+if (-not $serial) {
+    $why = Get-EmulatorFailure $Avd
+    Fail "o emulador $Avd não ficou pronto em 8 minutos nem depois de reiniciado$(if ($why) { " (o emulador fechou: $why; log: $(Get-EmulatorLogPath $Avd))" })"
+}
 $cutout = Set-EmulatorCutout $adb $serial $Avd
 Write-Host "aparelho: $serial ($Avd$(if ($cutout) { ", recorte de câmera: $cutout" }))"
 

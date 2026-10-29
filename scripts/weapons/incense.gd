@@ -40,7 +40,7 @@ func fire(origin: Vector2) -> void:
 			game.fx.add_ring(origin, radius(), Color(fx_color(), 0.5), 0.5, 1.0)
 	for i: int in _hits:
 		var away := (game.enemies.pos[i] - origin).normalized()
-		game.deal_damage(id, i, dmg, away, knockback())
+		game.deal_damage(id, i, dmg, away, knockback(), false, true)
 		if lifesteal > 0.0 and _healed_this_second < cap:
 			var amount_healed := minf(dmg * lifesteal * 0.1, cap - _healed_this_second)
 			_healed_this_second += amount_healed

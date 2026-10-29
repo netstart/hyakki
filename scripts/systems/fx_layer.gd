@@ -20,7 +20,6 @@ extends Node2D
 enum P { DOT, STREAK, EMBER, GLOW }
 
 const PARTICLE_CAPACITY := 1400
-const MAX_NUMBERS := 120
 const MAX_ANIMS := 160
 const MAX_FLASHES := 48
 const MAX_RINGS := 40
@@ -28,8 +27,10 @@ const MAX_RINGS := 40
 const MAX_WAVES := 3
 ## Clarões novos por passo de simulação (centenas de acertos não viram um borrão branco).
 const FLASHES_PER_STEP := 6
-const NUMBER_LIFETIME := 0.6
 const RING_LIFETIME := 0.4
+## Camada dos números: acima da escuridão da lanterna (5), do clarão do relâmpago (7) e do tom
+## da noite (CanvasModulate só pinta a camada 0), abaixo da HUD (10). Cores fiéis à paleta.
+const NUMBER_LAYER := 8
 ## Fiapos de fumaça (a lanterna que se apaga na morte): poucos, lentos, sobem e se desfazem.
 const MAX_WISPS := 24
 const WISP_LIFETIME := 1.6
@@ -92,6 +93,8 @@ static var _soft: Texture2D
 var game: HyakkiGame
 ## Escala de tempo só dos efeitos (câmera lenta visual do golpe da lanterna).
 var time_scale: float = 1.0
+## Números de dano e cura (DamageNumbers, num CanvasLayer que segue a câmera).
+var numbers: DamageNumbers
 
 var _sheets: Dictionary = {}
 
@@ -103,12 +106,22 @@ var _p_size := PackedFloat32Array()
 var _p_color := PackedColorArray()
 var _p_kind := PackedByteArray()
 var _p_next: int = 0
+## Partículas vivas e o índice da mais antiga viva (o anel só tem vivas de _p_oldest até
+## _p_next - 1): o passo, o desenho e o brilho percorrem só essa janela, não as 1400 vagas da
+## cota Alta a cada quadro (e nada quando não há partícula).
+var _p_alive: int = 0
+var _p_oldest: int = 0
+## Tamanho da janela no último passo e partículas criadas desde então (se passarem da cota, o
+## anel deu a volta sobre a janela: desenha o anel inteiro naquele quadro).
+var _p_window: int = 0
+var _p_emits: int = 0
 
-var _n_pos := PackedVector2Array()
-var _n_life := PackedFloat32Array()
-var _n_text := PackedStringArray()
-var _n_color := PackedColorArray()
-var _n_next: int = 0
+## Média móvel dos golpes diretos comuns (DamagePalette.next_mean): golpe "alto" e tamanho.
+var _hit_mean: float = 0.0
+## Golpes mostrados (número novo ou somado); os testes conferem que algo apareceu.
+var _n_next: int:
+	get:
+		return numbers.events if numbers else 0
 
 var _w_pos := PackedVector2Array()
 var _w_vel := PackedVector2Array()
@@ -143,10 +156,6 @@ func _ready() -> void:
 		var array: Variant = get(packed)
 		array.resize(PARTICLE_CAPACITY)
 		set(packed, array)
-	_n_pos.resize(MAX_NUMBERS)
-	_n_life.resize(MAX_NUMBERS)
-	_n_text.resize(MAX_NUMBERS)
-	_n_color.resize(MAX_NUMBERS)
 	_w_pos.resize(MAX_WISPS)
 	_w_vel.resize(MAX_WISPS)
 	_w_life.resize(MAX_WISPS)
@@ -156,6 +165,12 @@ func _ready() -> void:
 	_glow_layer.material = additive
 	_glow_layer.draw.connect(_draw_glow)
 	add_child(_glow_layer)
+	var layer_node := CanvasLayer.new()
+	layer_node.layer = NUMBER_LAYER
+	layer_node.follow_viewport_enabled = true
+	add_child(layer_node)
+	numbers = DamageNumbers.new()
+	layer_node.add_child(numbers)
 	var wave_material := ShaderMaterial.new()
 	var shader := Shader.new()
 	shader.code = WAVE_SHADER
@@ -194,6 +209,7 @@ func _apply_quality() -> void:
 		_p_life[i] = 0.0
 	if _p_next >= particles_max:
 		_p_next = 0
+	_recount_particles()
 	if not glow:
 		_waves.clear()
 	_glow_layer.visible = glow
@@ -227,7 +243,10 @@ static func draw_soft(canvas: CanvasItem, at: Vector2, r: float, color: Color) -
 
 func reset() -> void:
 	_p_life.fill(0.0)
-	_n_life.fill(0.0)
+	_p_alive = 0
+	_p_oldest = _p_next
+	numbers.reset()
+	_hit_mean = 0.0
 	_w_life.fill(0.0)
 	_anims.clear()
 	_rings.clear()
@@ -242,6 +261,9 @@ func reset() -> void:
 
 func _emit(kind: int, at: Vector2, vel: Vector2, life: float, color: Color, size: float = 1.0) -> void:
 	var i := _p_next
+	if _p_life[i] <= 0.0:
+		_p_alive += 1
+	_p_emits += 1
 	_p_pos[i] = at
 	_p_vel[i] = vel
 	_p_life[i] = life
@@ -292,6 +314,31 @@ func motes(at: Vector2, color: Color, count: int, spread: float = 6.0, speed: fl
 		var dir := Vector2.from_angle(randf() * TAU)
 		_emit(P.GLOW if glow else P.DOT, at + dir * randf() * spread, dir * speed * randf(),
 				randf_range(0.3, 0.6), color, randf_range(2.0, 4.0) if glow else 1.0)
+
+
+## Trechos do anel com partículas vivas, em ordem crescente de índice (a mesma ordem de desenho
+## de antes): [mais antiga, _p_next) ou, se a janela dá a volta, [0, _p_next) e [mais antiga, cota).
+func _particle_spans() -> Array[Vector2i]:
+	if _p_alive <= 0:
+		return []
+	if _p_oldest == _p_next or _p_window + _p_emits >= particles_max:
+		return [Vector2i(0, particles_max)]
+	if _p_oldest < _p_next:
+		return [Vector2i(_p_oldest, _p_next)]
+	return [Vector2i(0, _p_next), Vector2i(_p_oldest, particles_max)]
+
+
+## Recalcula as vivas e a janela (depois de mudar a cota).
+func _recount_particles() -> void:
+	_p_alive = 0
+	_p_oldest = _p_next
+	_p_emits = particles_max
+	for k: int in range(particles_max):
+		var i := (_p_next + k) % particles_max
+		if _p_life[i] > 0.0:
+			_p_alive += 1
+			if _p_alive == 1:
+				_p_oldest = i
 
 
 ## Partículas vivas agora (testes de orçamento).
@@ -379,8 +426,13 @@ func play_anim(name: String, at: Vector2, scale_factor: float = 1.0, angle: floa
 # --- Acertos ------------------------------------------------------------------------
 
 ## Todo acerto de arma (HyakkiGame.deal_damage): número de dano e impacto pelo tipo.
-func on_hit(weapon_id: StringName, at: Vector2, amount: float, crit: bool, dir: Vector2) -> void:
-	add_number(at, amount, crit)
+## `dot`: tique de dano contínuo (poças, furacões, aura); `enemy`: índice do alvo (soma golpes
+## seguidos no mesmo inimigo num número só).
+func on_hit(weapon_id: StringName, at: Vector2, amount: float, crit: bool, dir: Vector2,
+		dot: bool = false, enemy: int = -1) -> void:
+	var kind := DamagePalette.classify_hit(amount, crit, dot, _hit_mean)
+	add_number(at, amount, kind, _hit_mean, enemy)
+	_hit_mean = DamagePalette.next_mean(_hit_mean, amount, kind)
 	impact(weapon_id, at, dir, crit)
 
 
@@ -475,15 +527,32 @@ func step(dt: float) -> void:
 	else:
 		time_scale = minf(1.0, time_scale + dt * 3.0)
 	var fdt := dt * time_scale
-	for i: int in range(particles_max):
-		if _p_life[i] <= 0.0:
+	# Da mais nova para trás, até achar todas as vivas (cada uma é independente: a ordem não muda
+	# nada); a última achada é a mais antiga, o começo da janela do desenho.
+	var seen := 0
+	var alive_before := _p_alive
+	var slot := _p_next
+	_p_oldest = _p_next
+	for k: int in range(particles_max):
+		if seen >= alive_before:
+			break
+		slot = slot - 1 if slot > 0 else particles_max - 1
+		if _p_life[slot] <= 0.0:
 			continue
-		_p_life[i] -= fdt
-		var kind := _p_kind[i]
-		var v := _p_vel[i] * maxf(0.0, 1.0 - float(DRAG[kind]) * fdt)
+		seen += 1
+		_p_oldest = slot
+		_p_life[slot] -= fdt
+		if _p_life[slot] <= 0.0:
+			_p_alive -= 1
+		var kind := _p_kind[slot]
+		var v := _p_vel[slot] * maxf(0.0, 1.0 - float(DRAG[kind]) * fdt)
 		v.y += float(LIFT[kind]) * fdt
-		_p_vel[i] = v
-		_p_pos[i] += v * fdt
+		_p_vel[slot] = v
+		_p_pos[slot] += v * fdt
+	_p_emits = 0
+	_p_window = 0 if seen == 0 else (_p_next - _p_oldest + particles_max) % particles_max
+	if seen > 0 and _p_window == 0:
+		_p_window = particles_max
 	for i: int in range(MAX_WISPS):
 		if _w_life[i] <= 0.0:
 			continue
@@ -514,10 +583,13 @@ func _age(list: Array[Dictionary], dt: float) -> void:
 
 func _process(delta: float) -> void:
 	_calm = bool(Settings.get_value("reduce_flashes"))
-	for i: int in range(MAX_NUMBERS):
-		if _n_life[i] > 0.0:
-			_n_life[i] -= delta
-			_n_pos[i] += Vector2(0.0, -14.0 * delta)
+	numbers.set_colorblind(bool(Settings.get_value("colorblind")))
+	numbers.low = wfx == 0
+	if game and game.player:
+		numbers.guard = game.player.position
+	if game and game.enemies:
+		numbers.enemies = game.enemies.count_alive
+	numbers.step(delta)
 	_wave_layer.visible = glow and not _waves.is_empty()
 	queue_redraw()
 	if glow:
@@ -526,14 +598,22 @@ func _process(delta: float) -> void:
 		_wave_layer.queue_redraw()
 
 
-func add_number(at: Vector2, amount: float, crit: bool = false, color: Color = Color.WHITE) -> void:
+## Número de dano ou cura em `at` (DamagePalette.Kind). `ref`: média móvel (dano causado) ou
+## HP máximo (recebido e cura), para o tamanho; `target`: inimigo (soma golpes seguidos).
+## Desligado pela opção "damage_numbers" e, por tipo, pelas opções DamagePalette.SETTING_KEYS
+## (lidas na hora: a troca nas Opções vale na mesma partida).
+func add_number(at: Vector2, amount: float, kind: int = DamagePalette.Kind.HIT, ref: float = 0.0,
+		target: int = -1) -> void:
 	if not bool(Settings.get_value("damage_numbers")):
 		return
-	_n_pos[_n_next] = at + Vector2(randf_range(-3.0, 3.0), -8.0)
-	_n_life[_n_next] = NUMBER_LIFETIME
-	_n_text[_n_next] = str(roundi(amount))
-	_n_color[_n_next] = Color("ffd166") if crit else color
-	_n_next = (_n_next + 1) % MAX_NUMBERS
+	if not bool(Settings.get_value(DamagePalette.SETTING_KEYS[kind])):
+		return
+	numbers.add(global_position + at, amount, kind, ref, target)
+
+
+## Último número criado ou somado (testes): {"kind", "text", "fill", "size", ...} ou vazio.
+func last_number() -> Dictionary:
+	return numbers.last()
 
 
 # --- Desenho ------------------------------------------------------------------------------
@@ -548,13 +628,14 @@ func _view_rect() -> Rect2:
 
 func _draw() -> void:
 	var additive_particles := glow
-	for i: int in range(particles_max):
-		if _p_life[i] <= 0.0:
-			continue
-		var kind := _p_kind[i]
-		if additive_particles and (kind == P.STREAK or kind == P.GLOW):
-			continue
-		_draw_particle(self, i, 1.0)
+	for span: Vector2i in _particle_spans():
+		for i: int in range(span.x, span.y):
+			if _p_life[i] <= 0.0:
+				continue
+			var kind := _p_kind[i]
+			if additive_particles and (kind == P.STREAK or kind == P.GLOW):
+				continue
+			_draw_particle(self, i, 1.0)
 	for i: int in range(MAX_WISPS):
 		if _w_life[i] > 0.0:
 			# Cresce de 1 para 3 px enquanto some.
@@ -578,16 +659,6 @@ func _draw() -> void:
 			draw_circle(at, float(f["r"]) * 0.5, Color(c.lerp(Color.WHITE, 0.5), c.a * a * 0.6))
 	if not _cine.is_empty():
 		_draw_cinematic()
-	for i: int in range(MAX_NUMBERS):
-		if _n_life[i] <= 0.0:
-			continue
-		var alpha := clampf(_n_life[i] / NUMBER_LIFETIME * 2.0, 0.0, 1.0)
-		var at := _n_pos[i].round()
-		var color := _n_color[i]
-		color.a = alpha
-		draw_string_outline(_font, at, _n_text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3,
-				Color(0.0, 0.0, 0.0, alpha))
-		draw_string(_font, at, _n_text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, color)
 
 
 func _draw_particle(canvas: CanvasItem, i: int, gain: float) -> void:
@@ -629,17 +700,18 @@ func _draw_ring(ring: Dictionary) -> void:
 	var a := color.a * (1.0 - t)
 	var segments := clampi(int(r * 0.6), 16, 64)
 	var w := float(ring["w"]) * (1.0 - 0.5 * t)
-	draw_arc(ring["pos"], r, 0.0, TAU, segments, Color(color.r, color.g, color.b, a), maxf(1.0, w))
+	Stroke.arc(self, ring["pos"], r, 0.0, TAU, segments, Color(color.r, color.g, color.b, a), maxf(1.0, w))
 	if wfx >= 1 and r > 6.0:
-		draw_arc(ring["pos"], r - w - 1.0, 0.0, TAU, segments, Color(1.0, 1.0, 1.0, a * 0.35), 1.0)
+		Stroke.arc(self, ring["pos"], r - w - 1.0, 0.0, TAU, segments, Color(1.0, 1.0, 1.0, a * 0.35), 1.0)
 
 
 ## Camada aditiva: partículas que brilham, clarões, animações de luz e o brilho das armas.
 func _draw_glow() -> void:
 	var gain := 0.45 if _calm else 1.0
-	for i: int in range(particles_max):
-		if _p_life[i] > 0.0 and (_p_kind[i] == P.STREAK or _p_kind[i] == P.GLOW):
-			_draw_particle(_glow_layer, i, gain)
+	for span: Vector2i in _particle_spans():
+		for i: int in range(span.x, span.y):
+			if _p_life[i] > 0.0 and (_p_kind[i] == P.STREAK or _p_kind[i] == P.GLOW):
+				_draw_particle(_glow_layer, i, gain)
 	for f: Dictionary in _flashes:
 		var k := float(f["life"]) / float(f["max"])
 		var c: Color = f["color"]
@@ -694,5 +766,5 @@ func _draw_cinematic() -> void:
 		var p0 := at + d * near
 		var p1 := at + d * (near + reach * (0.3 + 0.1 * (k % 3)))
 		var side := d.orthogonal() * (1.5 + (k % 2))
-		draw_colored_polygon(PackedVector2Array([p0, p1 + side, p1 - side]),
+		Stroke.convex(self, PackedVector2Array([p0, p1 + side, p1 - side]),
 				Color(color.lerp(Color.WHITE, 0.7), 0.55 * la))

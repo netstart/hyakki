@@ -8,6 +8,8 @@ extends RefCounted
 
 enum Dir { DOWN, UP, LEFT, RIGHT }
 
+const NEIGHBORS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+
 static var _cache: Dictionary = {}
 
 var texture: Texture2D
@@ -112,7 +114,49 @@ static func _scale_cells(source: Image, size: Vector2i, cell: Vector2i) -> Image
 	return out
 
 
+## Silhueta da folha na cor dada (alfa do original), onde o alfa passa de 0,1.
+## Folhas de pixel art (alfa só 0/255, Image.detect_alpha() != ALPHA_BLEND) saem por cópia com
+## máscara nativa (blit_rect_mask), sem laço por pixel em GDScript: carregar os 61 tipos de
+## inimigo e chefe no começo da partida caía de ~540 ms para poucos ms no PC. Folhas com alfa
+## parcial seguem pelo laço exato.
 static func _silhouette(source: Image, color: Color) -> Image:
+	if source.detect_alpha() == Image.ALPHA_BLEND:
+		return silhouette_exact(source, color)
+	var w := source.get_width()
+	var h := source.get_height()
+	var out := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	out.blit_rect_mask(_solid(w, h, Color(color.r, color.g, color.b, 1.0)), source, Rect2i(0, 0, w, h), Vector2i.ZERO)
+	return out
+
+
+## Cópia da folha com contorno de 1 px em volta das partes opacas (mesmo atalho nativo).
+static func _outline(source: Image, color: Color) -> Image:
+	if source.detect_alpha() == Image.ALPHA_BLEND:
+		return outline_exact(source, color)
+	var w := source.get_width()
+	var h := source.get_height()
+	var full := Rect2i(0, 0, w, h)
+	var ring := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	var paint := _solid(w, h, color)
+	# Pixel com vizinho cheio nas 4 direções = a máscara deslocada 1 px para cada lado.
+	for offset: Vector2i in NEIGHBORS:
+		ring.blit_rect_mask(paint, source, full, offset)
+	var out := source.duplicate() as Image
+	out.blit_rect_mask(ring, ring, full, Vector2i.ZERO)
+	# Os pixels cheios voltam a ser os do original.
+	out.blit_rect_mask(source, source, full, Vector2i.ZERO)
+	return out
+
+
+## Imagem RGBA8 inteira de uma cor.
+static func _solid(w: int, h: int, color: Color) -> Image:
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(color)
+	return img
+
+
+## Laço exato por pixel (folhas com alfa parcial, e referência dos testes).
+static func silhouette_exact(source: Image, color: Color) -> Image:
 	var out := Image.create_empty(source.get_width(), source.get_height(), false, Image.FORMAT_RGBA8)
 	for y: int in range(source.get_height()):
 		for x: int in range(source.get_width()):
@@ -122,8 +166,8 @@ static func _silhouette(source: Image, color: Color) -> Image:
 	return out
 
 
-## Cópia da folha com contorno de 1 px em volta das partes opacas.
-static func _outline(source: Image, color: Color) -> Image:
+## Laço exato do contorno (folhas com alfa parcial, e referência dos testes).
+static func outline_exact(source: Image, color: Color) -> Image:
 	var w := source.get_width()
 	var h := source.get_height()
 	var out := source.duplicate() as Image
@@ -132,7 +176,7 @@ static func _outline(source: Image, color: Color) -> Image:
 			if source.get_pixel(x, y).a > 0.1:
 				continue
 			var touches := false
-			for offset: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			for offset: Vector2i in NEIGHBORS:
 				var nx := x + offset.x
 				var ny := y + offset.y
 				if nx >= 0 and ny >= 0 and nx < w and ny < h and source.get_pixel(nx, ny).a > 0.1:

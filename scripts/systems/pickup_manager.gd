@@ -229,7 +229,7 @@ func _draw() -> void:
 		# No modo daltônico, as brasas maiores ganham um contorno branco para diferenciar pela forma.
 		draw_set_transform(p.round(), 0.0, Vector2(s, s))
 		if colorblind and tier >= 2:
-			draw_arc(Vector2.ZERO, 7.0, 0.0, TAU, 12, Color.WHITE, 1.0)
+			Stroke.arc(self, Vector2.ZERO, 7.0, 0.0, TAU, 12, Color.WHITE, 1.0)
 		draw_texture(tex, -tex.get_size() * 0.5)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for item: Dictionary in items:
@@ -249,7 +249,7 @@ func _draw_item(tex: Texture2D, at: Vector2, t: float, calm: bool) -> void:
 	var p := at - Vector2(0.0, roundf(hop))
 	draw_circle(at + Vector2(0, 6), 5.0 - hop * 0.4, Color(0, 0, 0, 0.3))
 	draw_circle(p, 11.0 + 3.0 * pulse, Color(1.0, 0.9, 0.45, 0.10 + 0.12 * pulse))
-	draw_arc(p, 10.0 + 2.0 * pulse, 0.0, TAU, 20, Color(1.0, 0.95, 0.6, 0.45 + 0.35 * pulse), 1.0)
+	Stroke.arc(self, p, 10.0 + 2.0 * pulse, 0.0, TAU, 20, Color(1.0, 0.95, 0.6, 0.45 + 0.35 * pulse), 1.0)
 	if not calm:
 		var spin := t * 2.5
 		var reach := 13.0 + 2.0 * pulse

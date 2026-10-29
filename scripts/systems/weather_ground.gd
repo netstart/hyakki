@@ -396,7 +396,7 @@ func _draw_splashes() -> void:
 			continue
 		var k := age / RIPPLE_LIFE
 		draw_set_transform(_ripple[i], 0.0, Vector2(1.0, 0.55))
-		draw_arc(Vector2.ZERO, 1.0 + 6.0 * k, 0.0, TAU, 12, Color(0.8, 0.88, 1.0, 0.5 * (1.0 - k)), 1.0)
+		Stroke.arc(self, Vector2.ZERO, 1.0 + 6.0 * k, 0.0, TAU, 12, Color(0.8, 0.88, 1.0, 0.5 * (1.0 - k)), 1.0)
 	draw_set_transform(Vector2.ZERO)
 	for i: int in range(_drop_pos.size()):
 		var age := _drop_age[i]

@@ -257,6 +257,19 @@ func _check_scrolling() -> void:
 	var thanks := screen.find_child("Thanks", true, false) as Control
 	_check.call(scroll.get_global_rect().grow(0.5).encloses(thanks.get_global_rect()),
 			"Créditos: no fim a despedida aparece inteira")
+	# Lista rolando pelo dedo (TouchScroll.busy): lanternas e pétalas esperam paradas.
+	var clock := float(screen.get("_clock"))
+	for i: int in 6:
+		TouchScroll.mark_moving()
+		await _host.get_tree().process_frame
+	_check.call(is_equal_approx(float(screen.get("_clock")), clock),
+			"Créditos: lanternas e pétalas esperam enquanto a lista rola pelo dedo")
+	var wait_free := Time.get_ticks_usec()
+	while TouchScroll.busy() and Time.get_ticks_usec() - wait_free < 1000000:
+		await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	_check.call(float(screen.get("_clock")) > clock, "Créditos: a animação volta quando a lista para")
 	viewport.queue_free()
 	await _host.get_tree().process_frame
 

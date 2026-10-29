@@ -5,9 +5,10 @@ só pare quando terminar e validar tudo." Em 21/10: "termine tudo, quando termin
 
 - Branch: `feat/prototipo-m1`.
 - Godot 4.7.2 em `C:\src\tools\godot` · Android SDK `C:\android-sdk` · emulador `Redmi_Note_14_Pro_Plus_5G`
-  (1220×2712, x86_64, google_apis, **sem Play Store**) em `emulator-5554`. Desde 27/10 o E2E de toda versão roda
-  também em `Galaxy_M55_5G` (1080×2400, 450 dpi), `Pixel_7` (1080×2400, 420 dpi) e `Galaxy_A15` (1080×2340,
-  450 dpi), todos (Redmi incluso) com o recorte de câmera emulado `hole`; criados por `tools/create_test_avds.ps1`.
+  (1220×2712, x86_64, google_apis, **sem Play Store**) em `emulator-5554`, hoje só para teste manual.
+- **Política atual (29/10/2026):** testes automatizados no emulador Android são proibidos; os testes por resolução
+  rodam só no Godot (`tests/device_profiles.gd`, testes de layout, `tests/scroll_bench.tscn`). O E2E no emulador
+  (`tools/run_e2e.ps1`, `tools/create_test_avds.ps1`, `scripts/app/e2e_driver.gd`) foi removido. Veja o `AGENTS.md`.
 - Pacote base: `C:\src\assets\ninja-adventure\NinjaAdventure-AssetPack.zip` (SHA-256 `95a06f4f…7b15`, CC0),
   fora do repositório; só os 752 arquivos usados são copiados para `assets/` por `tools/sync_assets.py`.
 
@@ -154,13 +155,9 @@ depois de escolher habilidade; itens do chão que chamem atenção; barra de vid
   (Ciclope, Dragão de Cinza, Oni Vermelho), `boss_final` = 最終戦 (Kuroe, Izanami). As duas faixas 和風 antigas
   saíram do jogo. Escolha pelo título e pela categoria do site: ouça e troque em `tools/amacha_assets.json`.
 
-### Aparelhos-alvo do E2E (27/10/2026)
-- ✅ AVDs `Galaxy_M55_5G` (Samsung Galaxy M55 5G, 1080×2400, 450 dpi), `Pixel_7` (1080×2400, 420 dpi) e
-  `Galaxy_A15` (Samsung Galaxy A15 4G/5G, 1080×2340, 450 dpi; notch em gota emulado com `hole`), mesma imagem
-  do Redmi (android-34, google_apis, x86_64); `tools/create_test_avds.ps1` cria os que faltarem (Redmi incluso).
-- ✅ `tools/run_e2e.ps1` roda nos quatro por padrão (`-Avd all`), um emulador por vez, com relatório geral e uma pasta
-  por aparelho; `-Avd <nome>` roda só um. Em todos liga o overlay
-  `com.android.internal.display.cutout.emulation.hole` (furo central) para exercitar a área segura.
+### Aparelhos-alvo (27/10/2026; E2E no emulador removido em 29/10/2026)
+- O E2E automatizado em AVDs (27/10) foi removido: testes automatizados no emulador Android são proibidos e os
+  testes por resolução rodam só no Godot. O emulador fica só para teste manual.
 - Resoluções lógicas exigidas nos testes de layout: 678×305 (Redmi), 600×270 (Galaxy M55 e Pixel) e 585×270
   (Galaxy A15), furo dos dois lados.
 

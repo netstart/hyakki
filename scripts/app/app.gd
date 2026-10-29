@@ -35,6 +35,8 @@ var _root: Control
 var _backdrop: MenuBackdrop
 var _screens: Dictionary = {}
 var _after_story: Callable = Callable()
+## Os scripts das telas já foram pedidos ao carregamento em segundo plano (_preload_screens).
+var _preloading := false
 ## Melhor tempo da fase antes da partida atual (o MetaProgress.apply_run já o atualiza antes
 ## do fim): vai para last_result["prev_best_time"], para o selo de recorde dos Resultados.
 var _prev_best_time: float = 0.0
@@ -42,6 +44,8 @@ var _prev_best_time: float = 0.0
 
 func _ready() -> void:
 	InputSetup.ensure_actions()
+	# Listas roláveis rolam com o dedo começando em qualquer cartão ou botão (TouchScroll).
+	TouchScroll.install(get_tree())
 	get_tree().auto_accept_quit = false
 	var args := OS.get_cmdline_user_args()
 	if args.has("--bot") or args.has("--play"):
@@ -65,8 +69,6 @@ func _ready() -> void:
 	selection = (SaveManager.data["selected"] as Dictionary).duplicate()
 	if OS.is_debug_build() and _scenario_from_args(args):
 		return
-	if E2EDriver.requested():
-		add_child(E2EDriver.new(self))
 	_show_splash()
 
 
@@ -87,7 +89,7 @@ func _start_direct() -> void:
 
 
 ## Cenários de teste (debug): --scenario=chest|kami|revive|dawn|ending|secret abre uma partida
-## já no ponto da tela a validar no emulador (plano 14.2).
+## já no ponto da tela a conferir à mão no aparelho (plano 14.2).
 ## No Android o cenário vem de user://scenario.txt (adb shell run-as ...; lido e apagado).
 func _scenario_from_args(args: PackedStringArray) -> bool:
 	var found: PackedStringArray = args.duplicate()
@@ -154,7 +156,7 @@ func _show_blank() -> void:
 
 func go(name: StringName) -> void:
 	if not _screens.has(name):
-		var script := load(SCREENS[name]) as GDScript
+		var script := _screen_script(name)
 		var screen := script.new() as Screen
 		screen.app = self
 		screen.visible = false
@@ -163,12 +165,43 @@ func go(name: StringName) -> void:
 	for key: StringName in _screens:
 		(_screens[key] as Screen).visible = key == name
 	current = name
-	_backdrop.visible = name != &"story"
+	if name == &"title":
+		_preload_screens()
 	var shown := _screens[name] as Screen
+	# Telas que pintam o próprio fundo inteiro (história, resultados) cobrem o fundo animado:
+	# escondido, ele nem anima nem desenha (era custo de cada quadro sem aparecer na tela).
+	_backdrop.visible = name != &"story" and not shown.opaque_background
 	shown.on_show()
+	# Controles ajustados depois de entrar na árvore (on_show refaz listas) também rolam pelo dedo.
+	TouchScroll.adopt_all.call_deferred(shown)
 	if name in [&"title", &"heroes", &"stages", &"sanctuary", &"shop", &"codex", &"options", &"credits", &"licenses"]:
 		var screen_music := {&"sanctuary": "sanctuary", &"codex": "codex", &"credits": "credits"}
 		AudioManager.play_music(String(screen_music.get(name, "title")))
+
+
+## Na 1ª vez no título, compila em segundo plano os scripts das outras telas (ResourceLoader em
+## thread): a 1ª abertura de cada tela não paga mais a carga do script (70–150 ms no PC, várias
+## vezes isso no celular), que era um tranco no toque. Só os scripts; as telas são montadas
+## quando abrem, como antes.
+func _preload_screens() -> void:
+	if _preloading:
+		return
+	_preloading = true
+	for key: StringName in SCREENS:
+		var path := String(SCREENS[key])
+		if not _screens.has(key) and not ResourceLoader.has_cached(path):
+			ResourceLoader.load_threaded_request(path, "GDScript")
+
+
+## Script da tela: o pré-carregado em segundo plano (espera terminar, se ainda estiver
+## carregando) ou carregado agora.
+func _screen_script(name: StringName) -> GDScript:
+	var path := String(SCREENS[name])
+	if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+		var threaded := ResourceLoader.load_threaded_get(path) as GDScript
+		if threaded != null:
+			return threaded
+	return load(path) as GDScript
 
 
 func play_story(id: StringName, then: Callable) -> void:

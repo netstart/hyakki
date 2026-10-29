@@ -271,7 +271,7 @@ func revive_open() -> bool:
 	return _revive_panel.visible
 
 
-## Cartas visíveis do nível novo (o roteiro E2E toca nelas).
+## Cartas visíveis do nível novo (os testes tocam nelas).
 func level_cards() -> Array[Button]:
 	return _level_panel.cards()
 
@@ -372,7 +372,7 @@ func _draw_offscreen_arrows() -> void:
 		var color: Color = entry[1]
 		var tip := edge + dir * 7.0
 		var side := dir.orthogonal() * 5.0
-		_top.draw_colored_polygon(PackedVector2Array([tip, edge - dir * 3.0 + side, edge - dir * 3.0 - side]), color)
+		Stroke.convex(_top, PackedVector2Array([tip, edge - dir * 3.0 + side, edge - dir * 3.0 - side]), color)
 	if game.rift != null and game.rift.is_open():
 		var to: Vector2 = game.rift.portal_pos - game.player.position
 		if absf(to.x) >= view.x * 0.5 - 10.0 or absf(to.y) >= view.y * 0.5 - 10.0:
@@ -412,7 +412,7 @@ func _draw_ultimate() -> void:
 	var charge := game.ultimate.charge / UltimateSystem.FULL
 	var ready := game.ultimate.is_ready()
 	_ult_button.draw_circle(c, r - 2.0, Color(0.08, 0.05, 0.1, 0.7))
-	_ult_button.draw_arc(c, r - 3.0, -PI * 0.5, -PI * 0.5 + TAU * charge, 32,
+	Stroke.arc(_ult_button, c, r - 3.0, -PI * 0.5, -PI * 0.5 + TAU * charge, 32,
 			Color("ffd166") if ready else Color("b07b3a"), 4.0)
 	var sun := _icon("res://assets/art/ui/icons/meteo/Sun.png")
 	if sun:
@@ -468,7 +468,7 @@ func chest_burst_active() -> bool:
 	return _chest_panel.burst_active()
 
 
-## Cartões com o item pousado (o roteiro E2E confere depois de pular ou esperar a animação).
+## Cartões com o item pousado (os testes conferem depois de pular ou esperar a animação).
 func chest_lines_shown() -> int:
 	return _chest_panel.lines_shown()
 
@@ -648,17 +648,22 @@ func _build_revive_panel() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 6)
 	bottom.add_child(box)
-	_revive_watch = _menu_button(revive_text(), func() -> void:
-		_revive_panel.visible = false
-		revive_answered.emit(true), REVIVE_WATCH)
+	_revive_watch = _menu_button(revive_text(), _answer_revive.bind(true), REVIVE_WATCH)
 	_revive_watch.name = "ReviveWatch"
 	box.add_child(_revive_watch)
-	var results := _menu_button(tr("revive.results"), func() -> void:
-		_revive_panel.visible = false
-		revive_answered.emit(false), Vector2(200, 26))
+	var results := _menu_button(tr("revive.results"), _answer_revive.bind(false), Vector2(200, 26))
 	box.add_child(results)
 	_root.add_child(_revive_panel)
 	_style_revive_buttons(_revive_watch, results)
+
+
+## Responde a oferta uma vez só: o painel fecha antes de emitir, e qualquer toque, clique ou
+## tempo esgotado que chegue depois (no mesmo quadro ou no seguinte) é ignorado.
+func _answer_revive(accept: bool) -> void:
+	if not _revive_panel.visible:
+		return
+	_revive_panel.visible = false
+	revive_answered.emit(accept)
 
 
 func _style_revive_buttons(watch: Button, results: Button) -> void:
@@ -940,8 +945,7 @@ func bot_answer() -> void:
 	elif _kami_panel.is_open():
 		kami_chosen.emit(_kami_panel.bot_choose())
 	elif _revive_panel.visible:
-		_revive_panel.visible = false
-		revive_answered.emit(false)
+		_answer_revive(false)
 
 
 func _process(delta: float) -> void:
@@ -962,8 +966,7 @@ func _process(delta: float) -> void:
 		_revive_label.text = tr("revive.countdown") % ceili(maxf(_revive_left, 0.0))
 		_revive_bar.queue_redraw()
 		if _revive_left <= 0.0:
-			_revive_panel.visible = false
-			revive_answered.emit(false)
+			_answer_revive(false)
 	if _countdown_left > 0.0:
 		_countdown_left -= delta
 		_countdown_label.text = str(ceili(_countdown_left / COUNTDOWN * 3.0))

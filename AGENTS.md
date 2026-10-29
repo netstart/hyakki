@@ -73,43 +73,99 @@ Antes de adicionar algo com licença incerta, abra uma issue ou pergunte ao mant
 **Tudo neste jogo precisa ter testes automatizados.** Qualquer código, feature, sistema ou comportamento adicionado ao repositório deve ser coberto por:
 
 1. **Testes unitários**: testes rápidos e isolados de unidades de código (scripts GDScript etc.), executados dentro do Godot com a suíte de testes do projeto.
-2. **Testes end-to-end (E2E)**: testes que exercitam fluxos completos do jogo, executados em **ambos**:
-   - no **Godot** (editor/exportação de desktop), e
-   - no **emulador Android**, em **cada uma** das resoluções-alvo abaixo (build Android/APK rodando no emulador com o perfil de cada resolução).
+2. **Testes end-to-end (E2E)**: testes que exercitam fluxos completos do jogo (partida do bot, cenários,
+   telas em sequência), executados **só no Godot** do PC, em cada uma das resoluções-alvo abaixo.
+
+**Testes por resolução só no Godot; emulador Android só para teste manual.** Os testes que simulam a
+tela dos aparelhos rodam **apenas no Godot** do PC: runners headless ou com janela que leem
+`tests/device_profiles.gd` (testes de layout de cada tela, painel e HUD), `tests/scroll_bench.tscn`, os
+testes de desempenho (`tests/perf_tests.gd`) e o `tools/run_checks.ps1`. **É proibido executar testes
+automatizados no emulador Android** (roteiro E2E, AVDs de teste, `adb input`, medição de quadros ou
+qualquer script que instale, toque e confira sozinho). O emulador e o aparelho servem só para **teste
+manual**: uma pessoa instala, joga e confere (`Testar no emulador.bat`, `Testar release no emulador.bat`).
+Não crie script, roteiro nem critério de aprovação que rode no emulador.
 
 **Resoluções-alvo** (a regra de qualidade é **por resolução**, não por aparelho). O jogo escala a tela
-por um fator inteiro `k = round(altura / 300)` (`scripts/autoload/pixel_scaler.gd`), então cada
-resolução física vira uma **resolução lógica**, e é ela que define o layout. **Toda tela, todo painel
+por um fator inteiro `k = min(round(altura / 300), floor(largura / 480))`, nunca menor que 1
+(`scripts/autoload/pixel_scaler.gd`), então cada resolução física vira uma **resolução lógica**, e é
+ela que define o layout (simulada no Godot com a resolução lógica e a área segura de cada linha).
+O segundo termo garante largura lógica de pelo menos 480: só muda o fator em telas quase quadradas (Galaxy Z Fold aberto, tablets 4:3), que descem um passo inteiro e ficam
+mais altas (até 453) em vez de estreitas; em todas as outras linhas os dois termos dão o mesmo `k`. **Toda tela, todo painel
 e todo HUD precisam ser testados em todas as resoluções lógicas da tabela.** Os aparelhos são só
-exemplos e perfis de emulador de cada resolução:
+exemplos de cada resolução:
 
-| Resolução lógica | Tela física (paisagem) | Escala | Aparelhos de exemplo | AVD do E2E |
-|---|---|---|---|---|
-| **678x305** | 2712x1220 (20:9) | ×4 | Redmi Note 14 Pro+ 5G | `Redmi_Note_14_Pro_Plus_5G` |
-| **600x270** | 2400x1080 (20:9) | ×4 | Samsung Galaxy M55 5G (SM-M556B/DS), Google Pixel 7 | `Galaxy_M55_5G`, `Pixel_7` |
-| **585x270** | 2340x1080 (19.5:9) | ×4 | Samsung Galaxy A15 / A15 5G (SM-A155F / SM-A156B), Samsung Galaxy A56 5G (SM-A566B), Xiaomi POCO M3, Galaxy S24 Ultra / S25 Ultra em FHD+ (padrão) | `Galaxy_A15` |
-| **624x288** | 3120x1440 (19.5:9) | ×5 | Samsung Galaxy S24 Ultra (SM-S928B) / S25 Ultra (SM-S938B) em QHD+ | `Galaxy_S24_Ultra` |
-| **780x360** | 1560x720 (19.5:9) | ×2 | Samsung Galaxy S24 Ultra / S25 Ultra em HD+ | — (só testes unitários) |
-| **480x270** | 1920x1080 (16:9) | ×4 | telas 16:9 / desktop | — (só testes unitários) |
+| Resolução lógica | Tela física (paisagem) | Escala | Aparelhos de exemplo |
+|---|---|---|---|
+| **678x305** | 2712x1220 (20:9) | ×4 | Redmi Note 14 Pro+ 5G |
+| **600x270** | 2400x1080 (20:9) | ×4 | Samsung Galaxy M55 5G (SM-M556B/DS), Google Pixel 7 |
+| **585x270** | 2340x1080 (19.5:9) | ×4 | Samsung Galaxy A15 / A15 5G (SM-A155F / SM-A156B), Samsung Galaxy A56 5G (SM-A566B), Xiaomi POCO M3, Galaxy S24 Ultra / S25 Ultra em FHD+ (padrão) |
+| **624x288** | 3120x1440 (19.5:9) | ×5 | Samsung Galaxy S24 Ultra (SM-S928B) / S25 Ultra (SM-S938B) em QHD+ |
+| **780x360** | 1560x720 (19.5:9) | ×2 | Samsung Galaxy S24 Ultra / S25 Ultra em HD+ |
+| **480x270** | 1920x1080 (16:9) | ×4 | telas 16:9 / desktop |
+| **512x320** | 2560x1600 (16:10) | ×5 | Samsung Galaxy Tab S9 / S9 FE+ e tablets 16:10 QHD (sem furo na tela) |
+| **500x300** | 2000x1200 (16:10) | ×4 | Samsung Galaxy Tab A9+ e tablets 16:10 de entrada (sem furo na tela) |
+| **512x384** | 2048x1536 (4:3) | ×4 | tablets 4:3 (estilo iPad), Xiaomi Pad 4:3 (sem furo na tela) |
+| **800x360** | 1600x720 (20:9) | ×2 | Samsung Galaxy A05 / A05s, Motorola Moto E13 / E14 (HD+ baratos) |
+| **806x360** | 1612x720 (20:9) | ×2 | Motorola Moto G04 / G24 / E22, Xiaomi Redmi A3 (HD+ baratos) |
+| **544x453** | 2176x1812 (quase 1:1) | ×4 | Samsung Galaxy Z Fold5 / Fold6 aberto (tela interna) |
+| **772x301** | 2316x904 (23:9) | ×3 | Samsung Galaxy Z Fold5 / Fold6 fechado (tela externa) |
+| **630x270** | 2520x1080 (21:9) | ×4 | Sony Xperia 1 / Xperia 5 (FHD+), Xiaomi e Motorola 21:9 |
+| **660x270** | 2640x1080 (22:9) | ×4 | aparelhos 22:9 muito alongados (FHD+) |
 
+- **Todas as resoluções, sempre:** **cada** tela, painel, diálogo, sobreposição e o HUD da partida
+  (inclusive a área visível do jogo e a borda de surgimento dos inimigos) precisam ser testados em
+  **todas** as resoluções lógicas da tabela, sem exceção, antes de qualquer commit e de qualquer
+  versão: os testes de layout rodam no Godot em todas as linhas. Tela ou painel novo só entra com
+  teste de layout que percorra a tabela inteira (`DeviceProfiles.layout_cases()`); falha em uma resolução reprova o commit, mesmo que as outras
+  passem. A correção é sempre de layout responsivo (quebra de linha, rolagem, empilhar, colunas
+  menores, tamanhos a partir da tela), nunca um caso especial para uma resolução.
 - **Fonte única:** a lista de resoluções dos testes fica em `tests/device_profiles.gd`; os testes de
   layout leem dela, sem tamanho fixo no código. Resolução nova = uma linha nesta tabela **e** em
-  `tests/device_profiles.gd`; a partir daí todas as telas passam a ser testadas nela.
-- **Testes unitários de layout:** em **cada** resolução da tabela, com a área segura de um furo de
-  câmera **dos dois lados** (paisagem para a esquerda e para a direita), nenhum botão, texto ou elemento
-  de toque pode ficar fora da tela, cortado, sobreposto ou dentro do recorte.
-- **E2E:** `tools/run_e2e.ps1` (ou `Testes E2E no emulador.bat`) roda o roteiro nos AVDs da tabela
-  (criados por `tools/create_test_avds.ps1`, perfis em `tools/test_devices.ps1`), um depois do outro, com
-  o recorte de câmera emulado do Android ligado (`com.android.internal.display.cutout.emulation.hole`),
-  e só passa se passar em todos.
-- **Emulador travado:** a execução no emulador pode travar eventualmente (boot congelado ou `adb`
-  sem resposta). Espere o emulador responder por até **8 minutos**; se não responder, desligue-o à força
-  e reinicie-o, e retome o roteiro naquele AVD. Um travamento não conta como falha do teste, mas um
-  AVD que não fica pronto nem depois do reinício reprova o E2E.
+  `tests/device_profiles.gd`; a partir daí todas as telas passam a ser testadas nela. Aparelhos que dão
+  a mesma resolução lógica ficam na mesma linha.
+- **Testes unitários de layout:** em **cada** resolução da tabela, nos 11 idiomas, e com a área segura
+  de um furo de câmera **dos dois lados** (paisagem para a esquerda e para a direita), nenhum botão,
+  texto ou elemento de toque pode ficar fora da tela, cortado, sobreposto ou dentro do recorte. Vale
+  também para as telas sem furo (tablets, Fold aberto): elas são testadas com a mesma faixa genérica
+  dos dois lados.
+- **Rolagem suave e desempenho (qualidade Alta):** toda tela com lista rolável precisa rolar sem
+  engasgo, na qualidade gráfica **Alta**, em todas as resoluções. Os testes rodam no Godot do PC
+  (nunca no emulador):
+  - **Benchmark de rolagem (`tests/scroll_bench.tscn`, sem `--headless`):** em cada tela com lista
+    rolável (Guardiões, Fases, Loja, Diário, Opções, Créditos, Resultados, Santuário, Título), mede a
+    tela parada e, em cada lista, piparotes até o fim e de volta e um arrasto lento com o dedo
+    simulado, em todas as resoluções de `tests/device_profiles.gd`, sem VSync (custo real do quadro),
+    com média, p95, p99, pior quadro, travadas, tempo de render na CPU, chamadas de desenho e o tempo
+    da 1ª abertura de cada tela. Só os quadros em movimento contam. **Critério:** com `-- --strict`
+    passa com **p95 ≤ 6 ms**, **nenhum quadro > 33 ms** e **nenhuma travada** (quadro em que a lista
+    parou no meio do movimento) por lista, em todas as resoluções. Rode antes e depois de mexer em
+    telas, fundo ou tema (`-- --res=585x270 --screens=shop,codex --out=bench.json`).
+  - **Unitários (`tests/perf_tests.gd`, `tests/menu_backdrop_tests.gd`):** medidor de quadros,
+    rolagem pelo dedo começando em cima de botões (sem apertá-los), ritmo de quadros,
+    silhuetas nativas iguais ao laço, janela das partículas vivas e o fundo dos menus redesenhando só
+    as camadas animadas.
+  - **Partida (`tests/game_bench.tscn`, sem `--headless`):** quadro, render na CPU, chamadas de
+    desenho e traços por quadro de uma partida do bot (`-- --bot --seed=7 --stress=500`), com
+    `--native-strokes` para comparar com o caminho antigo e `--compare-shots=<pasta>` para conferir
+    que o mesmo quadro sai igual pelos dois caminhos.
+  Regras de desenho que esses testes protegem: o que é fixo não é redesenhado a cada quadro (camada
+  própria, ou `StaticBake` para desenhos grandes como o mapa da jornada); desenho refeito a cada
+  quadro não usa `draw_polygon`, `draw_colored_polygon`, `draw_polyline`, `draw_arc` nem
+  `draw_multiline` (cada um cria um buffer novo na GPU a cada redesenho): use retângulos, texturas
+  ou o `Stroke` (`Stroke.arc`, `Stroke.line`, `Stroke.polyline`, `Stroke.convex`, mesma geometria
+  do motor em primitivas sem buffer, conferida pixel a pixel por `tests/stroke_pixel_tests.tscn`,
+  sem `--headless`); cartões de lista que só mudam com toque/foco ficam assados (`StaticBake`, como
+  os do Diário); trocar override de tema ou caixa de estilo só quando o estado muda (cada troca
+  refaz o layout da tela); animações só decorativas esperam enquanto a lista rola pelo dedo
+  (`TouchScroll.busy()`);
+  animação lenta redesenha em ritmo próprio (o fundo dos menus a 30 Hz); botões e cartões dentro de
+  listas deixam o toque passar para a lista (`TouchScroll`, ligado pelo App); nada de laço por pixel
+  em GDScript para gerar texturas (use as operações nativas de `Image`).
 
 Nenhum PR é mesclado e nenhuma versão é lançada sem que os testes unitários (inclusive os de layout em
-todas as resoluções-alvo) e os testes E2E passem no Godot e no emulador Android em todas as
-resoluções-alvo.
+todas as resoluções-alvo), os testes E2E e o benchmark de rolagem passem **no Godot** em todas as
+resoluções-alvo. Teste no emulador ou no aparelho é só manual e não substitui nenhum deles.
+
 ## Versionamento (SemVer, obrigatório em todo commit)
 
 A versão do jogo segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) no formato `MAIOR.MENOR.CORREÇÃO` (ex.: `1.4.12`).

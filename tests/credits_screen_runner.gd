@@ -55,7 +55,7 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 	tests.set("_host", self)
 	tests.set("_check", _check)
 	var native := get_window().size
-	for target: Vector2 in DeviceProfiles.views():
+	for target: Vector2 in DeviceProfiles.shot_views():
 		var view: Vector2 = await DeviceProfiles.set_window_view(self, target)
 		tests.use_case(view, Vector2.ZERO)
 		for lang: String in langs:

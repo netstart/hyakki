@@ -150,7 +150,7 @@ func can_skip() -> bool:
 	return phase == Phase.NOTICE and notice_time >= NOTICE_GUARD and not _done
 
 
-## Nó do aviso (o roteiro E2E toca nele).
+## Nó do aviso (os testes tocam nele).
 func notice_control() -> Control:
 	return _root
 

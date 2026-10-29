@@ -4,6 +4,9 @@ extends Control
 ## canto inferior direito, botão "voltar" no canto superior esquerdo, alvos ≥ 48 dp.
 
 var app: App
+## A tela pinta o próprio fundo inteiro, opaco: o App esconde o fundo animado dos menus
+## (MenuBackdrop) enquanto ela está aberta, em vez de desenhá-lo por baixo sem aparecer.
+var opaque_background := false
 
 
 func _init() -> void:

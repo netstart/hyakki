@@ -7,7 +7,7 @@ extends Screen
 ## lista suspensa ou botões. A qualidade gráfica tem uma prévia do que cada nível muda,
 ## que acompanha a troca ao vivo (também a feita na pausa).
 ##
-## Cada controle tem o nome "opt_<chave>" (os testes e o roteiro E2E o acham por ele); nas
+## Cada controle tem o nome "opt_<chave>" (os testes o acham por ele); nas
 ## chaves e na qualidade gráfica o rótulo é o primeiro filho da linha do controle.
 
 const CONTENT_TOP := 42.0
@@ -18,6 +18,9 @@ const SECTION_GAP := 8
 const PERCENT_WIDTH := 34.0
 const SCROLL_DEADZONE := 8
 const SCROLL_TIME := 0.32
+## Recuo e largura da amostra das linhas de números por tipo.
+const DAMAGE_INDENT := 10.0
+const DAMAGE_SAMPLE_WIDTH := 30.0
 ## Política de privacidade publicada (exigida pela política de Dados do Usuário do Google Play
 ## acessível dentro do app). Aberta no navegador pela linha "Política de privacidade".
 const PRIVACY_POLICY_URL := "https://netstart.github.io/privacy-policy.html"
@@ -43,6 +46,8 @@ var _language: GridContainer
 var _quality: OptionButton
 var _preview: QualityPreview
 var _current := -1
+## Linhas dos números por tipo (_damage_type_rows).
+var _damage_types: VBoxContainer
 var _scroll_tween: Tween
 
 
@@ -164,7 +169,61 @@ func _build_display(card: VBoxContainer) -> void:
 		hint.text = String(hints.get(int(v), "")))
 	card.add_child(fps)
 	card.add_child(_toggle_row("damage_numbers", tr("options.damage_numbers")))
+	card.add_child(_damage_type_rows())
 	card.add_child(_toggle_row("hp_bar_below", tr("options.hp_bar_below")))
+
+
+## Números por tipo (DamagePalette.SETTING_KEYS), recuados sob "Números de dano": cada linha
+## com uma amostra do número na paleta em uso (daltonismo incluído). Com a opção geral
+## desligada, as linhas ficam apagadas e as chaves travadas (o valor de cada uma é mantido).
+func _damage_type_rows() -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.name = "opt_damage_types"
+	box.add_theme_constant_override("separation", ROW_GAP)
+	var labels := [tr("options.damage_show_hit"), tr("options.damage_show_high"), tr("options.damage_show_crit"),
+			tr("options.damage_show_dot"), tr("options.damage_show_taken"),
+			tr("options.damage_show_taken_heavy"), tr("options.damage_show_heal")]
+	for kind: int in DamagePalette.SETTING_KEYS.size():
+		var row := _toggle_row(DamagePalette.SETTING_KEYS[kind], labels[kind])
+		row.custom_minimum_size.y = ROW_HEIGHT - 4.0
+		var indent := Control.new()
+		indent.custom_minimum_size.x = DAMAGE_INDENT
+		indent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(indent)
+		row.move_child(indent, 0)
+		var sample := MenuKit.text(DamagePalette.text(kind, DamagePalette.SAMPLE_AMOUNTS[kind]), 12, Color.WHITE)
+		sample.name = "sample_%d" % kind
+		sample.custom_minimum_size.x = DAMAGE_SAMPLE_WIDTH
+		sample.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sample.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		sample.size_flags_vertical = Control.SIZE_FILL
+		row.add_child(sample)
+		row.move_child(sample, 1)
+		box.add_child(row)
+	_damage_types = box
+	_refresh_damage_types()
+	Settings.changed.connect(_on_setting_changed)
+	return box
+
+
+func _on_setting_changed(key: String) -> void:
+	if key == "damage_numbers" or key == "colorblind":
+		_refresh_damage_types()
+
+
+## Cor das amostras (paleta em uso) e estado das linhas conforme a opção geral.
+func _refresh_damage_types() -> void:
+	var on := bool(Settings.get_value("damage_numbers"))
+	var colorblind := bool(Settings.get_value("colorblind"))
+	for kind: int in _damage_types.get_child_count():
+		var row := _damage_types.get_child(kind) as HBoxContainer
+		var style := DamagePalette.style(kind, colorblind)
+		var sample := row.get_node("sample_%d" % kind) as Label
+		sample.add_theme_color_override("font_color", style["fill"])
+		sample.add_theme_color_override("font_outline_color", style["outline"])
+		sample.add_theme_constant_override("outline_size", int(style["outline_px"]) + 1)
+		(row.get_node("opt_%s" % DamagePalette.SETTING_KEYS[kind]) as BaseButton).disabled = not on
+		row.modulate.a = 1.0 if on else 0.4
 
 
 func _build_access(card: VBoxContainer) -> void:
@@ -439,15 +498,21 @@ func _rail_tab(index: int, title: String) -> Button:
 	icon.position = Vector2(8, 8)
 	icon.size = Vector2(14, 14)
 	b.add_child(icon)
+	# Aceso = pressionado (toggle): trocar a aba atual durante a rolagem (scroll-spy) só muda o estado
+	# do botão, sem trocar overrides de tema (cada troca refazia o layout e a quebra de linha do
+	# trilho e engasgava a rolagem ao cruzar uma seção).
+	b.toggle_mode = true
 	b.pressed.connect(func() -> void:
 		AudioManager.play_ui("ui_move")
-		show_section(index))
+		show_section(index)
+		_sync_tabs())
 	_rail.add_child(b)
-	_style_tab(b, false)
+	_style_tab(b)
 	return b
 
 
-func _style_tab(b: Button, on: bool) -> void:
+## Estilo único da aba (uma vez, na criação): apagada no normal, acesa quando pressionada.
+func _style_tab(b: Button) -> void:
 	var normal := ThemeFactory.flat_box(Color(0.05, 0.03, 0.05, 0.55), Color(ThemeFactory.GOLD, 0.25), 1, 3,
 			Vector2(28, 2))
 	normal.content_margin_right = 4
@@ -457,22 +522,33 @@ func _style_tab(b: Button, on: bool) -> void:
 	var hover := ThemeFactory.flat_box(Color(0.22, 0.07, 0.06, 0.85), Color(ThemeFactory.ACCENT, 0.8), 1, 3,
 			Vector2(28, 2))
 	hover.content_margin_right = 4
-	var boxes: Array[StyleBoxFlat] = []
-	boxes.assign([lit, lit, lit, lit] if on else [normal, hover, lit, normal])
+	b.begin_bulk_theme_override()
+	var boxes: Array[StyleBoxFlat] = [normal, hover, lit, normal]
 	ThemeFactory.apply_button_boxes(b, boxes)
-	b.add_theme_color_override("font_color", Color.WHITE if on else ThemeFactory.MUTED)
-	for state: String in ["font_hover_color", "font_focus_color", "font_hover_pressed_color", "font_pressed_color"]:
-		b.add_theme_color_override(state, Color.WHITE if on else ThemeFactory.ACCENT)
+	b.add_theme_color_override("font_color", ThemeFactory.MUTED)
+	b.add_theme_color_override("font_hover_color", ThemeFactory.ACCENT)
+	b.add_theme_color_override("font_focus_color", ThemeFactory.ACCENT)
+	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	b.add_theme_color_override("font_hover_pressed_color", Color.WHITE)
 	b.add_theme_constant_override("outline_size", 3)
-	(b.get_child(0) as CanvasItem).modulate = ThemeFactory.ACCENT if on else ThemeFactory.MUTED
+	b.end_bulk_theme_override()
+	(b.get_child(0) as CanvasItem).modulate = ThemeFactory.MUTED
+
+
+## Acende a aba atual e apaga as outras (só o estado pressionado e a cor do ícone).
+func _sync_tabs() -> void:
+	for i: int in _tabs.size():
+		var on := i == _current
+		if _tabs[i].button_pressed != on:
+			_tabs[i].set_pressed_no_signal(on)
+			(_tabs[i].get_child(0) as CanvasItem).modulate = ThemeFactory.ACCENT if on else ThemeFactory.MUTED
 
 
 func _set_current(index: int) -> void:
 	if index == _current:
 		return
 	_current = index
-	for i: int in _tabs.size():
-		_style_tab(_tabs[i], i == index)
+	_sync_tabs()
 
 
 ## Aba da seção cujo título já passou do topo da rolagem (a última, no fim da rolagem).

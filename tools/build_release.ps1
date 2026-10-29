@@ -1,15 +1,16 @@
 ﻿# Build de publicação do Hyakki (plano 16): AAB assinado para a Play Store + APK de release
-# para conferir no emulador, com R8 (minify) e só os recursos que vão no jogo.
+# para conferir à mão, com R8 (minify) e só os recursos que vão no jogo.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
 #
 # Opções:
 #   -SkipChecks        não roda tools\run_checks.ps1 antes
-#   -NoEmulator        só gera os arquivos (não instala nem abre no emulador)
 #   -VersionCode N     versionCode do Android (cada envio à Play Store precisa de um maior)
 #   -VersionName X     versão visível (ex.: 1.0.1)
 #   -KeystoreEnv path  arquivo com as variáveis da chave (padrão C:\src\keys\hyakki-release.env)
-#   -Avd nome          emulador a usar (padrão Redmi_Note_14_Pro_Plus_5G; também Galaxy_M55_5G e Pixel_7)
+#
+# Não instala nem testa no emulador: testes automatizados no emulador Android são proibidos
+# (AGENTS.md). Para conferir a build à mão: "Testar release no emulador.bat" -NoBuild.
 #
 # A chave de envio (upload key) NUNCA fica no repositório: o arquivo .env tem
 #   GODOT_ANDROID_KEYSTORE_RELEASE_PATH / _USER / _PASSWORD
@@ -17,11 +18,9 @@
 
 param(
     [switch]$SkipChecks,
-    [switch]$NoEmulator,
     [int]$VersionCode = 0,
     [string]$VersionName = '',
     [string]$KeystoreEnv = 'C:\src\keys\hyakki-release.env',
-    [string]$Avd = 'Redmi_Note_14_Pro_Plus_5G',
     [string]$Godot = $(if ($env:GODOT) { $env:GODOT } else { 'C:\src\tools\godot\Godot_v4.7.2-stable_win64_console.exe' }),
     [string]$AndroidSdk = 'C:\android-sdk'
 )
@@ -29,8 +28,6 @@ param(
 $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $project 'build\release'
-$adb = Join-Path $AndroidSdk 'platform-tools\adb.exe'
-$package = 'io.github.netstart.hyakki'
 
 function Step([string]$text) { Write-Host "== $text" -ForegroundColor Cyan }
 function Fail([string]$text) { Write-Host "FALHOU: $text" -ForegroundColor Red; exit 1 }
@@ -130,35 +127,5 @@ $zip.Dispose()
 Write-Host "ABIs no AAB: $($abis -join ', ')  ·  libgodot_android.so por ABI: $($debugSo -join ' / ') MB"
 Write-Host 'A Play Store entrega só a ABI do aparelho (o download fica bem menor que o AAB).'
 
-if ($NoEmulator) { Write-Host 'PRONTO (sem emulador)' -ForegroundColor Green; exit 0 }
-
-# --- 6. Emulador ---------------------------------------------------------------------
-Step "Emulador ($Avd)"
-# Processo independente (WMI): não morre quando este script ou o terminal terminam. Outro AVD
-# ligado é desligado antes (tools\test_devices.ps1).
-. (Join-Path $PSScriptRoot 'test_devices.ps1')
-try { Start-EmulatorFor $adb $AndroidSdk $Avd | Out-Null } catch { Fail $_.Exception.Message }
-# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez (AGENTS.md, "Emulador travado").
-$serial = Wait-EmulatorReady $adb $AndroidSdk $Avd 8
-if (-not $serial) { Fail "emulador $Avd não ficou pronto em 8 minutos nem depois de reiniciado" }
-$cutout = Set-EmulatorCutout $adb $serial $Avd
-Write-Host "aparelho: $serial ($Avd$(if ($cutout) { ", recorte de câmera: $cutout" }))"
-$install = & $adb -s $serial install -r $apk 2>&1 | Out-String
-if ($install -match 'INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match') {
-    Write-Host 'Assinatura diferente da instalação anterior (debug): desinstalando (apaga o save do emulador)' -ForegroundColor Yellow
-    & $adb -s $serial uninstall $package | Out-Null
-    $install = & $adb -s $serial install $apk 2>&1 | Out-String
-}
-if ($install -notmatch 'Success') { Write-Host $install; Fail 'instalação no emulador falhou' }
-& $adb -s $serial logcat -c
-& $adb -s $serial shell monkey -p $package -c android.intent.category.LAUNCHER 1 | Out-Null
-Start-Sleep -Seconds 15
-$shot = Join-Path $out 'emulator_launch.png'
-& cmd /c "`"$adb`" -s $serial exec-out screencap -p > `"$shot`""
-$appPid = (& $adb -s $serial shell pidof $package) -join ''
-$errors = & $adb -s $serial logcat -d | Select-String -Pattern 'godot\s+:\s+(SCRIPT )?ERROR|FATAL EXCEPTION|ANR in' |
-    Where-Object { $_ -notmatch 'cached shader|shader_gles3' }
-if (-not $appPid) { Fail 'o app não está rodando no emulador (veja adb logcat)' }
-if ($errors) { $errors | Select-Object -First 15 | Write-Host -ForegroundColor Yellow; Fail 'erros do Godot no logcat' }
-Write-Host "app rodando (pid $appPid), logcat sem erros; tela: $shot"
 Write-Host "PRONTO: envie $aab para a Play Console (teste interno ou fechado)." -ForegroundColor Green
+Write-Host 'Para conferir à mão no emulador: "Testar release no emulador.bat" -NoBuild'

@@ -97,7 +97,7 @@ func apply(card: Dictionary) -> void:
 			passive_levels[id] = int(card["level"])
 			apply_stats()
 		"heal":
-			game.player.heal(30.0)
+			game.player.heal(30.0, true)
 		"ryo":
 			game.add_run_ryo(25)
 

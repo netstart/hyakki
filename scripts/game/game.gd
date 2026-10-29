@@ -159,7 +159,7 @@ func _cli_config() -> Dictionary:
 
 
 ## Cenários de teste no aparelho (só em build de debug): leva direto a uma tela difícil de
-## alcançar jogando, para conferir no emulador. Ex.: adb ... --esa command_line_params --,--scenario=chest
+## alcançar jogando, para conferir à mão (teste manual). Ex.: adb ... --esa command_line_params --,--scenario=chest
 func apply_scenario(name: String) -> void:
 	if not OS.is_debug_build():
 		return
@@ -712,8 +712,9 @@ func _draw_weapons() -> void:
 
 
 ## Todo dano passa por aqui: crítico, registro por arma e número na tela.
+## `dot`: tique de dano contínuo (poças, furacões, aura do incenso); só muda o número de dano.
 func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2, force: float,
-		force_crit: bool = false) -> void:
+		force_crit: bool = false, dot: bool = false) -> void:
 	if enemies.alive[enemy] == 0:
 		return
 	var crit_chance := player.stats.get_stat("crit")
@@ -726,7 +727,7 @@ func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2,
 	if prop:
 		return
 	tracker.on_damage(weapon_id, amount)
-	fx.on_hit(weapon_id, at, amount, crit, dir)
+	fx.on_hit(weapon_id, at, amount, crit, dir, dot, enemy)
 	_play_hit_sound(weapon_id, crit)
 
 
@@ -772,7 +773,7 @@ func collect_item(item: Dictionary) -> void:
 	Events.item_collected.emit(id)
 	match String(item["effect"]):
 		"heal":
-			player.heal(float(item["value"]))
+			player.heal(float(item["value"]), true)
 			AudioManager.play("heal")
 			fx.play_anim("aura", player.sim_pos, 1.2, 0.0, Color(0.7, 1.0, 0.7))
 		"ryo":
@@ -1012,8 +1013,12 @@ func _on_death_offer_due() -> void:
 		death.show_notice()
 
 
+## Uma resposta por oferta: toque repetido, sinal duplicado ou o tempo da oferta acabando
+## enquanto o anúncio passa não abrem outro anúncio nem cortam o que está na tela.
 func _on_revive_answered(accept: bool) -> void:
-	if not accept:
+	if _ad_in_progress:
+		return
+	if not accept or _ad_revive_used:
 		death.show_notice()
 		return
 	_ad_revive_used = true

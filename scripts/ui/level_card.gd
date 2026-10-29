@@ -9,7 +9,7 @@ extends Button
 ## - nome, etiqueta ("Novo!" ou "Nv 3 → 4") com as marcas de nível (a nova pisca), descrição
 ##   com os números da melhoria em verde e, no rodapé, a sinergia ("Evolui com" + mini-ícone);
 ## - destaque ao passar/pressionar (a carta sobe e brilha) e, no modo banir, o carimbo 封.
-## O texto do Button fica vazio: o roteiro E2E toca no centro da carta.
+## O texto do Button fica vazio: os testes tocam no centro da carta.
 
 enum Cat { NEW, UP, LEGEND, PASSIVE, HEAL, RYO }
 

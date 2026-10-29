@@ -14,8 +14,9 @@ const GAP := 4.0
 const CARD_WIDTH := 266.0
 const CARD_MIN_WIDTH := 200.0
 const CARD_SHARE := CARD_WIDTH / 662.0
-## Pergaminho mais baixo que isto (telas de 270 de altura): os recordes e os avisos (bônus,
-## sugestão do Brisa) entram na rolagem, acima da narrativa, para ela não sumir.
+## Pergaminho mais baixo que isto (telas de 270 de altura) ou mais estreito que CARD_WIDTH
+## (tablets e telas quase quadradas, onde a narrativa quebra em mais linhas): os recordes e os
+## avisos (bônus, sugestão do Brisa) entram na rolagem, acima da narrativa, para ela não sumir.
 const COMPACT_HEIGHT := 280.0
 ## Largura mínima da Noite Sem Fim (chave e duas linhas de texto) ao lado do Começar.
 const ENDLESS_MIN_WIDTH := 100.0
@@ -76,7 +77,7 @@ func _layout() -> void:
 	var room := right - left - GAP
 	# Proporção pela largura da tela inteira: o recorte da câmera sai do mapa, não do pergaminho.
 	var card_w := clampf(roundf((size.x - MARGIN * 2.0 - GAP) * CARD_SHARE), CARD_MIN_WIDTH, CARD_WIDTH)
-	_set_compact(height < COMPACT_HEIGHT)
+	_set_compact(height < COMPACT_HEIGHT or card_w < CARD_WIDTH)
 	_scroll_auto()
 	_card.custom_minimum_size = Vector2(card_w, height)
 	_card.position = Vector2(right - card_w, MARGIN)

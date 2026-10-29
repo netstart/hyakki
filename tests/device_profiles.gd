@@ -1,8 +1,8 @@
 extends RefCounted
 ## Resoluções-alvo dos testes de layout (fonte única; ver "Resoluções-alvo" no AGENTS.md). A
 ## regra de qualidade é por RESOLUÇÃO LÓGICA, não por aparelho: o PixelScaler usa
-## k = round(altura / 300) e stretch "viewport", então lógico = físico / k. Os aparelhos ficam
-## só como exemplo no comentário de cada linha.
+## k = min(round(altura / 300), floor(largura / 480)), k ≥ 1, e stretch "viewport", então
+## lógico = físico / k. Os aparelhos ficam só como exemplo no comentário de cada linha.
 ##
 ## Toda tela, painel e HUD percorre layout_cases(): cada resolução sem recorte (todos os
 ## idiomas) e com a área segura de um furo de câmera à esquerda e à direita (MenuKit.test_insets).
@@ -24,15 +24,51 @@ const RESOLUTIONS: Array[Dictionary] = [
 	{"label": "780x360", "view": Vector2(780, 360), "physical": Vector2i(1560, 720), "scale": 2, "cutout": 80.0},
 	# 1920x1080 (16:9), ×4. Ex.: telas 16:9 / desktop.
 	{"label": "480x270", "view": Vector2(480, 270), "physical": Vector2i(1920, 1080), "scale": 4, "cutout": 118.0},
+	# 2560x1600 (16:10), ×5. Ex.: Samsung Galaxy Tab S9 / S9 FE+ e tablets 16:10 QHD. Sem furo na tela
+	# (câmera na moldura): testado com a faixa genérica dos dois lados, como as demais.
+	{"label": "512x320", "view": Vector2(512, 320), "physical": Vector2i(2560, 1600), "scale": 5, "cutout": 120.0},
+	# 2000x1200 (16:10), ×4. Ex.: Samsung Galaxy Tab A9+ e tablets 16:10 de entrada. Sem furo (faixa genérica).
+	{"label": "500x300", "view": Vector2(500, 300), "physical": Vector2i(2000, 1200), "scale": 4, "cutout": 100.0},
+	# 2048x1536 (4:3), ×4 (a largura mínima de 480 baixa o fator de 5 para 4). Ex.: tablets 4:3 (estilo
+	# iPad), Xiaomi Pad 4:3. Sem furo (faixa genérica).
+	{"label": "512x384", "view": Vector2(512, 384), "physical": Vector2i(2048, 1536), "scale": 4, "cutout": 120.0},
+	# 1600x720 (20:9), ×2. Ex.: Samsung Galaxy A05 / A05s, Motorola Moto E13 / E14 (HD+ baratos).
+	{"label": "800x360", "view": Vector2(800, 360), "physical": Vector2i(1600, 720), "scale": 2, "cutout": 80.0},
+	# 1612x720 (20:9), ×2. Ex.: Motorola Moto G04 / G24 / E22, Xiaomi Redmi A3 (HD+ baratos).
+	{"label": "806x360", "view": Vector2(806, 360), "physical": Vector2i(1612, 720), "scale": 2, "cutout": 80.0},
+	# 2176x1812 (quase quadrada), ×4 (a largura mínima de 480 baixa o fator de 6 para 4). Ex.: Samsung
+	# Galaxy Z Fold5 / Fold6 aberto (tela interna, câmera sob a tela).
+	{"label": "544x453", "view": Vector2(544, 453), "physical": Vector2i(2176, 1812), "scale": 4, "cutout": 150.0},
+	# 2316x904 (23:9), ×3. Ex.: Samsung Galaxy Z Fold5 / Fold6 fechado (tela externa, furo de câmera).
+	{"label": "772x301", "view": Vector2(772, 301), "physical": Vector2i(2316, 904), "scale": 3, "cutout": 96.0},
+	# 2520x1080 (21:9), ×4. Ex.: Sony Xperia 1 / Xperia 5 (FHD+), Xiaomi / Motorola 21:9.
+	{"label": "630x270", "view": Vector2(630, 270), "physical": Vector2i(2520, 1080), "scale": 4, "cutout": 118.0},
+	# 2640x1080 (22:9), ×4. Ex.: aparelhos 22:9 muito alongados (FHD+).
+	{"label": "660x270", "view": Vector2(660, 270), "physical": Vector2i(2640, 1080), "scale": 4, "cutout": 118.0},
+]
+## Telas físicas fora da tabela para o teste do PixelScaler (check_scaler): telas quase
+## quadradas, onde a largura mínima de 480 baixa o fator, e janelas de desktop e das capturas
+## (set_window_view usa o dobro da tela lógica). [físico, k esperado, lógico esperado].
+const SCALER_EXTRA: Array = [
+	[Vector2i(2176, 1812), 4, Vector2(544, 453)],
+	[Vector2i(2048, 1536), 4, Vector2(512, 384)],
+	[Vector2i(2224, 1668), 4, Vector2(556, 417)],
+	[Vector2i(1088, 906), 2, Vector2(544, 453)],
+	[Vector2i(1024, 768), 2, Vector2(512, 384)],
+	[Vector2i(1280, 720), 2, Vector2(640, 360)],
+	[Vector2i(1152, 648), 2, Vector2(576, 324)],
+	[Vector2i(800, 600), 1, Vector2(800, 600)],
+	[Vector2i(400, 300), 1, Vector2(400, 300)],
 ]
 ## Idiomas dos casos com recorte (os mais longos e o padrão), para o tempo da suíte não
 ## triplicar; sem recorte, cada resolução roda em todos os idiomas.
 const INSET_LANGS: Array[String] = ["pt_BR", "de", "ru"]
 
 
-## Fator inteiro do PixelScaler para uma altura física.
+## Fator inteiro do PixelScaler para uma tela física (a mesma regra, escrita à parte para o
+## teste conferir o PixelScaler de verdade contra ela).
 static func scale_for(physical: Vector2i) -> int:
-	return maxi(1, roundi(physical.y / 300.0))
+	return maxi(1, mini(roundi(physical.y / 300.0), floori(physical.x / 480.0)))
 
 
 ## Tela lógica que o PixelScaler dá para um tamanho físico.
@@ -50,6 +86,28 @@ static func cutout_logical(res: Dictionary) -> float:
 static func views() -> Array[Vector2]:
 	var list: Array[Vector2] = []
 	for r: Dictionary in RESOLUTIONS:
+		list.append(r["view"])
+	return list
+
+
+## Resoluções das capturas (--shots dos *_runner.gd): todas, ou só as de `--res=544x453,800x360`
+## (rótulos da tabela) nos argumentos depois de "--".
+static func shot_resolutions() -> Array[Dictionary]:
+	var wanted: PackedStringArray = []
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--res="):
+			wanted = arg.trim_prefix("--res=").split(",", false)
+	var list: Array[Dictionary] = []
+	for r: Dictionary in RESOLUTIONS:
+		if wanted.is_empty() or String(r["label"]) in wanted:
+			list.append(r)
+	return list
+
+
+## Telas lógicas das capturas (shot_resolutions), na ordem.
+static func shot_views() -> Array[Vector2]:
+	var list: Array[Vector2] = []
+	for r: Dictionary in shot_resolutions():
 		list.append(r["view"])
 	return list
 
@@ -122,6 +180,14 @@ static func check_scaler(host: Node, check: Callable) -> void:
 				root.content_scale_size, scaler.get("scale_factor")])
 		var c := cutout_logical(r)
 		check.call(c >= 20.0 and c <= 40.0, "Resoluções: recorte de %s com %.1f pontos lógicos" % [r["label"], c])
+		check.call((r["view"] as Vector2).x >= 480.0, "Resoluções: %s com largura lógica ≥ 480" % r["label"])
+	for e: Array in SCALER_EXTRA:
+		root.size = e[0]
+		scaler.call("_apply")
+		check.call(int(scaler.get("scale_factor")) == int(e[1]) and Vector2(root.content_scale_size) == e[2]
+				and scale_for(e[0]) == int(e[1]) and logical_for(e[0]) == e[2],
+				"Resoluções: %s físico dá %s lógico (×%d; obtido %s ×%d)" % [e[0], e[2], e[1],
+				root.content_scale_size, scaler.get("scale_factor")])
 	root.size = size
 	root.content_scale_size = css
 	root.content_scale_mode = mode

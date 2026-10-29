@@ -61,12 +61,20 @@ const SkillIconTests := preload("res://tests/skill_icon_tests.gd")
 ## Sem anúncio de abertura e "Apoie o jogo" (recompensas de presente com a compra).
 const AdsOffTests := preload("res://tests/ads_off_tests.gd")
 const SupportPackTests := preload("res://tests/support_pack_tests.gd")
+## Reviver por anúncio: uma morte, um anúncio só (toques repetidos, sinais duplicados, provedor falso).
+const ReviveAdTests := preload("res://tests/revive_ad_tests.gd")
 ## Furo da câmera trocando de lado com cada tela aberta, sem redimensionar (giro de 180°).
 const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
 ## Ampulheta de Fūjin: velocidade 2x/3x como compra (ryō ou dinheiro), posse, reembolso e partida.
 const SpeedUnlockTests := preload("res://tests/speed_unlock_tests.gd")
 ## Guardião do Limiar, portal e Kakuriyo: dados, travessia, outro mundo, retomada e cenários.
 const RealmTests := preload("res://tests/realm_tests.gd")
+## Números de dano coloridos: causado × recebido × cura, alto, crítico, contínuo e daltonismo.
+const DamageNumberTests := preload("res://tests/damage_number_tests.gd")
+## Anel, limite, soma, estresse, opções por tipo e a tela de Opções dos números de dano.
+const DamageNumberFlowTests := preload("res://tests/damage_number_flow_tests.gd")
+## Densidade adaptativa: pressão, tamanho/vida, juntar parecidos, pequenos, abreviação e cobertura.
+const DamageNumberDensityTests := preload("res://tests/damage_number_density_tests.gd")
 ## Aparelhos-alvo dos testes de layout (Redmi Note 14 Pro+, Galaxy M55, Pixel 7) e o furo da câmera.
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
@@ -95,6 +103,7 @@ func _ready() -> void:
 	await _test_suspended_run()
 	await _test_revive_by_ad()
 	await DeathSequenceTests.new().run(self, _check)
+	await ReviveAdTests.new().run(self, _check)
 	await AdsOffTests.new().run(self, _check)
 	await SupportPackTests.new().run(self, _check)
 	await SpeedUnlockTests.new().run(self, _check)
@@ -120,6 +129,9 @@ func _ready() -> void:
 	await (load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run(self, _check)
 	await RealmTests.new().run(self, _check)
 	await EnemyFxTests.new().run(self, _check)
+	await DamageNumberTests.new().run(self, _check)
+	await DamageNumberFlowTests.new().run(self, _check)
+	await DamageNumberDensityTests.new().run(self, _check)
 	await WeatherTests.new().run(self, _check)
 	await SurfaceTests.new().run(self, _check)
 	await SkillIconTests.new().run(self, _check)
@@ -127,6 +139,8 @@ func _ready() -> void:
 	await InsetFlipTests.new().run(self, _check)
 	await _test_shop_layout()
 	await _test_shop_scroll()
+	# Por último: liga o TouchScroll na árvore (como o App faz no jogo).
+	await (load("res://tests/perf_tests.gd") as GDScript).new().run(self, _check)
 	_remove_test_files()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)

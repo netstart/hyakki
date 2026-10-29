@@ -86,7 +86,7 @@ func _screenshots(dir: String) -> void:
 	overlay.layer = 100
 	overlay.add_child(strip)
 	add_child(overlay)
-	for res: Dictionary in DeviceProfiles.RESOLUTIONS:
+	for res: Dictionary in DeviceProfiles.shot_resolutions():
 		var view: Vector2 = await DeviceProfiles.set_window_view(self, res["view"])
 		var c := DeviceProfiles.cutout_logical(res)
 		for insets: Vector2 in [Vector2.ZERO, Vector2(c, 0.0), Vector2(0.0, c)]:

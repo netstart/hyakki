@@ -962,7 +962,7 @@ A física é **própria** (10.6): sem corpos físicos do Godot por inimigo, para
 | Testes | `tests/run_tests.gd` (regras puras, sem autoloads) + `tests/integration_tests.tscn` (dados, idiomas, fontes, Loja, Santuário, save), bot determinístico 1x/2x/3x, estresse e `gdlint` — tudo em `tools/run_checks.ps1` (*implementado; GUT/gdUnit4 dispensados*) | regressões de balanceamento e de conteúdo |
 | Textos | `i18n/strings.csv` gerado por `tools/build_i18n.py` a partir de `tools/i18n/*.py`, lido em tempo de execução pelo autoload `Locale` (importador do Godot desligado: `importer="keep"`) | um lugar para traduzir; o gerador confere chaves, 11 colunas e marcadores `%s/%d` |
 | Anúncios e compras | `AdsManager`/`PurchaseManager` com dois provedores: **real** no Android (plugin Poing AdMob 5.1.0 com UMP, e GodotGooglePlayBilling 3.3.0; exigem build Gradle) e **simulado** no PC e nos testes. Até a conta AdMob existir, o real usa os IDs de teste do Google (*implementado em 21/10/2026*) | o jogo fala só com os autoloads; dá para testar todos os fluxos no PC e os anúncios reais de teste no emulador |
-| Build de publicação | `tools/build_release.ps1`: verificações → AAB e APK de release assinados (chave fora do repositório, via variáveis de ambiente) com R8 → conferência das assinaturas → instala e abre no emulador | um comando reproduzível para cada envio à Play Store |
+| Build de publicação | `tools/build_release.ps1`: verificações → AAB e APK de release assinados (chave fora do repositório, via variáveis de ambiente) com R8 → conferência das assinaturas (a conferência no emulador é só manual) | um comando reproduzível para cada envio à Play Store |
 
 ### 10.2 Estrutura de pastas
 

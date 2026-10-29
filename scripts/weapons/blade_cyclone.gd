@@ -51,7 +51,7 @@ func draw(canvas: CanvasItem) -> void:
 	for k: int in range(count):
 		var angle := _angle + TAU * k / float(count)
 		if ghosts > 0:
-			canvas.draw_arc(center, r, angle - dir * 0.18 * ghosts, angle, 8, Color(fx_color(), 0.35), 3.0)
+			Stroke.arc(canvas, center, r, angle - dir * 0.18 * ghosts, angle, 8, Color(fx_color(), 0.35), 3.0)
 		for g: int in range(ghosts, 0, -1):
 			var ga := angle - dir * g * 0.16
 			canvas.draw_set_transform((center + Vector2.from_angle(ga) * r).round(), ga + PI * 0.5, Vector2.ONE)

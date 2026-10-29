@@ -54,7 +54,7 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 	var tests := TitleLayoutTests.new()
 	var native := get_window().size
 	var original := SaveManager.data
-	for r: Dictionary in DeviceProfiles.RESOLUTIONS:
+	for r: Dictionary in DeviceProfiles.shot_resolutions():
 		var view: Vector2 = await DeviceProfiles.set_window_view(self, r["view"])
 		var cut := DeviceProfiles.cutout_logical(r)
 		for insets: Vector2 in [Vector2.ZERO, Vector2(cut, 0.0), Vector2(0.0, cut)]:

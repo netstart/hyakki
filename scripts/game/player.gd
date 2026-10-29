@@ -10,7 +10,6 @@ const RADIUS := 4.0
 const ACCEL_TIME := 0.08
 const INVULN_TIME := DamageControl.INVULN_TIME
 const REVIVE_INVULN := 2.0
-const HURT_NUMBER_COLOR := Color("ff5a4f")
 ## Duração da pose de ataque e intervalo mínimo entre duas poses (várias armas disparando).
 const CAST_TIME := 0.25
 const CAST_GAP := 0.45
@@ -246,7 +245,8 @@ func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> v
 	hp -= final
 	_hit_flash = 0.12
 	damage_taken_time = 0.0
-	game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), final, false, HURT_NUMBER_COLOR)
+	game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), final,
+			DamagePalette.classify_taken(final, max_hp()), max_hp())
 	Events.player_hit.emit(final)
 	play_hurt_sound()
 	Settings.vibrate(40)
@@ -274,10 +274,16 @@ func revive(fraction: float = 0.5) -> void:
 	AudioManager.play("heal")
 
 
-func heal(amount: float) -> void:
+## `show_number`: mostra o "+N" verde (itens, carta de cura e especial; o roubo de vida
+## contínuo não mostra, para não poluir a tela). Só aparece se curou pelo menos 1 HP.
+func heal(amount: float, show_number: bool = false) -> void:
 	if amount <= 0.0 or not is_alive:
 		return
+	var before := hp
 	hp = minf(max_hp(), hp + amount)
+	if show_number and hp - before >= 1.0:
+		game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), hp - before, DamagePalette.Kind.HEAL,
+				max_hp())
 
 
 func clone_position() -> Vector2:
@@ -402,7 +408,7 @@ func _draw() -> void:
 	var posed := down > 0.0 or not is_alive
 	if aura_radius > 0.0 and not posed:
 		draw_circle(Vector2.ZERO, aura_radius, Color(aura_color.r, aura_color.g, aura_color.b, 0.07))
-		draw_arc(Vector2.ZERO, aura_radius, 0.0, TAU, 40, Color(aura_color.r, aura_color.g, aura_color.b, 0.25), 1.0)
+		Stroke.arc(self, Vector2.ZERO, aura_radius, 0.0, TAU, 40, Color(aura_color.r, aura_color.g, aura_color.b, 0.25), 1.0)
 	if _sheet == null:
 		return
 	if clone_time > 0.0 and not posed:
@@ -413,7 +419,7 @@ func _draw() -> void:
 		var below := bool(Settings.get_value("hp_bar_below"))
 		_draw_hp(Vector2(-8.0, 7.0) if below else Vector2(-8.0, sprite_top() - 9.0))
 	if show_hitbox:
-		draw_arc(Vector2.ZERO, RADIUS, 0.0, TAU, 16, Color.CYAN, 1.0)
+		Stroke.arc(self, Vector2.ZERO, RADIUS, 0.0, TAU, 16, Color.CYAN, 1.0)
 
 
 func _draw_body(offset: Vector2, tint: Color, main: bool) -> void:

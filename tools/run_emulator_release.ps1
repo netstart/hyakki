@@ -32,8 +32,8 @@ $package = 'io.github.netstart.hyakki'
 function Step([string]$text) { Write-Host "== $text" -ForegroundColor Cyan }
 function Fail([string]$text) { Write-Host "FALHOU: $text" -ForegroundColor Red; exit 1 }
 
-# AVDs dos aparelhos-alvo, troca de emulador e recorte de câmera (tools\test_devices.ps1).
-. (Join-Path $PSScriptRoot 'test_devices.ps1')
+# Ligar o AVD, troca de emulador e recorte de câmera (tools\emulator_common.ps1).
+. (Join-Path $PSScriptRoot 'emulator_common.ps1')
 
 # --- 1. Emulador (boot em paralelo com o export) -------------------------------------
 # Processo independente (WMI); se outro AVD estiver ligado, ele é desligado antes.
@@ -86,7 +86,7 @@ if (-not $NoBuild) {
 
 # --- 3. Instalar e abrir -------------------------------------------------------------
 Step 'Esperando o emulador'
-# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez (AGENTS.md, "Emulador travado").
+# Até 8 minutos; travado, é desligado à força e ligado de novo uma vez .
 $serial = Wait-EmulatorReady $adb $AndroidSdk $Avd 8
 if (-not $serial) { Fail "o emulador $Avd não ficou pronto em 8 minutos nem depois de reiniciado" }
 $cutout = Set-EmulatorCutout $adb $serial $Avd

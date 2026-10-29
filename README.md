@@ -63,39 +63,20 @@ Santuário, save, regras de anúncio), determinismo 1x/2x/3x e estresse com 500 
 Para um relatório completo (cada verificação listada, tempos e logs) em `build\test-report\<data_hora>\relatorio.html`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1 -E2E
+powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1
 ```
 
-`-E2E` inclui os testes de ponta a ponta no emulador (abaixo); `-SkipStress` pula o estresse e `-NoOpen`
-não abre o navegador.
+`-SkipStress` pula o estresse e `-NoOpen` não abre o navegador.
 
-### Ponta a ponta no emulador (E2E)
+### Testes por resolução (só no Godot)
 
-Dois cliques em **`Testes E2E no emulador.bat`** (ou `tools\run_e2e.ps1 [-NoBuild] [-NoChecks] [-Avd all|nome]`).
-O APK de debug é exportado uma vez só (com o primeiro emulador já ligando) e reinstalado em todos os aparelhos;
-logo depois o `tools\run_checks.ps1` roda em paralelo (log `run_checks.log` no relatório; se falhar, o E2E
-falha; `-NoChecks` pula). Os emuladores ligam a frio (`-no-snapshot`, ~30 s). Por
-padrão roda em todas as **resoluções-alvo** (a regra de qualidade é por resolução; veja `AGENTS.md`), um
-AVD depois do outro (o emulador anterior é desligado antes do próximo):
+Os testes que simulam a tela de cada aparelho rodam **só no Godot do PC**, com as resoluções de
+[tests/device_profiles.gd](tests/device_profiles.gd): testes de layout de todas as telas e do HUD em todas
+as resoluções-alvo (com furo de câmera dos dois lados), o benchmark de rolagem `tests/scroll_bench.tscn` e
+os testes de desempenho. Os comandos e critérios estão no `AGENTS.md`.
 
-| Resolução lógica | Tela física | AVDs |
-|---|---|---|
-| 678x305 | 2712x1220 | `Redmi_Note_14_Pro_Plus_5G` (Redmi Note 14 Pro+ 5G) |
-| 600x270 | 2400x1080 | `Galaxy_M55_5G` (Galaxy M55 5G), `Pixel_7` (Pixel 7) |
-| 585x270 | 2340x1080 | `Galaxy_A15` (Galaxy A15; cobre também o Galaxy A56 5G, o POCO M3 e o S24/S25 Ultra em FHD+) |
-| 624x288 | 3120x1440 | `Galaxy_S24_Ultra` (Galaxy S24 Ultra e S25 Ultra em QHD+) |
-
-Os AVDs que faltarem são criados por `tools\create_test_avds.ps1` (o `.bat` já chama); em todos
-o script liga o recorte de câmera emulado do Android (`cmd overlay ... cutout.emulation.hole`).
-`-Avd Pixel_7` roda só um aparelho. Em cada um o script instala a
-build de debug, apaga os dados do app (**perde o save do emulador**) e liga o roteiro de
-[scripts/app/e2e_driver.gd](scripts/app/e2e_driver.gd). O jogo pede ao PC, pelo logcat, toques e arrastos
-reais (`adb shell input`), o botão voltar, ir para segundo plano, fechar/reabrir e capturas de tela, e
-confere o efeito de cada um. O roteiro cobre: abertura, consentimento, introdução, todos os menus,
-seleção, controle por toque, nível novo, baú, pausa, derrota com oferta de reviver, resultados, partida
-suspensa e "Continuar". Relatório geral em `build\e2e-report\<data_hora>\relatorio.html` e um por
-aparelho, com as capturas, em `build\e2e-report\<data_hora>\<AVD>\`. Anúncios ficam no
-modo simulado (o AdMob abre outra tela do Android).
+**Testes automatizados no emulador Android são proibidos.** O emulador (e o aparelho) servem só para
+teste manual: uma pessoa instala, joga e confere (veja "Testes manuais no aparelho" abaixo).
 
 Opções de teste (depois de `--`): `--bot`, `--seed=N`, `--speed=1|2|3`, `--hero=ID`, `--stage=ID`,
 `--moon=0..5`, `--mode=normal|brisa`, `--endless`, `--god`, `--quit-at=S`, `--hash-at=S`,
@@ -114,8 +95,7 @@ C:\src\tools\godot\Godot_v4.7.2-stable_win64_console.exe --headless --path C:\sr
 C:\android-sdk\platform-tools\adb.exe install -r C:\src\hyakki\build\hyakki-debug.apk
 ```
 
-O APK inclui arm64-v8a (celulares) e x86_64 (emulador). Validado nos emuladores `Redmi_Note_14_Pro_Plus_5G`,
-`Galaxy_M55_5G` e `Pixel_7`.
+O APK inclui arm64-v8a (celulares) e x86_64 (emulador, para teste manual).
 
 > O pacote definitivo é `io.github.netstart.hyakki` (em `export_presets.cfg`). **Não mude:** depois que o
 > app sai na Play Store, o ID não pode mais ser trocado.
@@ -131,9 +111,9 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
 ```
 
 O script roda todas as verificações, gera `build\release\hyakki-release.aab` (para a Play Console) e
-`build\release\hyakki-release.apk` (release, para conferir), confere as assinaturas, instala o APK no
-emulador, abre o jogo e falha se houver erro do Godot no logcat. Opções: `-VersionCode N`
-(obrigatório subir a cada envio à Play Store), `-VersionName 1.0.1`, `-SkipChecks`, `-NoEmulator`.
+`build\release\hyakki-release.apk` (release, para conferir à mão) e confere as assinaturas. Não instala
+nem testa no emulador; para jogar a build à mão use `Testar release no emulador.bat -NoBuild`. Opções:
+`-VersionCode N` (obrigatório subir a cada envio à Play Store), `-VersionName 1.0.1`, `-SkipChecks`.
 
 - **Otimização:** template de release do Godot, R8/minify do Gradle (`admob/general/android/enable_r8_optimization`),
   texturas ETC2/ASTC, só os recursos do jogo (testes, ferramentas, docs, mocks e binários iOS dos plugins
@@ -148,10 +128,10 @@ emulador, abre o jogo e falha se houver erro do Godot no logcat. Opções: `-Ver
 - **Compras:** Google Play Billing real; só funciona com o app publicado na Play Console (teste interno) e
   um aparelho com Play Store. No emulador sem Play Store a compra responde "não concluída".
 
-## Testes no aparelho (build de debug)
+## Testes manuais no aparelho (build de debug)
 
-Para testar à mão, dê dois cliques em **`Testar no emulador.bat`** (raiz do projeto): ele compila o
-APK de debug, liga o emulador `Redmi_Note_14_Pro_Plus_5G` se estiver desligado, instala, abre o jogo
+Só teste manual (nada automatizado roda no emulador). Para testar à mão, dê dois cliques em
+**`Testar no emulador.bat`** (raiz do projeto): ele compila o APK de debug, liga o emulador `Redmi_Note_14_Pro_Plus_5G` se estiver desligado, instala, abre o jogo
 e fica mostrando o log do Godot. Pela linha de comando aceita opções:
 
 ```bash
@@ -159,8 +139,8 @@ powershell -ExecutionPolicy Bypass -File tools\run_emulator.ps1 -NoBuild -Scenar
 ```
 
 `-NoBuild` reinstala o último APK sem compilar, `-Scenario X` abre num dos cenários abaixo, `-NoLog`
-encerra assim que o jogo abre e `-Avd Galaxy_M55_5G` ou `-Avd Pixel_7` usa outro aparelho-alvo (o
-emulador ligado é trocado; vale também para os scripts de release).
+encerra assim que o jogo abre e `-Avd Galaxy_M55_5G` ou `-Avd Pixel_7` usa outro AVD
+(criado no Device Manager do Android Studio; o emulador ligado é trocado; vale também para o script de release).
 
 Para jogar a **build de produção** (APK de release otimizado e assinado), dois cliques em
 **`Testar release no emulador.bat`** (`tools\run_emulator_release.ps1`, aceita `-NoBuild` e `-NoLog`).

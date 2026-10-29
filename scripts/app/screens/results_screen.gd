@@ -16,6 +16,8 @@ extends Screen
 ## Margem nas bordas e espaço entre as colunas; as colunas dividem a largura útil (já sem a área
 ## segura) nestas proporções, que em 678x305 dão as larguras 196, 258 e 188 de sempre.
 const MARGIN := 10.0
+## Atualizações por segundo do pulso do botão principal (troca a caixa de estilo).
+const PULSE_HZ := 20.0
 const GAP := 8.0
 const SHARES: Array[float] = [196.0, 258.0, 188.0]
 ## Entrada: atraso de cada coluna, duração do deslize e deslocamento inicial.
@@ -74,6 +76,10 @@ var _columns: Array[Control] = []
 var _rects: Array[Rect2] = []
 var _portrait: TextureRect
 var _portrait_fx: Control
+## Céu fixo atrás das partículas (ver _draw).
+var _sky_layer: ResultsSky
+## Passo do pulso do "Jogar de novo" já aplicado (PULSE_HZ).
+var _pulse_step := -1
 var _title: Label
 var _subtitle: Label
 var _record: PanelContainer
@@ -112,6 +118,10 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	# O céu do amanhecer (ou da noite) cobre a tela toda: o fundo dos menus não precisa desenhar.
+	opaque_background = true
+	_sky_layer = ResultsSky.new()
+	add_child(_sky_layer)
 	clip_contents = true
 	_layout()
 	_columns.append(_build_left())
@@ -163,6 +173,9 @@ func _process(delta: float) -> void:
 			_set_buttons_armed(true)
 	_move_motes(delta)
 	_apply_timeline()
+	# Lista rolando pelo dedo: partículas e brilho do retrato esperam (TouchScroll.busy).
+	if TouchScroll.busy():
+		return
 	queue_redraw()
 	_portrait_fx.queue_redraw()
 
@@ -204,9 +217,16 @@ func _apply_timeline() -> void:
 	for row: Dictionary in _rows:
 		_size_bar(row, grow)
 	if _again_style != null:
+		# Mudar a caixa avisa o tema do botão e refaz o layout da coluna: o pulso (lento, 2 s) é
+		# atualizado a PULSE_HZ e espera enquanto a lista rola pelo dedo.
 		var pulse := 0.0 if _calm or _guard > 0.0 else 0.5 + 0.5 * sin(_t * 3.2)
-		_again_style.shadow_color = Color(ThemeFactory.ACCENT, 0.2 + 0.25 * pulse)
-		_again_style.border_color = ThemeFactory.ACCENT.lerp(Color.WHITE, 0.35 * pulse)
+		var step := floori(_t * PULSE_HZ)
+		if (step != _pulse_step and not TouchScroll.busy()) or pulse == 0.0:
+			_pulse_step = step
+			var shadow := Color(ThemeFactory.ACCENT, 0.2 + 0.25 * pulse)
+			if _again_style.shadow_color != shadow:
+				_again_style.shadow_color = shadow
+				_again_style.border_color = ThemeFactory.ACCENT.lerp(Color.WHITE, 0.35 * pulse)
 
 
 func _column_rect(i: int) -> Rect2:
@@ -1132,54 +1152,14 @@ func _area() -> Vector2:
 	return size if size.x > 1.0 and size.y > 1.0 else Vector2(678, 305)
 
 
+## A cada quadro só as partículas; o céu fica numa camada atrás (ResultsSky), refeita só quando
+## muda (o tamanho já a refaz sozinho).
 func _draw() -> void:
 	if _result.is_empty():
 		return
-	var area := _area()
-	var sky: Array = _mood["sky"]
-	var horizon := area.y * (0.78 if _victory else 1.0)
-	for i: int in range(sky.size() - 1):
-		var y0 := horizon * i / (sky.size() - 1)
-		var y1 := horizon * (i + 1) / (sky.size() - 1)
-		draw_polygon(PackedVector2Array([Vector2(0, y0), Vector2(area.x, y0), Vector2(area.x, y1), Vector2(0, y1)]),
-				PackedColorArray([sky[i], sky[i], sky[i + 1], sky[i + 1]]))
-	if _victory:
-		_draw_dawn(area, horizon)
-	else:
-		_draw_embers(area)
+	_sky_layer.set_sky(_mood["sky"], _victory, _rects[0].get_center().x if not _rects.is_empty() else 0.0)
 	for i: int in range(_motes.size()):
 		_draw_mote(i)
-
-
-func _draw_dawn(area: Vector2, horizon: float) -> void:
-	var sun := Vector2(_rects[0].get_center().x, horizon + 6.0)
-	for k: int in range(4):
-		draw_circle(sun, 70.0 - k * 14.0, Color(1.0, 0.85, 0.5, 0.08 + k * 0.05))
-	draw_circle(sun, 22.0, Color("ffe7a8"))
-	# Montanhas distantes e o chão escuro abaixo do horizonte.
-	var hills := PackedVector2Array([Vector2(0, area.y)])
-	for x: int in range(0, int(area.x) + 24, 24):
-		hills.append(Vector2(x, horizon - 6.0 - 10.0 * absf(sin(x * 0.013)) - 6.0 * absf(sin(x * 0.041))))
-	hills.append(Vector2(area.x, area.y))
-	draw_colored_polygon(hills, Color("3b2240"))
-	draw_rect(Rect2(0, horizon + 4.0, area.x, area.y - horizon), Color("24142a"))
-
-
-func _draw_embers(area: Vector2) -> void:
-	# Vinheta avermelhada nas bordas: anel de quatro trapézios que somem para dentro.
-	var inset := 70.0
-	var outer := [Vector2.ZERO, Vector2(area.x, 0), area, Vector2(0, area.y)]
-	var inner := [Vector2(inset, inset), Vector2(area.x - inset, inset), area - Vector2(inset, inset),
-			Vector2(inset, area.y - inset)]
-	var red := Color(0.5, 0.06, 0.05, 0.38)
-	var clear := Color(0.5, 0.06, 0.05, 0.0)
-	for i: int in range(4):
-		var j := (i + 1) % 4
-		draw_polygon(PackedVector2Array([outer[i], outer[j], inner[j], inner[i]]),
-				PackedColorArray([red, red, clear, clear]))
-	# Brasa baixa no chão.
-	draw_polygon(PackedVector2Array([Vector2(0, area.y - 50), Vector2(area.x, area.y - 50), area, Vector2(0, area.y)]),
-			PackedColorArray([clear, clear, Color(0.6, 0.12, 0.05, 0.3), Color(0.6, 0.12, 0.05, 0.3)]))
 
 
 func _draw_mote(i: int) -> void:

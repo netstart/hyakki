@@ -30,6 +30,8 @@ var auto_answer: bool = false
 
 var _layer: CanvasLayer
 var _admob: AdMobProvider
+## Verdadeiro enquanto um recompensado está na tela (AdMob ou simulado): um pedido só por vez.
+var _showing: bool = false
 
 
 func _ready() -> void:
@@ -48,10 +50,6 @@ func _ready() -> void:
 		# Nada do SDK: nem o provedor real é criado.
 		provider = "off"
 		return
-	# Roteiro E2E no emulador: anúncio simulado que responde sozinho (o AdMob abre outra Activity).
-	if OS.is_debug_build() and FileAccess.file_exists(E2EDriver.FILE):
-		provider = "forced_mock"
-		auto_answer = true
 	if provider == "mock" and AdMobProvider.is_supported():
 		provider = "admob"
 		_admob = AdMobProvider.new()
@@ -102,26 +100,39 @@ func rewarded_available() -> bool:
 
 ## Anúncio recompensado. `done(rewarded)` só recebe true se assistido até o fim (17.3).
 ## De presente (rewards_are_gifts()): entrega na hora (done(true)), sem tela nenhuma.
+## Um pedido feito enquanto outro anúncio ainda está na tela (toque repetido, sinal
+## duplicado) é ignorado: não abre um segundo anúncio e não chama o `done` dele, para não
+## dar como recusado o anúncio que o jogador está assistindo.
 func show_rewarded(placement: String, done: Callable) -> void:
 	if rewards_are_gifts():
 		ad_finished.emit(placement, true)
 		done.call(true)
 		return
+	if _showing:
+		push_warning("AdsManager: pedido de anúncio (%s) ignorado, já há um na tela" % placement)
+		return
 	if not rewarded_available():
 		done.call(false)
 		return
+	_showing = true
 	if provider == "admob":
 		var tree := get_tree()
 		var was_paused := tree.paused
 		tree.paused = true
 		_muted(true)
 		_admob.show_rewarded(func(rewarded: bool) -> void:
+			_showing = false
 			_muted(false)
 			tree.paused = was_paused
 			ad_finished.emit(placement, rewarded)
 			done.call(rewarded))
 		return
 	_show_mock(placement, done)
+
+
+## Há um recompensado na tela agora (o próximo pedido seria ignorado).
+func is_showing() -> bool:
+	return _showing
 
 
 func _muted(on: bool) -> void:
@@ -177,6 +188,7 @@ func _show_mock(placement: String, done: Callable) -> void:
 		if bool(state["done"]):
 			return
 		state["done"] = true
+		_showing = false
 		AudioServer.set_bus_mute(AudioServer.get_bus_index("Master"), false)
 		AudioManager.apply_volumes()
 		tree.paused = was_paused

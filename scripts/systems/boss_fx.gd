@@ -226,7 +226,7 @@ func _draw_portals(time: float) -> void:
 			var spin := time * (2.0 + ring) * (1.0 if ring % 2 == 0 else -1.0)
 			for seg: int in range(6):
 				var start := spin + seg * TAU / 6.0
-				draw_arc(Vector2.ZERO, r * (0.5 + 0.25 * ring), start, start + 0.6, 6, Color(color, 0.8 * fade), 1.5)
+				Stroke.arc(self, Vector2.ZERO, r * (0.5 + 0.25 * ring), start, start + 0.6, 6, Color(color, 0.8 * fade), 1.5)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -246,9 +246,9 @@ func _draw_telegraphs(time: float) -> void:
 			var segs := 10 if r > 25.0 else 6
 			for seg: int in range(segs):
 				var start := time * 2.5 + seg * TAU / segs
-				draw_arc(at, r + 1.0, start, start + PI / segs, 4, Color(WARN, 0.9), 1.5)
+				Stroke.arc(self, at, r + 1.0, start, start + PI / segs, 4, Color(WARN, 0.9), 1.5)
 			# Anel que fecha: quando encosta no centro, o golpe cai.
-			draw_arc(at, maxf(1.0, r * (1.0 - k)), 0.0, TAU, 24, Color(1.0, 0.85, 0.7, 0.35 + 0.5 * k), 1.0)
+			Stroke.arc(self, at, maxf(1.0, r * (1.0 - k)), 0.0, TAU, 24, Color(1.0, 0.85, 0.7, 0.35 + 0.5 * k), 1.0)
 			if left < 0.3 and int(time * 16.0) % 2 == 0:
 				draw_rect(Rect2(at + Vector2(-1, -6), Vector2(2, 7)), Color(1.0, 0.95, 0.9, 0.9))
 				draw_rect(Rect2(at + Vector2(-1, 3), Vector2(2, 2)), Color(1.0, 0.95, 0.9, 0.9))
@@ -260,13 +260,13 @@ func _draw_telegraphs(time: float) -> void:
 			for s: int in range(13):
 				pts.append(at + Vector2.from_angle(a0 + sweep * s / 12.0) * length)
 			var pulse := 0.5 + 0.5 * sin(time * 14.0)
-			draw_colored_polygon(pts, Color(WARN, 0.07 + 0.08 * pulse))
-			draw_arc(at, length, a0, a0 + sweep, 16, Color(WARN, 0.6), 1.0)
+			Stroke.convex(self, pts, Color(WARN, 0.07 + 0.08 * pulse))
+			Stroke.arc(self, at, length, a0, a0 + sweep, 16, Color(WARN, 0.6), 1.0)
 		elif kind == AreaEffects.Kind.HAZARD_POOL and float(e["life"]) > float(e["max_life"]):
 			var r := float(e["radius"])
 			for seg: int in range(8):
 				var start := -time * 2.0 + seg * TAU / 8.0
-				draw_arc(at, r + 1.0, start, start + 0.35, 3, Color(0.5, 0.75, 1.0, 0.9), 1.5)
+				Stroke.arc(self, at, r + 1.0, start, start + 0.35, 3, Color(0.5, 0.75, 1.0, 0.9), 1.5)
 
 
 func _draw_charge_line(boss: Dictionary, time: float) -> void:
@@ -283,10 +283,10 @@ func _draw_charge_line(boss: Dictionary, time: float) -> void:
 	while d < length:
 		var p := from + dir * d
 		var a := 0.35 + 0.55 * (d / length)
-		draw_polyline(PackedVector2Array([p - dir * 4.0 + side * 5.0, p, p - dir * 4.0 - side * 5.0]),
+		Stroke.line(self, PackedVector2Array([p - dir * 4.0 + side * 5.0, p, p - dir * 4.0 - side * 5.0]),
 				Color(1.0, 0.35, 0.25, a), 2.0)
 		d += 18.0
-	draw_arc(to, 8.0, 0.0, TAU, 16, Color(WARN, 0.8), 1.5)
+	Stroke.arc(self, to, 8.0, 0.0, TAU, 16, Color(WARN, 0.8), 1.5)
 
 
 func _draw_corpse(d: Dictionary) -> void:
@@ -335,7 +335,7 @@ func _draw_glow() -> void:
 			for k: int in range(7):
 				var x := (k - 3) * r * 0.25
 				var h := r * (0.7 + 0.35 * sin(time * 11.0 + k * 1.9))
-				_add.draw_colored_polygon(PackedVector2Array([at + Vector2(x - 4, 0), at + Vector2(x, -h),
+				Stroke.convex(_add, PackedVector2Array([at + Vector2(x - 4, 0), at + Vector2(x, -h),
 						at + Vector2(x + 4, 0)]), Color(1.0, 0.3 + 0.05 * k, 0.1, 0.35 * pulse))
 	for d: Dictionary in _deaths:
 		var t := float(d["t"])

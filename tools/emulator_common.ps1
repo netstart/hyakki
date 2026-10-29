@@ -1,50 +1,34 @@
-﻿# Aparelhos-alvo dos testes no emulador Android (AVDs) e funções comuns aos scripts do emulador.
-# Carregado com ". (Join-Path $PSScriptRoot 'test_devices.ps1')" por run_emulator.ps1, run_e2e.ps1,
-# run_emulator_release.ps1, build_release.ps1 e create_test_avds.ps1.
+﻿# Funções comuns aos scripts de teste MANUAL no emulador Android (run_emulator.ps1,
+# run_emulator_release.ps1, build_release.ps1): ligar o AVD, esperar o boot, ligar o recorte de
+# câmera emulado e desligar o emulador travado. Carregado com
+# ". (Join-Path $PSScriptRoot 'emulator_common.ps1')".
 #
-# Toda versão nova passa pelo E2E nos quatro (veja AGENTS.md, "Política de testes automatizados").
-# Resolução lógica = física / 4 (a do Godot com o stretch do projeto).
-#   Redmi Note 14 Pro+ 5G   2712x1220  480 dpi   -> 678x305
-#   Samsung Galaxy M55 5G   2400x1080  450 dpi   -> 600x270   furo central de câmera (cutout emulado)
-#   Google Pixel 7          2400x1080  420 dpi   -> 600x270   furo central de câmera (cutout emulado)
-#   Samsung Galaxy A15      2340x1080  450 dpi   -> 585x270   gota d'água (notch em U); emulado com o
-#                                                             furo central ('hole'), o overlay mais próximo
+# Testes automatizados no emulador Android são proibidos (AGENTS.md, "Política de testes
+# automatizados"): o emulador serve só para uma pessoa jogar e conferir à mão. Os testes por
+# resolução rodam só no Godot, com os perfis de tests/device_profiles.gd.
 #
-# Base = definição de aparelho do avdmanager usada para criar o AVD; tela e densidade são
-# ajustadas depois no config.ini. Cutout = overlay de recorte de tela do Android
-# (com.android.internal.display.cutout.emulation.<Cutout>), ligado depois do boot.
+# AVDs conhecidos (criados à mão no Device Manager do Android Studio, com a tela de cada aparelho):
+# o recorte de câmera emulado (com.android.internal.display.cutout.emulation.<Cutout>) é ligado
+# depois do boot. AVD fora da lista também vale, sem recorte.
 
-$TestDevices = @(
-    [pscustomobject]@{ Avd = 'Redmi_Note_14_Pro_Plus_5G'; Label = 'Redmi Note 14 Pro+ 5G'; Base = 'pixel_6_pro'
-        Manufacturer = 'Xiaomi'; Width = 1220; Height = 2712; Density = 480; Cutout = 'hole' }
-    [pscustomobject]@{ Avd = 'Galaxy_M55_5G'; Label = 'Samsung Galaxy M55 5G'; Base = 'pixel_7'
-        Manufacturer = 'Samsung'; Width = 1080; Height = 2400; Density = 450; Cutout = 'hole' }
-    [pscustomobject]@{ Avd = 'Pixel_7'; Label = 'Google Pixel 7'; Base = 'pixel_7'
-        Manufacturer = 'Google'; Width = 1080; Height = 2400; Density = 420; Cutout = 'hole' }
-    # A15 4G (SM-A155F) / A15 5G (SM-A156B): notch em gota; o Android não tem overlay de gota, 'hole' é o mais próximo.
-    [pscustomobject]@{ Avd = 'Galaxy_A15'; Label = 'Samsung Galaxy A15'; Base = 'pixel_7'
-        Manufacturer = 'Samsung'; Width = 1080; Height = 2340; Density = 450; Cutout = 'hole' }
-    # S24 Ultra (SM-S928B) / S25 Ultra (SM-S938B), mesma tela 3120x1440, na resolução nativa QHD+; o FHD+ de fábrica já é coberto pelo Galaxy_A15 (585x270).
-    [pscustomobject]@{ Avd = 'Galaxy_S24_Ultra'; Label = 'Samsung Galaxy S24 Ultra (QHD+)'; Base = 'pixel_7'
-        Manufacturer = 'Samsung'; Width = 1440; Height = 3120; Density = 600; Cutout = 'hole' }
+$EmulatorDevices = @(
+    [pscustomobject]@{ Avd = 'Redmi_Note_14_Pro_Plus_5G'; Label = 'Redmi Note 14 Pro+ 5G'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_M55_5G'; Label = 'Samsung Galaxy M55 5G'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Pixel_7'; Label = 'Google Pixel 7'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_A15'; Label = 'Samsung Galaxy A15'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_S24_Ultra'; Label = 'Samsung Galaxy S24 Ultra (QHD+)'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_Tab_S9'; Label = 'Samsung Galaxy Tab S9'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Tablet_4x3'; Label = 'Tablet 4:3 (2048x1536)'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_A05'; Label = 'Samsung Galaxy A05 (HD+)'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_Z_Fold_Open'; Label = 'Samsung Galaxy Z Fold (aberto)'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Galaxy_Z_Fold_Cover'; Label = 'Samsung Galaxy Z Fold (fechado)'; Cutout = 'hole' }
+    [pscustomobject]@{ Avd = 'Xperia_1'; Label = 'Sony Xperia 1 (21:9)'; Cutout = 'hole' }
 )
 
 $CutoutOverlayPrefix = 'com.android.internal.display.cutout.emulation'
 
-function Get-TestDevice([string]$Name) {
-    $TestDevices | Where-Object { $_.Avd -eq $Name } | Select-Object -First 1
-}
-
-# "all" (ou vazio) = todos da tabela; senão uma lista separada por vírgula. AVDs fora da tabela também
-# valem (sem cutout), para testar outro emulador à mão.
-function Resolve-TestDevices([string]$Spec) {
-    if (-not $Spec -or $Spec -eq 'all') { return @($TestDevices) }
-    @($Spec -split '[,;\s]+' | Where-Object { $_ } | ForEach-Object {
-        $d = Get-TestDevice $_
-        if ($d) { $d } else {
-            [pscustomobject]@{ Avd = $_; Label = $_; Base = ''; Manufacturer = ''; Width = 0; Height = 0; Density = 0; Cutout = '' }
-        }
-    })
+function Get-EmulatorDevice([string]$Name) {
+    $EmulatorDevices | Where-Object { $_.Avd -eq $Name } | Select-Object -First 1
 }
 
 function Test-AvdExists([string]$Name) {
@@ -81,8 +65,7 @@ function Get-RunningEmulators([string]$Adb) {
     })
 }
 
-# Desliga os emuladores que não são o AVD pedido (um por vez: o E2E manda toques para o único
-# aparelho ligado) e espera eles sumirem do adb.
+# Desliga os emuladores que não são o AVD pedido (um ligado por vez) e espera eles sumirem do adb.
 function Stop-OtherEmulators([string]$Adb, [string]$Avd) {
     $ErrorActionPreference = 'Continue'
     $others = @(Get-RunningEmulators $Adb | Where-Object { $_.Avd -ne $Avd })
@@ -137,7 +120,11 @@ function Wait-EmulatorFor([string]$Adb, [string]$Avd, [int]$Minutes = 8) {
         # O emulador fechou sozinho (ex.: falha ao carregar o snapshot): não adianta esperar o resto.
         $alive = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'qemu-system%' OR Name = 'emulator.exe'" -ErrorAction SilentlyContinue |
             Where-Object { $_.CommandLine -match $pattern })
-        if (-not $alive.Count -and ((Get-Date) - $since).TotalSeconds -gt 60) { return $null }
+        if (-not $alive.Count -and ((Get-Date) - $since).TotalSeconds -gt 20) {
+            $why = Get-EmulatorFailure $Avd
+            Write-Host "O emulador $Avd fechou sozinho$(if ($why) { ": $why" })" -ForegroundColor Yellow
+            return $null
+        }
         $e = Get-RunningEmulators $Adb | Where-Object { $_.State -eq 'device' -and $_.Avd -eq $Avd } | Select-Object -First 1
         # Com tempo-limite: um emulador congelado deixa o "adb shell" pendurado para sempre.
         $boot = if ($e) { Invoke-AdbTimeout $Adb @('-s', $e.Serial, 'shell', 'getprop', 'sys.boot_completed') 15 }
@@ -147,15 +134,16 @@ function Wait-EmulatorFor([string]$Adb, [string]$Avd, [int]$Minutes = 8) {
     return $null
 }
 
-# Regra "Emulador travado" (AGENTS.md): espera o AVD até $Minutes; se não responder (boot congelado ou
+# Emulador travado: espera o AVD até $Minutes; se não responder (boot congelado ou
 # adb pendurado), desliga à força, liga de novo do mesmo jeito e espera mais $Minutes. Uma só nova
 # tentativa: devolve o serial ou $null.
-function Wait-EmulatorReady([string]$Adb, [string]$AndroidSdk, [string]$Avd, [int]$Minutes = 8, [switch]$NoWindow) {
+function Wait-EmulatorReady([string]$Adb, [string]$AndroidSdk, [string]$Avd, [int]$Minutes = 8) {
     $serial = Wait-EmulatorFor $Adb $Avd $Minutes
     if ($serial) { return $serial }
     Write-Host "O emulador $Avd não respondeu em $Minutes minutos (ou fechou sozinho): desligando à força e ligando de novo" -ForegroundColor Yellow
     Stop-EmulatorProcess $Adb $Avd
-    Start-EmulatorFor $Adb $AndroidSdk $Avd -NoWindow:$NoWindow | Out-Null
+    try { Start-EmulatorFor $Adb $AndroidSdk $Avd | Out-Null } catch {
+        Write-Host "FALHOU: $($_.Exception.Message)" -ForegroundColor Red; return $null }
     return (Wait-EmulatorFor $Adb $Avd $Minutes)
 }
 
@@ -163,7 +151,7 @@ function Wait-EmulatorReady([string]$Adb, [string]$AndroidSdk, [string]$Avd, [in
 # mas é reaplicado a cada execução. Devolve o texto do overlay ativo ('' = nenhum).
 function Set-EmulatorCutout([string]$Adb, [string]$Serial, [string]$Avd) {
     $ErrorActionPreference = 'Continue'
-    $d = Get-TestDevice $Avd
+    $d = Get-EmulatorDevice $Avd
     $want = if ($d -and $d.Cutout) { "$CutoutOverlayPrefix.$($d.Cutout)" } else { '' }
     # Com tempo-limite: com o system_server engasgado, "cmd overlay" fica pendurado para sempre.
     $list = ((Invoke-AdbTimeout $Adb @('-s', $Serial, 'shell', 'cmd', 'overlay', 'list') 30) -split "`r?`n") |
@@ -188,23 +176,71 @@ function Set-EmulatorCutout([string]$Adb, [string]$Serial, [string]$Avd) {
 
 # Liga o emulador do AVD num processo independente (WMI: não morre com o terminal), depois de
 # desligar os outros. Não espera o boot (use Wait-EmulatorFor).
-function Start-EmulatorFor([string]$Adb, [string]$AndroidSdk, [string]$Avd, [switch]$NoWindow) {
+function Start-EmulatorFor([string]$Adb, [string]$AndroidSdk, [string]$Avd) {
     $ErrorActionPreference = 'Continue'
     Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
         CommandLine = "`"$Adb`" start-server"; CurrentDirectory = (Split-Path $Adb) } | Out-Null
     Start-Sleep -Seconds 2
     if (-not (Test-AvdExists $Avd)) {
-        throw "o AVD $Avd não existe; crie com: powershell -ExecutionPolicy Bypass -File tools\create_test_avds.ps1"
+        throw "o AVD $Avd não existe; crie-o no Device Manager do Android Studio (ou use -Avd com um AVD que já existe)"
     }
     Stop-OtherEmulators $Adb $Avd
     if (Get-RunningEmulators $Adb | Where-Object { $_.Avd -eq $Avd }) { return $false }
     Write-Host "== Ligando o emulador ($Avd)" -ForegroundColor Cyan
-    Remove-Item "$env:USERPROFILE\.android\avd\$Avd.avd\*.lock" -Recurse -Force -ErrorAction SilentlyContinue
+    $avdDir = Join-Path $env:USERPROFILE ".android\avd\$Avd.avd"
+    Remove-Item "$avdDir\*.lock" -Recurse -Force -ErrorAction SilentlyContinue
+    # RAM do convidado em arquivo (snapshots\default_boot\ram.img, 2,5 a 4 GB por AVD) que sobra de
+    # execuções antigas: com -no-snapshot ela nunca é carregada, só ocupa o disco.
+    Remove-Item "$avdDir\snapshots\default_boot\ram.img" -Force -ErrorAction SilentlyContinue
+    Assert-EmulatorDiskSpace $Avd
     # -no-snapshot: boot a frio (~30 s), sem carregar nem salvar o snapshot rápido. O snapshot salvo
     # pelo "emu kill" voltava com o system_server engasgado (cmd overlay/dumpsys pendurados, app que
     # abre e não passa da inicialização) ou nem subia.
-    $extra = ' -no-snapshot' + $(if ($NoWindow) { ' -no-window' } else { '' })
+    # -feature -QuickbootFileBacked: a RAM do convidado fica na memória, não num ram.img do tamanho da
+    # RAM gravado no disco a cada boot (sem snapshot ele não serve para nada; e boota mais rápido).
+    $extra = ' -no-snapshot -feature -QuickbootFileBacked'
+    # Saída do emulador num log: se ele fechar sozinho (ex.: FATAL de disco), o motivo aparece.
+    $log = Get-EmulatorLogPath $Avd
+    Remove-Item $log -Force -ErrorAction SilentlyContinue
+    $emu = Join-Path $AndroidSdk 'emulator\emulator.exe'
     Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{
-        CommandLine = "`"$(Join-Path $AndroidSdk 'emulator\emulator.exe')`" -avd $Avd -no-boot-anim$extra" } | Out-Null
+        CommandLine = "cmd.exe /d /c `"`"$emu`" -avd $Avd -no-boot-anim$extra > `"$log`" 2>&1`"" } | Out-Null
     return $true
+}
+
+function Get-EmulatorLogPath([string]$Avd) {
+    Join-Path $env:USERPROFILE ".android\avd\$Avd.avd\hyakki-emulator.log"
+}
+
+# Motivo de o emulador ter fechado sozinho: linhas FATAL/ERROR do log da última vez que ele foi ligado.
+function Get-EmulatorFailure([string]$Avd) {
+    $log = Get-EmulatorLogPath $Avd
+    if (-not (Test-Path $log)) { return '' }
+    $bad = @(Get-Content $log -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*(FATAL|ERROR)\b' } |
+        ForEach-Object { ($_ -replace '^\s*(FATAL|ERROR)\s*\|\s*', '').Trim() } | Select-Object -First 3)
+    $bad -join ' | '
+}
+
+# Espaço em disco: AVD sem userdata ainda (1º boot) precisa de 1,2 x a partição de dados livre, senão o
+# emulador fecha com "Not enough space to create userdata partition" (e o boot parecia só travado).
+# Com userdata, sobra uma folga para ela crescer durante o uso.
+function Assert-EmulatorDiskSpace([string]$Avd) {
+    $avdDir = Join-Path $env:USERPROFILE ".android\avd\$Avd.avd"
+    $iniPath = Join-Path $avdDir 'config.ini'
+    $dataBytes = [double]6GB
+    if (Test-Path $iniPath) {
+        $line = Get-Content $iniPath | Where-Object { $_ -match '^\s*disk\.dataPartition\.size\s*=\s*(\d+)\s*([KMG]?)' } | Select-Object -First 1
+        if ($line -and $line -match '=\s*(\d+)\s*([KMG]?)') {
+            $mult = @{ '' = 1; 'K' = 1KB; 'M' = 1MB; 'G' = 1GB }[$Matches[2].ToUpper()]
+            $dataBytes = [double]$Matches[1] * $mult
+        }
+    }
+    $firstBoot = -not (Test-Path (Join-Path $avdDir 'userdata-qemu.img'))
+    $need = if ($firstBoot) { $dataBytes * 1.2 + 1GB } else { [double]2GB }
+    $drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($avdDir))
+    if ($drive.AvailableFreeSpace -lt $need) {
+        throw ("disco cheio para o emulador {0}: {1:N1} GB livres em {2}, precisa de {3:N1} GB{4}. Libere espaço (ex.: AVDs e snapshots antigos em {5})" -f
+            $Avd, ($drive.AvailableFreeSpace / 1GB), $drive.Name, ($need / 1GB),
+            $(if ($firstBoot) { ' (1º boot: cria a partição de dados)' } else { '' }), (Split-Path $avdDir))
+    }
 }

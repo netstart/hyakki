@@ -114,7 +114,7 @@ func draw(canvas: CanvasItem) -> void:
 	var ghosts := mini(4, FxLayer.trail_points / 3)
 	var dir := signf(raw("speed")) if raw("speed") != 0.0 else 1.0
 	if evolved and FxLayer.wfx > 0:
-		canvas.draw_arc(center, r, 0.0, TAU, 40, Color(fx_color(), 0.22), 1.0)
+		Stroke.arc(canvas, center, r, 0.0, TAU, 40, Color(fx_color(), 0.22), 1.0)
 	for k: int in range(amount()):
 		var angle := _angle + TAU * k / float(maxi(1, amount()))
 		for g: int in range(ghosts, 0, -1):
