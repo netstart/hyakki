@@ -127,6 +127,10 @@ nem testa no emulador; para jogar a build à mão use `Testar release no emulado
   presente e a compra "Apoiar o jogo" some. Preenchidos os IDs, tudo volta sozinho.
 - **Compras:** Google Play Billing real; só funciona com o app publicado na Play Console (teste interno) e
   um aparelho com Play Store. No emulador sem Play Store a compra responde "não concluída".
+- **Backup do save:** o addon `addons/hyakki_android_backup` (ligado no `project.godot`) liga o Auto Backup do
+  Android a cada export Gradle: escreve em `android/build` (não versionada) as regras `res/xml/hyakki_*.xml` e
+  os manifestos de `src/standardDebug`/`src/standardRelease` com `allowBackup="true"`, só para `save.json`,
+  `save.bak` e `settings.cfg` (tudo o mais fica fora). Testes: `tests/android_backup_tests.gd`.
 
 ## Testes manuais no aparelho (build de debug)
 

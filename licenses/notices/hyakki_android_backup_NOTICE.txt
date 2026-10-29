@@ -1,0 +1,11 @@
+Hyakki - Android backup export plugin (addons/hyakki_android_backup/)
+
+Copyright (c) 2026 Clayton K. N. Passos and the Hyakki project contributors.
+
+This editor/export plugin is original code of the Hyakki project. On every Android Gradle
+export it writes the Android Auto Backup rules (fullBackupContent and dataExtractionRules)
+and the standardDebug/standardRelease manifests that turn backup on only for the player's
+save and settings files. No third-party code was used.
+
+Licensed under the MIT License (same as the Hyakki source code).
+Full text: licenses/texts/MIT-Hyakki.txt

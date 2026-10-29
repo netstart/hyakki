@@ -8,7 +8,7 @@
 > mesmo conteúdo. Revise a seção "Anúncios" se mudar a rede de anúncios, o SDK ou se passar a haver
 > servidor próprio, e atualize a data. Guia de publicação: `docs/store/play-console-guia.md`.
 
-Última atualização: 28 de outubro de 2026
+Última atualização: 29 de outubro de 2026
 
 ## Português (Brasil)
 
@@ -23,9 +23,12 @@ abrir o jogo. Nenhum anúncio interrompe uma partida. O jogo pede seu consentime
 
 **O que fica no seu aparelho.** O progresso (ryō, desbloqueios, conquistas, configurações), uma
 partida suspensa e um registro local das partidas, usado só para equilibrar o jogo dentro do próprio
-aparelho, ficam salvos apenas na memória interna do aparelho. Esses dados não são enviados a nós nem
-a terceiros. O backup automático do Android está desligado para este jogo. Apagar o app ou usar
-Opções › Apagar progresso remove tudo, de forma definitiva.
+aparelho, ficam salvos na memória interna do aparelho. Esses dados não são enviados a nós nem a
+terceiros. Se o backup do Android estiver ligado no aparelho, o progresso, a partida suspensa e as
+configurações (não o registro das partidas) podem entrar no backup da sua própria conta Google
+(Google Drive, criptografado no Android 9 ou superior) e voltar ao reinstalar o jogo ou trocar de
+celular; você controla isso nas configurações do aparelho. Apagar o app ou usar Opções › Apagar
+progresso remove tudo do aparelho, de forma definitiva.
 
 **Permissões.** O jogo funciona sem internet. As permissões de internet e de estado da rede existem
 para os anúncios e para a compra pelo Google Play; a vibração é usada nos efeitos do
@@ -58,8 +61,9 @@ dados, escreva para o contato acima.
 
 **Segurança, retenção e exclusão.** Não guardamos dados em servidores próprios, então não há nada a
 reter ou excluir do nosso lado. Os dados locais ficam até você apagar o progresso ou desinstalar o
-app. Dados tratados pelo Google seguem os prazos e as ferramentas do Google (por exemplo, a redefinição
-do ID de publicidade e <https://myaccount.google.com>).
+app; uma cópia no backup do Android fica na sua conta Google e segue as regras e as ferramentas de
+backup do Google. Dados tratados pelo Google seguem os prazos e as ferramentas do Google (por
+exemplo, a redefinição do ID de publicidade e <https://myaccount.google.com>).
 
 **Seus direitos (LGPD e GDPR).** Você pode pedir confirmação de tratamento, acesso, correção,
 exclusão, portabilidade e informações sobre compartilhamento, e retirar o consentimento a qualquer
@@ -84,10 +88,12 @@ you. The game shows only optional rewarded ads that you choose to watch; there i
 opens. No ad interrupts a run. The game asks for your consent where the law requires it.
 
 **What stays on your device.** Progress (ryō, unlocks, achievements, settings), a suspended run and
-a local log of runs, used only to balance the game on the device itself, are stored only in the
-device's internal storage. This data is not sent to us or to third parties. Android auto backup is
-turned off for this game. Uninstalling the app or using Options › Erase progress removes everything
-permanently.
+a local log of runs, used only to balance the game on the device itself, are stored in the device's
+internal storage. This data is not sent to us or to third parties. If Android backup is turned on
+for the device, your progress, suspended run and settings (not the run log) may be included in your
+own Google Account backup (Google Drive, encrypted on Android 9 or later) and come back when you
+reinstall the game or switch phones; you control this in the device settings. Uninstalling the app
+or using Options › Erase progress removes everything from the device permanently.
 
 **Permissions.** The game works offline. The internet and network-state permissions exist for ads
 and for purchases through Google Play; vibration is used for game effects and can be
@@ -117,7 +123,8 @@ from children under 13. If you are a parent or guardian and believe a child sent
 the contact above.
 
 **Security, retention and deletion.** We keep no data on our own servers, so there is nothing to
-retain or delete on our side. Local data stays until you erase your progress or uninstall the app.
+retain or delete on our side. Local data stays until you erase your progress or uninstall the app; a
+copy in the Android backup stays in your Google Account and follows Google's backup rules and tools.
 Data processed by Google follows Google's retention periods and tools (for example, resetting the
 advertising ID and <https://myaccount.google.com>).
 

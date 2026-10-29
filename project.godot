@@ -17,7 +17,7 @@ general/android/enable_r8_optimization=true
 
 config/name="Hyakki"
 config/description="Hyakki — Até o Amanhecer"
-config/version="1.11.1"
+config/version="1.12.0"
 run/main_scene="res://scenes/app/App.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -54,7 +54,7 @@ window/handheld/orientation=4
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/admob/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg")
+enabled=PackedStringArray("res://addons/admob/plugin.cfg", "res://addons/GodotGooglePlayBilling/plugin.cfg", "res://addons/hyakki_android_backup/plugin.cfg")
 
 [input_devices]
 

@@ -1,0 +1,11 @@
+Registro de origem - hyakki_android_backup (2026-10-29)
+
+Arquivos: addons/hyakki_android_backup/ (plugin.cfg, plugin.gd, export_plugin.gd, backup_rules.gd).
+Origem: código escrito pelo próprio projeto (EditorPlugin + EditorExportPlugin do Godot), sem
+código de terceiros. Não há página externa de origem: a fonte é este repositório.
+Função: a cada export Android com Gradle, escreve em android/build as regras do Auto Backup
+(res/xml/hyakki_backup_rules.xml e res/xml/hyakki_data_extraction_rules.xml) e os manifestos das
+variantes standardDebug/standardRelease (allowBackup="true"), só para save.json, save.bak e
+settings.cfg.
+Licença: MIT (a mesma do código do Hyakki, arquivo LICENSE).
+Testes: tests/android_backup_tests.gd (rodado por tests/run_tests.gd).

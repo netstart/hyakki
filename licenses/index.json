@@ -345,5 +345,19 @@
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/hyakki_portal_sfx_NOTICE.txt",
     "files_count": 9
+  },
+  {
+    "id": "hyakki_android_backup",
+    "name": "Hyakki - Android backup export plugin",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "license_id": "MIT",
+    "category": "plugin",
+    "version": "1.0.0 (2026-10-29)",
+    "downloaded_at": "2026-10-29",
+    "verified_at": "2026-10-29",
+    "modifications": "original work: Godot editor/export plugin that enables Android Auto Backup for the save and settings only",
+    "source_url": "addons/hyakki_android_backup/",
+    "license_file": "res://licenses/texts/MIT-Hyakki.txt",
+    "notice_file": "res://licenses/notices/hyakki_android_backup_NOTICE.txt"
   }
 ]

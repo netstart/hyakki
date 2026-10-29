@@ -31,6 +31,7 @@ Licenças do jogo, lidos do motor exportado (`Engine.get_copyright_info()`).
 | FreeMix - AssetsMix free demo (mid-boss monsters) | pixel-boy & AAA (challengerAAA) | LicenseRef-PixelBoy-AssetsMix | FreeMix.zip (itch.io upload 18782511, SHA-256 71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075; local copy and SHA-256 in C:/src/assets/pixelboy-freemix/) | sim | não | `licenses/texts/LicenseRef-PixelBoy-AssetsMix.txt` | https://pixel-boy.itch.io/free-mix |
 | Hyakki - Kakuriyo portal art | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_portal_fx.py (2026-10-28) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_portal_fx.py |
 | Hyakki - procedural portal and mid-boss sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_portal_sfx.py (2026-10-28) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_portal_sfx.py |
+| Hyakki - Android backup export plugin | Hyakki project (Clayton K. N. Passos) | MIT | 1.0.0 (2026-10-29) | sim | não | `licenses/texts/MIT-Hyakki.txt` | addons/hyakki_android_backup/ |
 
 Verificação: `python -I tools/check_licenses.py` (cobertura de todos os arquivos de `assets/`,
 hash das cópias, licenças permitidas, data de verificação). Snapshots das páginas de origem em

@@ -46,6 +46,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Google Mobile Ads SDK and UMP SDK** — Google LLC (LicenseRef-Google-Mobile-Ads-SDK) — https://developers.google.com/admob/android/quick-start
 - **GodotGooglePlayBilling** — Godot Engine contributors (MIT) — https://github.com/godot-sdk-integrations/godot-google-play-billing
 - **Google Play Billing Library** — Google LLC (LicenseRef-Google-Play-Billing-Library) — https://developer.android.com/google/play/billing
+- **Hyakki - Android backup export plugin** — Hyakki project (Clayton K. N. Passos) (MIT) — addons/hyakki_android_backup/
 
 ## Agradecimentos
 
