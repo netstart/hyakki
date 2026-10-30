@@ -19,6 +19,9 @@ extends Control
 ## nada; acima da cabeça da guardiã, ou ao lado dela quando não cabe em cima.
 
 signal closed
+## O balão só coube por cima de um retângulo "soft" do contexto (Próximas metas do título): quem o
+## mostrou esconde o bloco enquanto o balão fala (covered = true) e o volta quando ele some.
+signal soft_cover_changed(covered: bool)
 
 ## Estados: escondido, esperando para aparecer, letras aparecendo, parado e fechado pelo ×.
 enum { HIDDEN, WAITING, TYPING, IDLE, DISMISSED }
@@ -72,7 +75,8 @@ const TAP_LOCK_MS := 250
 
 static var _box_style: StyleBoxTexture
 
-## Devolve {view, insets, hero (Rect2), blockers (Array[Rect2])} no espaço do pai.
+## Devolve {view, insets, hero (Rect2), blockers (Array[Rect2]), soft (Array[Rect2], opcional:
+## evitados se der)} no espaço do pai.
 var context_provider: Callable = Callable()
 var _tip: Dictionary = {}
 var _text_value: String = ""
@@ -88,6 +92,7 @@ var _idle := 0.0
 var _shown_at := 0
 var _dirty := false
 var _tween: Tween
+var _covering := false
 
 
 
@@ -114,6 +119,9 @@ func _ready() -> void:
 	_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	add_child(_label)
 	set_process(false)
+	visibility_changed.connect(func() -> void:
+		if not visible:
+			_set_covering(false))
 
 
 # --- Layout puro ---------------------------------------------------------------------------
@@ -424,12 +432,24 @@ func relayout() -> void:
 	var blockers: Array[Rect2] = []
 	for r: Variant in ctx.get("blockers", []):
 		blockers.append(r as Rect2)
-	_layout = balloon_layout(ctx["view"], ctx["insets"], ctx["hero"], blockers, _text_value,
-			head_width(_category, font), chain_width(_icons.size(), bool(_tip.get("recipe", false))), font,
-			line_height())
+	var soft: Array[Rect2] = []
+	for r: Variant in ctx.get("soft", []):
+		soft.append(r as Rect2)
+	var head := head_width(_category, font)
+	var chain := chain_width(_icons.size(), bool(_tip.get("recipe", false)))
+	var all: Array[Rect2] = blockers.duplicate()
+	all.append_array(soft)
+	_layout = balloon_layout(ctx["view"], ctx["insets"], ctx["hero"], all, _text_value, head, chain, font, line_height())
+	var covering := false
+	if not bool(_layout.get("ok", false)) and not soft.is_empty():
+		# Sem lugar livre: pode cobrir o que é "soft" (quem o mostrou o esconde enquanto o balão fala).
+		_layout = balloon_layout(ctx["view"], ctx["insets"], ctx["hero"], blockers, _text_value, head, chain, font,
+				line_height())
+		covering = bool(_layout.get("ok", false))
 	if not bool(_layout.get("ok", false)):
 		visible = false
 		return
+	_set_covering(covering)
 	# O nó cobre o papel e o rabicho; o desenho e o texto ficam no espaço dele.
 	var box: Rect2 = _layout["box"]
 	var bounds := box
@@ -446,6 +466,17 @@ func relayout() -> void:
 	_label.update_minimum_size()
 	_label.size = text.size
 	_bake.invalidate()
+
+
+## O balão atual só coube por cima de um retângulo "soft" do contexto.
+func covers_soft() -> bool:
+	return _covering
+
+
+func _set_covering(on: bool) -> void:
+	if on != _covering:
+		_covering = on
+		soft_cover_changed.emit(on)
 
 
 func is_showing() -> bool:

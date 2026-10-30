@@ -12,7 +12,9 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   e às vezes 凶 com consolo em ryō, amarrado no galho) e uma roleta para em cada item. A sorte só mostra a
   contagem já sorteada; os 3 primeiros baús comuns do save saem com 中吉 garantido (o bot não usa nem gasta
   esses baús, então os testes de determinismo não dependem do save). Opção "Animação curta do baú".
-- Santuário (18 power-ups, reembolso total), 40 conquistas que desbloqueiam conteúdo, Diário do Guardião,
+- Santuário (18 power-ups, reembolso total), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
+  e mais 131 missões em 10 categorias, cada uma com recompensa e barra de progresso no Diário, e as
+  Próximas 3 metas no título e nos Resultados), Diário do Guardião,
   história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V.
 - Velocidade **1x / 2x / 3x** com passo fixo: a mesma semente gera a mesma partida em qualquer velocidade.
   2x e 3x são liberados pela **Ampulheta de Fūjin**, compra única e permanente na Loja: 3.000 ryō ou
@@ -71,6 +73,10 @@ powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1
 ```
 
 `-SkipStress` pula o estresse e `-NoOpen` não abre o navegador.
+
+Missões do Santuário sozinhas (dados, cada condição, recompensas, save, Próximas metas e uma partida pelo
+bot que conclui missões): `Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/mission_tests.tscn`
+(também rodam dentro de `tests/integration_tests.tscn`).
 
 ### Testes por resolução (só no Godot)
 
@@ -185,7 +191,7 @@ Depois abra o jogo: ele lê e apaga o arquivo. Cenários: `chest`, `kami`, `revi
 
 | O quê | Onde | Como regenerar |
 |---|---|---|
-| Dados do jogo | `data/*.json` | editar à mão; os testes de integração validam as referências |
+| Dados do jogo | `data/*.json` (missões: `data/missions.json`, nomes e descrições por modelo em `tools/i18n/missions.py`) | editar à mão; os testes de integração validam as referências |
 | Textos (11 idiomas) | `tools/i18n/*.py` → `i18n/strings.csv` | `python -I tools/build_i18n.py` |
 | Assets usados | `assets/` (cópia do que é usado; o pack bruto fica fora do repositório) | `python -I tools/sync_assets.py` |
 | Licenças | `licenses/registry.json` → `licenses/index.json`, `ASSET_LICENSES.md`, `CREDITS.md` | `python -I tools/fetch_licenses.py` e `python -I tools/build_license_index.py` |
@@ -202,7 +208,7 @@ scripts/core/                regras puras (StatBlock, progressão, grade espacia
 scripts/game/                partida (orquestrador), guardiã, mapa por chunks
 scripts/systems/             inimigos, chefes, projéteis, áreas, brasas, Kami, baú, lanterna, level-up, spawner
 scripts/weapons/             armas (uma classe por comportamento)
-scripts/meta/                meta-progressão, conquistas, registro da partida
+scripts/meta/                meta-progressão, conquistas e Missões do Santuário (MissionBook), registro da partida
 scripts/ui/ e scripts/app/   HUD, joystick, tema e telas
 tests/                       testes de regras e de integração
 tools/                       verificações, geradores, pipeline de assets e licenças, sync do site

@@ -7,7 +7,8 @@ extends Screen
 ##   brilho no amanhecer), título, fase/modo/lua, selo de recorde e o golpe final;
 ## - centro: 4 blocos de números (tempo, nível, abates, ryō) que contam do zero e o painel de
 ##   dano por arma (barras proporcionais à melhor arma, que ganha o selo MVP; rola se precisar);
-## - direita: conquistas novas, o próximo desbloqueio com barra de progresso, uma dica na
+## - direita: conquistas e missões novas, as Próximas metas (MissionGoals: 3 missões com barra e
+##   o "+N" que a partida somou), uma dica na
 ##   derrota (cartão 心得 do TipDeck, escolhido pelo motivo da derrota) e os botões: "Jogar de novo"
 ##   em destaque, "Dobrar ryō" por anúncio (17.6) e "Menu".
 ## O céu do fundo é desenhado em código (cinzas caindo na derrota, aurora e pétalas na vitória).
@@ -98,12 +99,8 @@ var _no_weapons: Label
 var _rows: Array[Dictionary] = []
 var _info_scroll: ScrollContainer
 var _achievements: VBoxContainer
-var _next_box: PanelContainer
-var _next_name: Label
-var _next_icon: TextureRect
-var _next_bar: ProgressBar
-var _next_detail: Label
-var _next_percent: Label
+## Próximas metas (MissionBook.next_goals) com o progresso que a partida somou.
+var _goals: MissionGoals
 var _tip_box: PanelContainer
 var _tip: TipBalloon.Card
 var _again: Button
@@ -188,6 +185,7 @@ func skip_intro() -> void:
 		tile["ticked"] = true
 	_guard = 0.0
 	_set_buttons_armed(true)
+	_goals.finish()
 	_apply_timeline()
 
 
@@ -792,7 +790,7 @@ func _decimal(value: float) -> String:
 	return "%s%s%d" % [Locale.format_number(floori(tenths / 10.0)), mark, tenths % 10]
 
 
-# --- Direita: conquistas, próximo desbloqueio, dica e botões ----------------------
+# --- Direita: conquistas, próximas metas, dica e botões ----------------------
 
 func _build_right() -> Control:
 	var col := VBoxContainer.new()
@@ -812,42 +810,8 @@ func _build_right() -> Control:
 	_achievements = VBoxContainer.new()
 	_achievements.add_theme_constant_override("separation", 3)
 	info.add_child(_achievements)
-	_next_box = PanelContainer.new()
-	_next_box.name = "Next"
-	info.add_child(_next_box)
-	var next := VBoxContainer.new()
-	next.add_theme_constant_override("separation", 2)
-	_next_box.add_child(next)
-	# "Próximo desbloqueio": ícone da conquista, nome e %, barra e o que falta (sem cabeçalho,
-	# para a dica da derrota caber sem rolar em qualquer idioma).
-	_next_box.tooltip_text = tr("results.next_unlock")
-	var name_row := HBoxContainer.new()
-	name_row.add_theme_constant_override("separation", 4)
-	next.add_child(name_row)
-	_next_icon = icon_rect("", Vector2(16, 16))
-	_next_icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	name_row.add_child(_next_icon)
-	_next_name = label("")
-	_next_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_next_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_next_name.add_theme_color_override("font_color", ThemeFactory.ACCENT)
-	name_row.add_child(_next_name)
-	_next_bar = ProgressBar.new()
-	_next_bar.show_percentage = false
-	_next_bar.custom_minimum_size = Vector2(0, 7)
-	_next_bar.max_value = 1.0
-	_next_bar.step = 0.0
-	_next_bar.add_theme_stylebox_override("background", _flat(Color(0, 0, 0, 0.6), Color(GOLD, 0.45), 1))
-	_next_bar.add_theme_stylebox_override("fill", _flat(GOLD, ThemeFactory.ACCENT, 1))
-	_next_percent = label("", 12, HORIZONTAL_ALIGNMENT_RIGHT)
-	_next_percent.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_next_percent.add_theme_color_override("font_color", ThemeFactory.ACCENT)
-	name_row.add_child(_next_percent)
-	next.add_child(_next_bar)
-	_next_detail = label("")
-	_next_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_next_detail.add_theme_color_override("font_color", DIM)
-	next.add_child(_next_detail)
+	_goals = MissionGoals.new(false)
+	info.add_child(_goals)
 	_tip_box = PanelContainer.new()
 	_tip_box.name = "Tip"
 	info.add_child(_tip_box)
@@ -882,16 +846,9 @@ func _fill_right(r: Dictionary) -> void:
 	if not news.is_empty() and not bool(r.get("achievement_sound_played", false)):
 		r["achievement_sound_played"] = true
 		AudioManager.play("achievement")
-	var next := next_unlock()
-	_next_box.visible = not next.is_empty()
-	if not next.is_empty():
-		_next_name.text = tr("achievement.%s.name" % next["id"])
-		var icon := String((DB.achievements[StringName(String(next["id"]))] as Dictionary).get("icon", ""))
-		_next_icon.texture = load(icon) as Texture2D if ResourceLoader.exists(icon) else null
-		_next_bar.value = float(next["progress"])
-		_next_percent.text = "%d%%" % floori(float(next["progress"]) * 100.0)
-		_next_detail.text = String(next["detail"])
-		_next_detail.visible = _next_detail.text != ""
+	# Metas depois da partida: barras do antes ao agora, depois da entrada das colunas.
+	_goals.set_goals(r["goals"] if r.has("goals") else MissionGoals.live_goals())
+	_goals.play(COLUMN_DELAY[2] + COLUMN_TIME)
 	# Dica fixa por resultado (não muda ao dobrar o ryō); some na vitória e sem a opção "Dicas".
 	if not r.has("tip"):
 		r["tip"] = TipDeck.result_tip(r)
@@ -909,11 +866,14 @@ func _achievement_card(id: String) -> PanelContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 5)
 	card.add_child(row)
-	var icon := icon_rect(String((DB.achievements.get(StringName(id), {}) as Dictionary).get("icon", "")),
-			Vector2(16, 16))
+	var icon := TextureRect.new()
+	icon.texture = CodexMissions.reward_chip(MissionBook.icon(StringName(id)), MissionBook.icon_is_face(StringName(id)))
+	icon.custom_minimum_size = Vector2(18, 18)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(icon)
-	var name_label := label(tr("achievement.%s.name" % id))
+	var name_label := label(MissionBook.title(StringName(id)))
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.add_theme_color_override("font_color", ThemeFactory.ACCENT)
@@ -977,36 +937,6 @@ func _on_double() -> void:
 		on_show())
 
 
-## A conquista mais perto de ser completada: {id, progress, detail} ou {} (plano 15.5).
-func next_unlock() -> Dictionary:
-	var stats: Dictionary = SaveManager.data["stats"]
-	var best := {}
-	var best_progress := -1.0
-	for id: StringName in DB.ids("achievements"):
-		if (SaveManager.data["achievements"] as Dictionary).has(String(id)):
-			continue
-		var c: Dictionary = DB.achievements[id]["condition"]
-		var progress := -1.0
-		var detail := ""
-		match String(c["type"]):
-			"kills_total":
-				progress = float(stats["kills"]) / float(c["count"])
-				detail = tr("results.left_kills") % Locale.format_number(int(c["count"]) - int(stats["kills"]))
-			"chests_total":
-				progress = float(stats["chests"]) / float(c["count"])
-				detail = tr("results.left_chests") % (int(c["count"]) - int(stats["chests"]))
-			"ryo_total":
-				progress = float(SaveManager.data["ryo_total"]) / float(c["count"])
-				detail = tr("results.left_ryo") % Locale.format_number(int(c["count"]) - int(SaveManager.data["ryo_total"]))
-			"evolve_count":
-				progress = float((stats["evolved"] as Array).size()) / float(c["count"])
-				detail = tr("results.left_evolutions") % (int(c["count"]) - (stats["evolved"] as Array).size())
-		if progress > best_progress and progress < 1.0:
-			best_progress = progress
-			best = {"id": String(id), "progress": maxf(progress, 0.0), "detail": detail}
-	return best
-
-
 # --- Estilo -----------------------------------------------------------------------
 
 func _style_panels() -> void:
@@ -1019,7 +949,7 @@ func _style_panels() -> void:
 		(tile["tile"] as PanelContainer).add_theme_stylebox_override("panel", box)
 	var weapons := _columns[1].get_node("Weapons") as PanelContainer
 	weapons.add_theme_stylebox_override("panel", _flat(panel_bg, edge, 1, 5))
-	for box: PanelContainer in [_next_box, _tip_box]:
+	for box: PanelContainer in [_goals, _tip_box]:
 		box.add_theme_stylebox_override("panel", _flat(panel_bg, edge, 1, 5))
 	for row: Dictionary in _rows:
 		(row["bar"] as ColorRect).color = _mood["bar"]

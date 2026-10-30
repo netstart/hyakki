@@ -206,7 +206,7 @@ func snapshot() -> Dictionary:
 		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
 		"dead": not player.is_alive, "speed": GameClock.speed,
-		"damage": player.damage.summary(), "realm": rift.snapshot(),
+		"damage": player.damage.summary(), "realm": rift.snapshot(), "tracker": tracker.snapshot(),
 	}
 
 
@@ -250,6 +250,7 @@ func restore_snapshot(s: Dictionary) -> void:
 		tracker.unions.append(StringName(id))
 	endless_phase = bool(s.get("endless_phase", false))
 	rift.restore(s.get("realm", {}))
+	tracker.restore(s.get("tracker", {}))
 	_ad_revive_used = bool(s.get("ad_revive_used", false))
 	hud.refresh_speed()
 	if bool(s.get("dead", false)):
@@ -817,7 +818,7 @@ func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: String
 		was_elite: bool, ai: int) -> void:
 	if ai == EnemyManager.AI.BOSS:
 		return
-	tracker.on_kill(enemy_id, GameClock.game_time)
+	tracker.on_kill(enemy_id, GameClock.game_time, at.distance_squared_to(player.sim_pos) > lantern.radius ** 2)
 	pickups.spawn(at, xp_value)
 	fx.burst(at, color)
 	if was_elite:
@@ -831,7 +832,7 @@ func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: String
 
 
 func on_boss_defeated(id: StringName, at: Vector2) -> void:
-	tracker.bosses.append(id)
+	tracker.on_boss_defeated(id, GameClock.game_time, player.damage)
 	Events.boss_defeated.emit(id)
 	if RiftPortal.is_midboss(id):
 		rift.on_midboss_defeated(at)  # dois baús e o portal para o Kakuriyo
@@ -1102,6 +1103,7 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 	var applied := MetaProgress.apply_run(result, tracker)
 	result["ryo_earned"] = applied["ryo"]
 	result["new_achievements"] = applied["achievements"]
+	result["goals"] = applied["goals"]
 	# Na derrota, o aviso da morte já tocou o jingle; aqui só a música.
 	if result["victory"] or not death.jingle_played:
 		AudioManager.play("jingle_success" if result["victory"] else "jingle_gameover")

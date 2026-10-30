@@ -4,7 +4,7 @@ extends Node
 ## sejam simples e o balanceamento possa ser feito sem o editor.
 
 const FILES := ["heroes", "weapons", "passives", "enemies", "bosses", "stages", "kami",
-		"powerups", "achievements", "items", "shop", "story"]
+		"powerups", "achievements", "missions", "items", "shop", "story"]
 
 var heroes: Dictionary = {}
 var weapons: Dictionary = {}
@@ -15,6 +15,8 @@ var stages: Dictionary = {}
 var kami: Dictionary = {}
 var powerups: Dictionary = {}
 var achievements: Dictionary = {}
+## Missões do Santuário além das conquistas (data/missions.json; ver MissionBook).
+var missions: Dictionary = {}
 var items: Dictionary = {}
 var shop: Dictionary = {}
 var story: Dictionary = {}

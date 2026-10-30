@@ -55,6 +55,12 @@ def data_keys() -> set:
         keys |= {f"powerup.{p['id']}.name", f"stat.{p['stat']}"}
     for a in data("achievements"):
         keys |= {f"achievement.{a['id']}.name", f"achievement.{a['id']}.desc"}
+    # Missões do Santuário: modelos por tipo de condição (MissionBook.title/description) e categorias.
+    for m in data("missions"):
+        kind = m["condition"]["type"]
+        keys |= {f"mission.{kind}.name", f"mission.{kind}.desc", f"mission.cat.{m['cat']}"}
+    keys |= {f"mission.cat.{c}" for c in ("stages", "heroes", "weapons", "bosses", "lantern", "kami",
+                                          "endless", "kills", "daily", "collection")}
     for i in data("items"):
         keys.add(f"item.{i['id']}.name")
     for s in data("shop"):

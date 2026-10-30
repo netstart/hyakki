@@ -15,6 +15,11 @@ extends Screen
 ## evolves_with, from, requires) com o modelo traduzido de cada idioma (cada %s vira um chip, na
 ## ordem do idioma). Cada item é um chip com o ícone 1:1 e o nome; tocar nele abre a entrada do
 ## item. O que ainda não se conhece segue a regra do Diário: chip em silhueta com "?" e "???".
+##
+## Missões do Santuário (marcador "Missões", CodexMissions/MissionBook): ~170 cartões em seções por
+## categoria (cabeçalho com ícone, nome e "feitas/total"); cada cartão aberto mostra uma barrinha
+## de progresso (assada com o cartão); a página da direita traz a barra com "312 / 500" e as
+## recompensas com ícone.
 
 const HEADER_H := 40.0
 const TAB_H := 26.0
@@ -55,7 +60,9 @@ var _left: Control
 var _page_title: Label
 var _page_count: Label
 var _grid_scroll: ScrollContainer
-var _grid: GridContainer
+## Coluna da página da esquerda: uma grade por seção (com cabeçalho nas Missões).
+var _list: VBoxContainer
+var _grids: Array[GridContainer] = []
 var _right: Control
 var _view: EntryView
 var _name: Label
@@ -64,6 +71,11 @@ var _detail_scroll: ScrollContainer
 var _lore: Label
 var _recipe: RichTextLabel
 var _stats: Label
+## Missões: barra e "312 / 500" do progresso e as recompensas com ícone.
+var _progress_row: HBoxContainer
+var _progress_bar: ProgressBar
+var _progress_text: Label
+var _rewards: RichTextLabel
 var _actions: HBoxContainer
 var _hint: Label
 var _category: StringName = &""
@@ -149,6 +161,11 @@ func open_entry(index: int) -> void:
 	_kind.visible = _kind.text != ""
 	_lore.text = String(e["text"])
 	_fill_recipe(e.get("recipe", []) as Array)
+	_progress_row.visible = e.has("progress_text")
+	if _progress_row.visible:
+		_progress_bar.value = 1.0 if known else float(e["progress"])
+		_progress_text.text = String(e["progress_text"])
+	CodexMissions.fill_rewards(_rewards, e.get("rewards", []) as Array)
 	_stats.text = "\n".join(e.get("stats", []) as Array) if known else ""
 	_stats.visible = _stats.text != ""
 	for child: Node in _actions.get_children():
@@ -224,17 +241,25 @@ func discovered_total() -> Array[int]:
 func _fill_page() -> void:
 	_entries = entries_for(_category)
 	_cards.clear()
-	for child: Node in _grid.get_children():
-		_grid.remove_child(child)
+	_grids.clear()
+	for child: Node in _list.get_children():
+		_list.remove_child(child)
 		child.queue_free()
-	for i: int in _entries.size():
-		var card := Card.new()
-		card.setup(_entries[i])
-		card.pressed.connect(func() -> void:
-			AudioManager.play_ui("ui_accept")
-			open_entry(i))
-		_grid.add_child(card)
-		_cards.append(card)
+	var sections: Array[Dictionary] = [{"from": 0, "to": _entries.size()}]
+	if _category == &"achievements":
+		sections = CodexMissions.sections(_entries)
+	for s: Dictionary in sections:
+		if s.has("title"):
+			_list.add_child(_section_header(s))
+		var grid := _new_grid()
+		for i: int in range(int(s["from"]), int(s["to"])):
+			var card := Card.new()
+			card.setup(_entries[i])
+			card.pressed.connect(func() -> void:
+				AudioManager.play_ui("ui_accept")
+				open_entry(i))
+			grid.add_child(card)
+			_cards.append(card)
 	var known := 0
 	for e: Dictionary in _entries:
 		known += int(bool(e["known"]))
@@ -255,6 +280,8 @@ func _fill_page() -> void:
 	_lore.text = ""
 	_recipe.visible = false
 	_stats.visible = false
+	_progress_row.visible = false
+	_rewards.visible = false
 	_actions.visible = false
 	_hint.visible = true
 	# Abre a primeira conhecida (ou a primeira) para a página da direita nunca ficar vazia; vindo
@@ -346,13 +373,7 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 						"stats": [tr("heroes.weapon") % tr("weapon.%s.name" % data["weapon"]),
 								tr("heroes.ultimate") % tr("ultimate.%s.name" % data["ultimate"]["type"])]})
 		&"achievements":
-			var done: Dictionary = SaveManager.data["achievements"]
-			for a: StringName in DB.ids("achievements"):
-				var data: Dictionary = DB.achievements[a]
-				var ok := done.has(String(a))
-				out.append({"title": tr("achievement.%s.name" % a), "known": ok, "icon": String(data["icon"]),
-						"show_locked": true, "kind": tr("codex.done") if ok else "",
-						"text": tr("achievement.%s.desc" % a)})
+			out = CodexMissions.entries()
 		&"story":
 			out = _story_entries()
 	return out
@@ -647,17 +668,53 @@ func _build_left() -> void:
 	_grid_scroll.scroll_deadzone = 8
 	_style_ink_scrollbar(_grid_scroll.get_v_scroll_bar())
 	col.add_child(_grid_scroll)
+	_list = VBoxContainer.new()
+	_list.name = "Sections"
+	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_list.add_theme_constant_override("separation", 3)
+	_list.mouse_filter = Control.MOUSE_FILTER_PASS
+	_grid_scroll.add_child(_list)
+
+
+## Grade de cartões (centrada na página) no fim da coluna da esquerda.
+func _new_grid() -> GridContainer:
 	var center := CenterContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.use_top_left = false
 	center.mouse_filter = Control.MOUSE_FILTER_PASS
-	_grid_scroll.add_child(center)
-	_grid = GridContainer.new()
-	_grid.name = "Cards"
-	_grid.add_theme_constant_override("h_separation", CARD_GAP)
-	_grid.add_theme_constant_override("v_separation", CARD_GAP)
-	_grid.mouse_filter = Control.MOUSE_FILTER_PASS
-	center.add_child(_grid)
+	_list.add_child(center)
+	var grid := GridContainer.new()
+	grid.name = "Cards"
+	grid.add_theme_constant_override("h_separation", CARD_GAP)
+	grid.add_theme_constant_override("v_separation", CARD_GAP)
+	grid.mouse_filter = Control.MOUSE_FILTER_PASS
+	grid.columns = _columns()
+	center.add_child(grid)
+	_grids.append(grid)
+	return grid
+
+
+## Cabeçalho de uma seção das Missões: ícone, nome da categoria e "feitas/total".
+func _section_header(s: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.name = "Section_%s" % s["id"]
+	row.add_theme_constant_override("separation", 4)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	var icon := TextureRect.new()
+	var path := String(s["icon"])
+	icon.texture = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	icon.custom_minimum_size = Vector2(16, 16)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(icon)
+	var title := _ink(String(s["title"]), 12, ThemeFactory.RED_INK)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.add_child(title)
+	row.add_child(_ink("%d/%d" % [s["done"], s["total"]], 12, ThemeFactory.PAPER_INK_SOFT))
+	return row
 
 
 func _build_right() -> void:
@@ -730,9 +787,47 @@ func _build_right() -> void:
 	_stats.name = "Stats"
 	_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_stats)
+	_build_mission_rows(body)
 	_actions = HBoxContainer.new()
 	_actions.name = "Actions"
 	body.add_child(_actions)
+
+
+## Barra do progresso da missão e "312 / 500" ao lado, e as recompensas com ícone.
+func _build_mission_rows(body: VBoxContainer) -> void:
+	_progress_row = HBoxContainer.new()
+	_progress_row.name = "MissionProgress"
+	_progress_row.add_theme_constant_override("separation", 6)
+	_progress_row.tooltip_text = tr("mission.progress")
+	_progress_bar = ProgressBar.new()
+	_progress_bar.show_percentage = false
+	_progress_bar.max_value = 1.0
+	_progress_bar.step = 0.0
+	_progress_bar.custom_minimum_size = Vector2(24, 8)
+	_progress_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_progress_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_progress_bar.mouse_filter = Control.MOUSE_FILTER_PASS
+	_progress_bar.add_theme_stylebox_override("background", ThemeFactory.flat_box(Color(0.3, 0.2, 0.1, 0.2),
+			Color(ThemeFactory.RED_INK, 0.6), 1, 2))
+	_progress_bar.add_theme_stylebox_override("fill", ThemeFactory.flat_box(ThemeFactory.GOLD, ThemeFactory.RED_INK, 1, 2))
+	_progress_row.add_child(_progress_bar)
+	_progress_text = _ink("", 12, ThemeFactory.PAPER_INK)
+	_progress_text.name = "ProgressValue"
+	_progress_row.add_child(_progress_text)
+	_progress_row.visible = false
+	body.add_child(_progress_row)
+	_rewards = RichTextLabel.new()
+	_rewards.name = "Rewards"
+	_rewards.fit_content = true
+	_rewards.scroll_active = false
+	_rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_rewards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_rewards.mouse_filter = Control.MOUSE_FILTER_PASS
+	_rewards.add_theme_color_override("default_color", ThemeFactory.PAPER_INK)
+	_rewards.add_theme_constant_override("outline_size", 0)
+	_rewards.add_theme_constant_override("line_separation", 2)
+	_rewards.visible = false
+	body.add_child(_rewards)
 
 
 func _ink(value: String, font_size: int, color: Color) -> Label:
@@ -797,8 +892,12 @@ func _layout_tabs() -> void:
 
 
 func _layout_grid() -> void:
-	var width := _left.size.x - 8.0
-	_grid.columns = maxi(1, floori((width + CARD_GAP) / (CARD + CARD_GAP)))
+	for grid: GridContainer in _grids:
+		grid.columns = _columns()
+
+
+func _columns() -> int:
+	return maxi(1, floori((_left.size.x - 8.0 + CARD_GAP) / (CARD + CARD_GAP)))
 
 
 # --- Peças desenhadas ----------------------------------------------------------------
@@ -927,7 +1026,13 @@ class Card extends Button:
 			else:
 				var tint := Color.WHITE if known else Color(0.45, 0.4, 0.38, 0.7)
 				c.draw_texture_rect_region(_tex, dest, src, tint)
-		if not known:
+		if entry.has("progress") and not known:
+			var bar := Rect2(4, size.y - 7, size.x - 8, 4)
+			c.draw_rect(bar, Color("6b4a2a", 0.55))
+			var fill := floorf((bar.size.x - 2.0) * clampf(float(entry["progress"]), 0.0, 1.0))
+			if fill > 0.0:
+				c.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2(fill, 2)), ThemeFactory.GOLD)
+		elif not known:
 			var font := get_theme_default_font()
 			var q := "?"
 			var at := Vector2(size.x - 9, size.y - 4)

@@ -11,7 +11,8 @@ const BACKUP_PATH := "user://save.bak"
 const TEMP_PATH := "user://save.tmp"
 ## Arquivos dos testes de integração (use_test_files): o save do jogador nunca é tocado.
 const TEST_PATHS := ["user://test_save.json", "user://test_save.bak", "user://test_save.tmp"]
-const VERSION := 1
+## 2: recordes das Missões do Santuário ("records", MissionBook.migrate_records).
+const VERSION := 2
 ## Campos de saves antigos que não existem mais (o anúncio de abertura saiu do jogo): a
 ## migração os apaga, sem mexer no resto.
 const OBSOLETE_KEYS := ["last_open_ad_unix", "open_ads_seen", "remove_ad_offer_shown"]
@@ -66,6 +67,9 @@ static func default_profile() -> Dictionary:
 		"tips": {"seen": [], "ever": [], "recent": [], "count": 0},
 		# Omikuji do baú (Omikuji): baús comuns com 中吉 garantido já usados no começo do save.
 		"omikuji": Omikuji.default_state(),
+		# Recordes das Missões do Santuário (MissionBook.record_run); "synced": missões que o
+		# progresso antigo já cumpria foram conferidas (MissionBook.catch_up).
+		"records": MissionBook.DEFAULT_RECORDS.duplicate(true),
 	}
 
 
@@ -91,14 +95,15 @@ func load_profile() -> void:
 	_reapply_achievement_unlocks()
 
 
-## Recompensas de conquista que ganharam desbloqueios novos chegam a saves antigos. Não
+## Recompensas de conquista que ganharam desbloqueios novos chegam a saves antigos e as
+## Missões do Santuário que o progresso antigo já cumpre são conferidas (uma vez). Não
 ## grava: a correção é refeita a cada carga (idempotente) e vai para o disco na próxima
 ## gravação normal. No início do jogo o DB (autoload seguinte) ainda não leu os JSON.
 func _reapply_achievement_unlocks() -> void:
 	if DB.is_node_ready():
-		MetaProgress.reapply_achievement_unlocks()
-	elif not DB.ready.is_connected(MetaProgress.reapply_achievement_unlocks):
-		DB.ready.connect(MetaProgress.reapply_achievement_unlocks, CONNECT_ONE_SHOT)
+		MetaProgress.on_profile_loaded()
+	elif not DB.ready.is_connected(MetaProgress.on_profile_loaded):
+		DB.ready.connect(MetaProgress.on_profile_loaded, CONNECT_ONE_SHOT)
 
 
 ## Leva saves antigos para a versão atual e completa campos que faltam.
@@ -107,6 +112,8 @@ static func migrate(old: Dictionary) -> Dictionary:
 	# Save antigo sem o omikuji: os baús já abertos contam como generosos gastos.
 	if not old.get(Omikuji.SAVE_KEY) is Dictionary:
 		old[Omikuji.SAVE_KEY] = Omikuji.migrate_state(old)
+	if int(old.get("version", 0)) < 2:
+		MissionBook.migrate_records(old)
 	_fill_missing(old, fresh)
 	for key: String in OBSOLETE_KEYS:
 		old.erase(key)

@@ -159,14 +159,14 @@ chest.ryo,+%d ryō,+%d ryō,+%d ryō,+%d Ryō,+%d ryō,+%d рё,+%d ryō,+%d両,
 chest.skip,Pular,Skip,Saltar,Überspringen,Passer,Пропустить,Lewati,スキップ,건너뛰기,跳過,跳过
 chest.title,Baú Laqueado,Lacquered Chest,Cofre lacado,Lacktruhe,Coffre laqué,Лакированный сундук,Peti Pernis,漆塗りの宝箱,옻칠 상자,漆器寶箱,漆器宝箱
 chest.union,UNIÃO!,UNION!,¡UNIÓN!,VEREINIGUNG!,UNION !,СОЮЗ!,PENYATUAN!,合体！,합체!,合體！,合体！
-codex.achievements,Conquistas,Achievements,Logros,Erfolge,Succès,Достижения,Pencapaian,実績,업적,成就,成就
-codex.achievements_count,%d de %d conquistas,%d of %d achievements,%d de %d logros,%d von %d Erfolgen,%d sur %d succès,%d из %d достижений,%d dari %d pencapaian,%d / %d 実績,%d / %d 업적,%d / %d 項成就,%d / %d 项成就
+codex.achievements,Missões,Missions,Misiones,Missionen,Missions,Задания,Misi,ミッション,임무,任務,任务
+codex.achievements_count,%d de %d missões,%d of %d missions,%d de %d misiones,%d von %d Missionen,%d sur %d missions,%d из %d заданий,%d dari %d misi,%d / %d ミッション,%d / %d 임무,%d / %d 項任務,%d / %d 项任务
 codex.blessing,Bênção,Blessing,Bendición,Segen,Bénédiction,Благословение,Berkah,加護,축복,加護,加护
 codex.boss_locked,Vença este chefe para ler sua história,Defeat this boss to read its tale,Vence a este jefe para leer su historia,"Besiege diesen Boss, um seine Geschichte zu lesen",Vaincs ce boss pour lire son histoire,"Победи босса, чтобы прочесть историю",Kalahkan bos ini untuk membaca kisahnya,このボスを倒すと物語が読める,이 보스를 이기면 이야기를 읽을 수 있습니다,擊敗此首領即可閱讀其故事,击败此首领即可阅读其故事
 codex.bosses,Chefes,Bosses,Jefes,Bosse,Boss,Боссы,Bos,ボス,보스,首領,首领
 codex.cost,Preço do pacto,Pact cost,Precio del pacto,Preis des Pakts,Prix du pacte,Цена договора,Harga pakta,契約の代償,계약의 대가,契約代價,契约代价
 codex.discovered,%d/%d descobertos,%d/%d discovered,%d/%d descubiertos,%d/%d entdeckt,%d/%d découverts,Открыто %d/%d,%d/%d ditemukan,%d/%d 発見,%d/%d 발견,已發現 %d/%d,已发现 %d/%d
-codex.done,Conquistada,Earned,Conseguido,Erreicht,Obtenu,Получено,Diraih,達成,달성,已達成,已达成
+codex.done,Concluída,Complete,Completada,Erfüllt,Accomplie,Выполнено,Selesai,達成,완료,已完成,已完成
 codex.enemies,Yōkai,Yōkai,Yōkai,Yōkai,Yōkai,Ёкаи,Yōkai,妖怪,요괴,妖怪,妖怪
 codex.evolved_from,Nasce de %s com %s,Born from %s with %s,Nace de %s con %s,Entsteht aus %s mit %s,Naît de %s avec %s,Рождается из %s с %s,Lahir dari %s dengan %s,%sと%sから進化,%s 와(과) %s 로 진화,由%s搭配%s進化而來,由%s搭配%s进化而来
 codex.evolves,"Com %s, evolui em: %s","With %s, evolves into: %s","Con %s, evoluciona en: %s",Mit %s entwickelt sich zu: %s,"Avec %s, évolue en : %s",С %s превращается в: %s,"Dengan %s, berevolusi jadi: %s",%sで進化: %s,%s 와(과) 함께 진화: %s,搭配%s進化為：%s,搭配%s进化为：%s
@@ -430,6 +430,9 @@ enemy.yurei.lore,Almas com um assunto inacabado. Somem na luz e reaparecem no es
 enemy.yurei.name,Yūrei,Yūrei,Yūrei,Yūrei,Yūrei,Юрэй,Yūrei,幽霊,유령,幽靈,幽灵
 event.drums,Os tambores aceleram... o céu começa a clarear.,The drums quicken... the sky begins to pale.,Los tambores se aceleran... el cielo empieza a clarear.,Die Trommeln werden schneller... der Himmel wird heller.,Les tambours s'accélèrent... le ciel pâlit.,Барабаны стучат чаще... небо светлеет.,Genderang makin cepat... langit mulai pucat.,太鼓が速まる…空が白み始めた。,북소리가 빨라집니다... 하늘이 밝아옵니다.,鼓聲加快……天空漸漸泛白。,鼓声加快……天空渐渐泛白。
 event.procession,A Procissão atravessa o vale! Fuja ou corte!,The Procession crosses the valley! Run or cut through!,¡La Procesión cruza el valle! ¡Huye o abre paso!,Die Prozession zieht durchs Tal! Flieh oder kämpf dich durch!,La Procession traverse la vallée ! Fuis ou tranche !,Шествие идёт через долину! Беги или прорубайся!,Arak-arakan melintasi lembah! Lari atau tebas!,百鬼の行列が谷を渡る！逃げるか、斬り抜けよ！,행렬이 골짜기를 지나갑니다! 피하거나 베어 내세요!,百鬼遊行穿過山谷！逃跑或殺出一條路！,百鬼夜行穿过山谷！逃跑或杀出一条路！
+goals.empty,Todas as missões cumpridas!,Every mission complete!,¡Todas las misiones cumplidas!,Alle Missionen erfüllt!,Toutes les missions accomplies !,Все задания выполнены!,Semua misi selesai!,全ミッション達成!,모든 임무 완료!,所有任務完成！,所有任务完成！
+goals.hint,Toque para ver as Missões no Diário,Tap to see the Missions in the Journal,Toca para ver las misiones en el Diario,"Tippen, um die Missionen im Tagebuch zu sehen",Touchez pour voir les missions dans le Journal,"Нажми, чтобы открыть задания в дневнике",Ketuk untuk melihat misi di Jurnal,タップで日誌のミッションへ,탭하면 일지의 임무를 봅니다,點擊在日誌中查看任務,点击在日志中查看任务
+goals.title,Próximas metas,Next goals,Próximas metas,Nächste Ziele,Prochains objectifs,Следующие цели,Target berikutnya,次の目標,다음 목표,下一個目標,下一个目标
 hero.aki.bonus,Área maior,Larger area,Mayor área,Größere Fläche,Zone plus grande,Больше область,Area lebih luas,範囲拡大,범위 증가,範圍加大,范围加大
 hero.aki.name,Aki,Aki,Aki,Aki,Aki,Аки,Aki,灯,아키,燈,灯
 hero.aki.role,A última guardiã,The last guardian,La última guardiana,Die letzte Wächterin,La dernière gardienne,Последняя стражница,Penjaga terakhir,最後の守り人,마지막 수호자,最後的守護者,最后的守护者
@@ -578,6 +581,71 @@ lvchest.skip,Pular,Skip,Saltar,Überspringen,Passer,Пропустить,Lewati,
 menu.back,Voltar,Back,Volver,Zurück,Retour,Назад,Kembali,戻る,뒤로,返回,返回
 midboss.title,Guardião do Limiar,Threshold Guardian,Guardián del Umbral,Hüter der Schwelle,Gardien du Seuil,Страж Порога,Penjaga Ambang,境の守り手,경계의 수호자,結界守護者,结界守护者
 midboss.warning,Algo guarda o limiar desta noite...,Something guards the threshold of this night...,Algo guarda el umbral de esta noche...,Etwas bewacht die Schwelle dieser Nacht ...,Quelque chose garde le seuil de cette nuit...,Что-то стережёт порог этой ночи...,Sesuatu menjaga ambang malam ini...,何かがこの夜の境を守っている……,무언가가 이 밤의 경계를 지키고 있다...,有什麼守著今夜的界線……,有什么守着今夜的界线……
+mission.boss_clean.desc,Vença %s sem levar nenhum golpe dele.,Defeat %s without taking a single hit from it.,Vence a %s sin recibir ningún golpe suyo.,"Besiege %s, ohne einen Treffer von ihm einzustecken.",Vaincs %s sans encaisser un seul de ses coups.,"Победи босса «%s», не получив от него ни одного удара.",Kalahkan %s tanpa terkena satu serangan pun darinya.,%sから一撃も受けずに倒す。,%s에게 한 번도 맞지 않고 처치.,不受%s任何攻擊而擊敗它。,不受%s任何攻击而击败它。
+mission.boss_clean.name,Intocado: %s,Untouched: %s,Intacto: %s,Unberührt: %s,Intact : %s,Без царапин: %s,Tak tersentuh: %s,無傷: %s,무상: %s,無傷：%s,无伤：%s
+mission.boss_fast.desc,Vença %s em até %s depois que ele entra.,Defeat %s within %s of its entrance.,Vence a %s en menos de %s desde su llegada.,Besiege %s innerhalb von %s nach seinem Auftritt.,Vaincs %s en moins de %s après son arrivée.,Победи босса «%s» за %s после его появления.,Kalahkan %s dalam %s sejak ia muncul.,%sを登場から%s以内に倒す。,%s을(를) 등장 후 %s 안에 처치.,在%s登場後%s內擊敗它。,在%s登场后%s内击败它。
+mission.boss_fast.name,Golpe veloz: %s,Swift strike: %s,Golpe veloz: %s,Schneller Schlag: %s,Frappe éclair : %s,Быстрый удар: %s,Serangan kilat: %s,速攻: %s,속공: %s,速攻：%s,速攻：%s
+mission.boss_kill.desc,Vença %s.,Defeat %s.,Vence a %s.,Besiege %s.,Vaincs %s.,Победи босса «%s».,Kalahkan %s.,%sを倒す。,%s 처치.,擊敗%s。,击败%s。
+mission.boss_kill.name,Caçada: %s,Hunt: %s,Cacería: %s,Jagd: %s,Chasse : %s,Охота: %s,Perburuan: %s,討伐: %s,토벌: %s,討伐：%s,讨伐：%s
+mission.cat.bosses,Chefes,Bosses,Jefes,Bosse,Boss,Боссы,Bos,ボス,보스,首領,首领
+mission.cat.collection,Coleção,Collection,Colección,Sammlung,Collection,Коллекция,Koleksi,収集,수집,收藏,收藏
+mission.cat.daily,Desafio Diário,Daily Challenge,Desafío diario,Tagesherausforderung,Défi quotidien,Ежедневное испытание,Tantangan Harian,デイリー,일일 도전,每日挑戰,每日挑战
+mission.cat.endless,Noite Sem Fim,Endless Night,Noche sin fin,Endlose Nacht,Nuit sans fin,Бесконечная ночь,Malam Tanpa Akhir,終わらぬ夜,끝없는 밤,無盡之夜,无尽之夜
+mission.cat.heroes,Guardiões,Guardians,Guardianes,Wächter,Gardiens,Стражи,Penjaga,守り人,수호자,守護者,守护者
+mission.cat.kami,Kami,Kami,Kami,Kami,Kami,Ками,Kami,神,신,神明,神明
+mission.cat.kills,Abates,Kills,Bajas,Siege,Éliminations,Победы,Kalahkan,撃破,처치,擊敗,击败
+mission.cat.lantern,Lanterna,Lantern,Linterna,Laterne,Lanterne,Фонарь,Lentera,灯籠,등롱,燈籠,灯笼
+mission.cat.stages,Fases,Stages,Fases,Gebiete,Niveaux,Уровни,Tahap,ステージ,스테이지,關卡,关卡
+mission.cat.weapons,Armas,Weapons,Armas,Waffen,Armes,Оружие,Senjata,武器,무기,武器,武器
+mission.chests_total.desc,Abra %s baús no total.,Open %s chests in total.,Abre %s cofres en total.,Öffne insgesamt %s Truhen.,Ouvre %s coffres au total.,Открой %s сундуков за всё время.,Buka total %s peti.,累計%s個の宝箱を開ける。,상자를 총 %s개 열기.,累計開啟%s個寶箱。,累计开启%s个宝箱。
+mission.chests_total.name,Baús · %s,Chests · %s,Cofres · %s,Truhen · %s,Coffres · %s,Сундуки · %s,Peti · %s,宝箱・%s,상자 · %s,寶箱・%s,宝箱・%s
+mission.codex_entries.desc,Registre %s entradas no Diário (yōkai com 100 abates e chefes vencidos).,Record %s Journal entries (yōkai with 100 kills and defeated bosses).,Registra %s entradas en el Diario (yōkai con 100 bajas y jefes vencidos).,Trage %s Einträge ins Tagebuch ein (Yōkai mit 100 Siegen und besiegte Bosse).,Inscris %s entrées au Journal (yōkai vaincus 100 fois et boss battus).,Заполни %s записей в дневнике (ёкаи после 100 побед и побеждённые боссы).,Catat %s entri Jurnal (yōkai dengan 100 kalah dan bos yang dikalahkan).,日誌に%s項目を記す(100体倒した妖怪と倒したボス)。,일지에 %s개 항목 기록 (100마리 처치한 요괴와 쓰러뜨린 보스).,在日誌記錄%s個條目（擊敗100次的妖怪與擊敗的首領）。,在日志记录%s个条目（击败100次的妖怪与击败的首领）。
+mission.codex_entries.name,Diário · %s,Journal · %s,Diario · %s,Tagebuch · %s,Journal · %s,Дневник · %s,Jurnal · %s,日誌・%s,일지 · %s,日誌・%s,日志・%s
+mission.daily_runs.desc,Jogue %s Desafios Diários.,Play %s Daily Challenges.,Juega %s desafíos diarios.,Spiele %s Tagesherausforderungen.,Joue %s défis quotidiens.,Сыграй %s ежедневных испытаний.,Mainkan %s Tantangan Harian.,デイリーチャレンジを%s回遊ぶ。,일일 도전 %s회 플레이.,遊玩%s次每日挑戰。,游玩%s次每日挑战。
+mission.daily_runs.name,Disciplina diária · %s,Daily discipline · %s,Disciplina diaria · %s,Tägliche Disziplin · %s,Discipline quotidienne · %s,Ежедневная дисциплина · %s,Disiplin harian · %s,日々の修行・%s,매일의 수행 · %s,每日修行・%s,每日修行・%s
+mission.dark_kills.desc,Derrote %s yōkai fora da luz da lanterna.,Defeat %s yōkai outside the lantern's light.,Derrota %s yōkai fuera de la luz de la linterna.,Besiege %s Yōkai außerhalb des Laternenlichts.,Vaincs %s yōkai hors de la lumière de la lanterne.,Победи %s ёкаев вне света фонаря.,Kalahkan %s yōkai di luar cahaya lentera.,灯籠の光の外で妖怪を%s体倒す。,등롱 빛 밖에서 요괴 %s마리 처치.,在燈籠光外擊敗%s隻妖怪。,在灯笼光外击败%s只妖怪。
+mission.dark_kills.name,Caça nas sombras · %s,Shadow hunt · %s,Caza en las sombras · %s,Schattenjagd · %s,Chasse dans l'ombre · %s,Охота в тенях · %s,Buru bayangan · %s,影の狩り・%s,그림자 사냥 · %s,暗影狩獵・%s,暗影狩猎・%s
+mission.dark_kills_run.desc,Derrote %s yōkai fora da luz numa só partida.,Defeat %s yōkai outside the light in a single run.,Derrota %s yōkai fuera de la luz en una sola partida.,Besiege %s Yōkai außerhalb des Lichts in einem Lauf.,Vaincs %s yōkai hors de la lumière en une seule partie.,Победи %s ёкаев вне света за один забег.,Kalahkan %s yōkai di luar cahaya dalam satu main.,1回のプレイで光の外の妖怪を%s体倒す。,한 판에서 빛 밖의 요괴 %s마리 처치.,單局在光外擊敗%s隻妖怪。,单局在光外击败%s只妖怪。
+mission.dark_kills_run.name,Noite sem lanterna,Lanternless night,Noche sin linterna,Nacht ohne Laterne,Nuit sans lanterne,Ночь без фонаря,Malam tanpa lentera,灯なき夜,등롱 없는 밤,無燈之夜,无灯之夜
+mission.dark_streak.desc,Fique %s seguidos com pouca luz.,Spend %s in a row with little light.,Pasa %s seguidos con poca luz.,Verbringe %s am Stück mit wenig Licht.,Tiens %s d'affilée avec peu de lumière.,Проведи %s подряд при слабом свете.,Bertahan %s berturut-turut dengan sedikit cahaya.,わずかな光で%s続けて過ごす。,적은 빛으로 %s 연속 버티기.,在微光中連續撐過%s。,在微光中连续撑过%s。
+mission.dark_streak.name,Andarilho do breu,Pitch-dark walker,Caminante de la penumbra,Wanderer im Finstern,Marcheur des ténèbres,Странник во мраке,Pengelana kegelapan,闇を歩む者,어둠을 걷는 자,行於黑暗者,行于黑暗者
+mission.endless_stages.desc,Chegue a %s na Noite Sem Fim em %s fases diferentes.,Reach %s in the Endless Night on %s different stages.,Llega a %s en la Noche sin fin en %s fases distintas.,Erreiche %s in der Endlosen Nacht in %s verschiedenen Gebieten.,Atteins %s dans la Nuit sans fin sur %s niveaux différents.,Доживи до %s в Бесконечной ночи на %s разных уровнях.,Capai %s di Malam Tanpa Akhir di %s tahap berbeda.,終わらぬ夜で%sに到達(%sつの異なるステージ)。,끝없는 밤에서 %s 도달 (서로 다른 스테이지 %s곳).,在無盡之夜達到%s（%s個不同關卡）。,在无尽之夜达到%s（%s个不同关卡）。
+mission.endless_stages.name,Vigília eterna,Eternal vigil,Vigilia eterna,Ewige Nachtwache,Veille éternelle,Вечное бдение,Berjaga abadi,永遠の夜伽,영원한 철야,永恆守夜,永恒守夜
+mission.endless_time.desc,Sobreviva até %s na Noite Sem Fim.,Survive until %s in the Endless Night.,Sobrevive hasta %s en la Noche sin fin.,Überlebe bis %s in der Endlosen Nacht.,Survis jusqu'à %s dans la Nuit sans fin.,Продержись до %s в Бесконечной ночи.,Bertahan hingga %s di Malam Tanpa Akhir.,終わらぬ夜で%sまで生き延びる。,끝없는 밤에서 %s까지 생존.,在無盡之夜存活至%s。,在无尽之夜存活至%s。
+mission.endless_time.name,Vigília · %s,Vigil · %s,Vigilia · %s,Nachtwache · %s,Veille · %s,Бдение · %s,Berjaga · %s,夜伽・%s,철야 · %s,守夜・%s,守夜・%s
+mission.hero_evolve.desc,"Com %s, evolua a arma inicial em %s.","With %s, evolve the starting weapon into %s.","Con %s, evoluciona el arma inicial en %s.",Entwickle mit %s die Startwaffe zu %s.,"Avec %s, fais évoluer l'arme de départ en %s.",За %s доведи стартовое оружие до «%s».,"Dengan %s, evolusikan senjata awal menjadi %s.",%sで初期武器を%sに進化させる。,%s(으)로 시작 무기를 %s(으)로 진화.,以%s將初始武器進化為%s。,以%s将初始武器进化为%s。
+mission.hero_evolve.name,Arma de %s,%s's Weapon,Arma de %s,%ss Waffe,L'arme de %s,Оружие: %s,Senjata %s,%sの武器,%s의 무기,%s的武器,%s的武器
+mission.hero_level.desc,"Com %s, alcance o nível %s numa partida.","With %s, reach level %s in a run.","Con %s, alcanza el nivel %s en una partida.",Erreiche mit %s Stufe %s in einem Lauf.,"Avec %s, atteins le niveau %s en une partie.",За %s достигни %s уровня за забег.,"Dengan %s, capai level %s dalam satu main.",%sで1回のプレイ中にLv%sに到達。,%s(으)로 한 판에서 레벨 %s 달성.,以%s在單局達到%s級。,以%s在单局达到%s级。
+mission.hero_level.name,"%s, nível %s","%s, level %s","%s, nivel %s","%s, Stufe %s","%s, niveau %s","%s, уровень %s","%s, level %s",%s Lv%s,%s 레벨 %s,%s %s級,%s %s级
+mission.hero_win.desc,Chegue ao amanhecer com %s.,Reach dawn with %s.,Llega al amanecer con %s.,Erreiche den Morgen mit %s.,Atteins l'aube avec %s.,Доживи до рассвета за %s.,Capai fajar bersama %s.,%sで夜明けを迎える。,%s(으)로 새벽을 맞이하라.,以%s迎來黎明。,以%s迎来黎明。
+mission.hero_win.name,Aurora de %s,%s's Dawn,Alba de %s,%ss Morgenrot,L'aube de %s,Рассвет: %s,Fajar %s,%sの夜明け,%s의 새벽,%s的黎明,%s的黎明
+mission.kami_accept.desc,Aceite o pacto de %s numa partida.,Accept %s's pact in a run.,Acepta el pacto de %s en una partida.,Nimm in einem Lauf den Pakt von %s an.,Accepte le pacte de %s en une partie.,Прими договор с ками «%s» за забег.,Terima perjanjian %s dalam satu main.,プレイ中に%sの契りを受ける。,한 판에서 %s의 계약을 받아들이기.,在一局中接受%s的契約。,在一局中接受%s的契约。
+mission.kami_accept.name,Pacto: %s,Pact: %s,Pacto: %s,Pakt: %s,Pacte : %s,Договор: %s,Perjanjian: %s,契り: %s,계약: %s,契約：%s,契约：%s
+mission.kami_pacts.desc,Aceite %s pactos com Kami no total.,Accept %s Kami pacts in total.,Acepta %s pactos con kami en total.,Nimm insgesamt %s Kami-Pakte an.,Accepte %s pactes de kami au total.,Прими %s договоров с ками за всё время.,Terima total %s perjanjian Kami.,神の契りを累計%s回受ける。,신의 계약을 총 %s번 받아들이기.,累計接受%s次神明契約。,累计接受%s次神明契约。
+mission.kami_pacts.name,Devoto · %s,Devotee · %s,Devoto · %s,Gläubiger · %s,Dévot · %s,Верный · %s,Pemuja · %s,信心・%s,신실함 · %s,虔誠・%s,虔诚・%s
+mission.kills_burst_best.desc,Derrote %s yōkai em 10 segundos.,Defeat %s yōkai within 10 seconds.,Derrota %s yōkai en 10 segundos.,Besiege %s Yōkai in 10 Sekunden.,Vaincs %s yōkai en 10 secondes.,Победи %s ёкаев за 10 секунд.,Kalahkan %s yōkai dalam 10 detik.,10秒以内に妖怪を%s体倒す。,10초 안에 요괴 %s마리 처치.,10秒內擊敗%s隻妖怪。,10秒内击败%s只妖怪。
+mission.kills_burst_best.name,Tempestade de lâminas,Storm of blades,Tormenta de filos,Klingensturm,Tempête de lames,Буря клинков,Badai bilah,刃の嵐,칼날 폭풍,刃之風暴,刃之风暴
+mission.kills_run.desc,Derrote %s yōkai numa só partida.,Defeat %s yōkai in a single run.,Derrota %s yōkai en una sola partida.,Besiege %s Yōkai in einem Lauf.,Vaincs %s yōkai en une seule partie.,Победи %s ёкаев за один забег.,Kalahkan %s yōkai dalam satu main.,1回のプレイで妖怪を%s体倒す。,한 판에서 요괴 %s마리 처치.,單局擊敗%s隻妖怪。,单局击败%s只妖怪。
+mission.kills_run.name,Noite rubra · %s,Crimson night · %s,Noche carmesí · %s,Rote Nacht · %s,Nuit pourpre · %s,Багровая ночь · %s,Malam merah · %s,紅の夜・%s,붉은 밤 · %s,赤紅之夜・%s,赤红之夜・%s
+mission.kills_total.desc,Derrote %s yōkai no total.,Defeat %s yōkai in total.,Derrota %s yōkai en total.,Besiege insgesamt %s Yōkai.,Vaincs %s yōkai au total.,Победи %s ёкаев за всё время.,Kalahkan total %s yōkai.,累計%s体の妖怪を倒す。,요괴를 총 %s마리 처치.,累計擊敗%s隻妖怪。,累计击败%s只妖怪。
+mission.kills_total.name,Procissão desfeita · %s,Procession broken · %s,Procesión deshecha · %s,Zerschlagene Prozession · %s,Procession brisée · %s,Разбитое шествие · %s,Arak-arakan bubar · %s,崩れた行列・%s,흩어진 행렬 · %s,潰散的百鬼・%s,溃散的百鬼・%s
+mission.progress,Progresso,Progress,Progreso,Fortschritt,Progression,Прогресс,Kemajuan,進捗,진행,進度,进度
+mission.realm_count.desc,Entre no Kakuriyo em %s fases diferentes.,Enter the Kakuriyo in %s different stages.,Entra al Kakuriyo en %s fases distintas.,Betritt das Kakuriyo in %s verschiedenen Gebieten.,Entre dans le Kakuriyo dans %s niveaux différents.,Побывай в Какурийо на %s разных уровнях.,Masuki Kakuriyo di %s tahap berbeda.,%sつの異なるステージで隠世に入る。,서로 다른 %s개 스테이지에서 카쿠리요에 들어가기.,在%s個不同關卡進入隱世。,在%s个不同关卡进入隐世。
+mission.realm_count.name,Viajante do Kakuriyo,Kakuriyo Wanderer,Viajero del Kakuriyo,Kakuriyo-Wanderer,Voyageur du Kakuriyo,Странник Какурийо,Pengembara Kakuriyo,隠世の旅人,카쿠리요의 나그네,隱世旅人,隐世旅人
+mission.reward,Recompensa,Reward,Recompensa,Belohnung,Récompense,Награда,Hadiah,報酬,보상,獎勵,奖励
+mission.reward_ryo,%s ryō,%s ryō,%s ryō,%s Ryō,%s ryō,%s рё,%s ryō,%s両,%s료,%s兩,%s两
+mission.ryo_total.desc,Ganhe %s ryō no total.,Earn %s ryō in total.,Gana %s ryō en total.,Verdiene insgesamt %s Ryō.,Gagne %s ryō au total.,Заработай %s рё за всё время.,Kumpulkan total %s ryō.,累計%s両を稼ぐ。,총 %s료 획득.,累計賺取%s兩。,累计赚取%s两。
+mission.ryo_total.name,Tesouro · %s,Treasure · %s,Tesoro · %s,Schatz · %s,Trésor · %s,Сокровище · %s,Harta · %s,財宝・%s,보물 · %s,財寶・%s,财宝・%s
+mission.stage_moon.desc,Vença em %s com Lua Vermelha %s ou mais.,Win in %s on Red Moon %s or higher.,Gana en %s con Luna Roja %s o superior.,Siege in %s auf Blutmond %s oder höher.,Gagne à %s en Lune rouge %s ou plus.,Победи на уровне «%s» на Красной луне %s или выше.,Menangkan %s di Bulan Merah %s atau lebih.,%sで紅月%s以上で勝利する。,%s에서 붉은 달 %s 이상으로 승리.,在%s以紅月%s以上獲勝。,在%s以红月%s以上获胜。
+mission.stage_moon.name,%s · Lua %s,%s · Moon %s,%s · Luna %s,%s · Mond %s,%s · Lune %s,%s · Луна %s,%s · Bulan %s,%s・紅月%s,%s · 붉은 달 %s,%s・紅月%s,%s・红月%s
+mission.stage_no_item.desc,Vença em %s sem pegar nenhum %s.,Win in %s without picking up any %s.,Gana en %s sin recoger ningún %s.,"Siege in %s, ohne ein %s aufzuheben.",Gagne à %s sans ramasser de %s.,"Победи на уровне «%s», не подобрав ни одного «%s».",Menangkan %s tanpa mengambil %s.,%sで%sを拾わずに勝利する。,%s에서 %s를 줍지 않고 승리.,在%s不拾取任何%s獲勝。,在%s不拾取任何%s获胜。
+mission.stage_no_item.name,Jejum: %s,Fasting: %s,Ayuno: %s,Fasten: %s,Jeûne : %s,Пост: %s,Puasa: %s,断食: %s,금식: %s,禁食：%s,禁食：%s
+mission.stage_realm.desc,Atravesse o portal do Guardião do Limiar para o Kakuriyo em %s.,Cross the Threshold Guardian's portal into the Kakuriyo in %s.,Cruza el portal del Guardián del Umbral al Kakuriyo en %s.,Durchschreite in %s das Portal des Schwellenwächters ins Kakuriyo.,Franchis le portail du Gardien du Seuil vers le Kakuriyo à %s.,Пройди через портал Стража порога в Какурийо на уровне «%s».,Lewati portal Penjaga Ambang ke Kakuriyo di %s.,%sで境の守り手の門をくぐり、隠世へ。,%s에서 문턱 수호자의 문을 지나 카쿠리요로.,在%s穿過門檻守護者的傳送門進入隱世。,在%s穿过门槛守护者的传送门进入隐世。
+mission.stage_realm.name,Além do véu: %s,Beyond the veil: %s,Tras el velo: %s,Hinter dem Schleier: %s,Au-delà du voile : %s,За завесой: %s,Di balik tabir: %s,帳の向こう: %s,장막 너머: %s,帷幕之後：%s,帷幕之后：%s
+mission.weapon_evolve.desc,Evolua uma arma em %s.,Evolve a weapon into %s.,Evoluciona un arma en %s.,Entwickle eine Waffe zu %s.,Fais évoluer une arme en %s.,Доведи оружие до «%s».,Evolusikan senjata menjadi %s.,武器を%sに進化させる。,무기를 %s(으)로 진화.,將武器進化為%s。,将武器进化为%s。
+mission.weapon_evolve.name,Forja: %s,Forge: %s,Forja: %s,Schmiede: %s,Forge : %s,Ковка: %s,Tempa: %s,鍛錬: %s,단련: %s,鍛造：%s,锻造：%s
+mission.weapon_union.desc,Forme a união %s.,Forge the union %s.,Forma la unión %s.,Bilde die Vereinigung %s.,Forme l'union %s.,Создай союз «%s».,Bentuk penyatuan %s.,合体武器%sを生み出す。,합체 무기 %s 완성.,完成合體武器%s。,完成合体武器%s。
+mission.weapon_union.name,União: %s,Union: %s,Unión: %s,Vereinigung: %s,Union : %s,Союз: %s,Penyatuan: %s,合体: %s,합체: %s,合體：%s,合体：%s
 mode.brisa,Brisa (história),Breeze (story),Brisa (historia),Brise (Story),Brise (histoire),Бриз (сюжет),Semilir (cerita),そよ風（物語）,산들바람 (스토리),微風（劇情）,微风（剧情）
 mode.normal,Normal,Normal,Normal,Normal,Normal,Обычный,Normal,ノーマル,보통,普通,普通
 moon.level,Lua Vermelha %s,Red Moon %s,Luna Roja %s,Blutmond %s,Lune rouge %s,Красная луна %s,Bulan Merah %s,紅月 %s,붉은 달 %s,紅月 %s,红月 %s
@@ -721,14 +789,9 @@ results.dps,Dano/s,DPS,Daño/s,DPS,Dégâts/s,Урон/с,DPS,DPS,초당 피해,
 results.final_blow,Golpe final: %s,Final blow: %s,Golpe final: %s,Letzter Treffer: %s,Coup final : %s,Последний удар: %s,Serangan terakhir: %s,最後の一撃: %s,마지막 일격: %s,最後一擊：%s,最后一击：%s
 results.gave_up,Vigília interrompida,Vigil abandoned,Vigilia interrumpida,Wache abgebrochen,Veille interrompue,Дозор прерван,Jaga malam dihentikan,見張りを中断した,파수를 중단했다,守夜中斷,守夜中断
 results.hurt_most,Mais feriu: %s,Hurt you most: %s,Quien más hirió: %s,Am meisten verletzt von: %s,Plus blessant : %s,Больше всех ранил: %s,Paling melukai: %s,最も傷つけた敵: %s,가장 아프게 한 적: %s,傷你最深：%s,伤你最深：%s
-results.left_chests,Faltam %d baús,%d chests to go,Faltan %d cofres,Noch %d Truhen,Encore %d coffres,Осталось сундуков: %d,Kurang %d peti,あと%d箱,상자 %d개 남음,還差%d個寶箱,还差%d个宝箱
-results.left_evolutions,Faltam %d evoluções,%d evolutions to go,Faltan %d evoluciones,Noch %d Entwicklungen,Encore %d évolutions,Осталось эволюций: %d,Kurang %d evolusi,あと%d回進化,진화 %d회 남음,還差%d次進化,还差%d次进化
-results.left_kills,Faltam %s abates,%s kills to go,Faltan %s bajas,Noch %s Siege,Encore %s éliminations,Осталось убить: %s,Kurang %s kalah,あと%s体撃破,%s 처치 남음,還差%s擊敗,还差%s击败
-results.left_ryo,Faltam %s ryō,%s ryō to go,Faltan %s ryō,Noch %s Ryō,Encore %s ryō,Осталось рё: %s,Kurang %s ryō,あと%s両,%s료 남음,還差%s兩,还差%s两
 results.level,Nv,Lv,Nv,St,Nv,Ур,Lv,Lv,Lv,等級,等级
 results.menu,Menu,Menu,Menú,Menü,Menu,Меню,Menu,メニュー,메뉴,選單,菜单
 results.mvp,MVP,MVP,MVP,MVP,MVP,MVP,MVP,MVP,MVP,MVP,MVP
-results.next_unlock,Próximo desbloqueio:,Next unlock:,Próximo desbloqueo:,Nächste Freischaltung:,Prochain déblocage :,Следующая награда:,Buka berikutnya:,次の解放:,다음 해금:,下一個解鎖：,下一个解锁：
 results.no_weapons,Nenhum dano registrado.,No damage recorded.,Sin daño registrado.,Kein Schaden verzeichnet.,Aucun dégât enregistré.,Урон не зафиксирован.,Tidak ada damage tercatat.,記録されたダメージはない。,기록된 피해가 없다.,沒有記錄到傷害。,没有记录到伤害。
 results.record,NOVO RECORDE,NEW RECORD,NUEVO RÉCORD,NEUER REKORD,NOUVEAU RECORD,НОВЫЙ РЕКОРД,REKOR BARU,新記録,신기록,新紀錄,新纪录
 results.stat_kills,Abates,Kills,Bajas,Siege,Éliminations,Убито,Kalah,撃破,처치,擊敗,击败

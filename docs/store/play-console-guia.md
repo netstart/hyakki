@@ -515,6 +515,19 @@ First release of Hyakki: Until Dawn. Face the parade of a hundred yōkai with 7 
 
 (pt-BR: 401 caracteres; en-US: 387.)
 
+### 9.5.1 Notas da versão 1.15.0 (versionCode 31)
+Para o envio com o Omikuji do baú (1.14.0) e as Missões do Santuário (1.15.0). Gere o AAB com
+`tools\build_release.ps1` e envie em **Teste interno** (ou na faixa em que o app estiver):
+
+```
+<pt-BR>
+Novidades: o Baú Laqueado agora tira a sua sorte no omikuji (吉, 中吉, 大吉 e, às vezes, 凶 com consolo) antes de uma roleta que para em cada item. As conquistas viraram 172 Missões do Santuário em 10 categorias, com barras de progresso no Diário e as Próximas 3 metas no título e nos Resultados. Nova opção "Animação curta do baú" e correção da conquista de 5 Golpes da Lanterna.
+</pt-BR>
+<en-US>
+New: the Lacquered Chest now draws your omikuji fortune (吉, 中吉, 大吉 and sometimes 凶 with a consolation) before a reel that stops on each item. Achievements became 172 Sanctuary Missions in 10 categories, with progress bars in the Journal and your Next 3 goals on the title and Results screens. New "Short chest animation" option, and the 5 Lantern Strikes achievement is fixed.
+</en-US>
+```
+
 ### 9.6 Relatório de pré-lançamento (*Pre-launch report*)
 Roda sozinho em aparelhos reais do Google sempre que um AAB entra num teste (interno, fechado ou
 aberto). Abra em **Testar e lançar › Relatório de pré-lançamento** e confira:

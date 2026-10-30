@@ -70,7 +70,7 @@ STRINGS = {
     "codex.blessing": ["Bênção", "Blessing", "Bendición", "Segen", "Bénédiction", "Благословение", "Berkah", "加護", "축복", "加護", "加护"],
     "codex.cost": ["Preço do pacto", "Pact cost", "Precio del pacto", "Preis des Pakts", "Prix du pacte", "Цена договора", "Harga pakta", "契約の代償", "계약의 대가", "契約代價", "契约代价"],
     "codex.per_level": ["A cada nível: %s", "Each level: %s", "Cada nivel: %s", "Pro Stufe: %s", "Par niveau : %s", "За уровень: %s", "Tiap level: %s", "レベルごと: %s", "레벨마다: %s", "每級：%s", "每级：%s"],
-    "codex.done": ["Conquistada", "Earned", "Conseguido", "Erreicht", "Obtenu", "Получено", "Diraih", "達成", "달성", "已達成", "已达成"],
+    "codex.done": ["Concluída", "Complete", "Completada", "Erfüllt", "Accomplie", "Выполнено", "Selesai", "達成", "완료", "已完成", "已完成"],
     "codex.story_intro": ["O Despertar", "The Awakening", "El Despertar", "Das Erwachen", "L'Éveil", "Пробуждение", "Kebangkitan", "目覚め", "깨어남", "甦醒", "苏醒"],
     "codex.story_ending": ["O Amanhecer", "The Dawn", "El Amanecer", "Die Morgendämmerung", "L'Aube", "Рассвет", "Fajar", "夜明け", "새벽", "黎明", "黎明"],
     "codex.story_secret": ["O Final Verdadeiro", "The True Ending", "El Final Verdadero", "Das wahre Ende", "La Vraie Fin", "Истинный финал", "Akhir Sejati", "真の結末", "진정한 결말", "真正的結局", "真正的结局"],

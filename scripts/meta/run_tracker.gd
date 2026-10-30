@@ -24,17 +24,78 @@ var revived_by_ad: bool = false
 var doubled_ryo: bool = false
 ## Atravessou o portal do Guardião do Limiar e jogou no Kakuriyo.
 var realm_reached: bool = false
+## Abates fora da luz da lanterna (Missões do Santuário).
+var dark_kills: int = 0
+## Lutas com chefes em andamento: {id: {start, hits}} (golpes do chefe na guardiã na entrada).
+var boss_fights: Dictionary = {}
+## Chefes vencidos nesta partida: {id: {time (s da entrada à derrota), clean (sem golpe dele)}}.
+var boss_results: Dictionary = {}
 
 var _kill_times: PackedFloat32Array = []
 
 
-func on_kill(enemy_id: StringName, time: float) -> void:
+func on_kill(enemy_id: StringName, time: float, dark: bool = false) -> void:
 	kills += 1
+	dark_kills += int(dark)
 	kills_by_enemy[enemy_id] = int(kills_by_enemy.get(enemy_id, 0)) + 1
 	_kill_times.append(time)
 	while not _kill_times.is_empty() and time - _kill_times[0] > 10.0:
 		_kill_times.remove_at(0)
 	max_kills_10s = maxi(max_kills_10s, _kill_times.size())
+
+
+## Entrada do chefe (fim do diálogo): guarda o instante e quantos golpes dele a guardiã já levou.
+func on_boss_start(id: StringName, time: float, damage: DamageControl) -> void:
+	boss_fights[id] = {"start": time, "hits": _hits(damage, id)}
+
+
+## Chefe vencido: soma à lista da partida e, se a entrada foi registrada, o tempo da luta e se a
+## guardiã passou sem nenhum golpe dele.
+func on_boss_defeated(id: StringName, time: float, damage: DamageControl) -> void:
+	bosses.append(id)
+	if not boss_fights.has(id):
+		return
+	var fight: Dictionary = boss_fights[id]
+	boss_fights.erase(id)
+	boss_results[id] = {"time": time - float(fight["start"]), "clean": _hits(damage, id) == int(fight["hits"])}
+
+
+static func _hits(damage: DamageControl, id: StringName) -> int:
+	return int((damage.by_source.get(id, {}) as Dictionary).get("hits", 0)) if damage != null else 0
+
+
+## Campos das Missões para a partida suspensa (snapshot/restore do HyakkiGame).
+func snapshot() -> Dictionary:
+	var items_out := {}
+	for id: StringName in items:
+		items_out[String(id)] = int(items[id])
+	return {"dark_kills": dark_kills, "items": items_out, "boss_fights": _str_keys(boss_fights),
+			"boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
+			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
+			"kami": Array(kami).map(func(k: StringName) -> String: return String(k))}
+
+
+func restore(s: Dictionary) -> void:
+	dark_kills = int(s.get("dark_kills", 0))
+	for id: String in (s.get("items", {}) as Dictionary):
+		items[StringName(id)] = int(s["items"][id])
+	for key: String in ["boss_fights", "boss_results"]:
+		var table: Dictionary = get(key)
+		for id: String in (s.get(key, {}) as Dictionary):
+			table[StringName(id)] = (s[key][id] as Dictionary).duplicate()
+	max_dark_streak = float(s.get("max_dark_streak", 0.0))
+	max_no_damage = float(s.get("max_no_damage", 0.0))
+	ultimates = int(s.get("ultimates", 0))
+	chests = int(s.get("chests", 0))
+	for k: Variant in s.get("kami", []):
+		kami.append(StringName(String(k)))
+
+
+static func _str_keys(table: Dictionary) -> Dictionary:
+	var out := {}
+	for id: StringName in table:
+		out[String(id)] = (table[id] as Dictionary).duplicate()
+	return out
 
 
 func on_damage(weapon_id: StringName, amount: float) -> void:

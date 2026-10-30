@@ -138,10 +138,16 @@ func _bench_screen(app: App, screen_name: StringName, res: String, fps: int) -> 
 	await _frames(90)
 	_record(res, screen_name, "parada", fps)
 	var scrollers := _scrollers(screen)
-	if scrollers.is_empty():
-		return
 	for scroll: ScrollContainer in scrollers:
 		await _bench_scroller(scroll, res, screen_name, fps)
+	if screen_name == &"codex":
+		# Missões do Santuário: a maior lista do Diário (~170 cartões assados em seções).
+		screen.call("open_category", &"achievements", false)
+		await _frames(30)
+		for scroll: ScrollContainer in _scrollers(screen):
+			if scroll.name == "GridScroll":
+				await _bench_scroller(scroll, res, &"codex_missions", fps)
+		screen.call("open_category", &"enemies", false)
 
 
 ## Listas roláveis visíveis da tela com conteúdo maior que a área (só as que rolam de fato).

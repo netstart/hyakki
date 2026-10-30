@@ -452,8 +452,37 @@ func _test_codex(view: Vector2, state: String) -> void:
 			check_common(screen, view, "%s entrada %d" % [sub, i])
 		if id in [&"weapons", &"relics"]:
 			await _test_codex_recipe_layout(screen, view, sub)
+		if id == &"achievements":
+			await _test_codex_missions_layout(screen, view, sub)
 	close_screen(screen)
 	await _host.get_tree().process_frame
+
+
+## Missões: uma seção por categoria (cabeçalho inteiro na página), barra com "312 / 500" e as
+## recompensas (com ícone) inteiras na página da direita, numa missão aberta, numa concluída e
+## numa com duas recompensas.
+func _test_codex_missions_layout(screen: Control, view: Vector2, sub: String) -> void:
+	var page := (screen.get("_grid_scroll") as Control).get_global_rect()
+	var headers := (screen.get("_list") as Node).get_children().filter(func(n: Node) -> bool:
+			return String(n.name).begins_with("Section_"))
+	_ok(headers.size() == MissionBook.CATEGORIES.size(), "%s: uma seção por categoria (%d)" % [sub, headers.size()])
+	for h: Control in headers:
+		var r := h.get_global_rect()
+		_ok(r.position.x >= page.position.x - 0.5 and r.end.x <= page.end.x + 0.5,
+				"%s: cabeçalho %s na página" % [sub, h.name])
+	_ok((screen.call("cards") as Array).size() == MissionBook.ids().size(), "%s: um cartão por missão" % sub)
+	var right := (screen.get("_right") as Control).get_global_rect()
+	for id: StringName in [&"m_dark_500", &"ach_first_steps", &"m_pacts_60"]:
+		screen.call("open_entry", screen.call("index_of", id))
+		await _host.get_tree().process_frame
+		var row := screen.get("_progress_row") as Control
+		var value := screen.get("_progress_text") as Label
+		var rewards := screen.get("_rewards") as RichTextLabel
+		_ok(row.is_visible_in_tree() and value.text == MissionBook.progress_text(id), "%s %s: barra e progresso" % [sub, id])
+		_ok(rewards.is_visible_in_tree() and rewards.get_global_rect().position.x >= right.position.x - 0.5
+				and rewards.get_global_rect().end.x <= right.end.x + 0.5 and rewards.get_content_height() <= rewards.size.y + 0.5,
+				"%s %s: recompensas inteiras na página" % [sub, id])
+		check_common(screen, view, "%s %s" % [sub, id])
 
 
 func _test_codex_behaviour() -> void:
@@ -783,6 +812,8 @@ static func rich_profile() -> void:
 	var ach := DB.ids("achievements")
 	for i: int in 12:
 		(d["achievements"] as Dictionary)[String(ach[i])] = 1
+	(d["achievements"] as Dictionary)["m_kami_inari"] = 1
+	d["stats"]["kills"] = 640
 	d["story"]["intro_seen"] = true
 	d["story"]["ending_seen"] = true
 	(d["stats"]["evolved"] as Array).append_array(["dawn_blade", "steel_storm"])

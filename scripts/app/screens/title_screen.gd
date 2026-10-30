@@ -4,6 +4,10 @@ extends Screen
 ## canto inferior direito (Desafio Diário, Jogar e, com partida suspensa, Continuar).
 ## O centro fica livre para o torii e a guardiã do fundo (MenuBackdrop), que fala as dicas 心得
 ## num balão (TipBalloon) entre o menu e o bloco de ação, sem cobrir nenhum dos dois.
+## Sob o saldo, as Próximas metas (MissionGoals compacto): as 3 missões mais alcançáveis, com
+## barra e "312 / 500", entre o título/menu e o bloco de ação (some uma meta por vez quando a altura
+## não dá); tocar abre as Missões no Diário. O balão de dicas evita o bloco e, só se não couber em
+## lugar nenhum, o esconde enquanto fala (TipBalloon "soft").
 ## Com recorte de câmera (MenuKit.safe_insets), título, menu e versão andam para dentro pela
 ## esquerda e saldo e bloco de ação pela direita (_layout, a cada exibição,
 ## redimensionamento e troca do lado do furo).
@@ -24,6 +28,10 @@ const CARD_HEIGHT := 30.0
 const CTA_GAP := 6.0
 ## Folga mínima entre a coluna de menu e o bloco de ação.
 const COLUMN_GAP := 8.0
+## Próximas metas: largura máxima e mínima e a folga até o saldo e o bloco de ação.
+const GOALS_WIDTH := 180.0
+const GOALS_MIN_WIDTH := 112.0
+const GOALS_GAP := 6.0
 const VERMILION := Color("c0392b")
 const SEAL_RED := Color("b3261e")
 const SHADOW := Color(0.08, 0.03, 0.03)
@@ -55,6 +63,9 @@ var _divider: ColorRect
 var _cta_width := CTA_WIDTH
 ## Balão de dicas da guardiã (TipBalloon).
 var _tips: TipBalloon
+## Próximas metas (MissionGoals compacto) e se cabem na tela atual.
+var _goals: MissionGoals
+var _goals_fit := false
 
 
 func _ready() -> void:
@@ -72,6 +83,9 @@ func _ready() -> void:
 	_build_menu()
 	_build_chip()
 	_build_cta()
+	_goals = MissionGoals.new(true)
+	_goals.pressed.connect(func(id: StringName) -> void: app.open_codex(&"achievements", id))
+	add_child(_goals)
 	var version := label("v" + str(ProjectSettings.get_setting("application/config/version")))
 	version.add_theme_color_override("font_color", Color(MUTED, 0.45))
 	version.add_theme_constant_override("outline_size", 0)
@@ -84,6 +98,7 @@ func _ready() -> void:
 	_tips = TipBalloon.new()
 	_tips.name = "TipBalloon"
 	_tips.context_provider = _tip_context
+	_tips.soft_cover_changed.connect(func(covered: bool) -> void: _goals.visible = _goals_fit and not covered)
 	add_child(_tips)
 	visibility_changed.connect(func() -> void:
 		if not is_visible_in_tree():
@@ -103,6 +118,7 @@ func on_show() -> void:
 	_daily_done.visible = done
 	_daily_new.visible = not done
 	_daily.self_modulate = Color(1, 1, 1, 0.72) if done else Color.WHITE
+	_goals.set_goals(MissionGoals.live_goals())
 	_layout()
 	_layout_cta()
 	_play_intro()
@@ -134,6 +150,7 @@ func _layout() -> void:
 	_cta_anchor.offset_left = -CTA_MARGIN - inset.y - CTA_WIDTH
 	_cta_anchor.offset_right = -CTA_MARGIN - inset.y
 	_fit_rows()
+	_layout_goals()
 	if _tips != null and _tips.is_showing():
 		_tips.relayout.call_deferred()
 
@@ -156,8 +173,38 @@ func _tip_context() -> Dictionary:
 			cta = r if cta.size == Vector2.ZERO else cta.merge(r)
 	var blockers: Array[Rect2] = [to_local * _title_box.get_global_rect(), to_local * _chip.get_global_rect(), menu,
 			cta, to_local * _version.get_global_rect()]
-	return {"view": size, "insets": MenuKit.safe_insets(self), "blockers": blockers,
+	var soft: Array[Rect2] = []
+	if _goals_fit:
+		soft.append(Rect2(_goals.position, _goals.size))
+	return {"view": size, "insets": MenuKit.safe_insets(self), "blockers": blockers, "soft": soft,
 			"hero": to_local * (backdrop.get_global_transform() * backdrop.hero_rect())}
+
+
+## Próximas metas sob o saldo, à direita: largura até o título e a coluna do menu, altura até o
+## bloco de ação (fit_height tira metas do fim); sem largura mínima, some.
+func _layout_goals() -> void:
+	if _goals == null or _rows.is_empty():
+		return
+	var inset := MenuKit.safe_insets(self)
+	var right := size.x - CHIP_MARGIN - inset.y
+	var left := maxf(_title_box.position.x + _title_box.size.x, _menu.position.x + _rows[0].size.x) + COLUMN_GAP
+	var width := floorf(minf(GOALS_WIDTH, right - left))
+	var top := _chip.offset_top + _chip.get_combined_minimum_size().y + GOALS_GAP
+	var cta_top := size.y + _cta_anchor.offset_top + _daily.position.y
+	_goals.custom_minimum_size = Vector2(maxf(width, 0.0), 0.0)
+	_goals.size = Vector2(maxf(width, 0.0), 0.0)
+	_goals_fit = width >= GOALS_MIN_WIDTH and _goals.fit_height(cta_top - GOALS_GAP - top) > 0
+	_goals.position = Vector2(right - _goals.size.x, top)
+	_goals.visible = _goals_fit and not _tips_cover_goals()
+
+
+func _tips_cover_goals() -> bool:
+	return _tips != null and _tips.is_showing() and _tips.covers_soft()
+
+
+## Próximas metas (testes).
+func goals() -> MissionGoals:
+	return _goals
 
 
 ## Balão de dicas (testes e capturas).
@@ -490,6 +537,7 @@ func _layout_cta() -> void:
 		y -= CTA_GAP
 	_cta_width = width
 	_fit_rows()
+	_layout_goals()
 	var main := _primary()
 	_glow.position = main.position - Vector2(22, 14)
 	_glow.size = main.size + Vector2(44, 28)
@@ -580,6 +628,7 @@ func _play_intro() -> void:
 	_intro.tween_property(_title_box, "position:y", TITLE_AT.y, 0.3).from(TITLE_AT.y - 6.0)
 	_intro.tween_property(_title_box, "modulate:a", 1.0, 0.3).from(0.0)
 	_intro.tween_property(_chip, "modulate:a", 1.0, 0.3).from(0.0)
+	_intro.tween_property(_goals, "modulate:a", 1.0, 0.3).from(0.0).set_delay(0.12)
 	for i: int in _rows.size():
 		var row := _rows[i]
 		var delay := 0.08 + i * 0.04

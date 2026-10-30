@@ -204,6 +204,12 @@ func _screen_script(name: StringName) -> GDScript:
 	return load(path) as GDScript
 
 
+## Abre o Diário na categoria `category` e na entrada `entry` (as metas do título levam às Missões).
+func open_codex(category: StringName, entry: StringName = &"") -> void:
+	go(&"codex")
+	(_screens[&"codex"] as Screen).call("open_item", category, entry)
+
+
 func play_story(id: StringName, then: Callable) -> void:
 	_after_story = then
 	go(&"story")

@@ -106,7 +106,11 @@ static func make_result(variant: String, weapons: int) -> Dictionary:
 			"ryo_earned": 1234, "weapons": rows,
 			"new_achievements": [&"ach_win_village", &"ach_unscathed", &"ach_win_moon3"] if victory else [&"ach_first_steps"],
 			"damage_taken": {"total": 345.0, "top": ["tanuki", "slime_rice"], "cause": "slime_rice"},
-			"endless": false, "daily": false, "doubled": false, "prev_best_time": 0.0}
+			"endless": false, "daily": false, "doubled": false, "prev_best_time": 0.0,
+			# Próximas metas com o que a partida somou (abates, breu e um tempo, o "+N" mais largo).
+			"goals": [{"id": "ach_kills_20000", "before": 12345.0, "after": 18765.0, "target": 20000.0},
+					{"id": "m_dark_10000", "before": 0.0, "after": 9876.0, "target": 10000.0},
+					{"id": "m_endless_19", "before": 300.0, "after": 1139.0, "target": 1140.0}]}
 
 
 ## Tudo visível dentro da tela, sem sobreposição; textos e botões inteiros; o que está nas
@@ -194,6 +198,7 @@ func _check_variant(screen: Control, r: Dictionary, variant: String, state: Stri
 		_check.call((screen.get("_cause_icon") as TextureRect).texture != null, "%s: ícone do golpe final" % state)
 	else:
 		_check.call(cause == tr("results.hurt_most") % tr("boss.tanuki.name"), "%s: quem mais feriu" % state)
+	_check_goals(screen, r, state)
 	var cards := 0
 	for child: Node in (screen.get("_achievements") as Node).get_children():
 		if child is PanelContainer:
@@ -206,6 +211,21 @@ func _check_variant(screen: Control, r: Dictionary, variant: String, state: Stri
 	_check.call(shown[0] == Screen.format_time(float(r["time"])) and shown[1] == str(int(r["level"]))
 			and shown[2] == Locale.format_number(int(r["kills"])) and shown[3] == Locale.format_number(int(r["ryo_earned"])),
 			"%s: números finais depois da contagem (%s)" % [state, shown])
+
+
+## Próximas metas: uma linha por meta com nome, barra no valor de depois e o "+N" visível.
+func _check_goals(screen: Control, r: Dictionary, state: String) -> void:
+	var goals := screen.get("_goals") as MissionGoals
+	var rows := goals.rows
+	_check.call(goals.is_visible_in_tree() and rows.size() == (r["goals"] as Array).size(),
+			"%s: Próximas metas com %d linhas" % [state, rows.size()])
+	for row: Dictionary in rows:
+		var bar := row["bar"] as MissionGoals.GoalBar
+		var delta := row["delta"] as Label
+		_check.call(is_equal_approx(bar.fill, float(row["after"]) / float(row["target"])) and bar.size.x >= 20.0,
+				"%s: barra da meta %s no valor de depois" % [state, row["id"]])
+		_check.call(delta.is_visible_in_tree() and delta.text.begins_with("+") and is_equal_approx(delta.modulate.a, 1.0),
+				"%s: \"+N\" da meta %s (%s)" % [state, row["id"], delta.text])
 
 
 ## Linhas em ordem de dano decrescente, barra proporcional à melhor, MVP só na primeira.

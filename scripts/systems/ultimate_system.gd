@@ -78,6 +78,8 @@ func activate() -> bool:
 		return false
 	charge = 0.0
 	uses += 1
+	# Conquista "5 Golpes da Lanterna numa partida" e o recorde das Missões (só registro).
+	game.tracker.ultimates += 1
 	var ult: Dictionary = game.player.hero.get("ultimate", {})
 	var player := game.player
 	var might := player.stats.get_stat("might")

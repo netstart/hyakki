@@ -81,6 +81,8 @@ const DamageNumberTests := preload("res://tests/damage_number_tests.gd")
 const DamageNumberFlowTests := preload("res://tests/damage_number_flow_tests.gd")
 ## Densidade adaptativa: pressão, tamanho/vida, juntar parecidos, pequenos, abreviação e cobertura.
 const DamageNumberDensityTests := preload("res://tests/damage_number_density_tests.gd")
+## Missões do Santuário: dados, condições, recompensas, save, Próximas metas e a partida pelo bot.
+const MissionTests := preload("res://tests/mission_tests.gd")
 ## Aparelhos-alvo dos testes de layout (Redmi Note 14 Pro+, Galaxy M55, Pixel 7) e o furo da câmera.
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
@@ -101,6 +103,7 @@ func _ready() -> void:
 	_test_descriptions()
 	_test_save_migration()
 	AchievementRewardTests.new().run(_check)
+	await MissionTests.new().run(self, _check)
 	_test_sanctuary()
 	_test_shop_clock()
 	_test_shop_coin_items()

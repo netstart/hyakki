@@ -3,7 +3,9 @@ extends RefCounted
 ## de cada lado): coluna de menu, saldo, bloco de ação e selos (Loja pronta,
 ## Desafio Diário feito, partida suspensa) em todos os idiomas; foco no botão principal e
 ## entrada animada que não acumula deslocamento; balão de dicas da guardiã (TipBalloon) com a
-## dica mais longa de cada idioma, sem cobrir nada e sem corte. Chamado por tests/integration_tests.gd.
+## dica mais longa de cada idioma, sem cobrir nada e sem corte; Próximas metas (MissionGoals) sob o
+## saldo, inteiras, sem encostar em nada e sem texto cortado (o balão as evita ou as esconde enquanto
+## fala). Chamado por tests/integration_tests.gd.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
@@ -36,6 +38,7 @@ func run(host: Node, check: Callable) -> void:
 				await _settle(host, screen)
 				var tag := "Título %s [%s] (loja %s, diário %s)" % [lang, c["label"], shop_ready, done]
 				_check_layout(screen, check, tag)
+				_check_goals(screen, check, tag)
 				_check_states(app, screen, check, tag, shop_ready, done)
 				_check_tip(screen, check, tag)
 				if state == 0:
@@ -125,6 +128,36 @@ func _check_layout(screen: Control, check: Callable, tag: String) -> void:
 		check.call(not rect.intersects(chip), "%s: saldo não encosta em botão" % tag)
 
 
+## Próximas metas: ao menos uma meta (as 3 quando cabem), dentro da área segura, sem encostar no
+## título, no saldo, nos botões nem na versão; textos inteiros (o nome usa reticências).
+func _check_goals(screen: Control, check: Callable, tag: String) -> void:
+	var goals := screen.call("goals") as MissionGoals
+	var shown := goals.visible_rows()
+	check.call(goals.is_visible_in_tree() and shown >= 1 and goals.rows.size() == 3,
+			"%s: Próximas metas visíveis (%d de %d)" % [tag, shown, goals.rows.size()])
+	if not goals.is_visible_in_tree():
+		return
+	var rect := goals.get_global_rect()
+	check.call(_safe.encloses(rect), "%s: metas inteiras na tela (%s em %s)" % [tag, rect, _safe])
+	check.call(rect.size.x >= 112.0 and is_equal_approx(goals.modulate.a, 1.0), "%s: metas com largura e opacas" % tag)
+	var others: Array[Control] = [screen.get("_title_box") as Control, screen.get("_chip") as Control,
+			screen.get("_version") as Control]
+	others.append_array(_buttons(screen))
+	for c: Control in others:
+		check.call(not rect.intersects(c.get_global_rect()), "%s: metas não encostam em '%s'" % [tag, c.name])
+	for node: Node in goals.find_children("*", "Label", true, false):
+		var l := node as Label
+		if not l.is_visible_in_tree():
+			continue
+		var font := l.get_theme_font("font")
+		var font_size := l.get_theme_font_size("font_size")
+		check.call(l.get_line_count() * font.get_height(font_size) <= l.size.y + 0.5 and rect.encloses(l.get_global_rect()),
+				"%s: texto '%s' das metas inteiro na altura" % [tag, l.text.left(24)])
+		if l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING:
+			check.call(font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= l.size.x + 0.5,
+					"%s: texto '%s' das metas sem corte" % [tag, l.text])
+
+
 func _check_states(app: App, screen: Control, check: Callable, tag: String, shop_ready: bool, done: bool) -> void:
 	var shop := screen.get("_shop_button") as Button
 	check.call(shop.text == TranslationServer.translate("title.shop"), "%s: Loja sem sufixo de texto" % tag)
@@ -169,6 +202,11 @@ func _check_tip(screen: Control, check: Callable, tag: String) -> void:
 	check.call(_safe.encloses(box), "%s: balão inteiro na área segura (%s em %s)" % [tag, box, _safe])
 	var blockers: Array[Control] = [screen.get("_title_box") as Control, screen.get("_chip") as Control,
 			screen.get("_version") as Control]
+	var goals := screen.call("goals") as MissionGoals
+	if goals.is_visible_in_tree():
+		blockers.append(goals)
+	check.call(goals.is_visible_in_tree() != balloon.covers_soft(),
+			"%s: metas escondidas só quando o balão precisa do lugar delas" % tag)
 	for b: Button in _buttons(screen):
 		blockers.append(b)
 	for c: Control in blockers:

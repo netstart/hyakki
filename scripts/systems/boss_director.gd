@@ -90,6 +90,7 @@ func _intro(boss: Dictionary) -> void:
 	AudioManager.play_music(String(data.get("music", "boss_a")))
 	AudioManager.play("alert3")
 	AudioManager.play("taiko")
+	game.tracker.on_boss_start(id, GameClock.game_time, game.player.damage)
 	Events.boss_spawned.emit(id)
 
 

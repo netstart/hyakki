@@ -72,9 +72,11 @@ static func is_content_available(kind: String, id: StringName, data: Dictionary)
 	return unlock.is_empty() or SaveManager.is_unlocked(kind, id)
 
 
-## Aplica o resultado da partida ao perfil. Devolve as conquistas novas e os desbloqueios.
+## Aplica o resultado da partida ao perfil. Devolve o ryō, as conquistas e missões novas
+## ("achievements") e as próximas metas com o progresso de antes e depois ("goals", MissionBook).
 static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 	var data := SaveManager.data
+	var before := MissionBook.snapshot()
 	var stats: Dictionary = data["stats"]
 	var ryo := tracker.ryo
 	if bool(result.get("endless", false)):
@@ -134,10 +136,22 @@ static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 			daily["best_revived"] = bool(result.get("revived_by_ad", false))
 		daily["best_time"] = maxf(float(daily["best_time"]), float(result["time"]))
 		daily["best_kills"] = maxi(int(daily["best_kills"]), tracker.kills)
+	MissionBook.record_run(result, tracker)
 	var new_achievements := check_achievements(result, tracker)
 	SaveManager.save_profile()
 	_append_telemetry(tracker.csv_line(result))
-	return {"ryo": ryo, "achievements": new_achievements}
+	return {"ryo": ryo, "achievements": new_achievements, "goals": goals_with_delta(before)}
+
+
+## Próximas metas (MissionBook.next_goals) com o progresso antes da partida, para o "+N":
+## [{id, before, after, target}].
+static func goals_with_delta(before: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for id: StringName in MissionBook.next_goals():
+		var now := MissionBook.progress(id)
+		out.append({"id": String(id), "before": minf(float(before.get(String(id), now.x)), now.x),
+				"after": now.x, "target": now.y})
+	return out
 
 
 static func check_achievements(result: Dictionary, tracker: RunTracker) -> Array[StringName]:
@@ -152,6 +166,8 @@ static func check_achievements(result: Dictionary, tracker: RunTracker) -> Array
 			unlocked.append(id)
 			grant(String(data.get("reward", "")))
 			Events.achievement_unlocked.emit(id)
+	# Missões do Santuário (data/missions.json): conferidas pelos recordes do perfil.
+	unlocked.append_array(MissionBook.check_missions())
 	return unlocked
 
 
@@ -226,10 +242,22 @@ static func grant(reward: String, include_currency: bool = true) -> bool:
 		if kind == "ryo":
 			if include_currency:
 				SaveManager.add_ryo(value.to_int())
+		elif kind == "next_run":
+			# Reforço da Loja para a próxima partida (como a vaga por anúncio): consumível, nunca
+			# reaplicado.
+			if include_currency and DB.shop.has(StringName(value)):
+				(SaveManager.data["shop"]["next_run"] as Dictionary)[value] = true
 		elif UNLOCK_KINDS.has(kind):
 			if SaveManager.unlock(String(UNLOCK_KINDS[kind]), StringName(value)):
 				changed = true
 	return changed
+
+
+## Perfil carregado (SaveManager.load_profile, com o DB pronto): reaplica os desbloqueios das
+## conquistas e confere, uma vez, as missões que o progresso antigo já cumpre.
+static func on_profile_loaded() -> void:
+	reapply_achievement_unlocks()
+	MissionBook.catch_up()
 
 
 ## Reaplica os desbloqueios (nunca o ryō) das conquistas que o perfil já tem: uma recompensa
@@ -241,9 +269,9 @@ static func reapply_achievement_unlocks() -> bool:
 	var done: Dictionary = SaveManager.data.get("achievements", {})
 	for key: String in done:
 		var id := StringName(key)
-		if not DB.achievements.has(id):
+		if not MissionBook.has(id):
 			continue
-		var data: Dictionary = DB.achievements[id]
+		var data := MissionBook.data(id)
 		if grant(String(data.get("reward", "")), false):
 			changed = true
 	return changed
