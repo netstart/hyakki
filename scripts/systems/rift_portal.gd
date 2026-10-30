@@ -113,6 +113,8 @@ var _torii_tex: Texture2D
 var _glow: Node2D
 var _hum: AudioStreamPlayer2D
 var _near: Array[int] = []
+## Guardião cuja entrada ainda vai mostrar o aviso e o rugido (spawn_midboss).
+var _title_for: StringName = &""
 
 
 func _ready() -> void:
@@ -177,6 +179,7 @@ func reset() -> void:
 	realm_seed = 0
 	base_stage = game.stage if game != null else {}
 	_toast_delay = -1.0
+	_title_for = &""
 	_cross_t = -1.0
 	_swapped = false
 	if game != null and game.hud != null and game.hud.realm_card_exists():
@@ -224,9 +227,20 @@ func warn_midboss() -> void:
 	AudioManager.play(SFX_GONG, 0.8, 0.0, -6.0)
 
 
-func spawn_midboss(id: StringName) -> void:
+## Entrada do Guardião. O aviso "Guardião do Limiar" e o rugido vêm com a entrada do chefe
+## (Events.boss_spawned): depois do diálogo, quando há um. `dialogue` false na retomada.
+func spawn_midboss(id: StringName, dialogue: bool = true) -> void:
 	game.spawner.hush(ENTRY_HUSH)
-	game.bosses.spawn(id)
+	if not Events.boss_spawned.is_connected(_on_boss_spawned):
+		Events.boss_spawned.connect(_on_boss_spawned)
+	_title_for = id
+	game.bosses.spawn(id, dialogue)
+
+
+func _on_boss_spawned(id: StringName) -> void:
+	if _title_for == &"" or id != _title_for:
+		return
+	_title_for = &""
 	game.hud.toast(tr("midboss.title"), 3.0)
 	AudioManager.play(SFX_ROAR, 1.0, 0.05, -2.0)
 
@@ -460,7 +474,7 @@ func restore(s: Dictionary) -> void:
 		state = State.OPEN
 		_start_hum()
 	elif not midboss_done and not mid.is_empty() and GameClock.game_time > float(mid["t"]):
-		spawn_midboss(StringName(mid["id"]))
+		spawn_midboss(StringName(mid["id"]), false)
 
 
 ## Cenários de depuração (HyakkiGame.apply_scenario): "midboss" (pouco antes do aviso),

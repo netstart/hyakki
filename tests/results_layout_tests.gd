@@ -4,7 +4,8 @@ extends RefCounted
 ## botões visíveis e dentro da tela, armas em ordem de dano com barras proporcionais,
 ## vitória/derrota/desistência, sem armas, muitas armas (rolagem), textos longos (todos os
 ## idiomas), "Dobrar ryō" só quando dá e uma vez, jingle de conquista uma vez, trava de toque
-## da entrada, selo de recorde e "Reduzir flashes".
+## da entrada, selo de recorde e "Reduzir flashes". Na derrota, o cartão 心得 leva a dica mais
+## longa do idioma (TipDeck.longest), para o pior caso caber em toda resolução.
 ## Chamado por tests/results_layout_runner.gd (ou pelo integration_tests.gd), que passa o nó
 ## anfitrião e o _check.
 
@@ -31,6 +32,7 @@ var _check: Callable
 ## Fora do laço de resoluções (rolagem, Dobrar ryō etc.), a resolução de referência.
 var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+var _longest: Dictionary = {}
 
 
 func run(host: Node, check: Callable) -> void:
@@ -51,6 +53,8 @@ func run(host: Node, check: Callable) -> void:
 					continue
 				for count: int in [6, 0, 10]:
 					var r := make_result(variant, count)
+					if variant == "defeat":
+						r["tip"] = _longest_tip()
 					var opened := await _open(r)
 					var state := "%s [%s], %s, %d armas" % [lang, c["label"], variant, count]
 					check_layout(opened, state)
@@ -78,6 +82,13 @@ func use_case(view: Vector2, insets: Vector2) -> void:
 	_view = Rect2(Vector2.ZERO, view)
 	_safe = DeviceProfiles.safe_rect(view, insets)
 	DeviceProfiles.simulate_insets(insets)
+
+
+## Dica mais larga do idioma atual (uma vez por idioma).
+func _longest_tip() -> Dictionary:
+	if not _longest.has(Locale.current):
+		_longest[Locale.current] = TipDeck.longest(Locale.font if Locale.font != null else ThemeDB.fallback_font)
+	return _longest[Locale.current]
 
 
 ## Resultado de exemplo como o HyakkiGame.build_result + MetaProgress.apply_run.
@@ -172,6 +183,11 @@ func _check_variant(screen: Control, r: Dictionary, variant: String, state: Stri
 	_check.call(title == tr(key), "%s: título %s" % [state, key])
 	var tip := screen.get("_tip_box") as Control
 	_check.call(tip.visible == (variant != "victory"), "%s: dica só fora da vitória" % state)
+	if tip.visible:
+		var card := screen.get("_tip") as TipBalloon.Card
+		_check.call(card.text.text == TipDeck.text(r["tip"]) and not card.text.text.is_empty()
+				and card.category == TipDeck.category_text(r["tip"]) and card.seal.is_visible_in_tree(),
+				"%s: cartão 心得 com selo, dica e categoria" % state)
 	var cause := (screen.get("_cause") as Label).text
 	if variant == "defeat":
 		_check.call(cause == tr("results.final_blow") % tr("enemy.slime_rice.name"), "%s: golpe final" % state)

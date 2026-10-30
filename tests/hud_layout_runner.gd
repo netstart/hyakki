@@ -3,7 +3,7 @@ extends Node
 ## (o perfil do jogador não é tocado):
 ##   godot --headless --path . res://tests/hud_layout_tests.tscn
 ## Com `-- --shots=<pasta>` (sem --headless) abre uma partida de verdade (6 armas, 6 passivas,
-## números grandes, joystick fixo) e grava capturas da HUD e do painel de Kami em cada
+## números grandes, joystick fixo) e grava capturas da HUD, do diálogo antes do chefe e do painel de Kami em cada
 ## resolução de tests/device_profiles.gd, sem recorte e com o furo da câmera de cada lado (a
 ## faixa do recorte aparece em vermelho); `--langs=pt_BR,de` troca os idiomas e
 ## `--views=678x305,480x270` limita as resoluções. O painel de Kami sai parado, com uma placa
@@ -87,6 +87,7 @@ func _screenshots(dir: String, langs: PackedStringArray, views: PackedStringArra
 				var side := "sem" if insets == Vector2.ZERO else ("esq" if insets.x > 0.0 else "dir")
 				await get_tree().create_timer(0.8).timeout
 				await _shot(dir.path_join("hud_%s_%s_%dx%d.png" % [lang, side, view.x, view.y]))
+				await _dialogue_shots(app, dir, "%s_%s_%dx%d" % [lang, side, view.x, view.y])
 				var offer: Array[StringName] = [&"hachiman", &"inari", &"raijin"]
 				app.game.open_kami(offer)
 				var tag := "%s_%s_%dx%d" % [lang, side, view.x, view.y]
@@ -109,6 +110,26 @@ func _screenshots(dir: String, langs: PackedStringArray, views: PackedStringArra
 	await get_tree().process_frame
 	DisplayServer.window_set_size(native)
 	Locale.set_language("pt_BR", false)
+
+
+## Diálogo antes do chefe: a 1ª fala (o chefe, à direita) subindo e parada, e a resposta da
+## guardiã (à esquerda). O bot fecha e a partida volta a ficar parada para as próximas capturas.
+func _dialogue_shots(app: App, dir: String, tag: String) -> void:
+	var hud := app.game.hud
+	app.game.open_dialogue(&"kappa_elder", func() -> void: pass)
+	await get_tree().create_timer(0.1).timeout
+	await _shot(dir.path_join("dialogue_%s_rise.png" % tag))
+	hud.dialogue_panel().finish_intro()
+	await get_tree().create_timer(0.5).timeout
+	await _shot(dir.path_join("dialogue_%s_boss.png" % tag))
+	var hero: Array[Dictionary] = [DialogueScript.build(&"kappa_elder", &"aki")[1]]
+	hud.show_dialogue(hero)
+	hud.dialogue_panel().finish_intro()
+	await get_tree().create_timer(0.5).timeout
+	await _shot(dir.path_join("dialogue_%s_hero.png" % tag))
+	hud.bot_answer()
+	GameClock.paused = true
+	await get_tree().create_timer(0.3).timeout
 
 
 ## Pacto selado e "Continuar" de um baú: quadros dos ícones voando até a guardiã.

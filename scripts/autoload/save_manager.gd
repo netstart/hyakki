@@ -60,6 +60,10 @@ static func default_profile() -> Dictionary:
 		"selected": {"hero": "aki", "stage": "village", "moon": 0, "mode": "normal",
 				"cosmetic": ""},
 		"suspended": {},
+		# Chefes cujo diálogo de entrada já apareceu (DialogueScript): {id: true}.
+		"dialogue_seen": {},
+		# Dicas 心得 já mostradas (TipBook): ciclo atual, já vistas, recentes e total.
+		"tips": {"seen": [], "ever": [], "recent": [], "count": 0},
 	}
 
 

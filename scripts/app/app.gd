@@ -246,6 +246,11 @@ func start_run(daily: bool = false) -> void:
 	add_child(game)
 
 
+## Fundo animado dos menus (a guardiã sob o torii; o balão de dicas do título aponta para ela).
+func backdrop() -> MenuBackdrop:
+	return _backdrop
+
+
 func has_suspended_run() -> bool:
 	var s: Dictionary = SaveManager.data.get("suspended", {})
 	if s.is_empty() or int(s.get("version", 0)) != 1:

@@ -4,7 +4,8 @@ extends Node
 ##   godot --headless --path . res://tests/title_layout_tests.tscn
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas do título em cada resolução de
 ## tests/device_profiles.gd, sem recorte e com o furo da câmera de cada lado (a faixa do
-## recorte aparece em vermelho), com partida suspensa; `--langs=pt_BR,de` troca os idiomas.
+## recorte aparece em vermelho), com partida suspensa e o balão de dicas da guardiã com a dica mais
+## longa do idioma; `--langs=pt_BR,de` troca os idiomas.
 
 const TitleLayoutTests := preload("res://tests/title_layout_tests.gd")
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
@@ -71,6 +72,9 @@ func _screenshots(dir: String, langs: PackedStringArray) -> void:
 				var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
 				await get_tree().process_frame
 				screen.call("_finish_intro")
+				var balloon := screen.call("tip_balloon") as TipBalloon
+				balloon.show_tip(TipDeck.longest(Locale.font), false)
+				balloon.reveal()
 				var strip := ShotStrip.new(view, insets)
 				add_child(strip)
 				await get_tree().create_timer(0.6).timeout

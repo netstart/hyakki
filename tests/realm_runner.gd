@@ -92,7 +92,7 @@ func _screenshots(dir: String, stages: PackedStringArray) -> void:
 func _midboss_shots(game: HyakkiGame, dir: String, id: String) -> void:
 	var mid := RiftPortal.midboss_of(game.stage)
 	GameClock.paused = true
-	game.bosses.spawn(StringName(mid["id"]))
+	game.bosses.spawn(StringName(mid["id"]), false)
 	var i := int(game.bosses.bosses[0]["index"])
 	game.enemies.pos[i] = game.player.sim_pos + Vector2(70.0, -6.0)
 	game.enemies.prev[i] = game.enemies.pos[i]

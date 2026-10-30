@@ -21,6 +21,8 @@ func _initialize() -> void:
 	(load("res://tests/terrain_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/realm_tests.gd") as GDScript).new().run_unit(_check)
+	(load("res://tests/dialogue_tests.gd") as GDScript).new().run_unit(_check)
+	(load("res://tests/tip_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/damage_number_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/damage_number_density_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/perf_tests.gd") as GDScript).new().run_unit(_check)

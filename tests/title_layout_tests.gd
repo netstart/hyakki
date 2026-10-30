@@ -2,13 +2,16 @@ extends RefCounted
 ## Tela de título em cada resolução de tests/device_profiles.gd (sem e com o furo da câmera
 ## de cada lado): coluna de menu, saldo, bloco de ação e selos (Loja pronta,
 ## Desafio Diário feito, partida suspensa) em todos os idiomas; foco no botão principal e
-## entrada animada que não acumula deslocamento. Chamado por tests/integration_tests.gd.
+## entrada animada que não acumula deslocamento; balão de dicas da guardiã (TipBalloon) com a
+## dica mais longa de cada idioma, sem cobrir nada e sem corte. Chamado por tests/integration_tests.gd.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 ## Tela lógica do caso atual e a área segura (fora do furo da câmera).
 var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
 var _safe := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
+## Dica mais larga de cada idioma (TipDeck.longest), calculada uma vez.
+var _longest: Dictionary = {}
 
 
 func run(host: Node, check: Callable) -> void:
@@ -34,6 +37,7 @@ func run(host: Node, check: Callable) -> void:
 				var tag := "Título %s [%s] (loja %s, diário %s)" % [lang, c["label"], shop_ready, done]
 				_check_layout(screen, check, tag)
 				_check_states(app, screen, check, tag, shop_ready, done)
+				_check_tip(screen, check, tag)
 				if state == 0:
 					await _check_repeat(host, app, screen, check, tag)
 				app.queue_free()
@@ -143,6 +147,57 @@ func _check_states(app: App, screen: Control, check: Callable, tag: String, shop
 	for b: Button in _buttons(screen):
 		check.call(b == primary or b.get_global_rect().size.y < primary.get_global_rect().size.y,
 				"%s: '%s' menor que o principal" % [tag, b.text])
+
+
+## Balão de dicas com a dica mais longa do idioma: dentro da área segura, sem cobrir título,
+## saldo, menu, bloco de ação, versão nem a guardiã; rabicho até a cabeça; texto inteiro.
+func _check_tip(screen: Control, check: Callable, tag: String) -> void:
+	var balloon := screen.call("tip_balloon") as TipBalloon
+	var font: Font = Locale.font if Locale.font != null else ThemeDB.fallback_font
+	if not _longest.has(Locale.current):
+		_longest[Locale.current] = TipDeck.longest(font)
+	var tip: Dictionary = _longest[Locale.current]
+	balloon.show_tip(tip, false)
+	balloon.reveal()
+	var rects := balloon.layout_rects()
+	var name := String(tip.get("id", ""))
+	check.call(bool(rects.get("ok", false)) and balloon.visible, "%s: balão cabe com a dica mais longa (%s)" % [tag, name])
+	if not bool(rects.get("ok", false)):
+		return
+	var xf := screen.get_global_transform()
+	var box: Rect2 = xf * (rects["box"] as Rect2)
+	check.call(_safe.encloses(box), "%s: balão inteiro na área segura (%s em %s)" % [tag, box, _safe])
+	var blockers: Array[Control] = [screen.get("_title_box") as Control, screen.get("_chip") as Control,
+			screen.get("_version") as Control]
+	for b: Button in _buttons(screen):
+		blockers.append(b)
+	for c: Control in blockers:
+		check.call(not box.intersects(c.get_global_rect()), "%s: balão não cobre '%s'" % [tag, c.name])
+	var app := screen.get("app") as App
+	var backdrop := app.backdrop()
+	var hero := backdrop.get_global_transform() * backdrop.hero_rect()
+	check.call(not box.intersects(hero), "%s: balão não cobre a guardiã" % tag)
+	var tail: PackedVector2Array = rects["tail"]
+	var tip_at := xf * tail[2]
+	check.call(tip_at.distance_to(Vector2(hero.get_center().x, hero.position.y)) <= 16.0 + hero.size.y * 0.5,
+			"%s: rabicho aponta para a guardiã (%s, %s)" % [tag, tip_at, hero])
+	# "×": desenho dentro do papel (sem a moldura de 6 px), da área assada e da área de toque, sem
+	# encostar nos ícones da receita nem no texto.
+	var glyph: Rect2 = xf * (rects["close_glyph"] as Rect2)
+	var bake := balloon.get_node("StaticBake") as Control if balloon.has_node("StaticBake") else null
+	var baked := bake.get_global_rect() if bake != null else balloon.get_global_rect()
+	check.call(box.grow(-6.0).encloses(glyph) and baked.encloses(glyph) and baked.size == balloon.size
+			and (xf * (rects["close"] as Rect2)).encloses(glyph),
+			"%s: × do balão inteiro no papel e na área assada (%s em %s, %s)" % [tag, glyph, box, baked])
+	var chain: Rect2 = xf * (rects["chain"] as Rect2)
+	check.call(chain.size.x <= 0.0 or not chain.intersects(glyph), "%s: × não encosta nos ícones" % tag)
+	var label := balloon.text_label()
+	var text := label.get_global_rect()
+	check.call(not text.intersects(glyph), "%s: × não encosta no texto" % tag)
+	check.call(box.encloses(text) and int(rects["lines"]) <= TipBalloon.MAX_LINES
+			and label.get_line_count() <= int(rects["lines"]) and TipBalloon.words_fit(label.text, text.size.x, font),
+			"%s: dica '%s' inteira no balão (%d linhas)" % [tag, name, label.get_line_count()])
+	balloon.show_tip({})
 
 
 func _check_repeat(host: Node, app: App, screen: Control, check: Callable, tag: String) -> void:

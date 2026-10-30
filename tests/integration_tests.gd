@@ -69,6 +69,10 @@ const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
 const SpeedUnlockTests := preload("res://tests/speed_unlock_tests.gd")
 ## Guardião do Limiar, portal e Kakuriyo: dados, travessia, outro mundo, retomada e cenários.
 const RealmTests := preload("res://tests/realm_tests.gd")
+## Diálogo antes dos chefes: roteiros, regras de visto, opção "sempre" e a entrada adiada.
+const DialogueTests := preload("res://tests/dialogue_tests.gd")
+## Dicas 心得: catálogo, regras, balão do título, cartão dos Resultados e a opção "Dicas".
+const TipTests := preload("res://tests/tip_tests.gd")
 ## Números de dano coloridos: causado × recebido × cura, alto, crítico, contínuo e daltonismo.
 const DamageNumberTests := preload("res://tests/damage_number_tests.gd")
 ## Anel, limite, soma, estresse, opções por tipo e a tela de Opções dos números de dano.
@@ -128,6 +132,10 @@ func _ready() -> void:
 	await (load("res://tests/terrain_tests.gd") as GDScript).new().run(self, _check)
 	await (load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run(self, _check)
 	await RealmTests.new().run(self, _check)
+	DialogueTests.new().run_unit(_check)
+	await DialogueTests.new().run(self, _check)
+	TipTests.new().run_unit(_check)
+	await TipTests.new().run(self, _check)
 	await EnemyFxTests.new().run(self, _check)
 	await DamageNumberTests.new().run(self, _check)
 	await DamageNumberFlowTests.new().run(self, _check)
@@ -409,6 +417,8 @@ func _test_save_migration() -> void:
 	_check((migrated["unlocked"]["heroes"] as Array).has("kenta"), "migração mantém heróis")
 	_check(migrated["unlocked"].has("stages") and migrated.has("shop"), "migração completa campos novos")
 	_check(int(migrated["version"]) == SaveManager.VERSION, "migração atualiza versão")
+	_check(migrated.get("dialogue_seen") is Dictionary and (migrated["dialogue_seen"] as Dictionary).is_empty(),
+			"migração cria dialogue_seen vazio (diálogos dos chefes)")
 	var original_data := SaveManager.data
 	SaveManager.data = SaveManager.default_profile()
 	SaveManager.data["unlocked"]["heroes"] = ["aki"]

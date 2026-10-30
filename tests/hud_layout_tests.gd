@@ -21,6 +21,9 @@ extends RefCounted
 ##   texto encostar no outro, o mesmo arranjo nas três e as legendas "Bênção"/"Preço" em telas
 ##   de 300 px ou mais; todo Kami em alguma oferta, Hachiman em cada posição e a oferta de 2
 ##   (Lua V);
+## - diálogo antes do chefe (scripts/ui/dialogue_panel.gd): caixa, retrato 38x38 na moldura, nome,
+##   fala e "Pular" na área segura com 4 px de folga, sem se sobrepor, com a fala mais longa de
+##   cada idioma do lado do chefe e do herói, e toda fala do idioma cabendo nas linhas da caixa;
 ## - a HUD refaz o layout quando a tela muda de tamanho e quando o recorte troca de lado.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
@@ -51,6 +54,7 @@ func run(host: Node, check: Callable) -> void:
 			_check_arrows(hud, c["view"], safe, state)
 			_check_realm_card(hud, c["view"], c["insets"], safe, state)
 		await _check_kami(hud, safe.grow(-4.0), c["langs"], String(c["label"]))
+		await _check_dialogue(hud, safe.grow(-4.0), c["langs"], String(c["label"]))
 		await _close(hud)
 	DeviceProfiles.clear_insets()
 	Locale.set_language("pt_BR", false)
@@ -326,6 +330,88 @@ func check_kami_layout(panel: KamiPanel, room: Rect2, state: String) -> void:
 		for r: Rect2 in rects:
 			_check.call(not r.intersects(br), "%s: botão %s longe das placas" % [state, b.text])
 	_check.call(not buttons[0].get_global_rect().intersects(buttons[1].get_global_rect()), "%s: botões separados" % state)
+
+
+# --- Diálogo antes do chefe -------------------------------------------------------
+
+## Todas as falas de todos os roteiros, com cada herói (DialogueScript.build), sem repetir.
+static func dialogue_lines() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var seen := {}
+	for boss: String in DB.dialogues:
+		for hero: StringName in DB.ids("heroes"):
+			for line: Dictionary in DialogueScript.build(StringName(boss), hero):
+				if not seen.has(line["text_key"]):
+					seen[line["text_key"]] = true
+					out.append(line)
+	return out
+
+
+## A caixa com a fala mais longa do idioma do lado do chefe e do lado do herói.
+func _check_dialogue(hud: Hud, room: Rect2, langs: Array, label: String) -> void:
+	var panel := hud.dialogue_panel()
+	var lines := dialogue_lines()
+	for lang: String in langs:
+		Locale.set_language(lang, false)
+		var texts: Array[String] = []
+		var longest := {}
+		for line: Dictionary in lines:
+			var text := TranslationServer.translate(String(line["text_key"]))
+			texts.append(text)
+			var side := String(line["side"])
+			if not longest.has(side) or text.length() > String(longest[side][1]).length():
+				longest[side] = [line, text]
+		for side: String in ["right", "left"]:
+			var one: Array[Dictionary] = [longest[side][0]]
+			hud.show_dialogue(one)
+			panel.finish_intro()
+			check_dialogue_layout(panel, room, texts, "%s [%s], diálogo à %s" % [lang, label,
+					"direita" if side == "right" else "esquerda"])
+		await _host.get_tree().process_frame
+	panel.close_now()
+	Locale.set_language("pt_BR", false)
+
+
+## Diálogo aberto e parado: caixa, retrato, nome, fala e "Pular" inteiros em `room`, sem se
+## sobrepor; toda fala `texts` do idioma cabe na área de texto (DialoguePanel.text_fits).
+func check_dialogue_layout(panel: DialoguePanel, room: Rect2, texts: Array[String], state: String) -> void:
+	var origin := panel.get_global_rect().position
+	var layout := panel.layout_rects()
+	var rects := {}
+	for key: String in ["box", "frame", "portrait", "name", "text", "skip"]:
+		var r := Rect2(origin + (layout[key] as Rect2).position, (layout[key] as Rect2).size)
+		rects[key] = r
+		_check.call(r.size.x > 0.0 and room.encloses(r), "%s: %s na área segura (%s em %s)" % [state, key, r, room])
+	var box: Rect2 = rects["box"]
+	for key: String in ["frame", "name", "text"]:
+		_check.call(box.encloses(rects[key]), "%s: %s dentro da caixa" % [state, key])
+	_check.call((rects["frame"] as Rect2).encloses(rects["portrait"]) and (rects["portrait"] as Rect2).size
+			== Vector2(DialoguePanel.FACE, DialoguePanel.FACE), "%s: retrato 38x38 na moldura" % state)
+	_check.call(((rects["frame"] as Rect2).get_center().x > box.get_center().x) == (panel.current_side() == "right"),
+			"%s: retrato do lado de quem fala" % state)
+	var parts: Array[String] = ["frame", "name", "text", "skip"]
+	for a: int in parts.size():
+		for b: int in range(a + 1, parts.size()):
+			_check.call(not (rects[parts[a]] as Rect2).intersects(rects[parts[b]]),
+					"%s: %s e %s sem se sobrepor" % [state, parts[a], parts[b]])
+	_check.call(not box.intersects(rects["skip"]), "%s: \"Pular\" fora da caixa" % state)
+	var skip := panel.skip_button()
+	var br := skip.get_global_rect()
+	var minimum := skip.get_combined_minimum_size()
+	_check.call(room.encloses(br) and minimum.x <= br.size.x + 0.5 and minimum.y <= br.size.y + 0.5,
+			"%s: botão \"%s\" inteiro (%s, mínimo %s)" % [state, skip.text, br, minimum])
+	var font := Locale.font
+	var name_w := font.get_string_size(panel.speaker_name(), HORIZONTAL_ALIGNMENT_LEFT, -1,
+			DialoguePanel.FONT_SIZE).x
+	_check.call(name_w <= (rects["name"] as Rect2).size.x, "%s: nome \"%s\" inteiro" % [state, panel.speaker_name()])
+	_check.call(panel.text_label().get_line_count() <= DialoguePanel.TEXT_LINES,
+			"%s: fala aberta com todas as linhas (%d)" % [state, panel.text_label().get_line_count()])
+	var width := (rects["text"] as Rect2).size.x
+	var cut: Array[String] = []
+	for text: String in texts:
+		if not DialoguePanel.text_fits(text, width, font):
+			cut.append(text.left(24))
+	_check.call(cut.is_empty(), "%s: todas as falas cabem em %.0f px (não cabem: %s)" % [state, width, cut])
 
 
 # --- Relayout ---------------------------------------------------------------------

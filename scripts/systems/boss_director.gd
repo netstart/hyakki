@@ -55,7 +55,11 @@ func has_boss(id: StringName) -> bool:
 	return false
 
 
-func spawn(id: StringName) -> void:
+## Chama o chefe `id` na borda (o Shinigami, perto da guardiã). Com diálogo a mostrar
+## (DialogueScript.should_show; `dialogue` false na retomada da partida), o chefe já entra em
+## campo, a luta para e a entrada (painel, música, rugido, Events.boss_spawned) vem no fim do
+## diálogo (_intro).
+func spawn(id: StringName, dialogue: bool = true) -> void:
 	var data: Dictionary = DB.bosses.get(id, {})
 	if data.is_empty():
 		return
@@ -68,6 +72,19 @@ func spawn(id: StringName) -> void:
 			"pattern": 0, "phase": -1, "sub": 0.0, "dir": Vector2.ZERO, "line": [],
 			"spiral_angle": 0.0, "decoys": [], "enraged": false}
 	bosses.append(boss)
+	if dialogue and DialogueScript.should_show(id):
+		game.open_dialogue(id, _intro.bind(boss))
+	else:
+		_intro(boss)
+
+
+## Entrada do chefe: painel com o nome e a frase, portal e fumaça, música, rugido e taiko. Depois
+## do diálogo, só se o chefe ainda estiver em campo (nova partida no meio do diálogo: nada).
+func _intro(boss: Dictionary) -> void:
+	if not bosses.has(boss):
+		return
+	var id := StringName(boss["id"])
+	var data: Dictionary = boss["data"]
 	game.hud.show_boss(tr("boss.%s.name" % id), tr("boss.%s.line" % id), panel_info(data))
 	fx.on_spawn(boss)
 	AudioManager.play_music(String(data.get("music", "boss_a")))

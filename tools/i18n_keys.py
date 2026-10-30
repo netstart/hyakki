@@ -65,6 +65,20 @@ def data_keys() -> set:
             keys.add(f"realm.{s['id']}.name")
     for story in data("story"):
         keys |= {p["text"] for p in story["panels"]}
+    hero_ids = [h["id"] for h in data("heroes")]
+    for script in data("dialogues").values():
+        for line in script["lines"]:
+            if line["who"] == "hero":
+                keys |= {f"{line['key']}.{hid}" for hid in hero_ids}
+            else:
+                keys.add(line["key"])
+    # Dicas 心得 (data/tips.json): as escritas e as categorias; os modelos das geradas são literais
+    # em scripts/systems/tip_book.gd (TipBook.GEN_*).
+    tips = json.loads((ROOT / "data" / "tips.json").read_text(encoding="utf-8"))
+    keys |= {f"tip.{t['id']}" for t in tips["tips"]}
+    keys |= {f"tip.cat.{c}" for c in tips["categories"]}
+    keys |= {"tip.gen.evolution", "tip.gen.union", "tip.gen.shared", "tip.gen.unlock_weapon",
+             "tip.gen.unlock_passive", "tip.gen.missed"}
     keys |= {f"moon.rule{n}" for n in range(1, 6)}
     keys |= {f"damage.source.{s}" for s in ("lava", "statue", "unknown")}
     keys |= {f"cosmetic.{c}" for c in ("golden_lantern", "crimson_lantern", "jade_lantern",
@@ -72,7 +86,7 @@ def data_keys() -> set:
     keys |= {f"licenses.cat_{c}" for c in ("all", "engine", "art", "audio", "font", "android")}
     for key in ("music_volume", "sfx_volume", "ui_volume", "joystick_mode", "joystick_side", "fps",
                 "vibration", "colorblind", "reduce_flashes", "damage_numbers", "damage_sounds", "hurt_sounds", "hp_bar_below",
-                "notifications"):
+                "notifications", "dialogues_always"):
         keys.add(f"options.{key}")
     keys |= {"options.joystick_floating", "options.joystick_fixed", "options.side_left",
              "options.side_right", "options.fps30", "options.fps60", "options.fps120"}

@@ -8,7 +8,8 @@ extends Screen
 ## - centro: 4 blocos de números (tempo, nível, abates, ryō) que contam do zero e o painel de
 ##   dano por arma (barras proporcionais à melhor arma, que ganha o selo MVP; rola se precisar);
 ## - direita: conquistas novas, o próximo desbloqueio com barra de progresso, uma dica na
-##   derrota e os botões: "Jogar de novo" em destaque, "Dobrar ryō" por anúncio (17.6) e "Menu".
+##   derrota (cartão 心得 do TipDeck, escolhido pelo motivo da derrota) e os botões: "Jogar de novo"
+##   em destaque, "Dobrar ryō" por anúncio (17.6) e "Menu".
 ## O céu do fundo é desenhado em código (cinzas caindo na derrota, aurora e pétalas na vitória).
 ## A entrada é escalonada (~0,6 s) e os botões só aceitam toque depois de INPUT_GUARD, para o
 ## toque que fechou o aviso de morte não cair num botão. "Reduzir flashes" desliga os pulsos.
@@ -45,7 +46,6 @@ const ICONS := {
 	"kills": "res://assets/art/ui/icons/spell/Cut.png",
 	"ryo": "res://assets/art/ui/icons/items/Money.png",
 }
-const TIP_ICON := "res://assets/art/ui/icons/items/Scroll.png"
 const GOLD := Color("d9a441")
 const VERMILION := Color("b23a26")
 const DIM := Color(0.8, 0.76, 0.72)
@@ -105,7 +105,7 @@ var _next_bar: ProgressBar
 var _next_detail: Label
 var _next_percent: Label
 var _tip_box: PanelContainer
-var _tip: Label
+var _tip: TipBalloon.Card
 var _again: Button
 var _double: Button
 var _menu: Button
@@ -851,18 +851,9 @@ func _build_right() -> Control:
 	_tip_box = PanelContainer.new()
 	_tip_box.name = "Tip"
 	info.add_child(_tip_box)
-	var tip := HBoxContainer.new()
-	tip.add_theme_constant_override("separation", 5)
-	_tip_box.add_child(tip)
-	var tip_icon := icon_rect(TIP_ICON, Vector2(16, 16))
-	tip_icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	tip_icon.tooltip_text = tr("results.tip")
-	tip.add_child(tip_icon)
-	_tip = label("")
-	_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_tip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_tip.add_theme_color_override("font_color", Color("e8dccb"))
-	tip.add_child(_tip)
+	_tip_box.tooltip_text = tr("results.tip")
+	_tip = TipBalloon.Card.new()
+	_tip_box.add_child(_tip)
 	_again = button(tr("results.again"), _on_again, Vector2(0, 30))
 	_again.name = "Again"
 	col.add_child(_again)
@@ -901,8 +892,12 @@ func _fill_right(r: Dictionary) -> void:
 		_next_percent.text = "%d%%" % floori(float(next["progress"]) * 100.0)
 		_next_detail.text = String(next["detail"])
 		_next_detail.visible = _next_detail.text != ""
-	_tip_box.visible = not _victory
-	_tip.text = tip_text(r)
+	# Dica fixa por resultado (não muda ao dobrar o ryō); some na vitória e sem a opção "Dicas".
+	if not r.has("tip"):
+		r["tip"] = TipDeck.result_tip(r)
+	_tip_box.visible = not _victory and not (r["tip"] as Dictionary).is_empty()
+	if _tip_box.visible:
+		_tip.set_tip(r["tip"])
 	_info_scroll.scroll_vertical = 0
 	_again.text = tr("results.again")
 
@@ -924,14 +919,6 @@ func _achievement_card(id: String) -> PanelContainer:
 	name_label.add_theme_color_override("font_color", ThemeFactory.ACCENT)
 	row.add_child(name_label)
 	return card
-
-
-## Dica para a próxima noite: fixa por resultado (não muda ao dobrar o ryō).
-func tip_text(r: Dictionary) -> String:
-	var tips := [tr("results.tip.0"), tr("results.tip.1"), tr("results.tip.2"), tr("results.tip.3"),
-			tr("results.tip.4"), tr("results.tip.5")]
-	var pick := int(float(r.get("time", 0.0)) * 10.0) + int(r.get("kills", 0)) * 7 + int(r.get("level", 0))
-	return tips[posmod(pick, tips.size())]
 
 
 ## Atualiza o que muda sem um resultado novo: ryō (dobrado), selo ×2 e o botão do anúncio.

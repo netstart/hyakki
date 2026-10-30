@@ -1,0 +1,74 @@
+{
+  "kappa_elder": {"lines": [
+    {"who": "boss", "key": "dialog.kappa_elder.open"},
+    {"who": "hero", "key": "dialog.kappa_elder.reply"},
+    {"who": "tora", "key": "dialog.kappa_elder.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.kappa_elder.close"}
+  ]},
+  "kitsune_nine": {"lines": [
+    {"who": "boss", "key": "dialog.kitsune_nine.open"},
+    {"who": "hero", "key": "dialog.kitsune_nine.reply"},
+    {"who": "tora", "key": "dialog.kitsune_nine.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.kitsune_nine.close"}
+  ]},
+  "faceless_monk": {"lines": [
+    {"who": "boss", "key": "dialog.faceless_monk.open"},
+    {"who": "hero", "key": "dialog.faceless_monk.reply"},
+    {"who": "tora", "key": "dialog.faceless_monk.aside", "skip": ["tora", "goro"]},
+    {"who": "boss", "key": "dialog.faceless_monk.close"}
+  ]},
+  "ash_dragon": {"lines": [
+    {"who": "boss", "key": "dialog.ash_dragon.open"},
+    {"who": "hero", "key": "dialog.ash_dragon.reply"},
+    {"who": "tora", "key": "dialog.ash_dragon.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.ash_dragon.close"}
+  ]},
+  "kuroe": {"lines": [
+    {"who": "boss", "key": "dialog.kuroe.open"},
+    {"who": "hero", "key": "dialog.kuroe.reply"},
+    {"who": "tora", "key": "dialog.kuroe.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.kuroe.close"}
+  ]},
+  "izanami": {"lines": [
+    {"who": "boss", "key": "dialog.izanami.open"},
+    {"who": "hero", "key": "dialog.izanami.reply"},
+    {"who": "tora", "key": "dialog.izanami.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.izanami.close"}
+  ]},
+  "onikuma": {"lines": [
+    {"who": "boss", "key": "dialog.onikuma.open"},
+    {"who": "hero", "key": "dialog.onikuma.reply"},
+    {"who": "tora", "key": "dialog.onikuma.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.onikuma.close"}
+  ]},
+  "nuppeppo": {"lines": [
+    {"who": "boss", "key": "dialog.nuppeppo.open"},
+    {"who": "hero", "key": "dialog.nuppeppo.reply"},
+    {"who": "tora", "key": "dialog.nuppeppo.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.nuppeppo.close"}
+  ]},
+  "onmoraki": {"lines": [
+    {"who": "boss", "key": "dialog.onmoraki.open"},
+    {"who": "hero", "key": "dialog.onmoraki.reply"},
+    {"who": "hana", "key": "dialog.onmoraki.aside", "skip": ["hana"]},
+    {"who": "boss", "key": "dialog.onmoraki.close"}
+  ]},
+  "onibi": {"lines": [
+    {"who": "boss", "key": "dialog.onibi.open"},
+    {"who": "hero", "key": "dialog.onibi.reply"},
+    {"who": "rin", "key": "dialog.onibi.aside", "skip": ["rin"]},
+    {"who": "boss", "key": "dialog.onibi.close"}
+  ]},
+  "yomi_hebi": {"lines": [
+    {"who": "boss", "key": "dialog.yomi_hebi.open"},
+    {"who": "hero", "key": "dialog.yomi_hebi.reply"},
+    {"who": "tora", "key": "dialog.yomi_hebi.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.yomi_hebi.close"}
+  ]},
+  "kincho": {"lines": [
+    {"who": "boss", "key": "dialog.kincho.open"},
+    {"who": "hero", "key": "dialog.kincho.reply"},
+    {"who": "tora", "key": "dialog.kincho.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.kincho.close"}
+  ]}
+}

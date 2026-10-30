@@ -18,6 +18,9 @@ var achievements: Dictionary = {}
 var items: Dictionary = {}
 var shop: Dictionary = {}
 var story: Dictionary = {}
+## Diálogos antes dos chefes (data/dialogues.json, um bloco por id de chefe; ver DialogueScript).
+## Sem o arquivo, nenhum chefe tem diálogo.
+var dialogues: Dictionary = {}
 ## Listas na ordem do arquivo (a ordem importa para menus e sorteios determinísticos).
 var order: Dictionary = {}
 var errors: PackedStringArray = []
@@ -54,8 +57,21 @@ func load_all() -> void:
 			ids.append(id)
 		set(name, table)
 		order[name] = ids
+	dialogues = _load_dialogues()
 	for message: String in errors:
 		push_error("DB: " + message)
+
+
+## data/dialogues.json é um objeto {id do chefe: {"lines": [...]}} e é opcional.
+func _load_dialogues() -> Dictionary:
+	var path := "res://data/dialogues.json"
+	if not FileAccess.file_exists(path):
+		return {}
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if typeof(parsed) != TYPE_DICTIONARY:
+		errors.append("não é um objeto JSON: " + path)
+		return {}
+	return parsed
 
 
 func ids(table: String) -> Array[StringName]:

@@ -76,6 +76,8 @@ var _tag_amount: Dictionary = {}
 var _choices: Array[Dictionary] = []
 var _pending_levels: int = 0
 var _pending_chests: Array[bool] = []
+## Entrada do chefe adiada até o fim do diálogo (open_dialogue).
+var _dialogue_done: Callable = Callable()
 var _bot: bool = false
 var _seed: int = 0
 var _quit_at: float = -1.0
@@ -330,6 +332,7 @@ func _build() -> void:
 	hud.kami_chosen.connect(_on_kami_chosen)
 	hud.chest_closed.connect(_on_chest_closed)
 	hud.revive_answered.connect(_on_revive_answered)
+	hud.dialogue_finished.connect(_on_dialogue_finished)
 	death = DeathSequence.new()
 	death.game = self
 	add_child(death)
@@ -390,6 +393,7 @@ func start_run(cfg: Dictionary) -> void:
 	step_index = 0
 	_pending_levels = 0
 	_pending_chests.clear()
+	_dialogue_done = Callable()
 	_choices.clear()
 	_hash_done = false
 	_over_budget = 0.0
@@ -916,6 +920,28 @@ func open_kami(offer: Array[StringName]) -> void:
 		return
 	GameClock.paused = true
 	hud.show_kami(offer)
+
+
+## Diálogo antes do chefe `boss_id` (DialogueScript): pausa a luta e, ao fim, chama `on_done`
+## (a entrada do chefe) e solta o relógio. Sem falas para o herói da partida, só chama `on_done`.
+## Marca como visto ao abrir.
+func open_dialogue(boss_id: StringName, on_done: Callable) -> void:
+	var lines := DialogueScript.build(boss_id, StringName(player.hero.get("id", &"aki")))
+	if lines.is_empty():
+		on_done.call()
+		return
+	DialogueScript.mark_seen(boss_id)
+	_dialogue_done = on_done
+	GameClock.paused = true
+	hud.show_dialogue(lines)
+
+
+func _on_dialogue_finished() -> void:
+	var done := _dialogue_done
+	_dialogue_done = Callable()
+	if done.is_valid():
+		done.call()
+	_resume_if_clear(false)
 
 
 func _on_kami_chosen(id: StringName) -> void:

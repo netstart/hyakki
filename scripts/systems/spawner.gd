@@ -49,8 +49,13 @@ func reset() -> void:
 		var event: Dictionary = (e as Dictionary).duplicate()
 		event["done"] = false
 		_events.append(event)
-	for b: Variant in stage.get("bosses", []):
-		_events.append({"t": float((b as Dictionary)["t"]), "type": "boss", "boss": (b as Dictionary)["id"], "done": false})
+	# Só o chefe das 10:00 (o último da lista) tem diálogo: o Dragão de Cinzas aos 5:00 do Santuário
+	# Secreto entra calado.
+	var boss_list: Array = stage.get("bosses", [])
+	for i: int in boss_list.size():
+		var b: Dictionary = boss_list[i]
+		_events.append({"t": float(b["t"]), "type": "boss", "boss": b["id"], "done": false,
+				"dialogue": i == boss_list.size() - 1})
 	for t: Variant in stage.get("kami", []):
 		_events.append({"t": float(t), "type": "kami", "done": false})
 	var mid := RiftPortal.midboss_of(stage)
@@ -116,7 +121,7 @@ func _run_event(event: Dictionary) -> void:
 			AudioManager.play("alert3", 0.7)
 			AudioManager.play("taiko")
 		"boss":
-			game.bosses.spawn(StringName(event["boss"]))
+			game.bosses.spawn(StringName(event["boss"]), bool(event.get("dialogue", false)))
 		"kami":
 			game.kami.spawn_shrine()
 		"midboss_warn":

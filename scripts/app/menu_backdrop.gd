@@ -202,6 +202,23 @@ func hero_id() -> String:
 	return _hero_id
 
 
+## Retângulo da guardiã desenhada sob o torii (sprite 2x, sem o balanço de 1 px), no espaço do
+## fundo: o balão de dicas do título (TipBalloon) aponta para o alto dele e não o cobre.
+func hero_rect() -> Rect2:
+	_ensure_layout()
+	if _hero == null:
+		_refresh_hero()
+	var feet := Vector2(roundf(_layout_size.x * 0.5), _torii.end.y + 6.0)
+	var drawn := _hero_side * 2.0 if _hero_side != Vector2.ZERO else Vector2(32, 32)
+	return Rect2(feet.x - drawn.x * 0.5, feet.y - drawn.y, drawn.x, drawn.y)
+
+
+## Alto da cabeça da guardiã (centro de cima do retângulo de hero_rect), no espaço do fundo.
+func hero_head() -> Vector2:
+	var r := hero_rect()
+	return Vector2(r.get_center().x, r.position.y)
+
+
 ## Pés de cada yōkai da procissão no último quadro desenhado.
 func walker_positions() -> PackedVector2Array:
 	return _walkers

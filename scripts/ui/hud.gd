@@ -18,6 +18,8 @@ signal ultimate_pressed
 signal kami_chosen(id: StringName)
 signal chest_closed
 signal revive_answered(accept: bool)
+## O diálogo antes do chefe terminou (todas as falas ou "Pular").
+signal dialogue_finished
 
 ## Bloqueio após abrir o level-up, para não escolher sem querer (plano 7.4).
 const CARD_LOCK_MS := LevelUpPanel.CARD_LOCK_MS
@@ -74,6 +76,8 @@ var _hint_step: int = 0
 var _level_panel: LevelUpPanel
 var _chest_panel: ChestPanel
 var _kami_panel: KamiPanel
+## Diálogo antes dos chefes (scripts/ui/dialogue_panel.gd).
+var _dialogue_panel: DialoguePanel
 ## Ícones das recompensas voando até a guardiã (scripts/ui/reward_flight.gd), sobre as telas.
 var _flight: RewardFlight
 ## Tela de pausa (scripts/ui/pause_menu.gd).
@@ -196,6 +200,7 @@ func _ready() -> void:
 	_build_level_panel()
 	_build_chest_panel()
 	_build_kami_panel()
+	_build_dialogue_panel()
 	_build_pause_panel()
 	_build_revive_panel()
 	_build_flight()
@@ -217,6 +222,7 @@ func start_run() -> void:
 	_level_panel.close_now()
 	_chest_panel.cancel()
 	_kami_panel.close_now()
+	_dialogue_panel.close_now()
 	_flight.clear()
 	_pause.close(false)
 	_show_play_hud(true)
@@ -233,7 +239,7 @@ func start_run() -> void:
 
 func overlay_open() -> bool:
 	return _level_panel.is_open() or _chest_panel.is_open() or _kami_panel.is_open() \
-			or _pause.is_open() or _revive_panel.visible or realm_active()
+			or _dialogue_panel.is_open() or _pause.is_open() or _revive_panel.visible or realm_active()
 
 
 func pause_open() -> bool:
@@ -527,6 +533,28 @@ func _build_flight() -> void:
 	_flight.landed.connect(func(item: Dictionary) -> void:
 		_skill_icons.pulse(String(item.get("key", "")), Time.get_ticks_msec() / 1000.0))
 	_root.add_child(_flight)
+
+
+# --- Diálogo antes do chefe ----------------------------------------------------------
+
+## Falas de DialogueScript.build, com a luta parada (quem pausa é o HyakkiGame).
+func show_dialogue(lines: Array[Dictionary]) -> void:
+	_dialogue_panel.open(lines)
+
+
+func dialogue_open() -> bool:
+	return _dialogue_panel.is_open()
+
+
+func dialogue_panel() -> DialoguePanel:
+	return _dialogue_panel
+
+
+func _build_dialogue_panel() -> void:
+	_dialogue_panel = DialoguePanel.new()
+	_dialogue_panel.name = "DialoguePanel"
+	_root.add_child(_dialogue_panel)
+	_dialogue_panel.finished.connect(func() -> void: dialogue_finished.emit())
 
 
 # --- Kami ----------------------------------------------------------------------------
@@ -936,7 +964,9 @@ func toggle_debug() -> void:
 
 ## Respostas automáticas do bot de testes.
 func bot_answer() -> void:
-	if _level_panel.is_open():
+	if _dialogue_panel.is_open():
+		_dialogue_panel.bot_finish()
+	elif _level_panel.is_open():
 		_level_panel.close_now()
 		card_chosen.emit(0)
 	elif _chest_panel.is_open():

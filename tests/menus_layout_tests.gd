@@ -22,7 +22,7 @@ const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "u
 		"hurt_sounds", "joystick_mode", "joystick_side", "vibration", "fps", "graphics_quality", "colorblind",
 		"reduce_flashes", "damage_numbers", "damage_show_hit", "damage_show_high", "damage_show_crit",
 		"damage_show_dot", "damage_show_taken", "damage_show_taken_heavy", "damage_show_heal", "hp_bar_below",
-		"notifications", "privacy", "restore", "credits",
+		"notifications", "dialogues_always", "tips", "privacy", "restore", "credits",
 		"licenses", "privacy_policy", "reset", "version"]
 
 var _host: Node

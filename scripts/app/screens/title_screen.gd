@@ -2,7 +2,8 @@ extends Screen
 ## Título (plano 7.3): festival de yokai à noite. Coluna de menu à esquerda (Santuário,
 ## Loja, Diário, Opções e Créditos), saldo de ryō no alto à direita e o bloco de ação no
 ## canto inferior direito (Desafio Diário, Jogar e, com partida suspensa, Continuar).
-## O centro fica livre para o torii e a guardiã do fundo (MenuBackdrop).
+## O centro fica livre para o torii e a guardiã do fundo (MenuBackdrop), que fala as dicas 心得
+## num balão (TipBalloon) entre o menu e o bloco de ação, sem cobrir nenhum dos dois.
 ## Com recorte de câmera (MenuKit.safe_insets), título, menu e versão andam para dentro pela
 ## esquerda e saldo e bloco de ação pela direita (_layout, a cada exibição,
 ## redimensionamento e troca do lado do furo).
@@ -52,6 +53,8 @@ var _intro: Tween
 var _divider: ColorRect
 ## Largura atual do bloco de ação (cresce com o texto do idioma).
 var _cta_width := CTA_WIDTH
+## Balão de dicas da guardiã (TipBalloon).
+var _tips: TipBalloon
 
 
 func _ready() -> void:
@@ -78,6 +81,13 @@ func _ready() -> void:
 	version.offset_bottom = -4
 	add_child(version)
 	_version = version
+	_tips = TipBalloon.new()
+	_tips.name = "TipBalloon"
+	_tips.context_provider = _tip_context
+	add_child(_tips)
+	visibility_changed.connect(func() -> void:
+		if not is_visible_in_tree():
+			_tips.stop())
 	resized.connect(_layout)
 	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
 	MenuKit.on_insets_change(self, _layout)
@@ -97,6 +107,7 @@ func on_show() -> void:
 	_layout_cta()
 	_play_intro()
 	_primary().grab_focus()
+	_tips.restart()
 
 
 func on_back() -> void:
@@ -123,6 +134,35 @@ func _layout() -> void:
 	_cta_anchor.offset_left = -CTA_MARGIN - inset.y - CTA_WIDTH
 	_cta_anchor.offset_right = -CTA_MARGIN - inset.y
 	_fit_rows()
+	if _tips != null and _tips.is_showing():
+		_tips.relayout.call_deferred()
+
+
+## Onde o balão de dicas pode ficar (espaço desta tela): a guardiã do fundo, a tela, o recorte e
+## o que ele não pode cobrir (título, saldo, coluna do menu, bloco de ação e versão).
+func _tip_context() -> Dictionary:
+	var backdrop: MenuBackdrop = app.backdrop() if app != null else null
+	if backdrop == null or not backdrop.is_inside_tree() or size.x < 1.0:
+		return {}
+	var to_local := get_global_transform().affine_inverse()
+	var menu := Rect2()
+	for row: Button in _rows:
+		var r := to_local * row.get_global_rect()
+		menu = r if menu.size == Vector2.ZERO else menu.merge(r)
+	var cta := Rect2()
+	for b: Button in [_daily, _play, _continue]:
+		if b.visible:
+			var r := to_local * b.get_global_rect()
+			cta = r if cta.size == Vector2.ZERO else cta.merge(r)
+	var blockers: Array[Rect2] = [to_local * _title_box.get_global_rect(), to_local * _chip.get_global_rect(), menu,
+			cta, to_local * _version.get_global_rect()]
+	return {"view": size, "insets": MenuKit.safe_insets(self), "blockers": blockers,
+			"hero": to_local * (backdrop.get_global_transform() * backdrop.hero_rect())}
+
+
+## Balão de dicas (testes e capturas).
+func tip_balloon() -> TipBalloon:
+	return _tips
 
 
 ## Linhas do menu com ROW_SIZE.x, ou mais estreitas (até o texto mais largo) quando o bloco de

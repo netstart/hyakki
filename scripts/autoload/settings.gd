@@ -36,6 +36,10 @@ const DEFAULTS := {
 	"speed": 1,
 	"notifications": false,
 	"show_fps": false,
+	## Diálogo antes dos chefes em todo encontro, e não só no primeiro (DialogueScript).
+	"dialogues_always": false,
+	## Dicas 心得 no balão da guardiã (título) e nos Resultados (TipDeck).
+	"tips": true,
 	## Qualidade gráfica (GfxQuality): "auto" | "low" | "medium" | "high".
 	"graphics_quality": "auto",
 }
