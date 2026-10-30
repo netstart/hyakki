@@ -40,6 +40,8 @@ const DEFAULTS := {
 	"dialogues_always": false,
 	## Dicas 心得 no balão da guardiã (título) e nos Resultados (TipDeck).
 	"tips": true,
+	## Baú com a sequência curta (omikuji, abertura e roleta duas vezes mais rápidas).
+	"chest_short": false,
 	## Qualidade gráfica (GfxQuality): "auto" | "low" | "medium" | "high".
 	"graphics_quality": "auto",
 }

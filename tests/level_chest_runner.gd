@@ -87,18 +87,28 @@ func _screenshots(dir: String, langs: Array[String]) -> void:
 			await _wait(0.12)
 			await _save(dir.path_join("levelup_%s_fly.png" % tag))
 			await _wait(1.0)
-			for count: int in [5, 3, 1]:
+			# Baús de 5, 3 e 1 itens, e o de 1 item como 凶 (papel amarrado no galho); no de 5 e
+			# no 凶, cada momento do omikuji, do baú e da roleta.
+			for spec: Array in [[5, Omikuji.DAIKICHI], [3, Omikuji.CHUKICHI], [1, Omikuji.KICHI], [1, Omikuji.KYO]]:
+				var count: int = spec[0]
+				var shot := "chest%d%s" % [count, "_kyo" if spec[1] == Omikuji.KYO else ""]
 				_unpause(game)
 				GameClock.paused = true
-				game.hud.show_chest(LevelChestTests.sample_rewards(count))
-				if count == 5:
-					for at: Array in [[0.2, "drop"], [1.15, "shake"], [1.62, "open"], [2.5, "items"]]:
+				game.hud.show_chest(LevelChestTests.sample_rewards(count), spec[1])
+				var chest_panel := game.hud.chest_panel()
+				if count == 5 or spec[1] == Omikuji.KYO:
+					var moments: Array = [[0.3, "tube"], [chest_panel.pop_time() + 0.1, "pop"],
+							[chest_panel.reveal_time() + 0.15, "slip"], [chest_panel.fold_time() + 0.15, "fold"],
+							[chest_panel.omikuji_time() + 0.2, "drop"], [chest_panel.open_time() - 0.3, "shake"],
+							[chest_panel.open_time() + 0.1, "open"], [chest_panel.reel_start(0) + 0.45, "reel"],
+							[chest_panel.item_time(0) + 0.3, "items"]]
+					for at: Array in moments:
 						await _until(game, float(at[0]))
-						await _save(dir.path_join("chest%d_%s_%s.png" % [count, tag, at[1]]))
+						await _save(dir.path_join("%s_%s_%s.png" % [shot, tag, at[1]]))
 				await _wait_end(game)
 				await _wait(0.5)
-				await _save(dir.path_join("chest%d_%s.png" % [count, tag]))
-				game.hud.chest_panel().button().pressed.emit()
+				await _save(dir.path_join("%s_%s.png" % [shot, tag]))
+				chest_panel.button().pressed.emit()
 			game.queue_free()
 			GameClock.paused = false
 			await get_tree().process_frame

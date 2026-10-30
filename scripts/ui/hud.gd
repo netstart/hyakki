@@ -459,10 +459,11 @@ func skill_slot(card: Dictionary) -> Vector2:
 	return game.player.get_global_transform_with_canvas().origin if game.player else Vector2(339, 152)
 
 
-## Tremor, abertura, itens voando um a um (cada um com som) e o cartão de cada item.
-func show_chest(rewards: Array[Dictionary]) -> void:
+## Omikuji (a sorte do baú), tremor, abertura, roleta de cada item, itens voando um a um
+## (cada um com som) e o cartão de cada item. Sem `fortune`, a sorte sai da contagem.
+func show_chest(rewards: Array[Dictionary], fortune: StringName = &"") -> void:
 	joystick.release()
-	_chest_panel.show_chest(rewards)
+	_chest_panel.show_chest(rewards, fortune)
 
 
 func chest_animating() -> bool:

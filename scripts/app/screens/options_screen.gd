@@ -266,6 +266,8 @@ func _build_other(card: VBoxContainer) -> void:
 	card.add_child(_toggle_row("dialogues_always", tr("options.dialogues_always")))
 	# Dicas 心得: balão da guardiã no título e cartão nos Resultados (ligadas por padrão).
 	card.add_child(_toggle_row("tips", tr("options.tips")))
+	# Baú: omikuji, abertura e roleta na metade do tempo (tocar ainda pula para o fim).
+	card.add_child(_toggle_row("chest_short", tr("options.chest_short")))
 	# Sem anúncios (AdsManager.ads_enabled = false) não há consentimento a rever. "Restaurar
 	# compras" fica sempre que há loja de dinheiro (Play Billing ou o simulado): a Ampulheta de
 	# Fūjin (velocidade 2x/3x) é vendida com ou sem anúncios.

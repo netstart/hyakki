@@ -8,6 +8,10 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 
 - 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos,
   37 yōkai, 12 chefes, 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
+- Omikuji do baú (おみくじ): antes de abrir, o tubo de madeira solta a sorte (吉 1 item, 中吉 3, 大吉 5,
+  e às vezes 凶 com consolo em ryō, amarrado no galho) e uma roleta para em cada item. A sorte só mostra a
+  contagem já sorteada; os 3 primeiros baús comuns do save saem com 中吉 garantido (o bot não usa nem gasta
+  esses baús, então os testes de determinismo não dependem do save). Opção "Animação curta do baú".
 - Santuário (18 power-ups, reembolso total), 40 conquistas que desbloqueiam conteúdo, Diário do Guardião,
   história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V.
 - Velocidade **1x / 2x / 3x** com passo fixo: a mesma semente gera a mesma partida em qualquer velocidade.
@@ -55,7 +59,7 @@ Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espa�
 powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 ```
 
-Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (799 chaves ×
+Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (1066 chaves ×
 11 idiomas, marcadores `%s/%d`), licenças (cobertura de todos os arquivos de `assets/`, hashes, licenças
 permitidas), limites da ficha da loja, testes de integração (dados, idiomas, cobertura de glifos, Loja,
 Santuário, save, regras de anúncio), determinismo 1x/2x/3x e estresse com 500 inimigos.

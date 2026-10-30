@@ -39,6 +39,8 @@ const StageMapLayoutTests := preload("res://tests/stage_map_layout_tests.gd")
 const ChestBurstTests := preload("res://tests/chest_burst_tests.gd")
 ## Telas de nova habilidade e do baú: fluxo, qualidade gráfica e layout em cada idioma.
 const LevelChestTests := preload("res://tests/level_chest_tests.gd")
+## Omikuji do baú: sortes, 凶 determinístico, baús generosos no save, roleta, pular e animação curta.
+const OmikujiTests := preload("res://tests/omikuji_tests.gd")
 ## Desbloqueios de conquistas reaplicados em saves antigos (Onikiri do Oni Vermelho).
 const AchievementRewardTests := preload("res://tests/achievement_reward_tests.gd")
 ## Fundo dos menus (Hyakki Yagyō): camadas, procissão na crista, guardiã escolhida e tamanhos.
@@ -121,6 +123,7 @@ func _ready() -> void:
 	await HudLayoutTests.new().run(self, _check)
 	await ChestBurstTests.new().run(self, _check)
 	await LevelChestTests.new().run(self, _check)
+	await OmikujiTests.new().run(self, _check)
 	await MenusLayoutTests.new().run(self, _check)
 	await SanctuaryLayoutTests.new().run(self, _check)
 	await ResultsLayoutTests.new().run(self, _check)

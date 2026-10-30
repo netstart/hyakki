@@ -587,7 +587,16 @@ moon.rule2,Lua II: chefes com um ataque extra.,Moon II: bosses gain an extra att
 moon.rule3,Lua III: Sombras também na luz.,Moon III: Shades lurk in the light too.,Luna III: las Sombras también en la luz.,Mond III: Schatten auch im Licht.,Lune III : les Ombres aussi dans la lumière.,Луна III: Тени и на свету.,Bulan III: Bayangan juga di cahaya.,紅月III：影は光の中にも潜む。,달 III: 그림자가 빛 속에도.,紅月III：影子也在光中。,红月III：影子也在光中。
 moon.rule4,Lua IV: sem bolinhos de arroz.,Moon IV: no rice balls.,Luna IV: sin bolas de arroz.,Mond IV: keine Reisbällchen.,Lune IV : pas d'onigiri.,Луна IV: без онигири.,Bulan IV: tanpa onigiri.,紅月IV：おにぎりなし。,달 IV: 주먹밥 없음.,紅月IV：沒有飯糰。,红月IV：没有饭团。
 moon.rule5,Lua V: os Kami oferecem só 2 pactos.,Moon V: Kami offer only 2 pacts.,Luna V: los kami ofrecen solo 2 pactos.,Mond V: Kami bieten nur 2 Pakte.,Lune V : les kami n'offrent que 2 pactes.,Луна V: ками предлагают лишь 2 договора.,Bulan V: Kami hanya menawarkan 2.,紅月V：神の契りは2つだけ。,달 V: 신의 계약은 2개뿐.,紅月V：神明只提供2個契約。,红月V：神明只提供2个契约。
+omikuji.chukichi,Chūkichi,Chūkichi,Chūkichi,Chūkichi,Chūkichi,Тюкити,Chūkichi,ちゅうきち,중길,中吉籤,中吉签
+omikuji.chukichi_meaning,Ótima sorte,Great luck,Gran suerte,Großes Glück,Grande fortune,Большая удача,Untung besar,なかなかの運,꽤 좋은 운,不錯的運氣,不错的运气
+omikuji.daikichi,Daikichi,Daikichi,Daikichi,Daikichi,Daikichi,Дайкити,Daikichi,だいきち,대길,大吉籤,大吉签
+omikuji.daikichi_meaning,Sorte grande!,Excellent luck!,¡Suerte máxima!,Höchstes Glück!,Fortune suprême !,Великая удача!,Sangat beruntung!,最高の運！,최고의 운!,大好運！,大好运！
+omikuji.kichi,Kichi,Kichi,Kichi,Kichi,Kichi,Кити,Kichi,きち,길,吉籤,吉签
+omikuji.kichi_meaning,Boa sorte,Good luck,Buena suerte,Glück,Bonne fortune,Удача,Untung,よい運,좋은 운,好運,好运
+omikuji.kyo,Kyō,Kyō,Kyō,Kyō,Kyō,Кё,Kyō,きょう,흉,凶籤,凶签
+omikuji.kyo_meaning,Azar! Amarre no galho,Bad luck! Tie it up,¡Mala suerte! Átala,Pech! An den Ast,Malchance ! Nouez-la,Неудача! Привяжи,Sial! Ikat di dahan,枝に結んで厄払い,가지에 묶어 액땜,綁在樹枝上化解,绑在树枝上化解
 options.about,Sobre,About,Acerca de,Über,À propos,Об игре,Tentang,情報,정보,關於,关于
+options.chest_short,Animação curta do baú,Short chest animation,Animación corta del cofre,Kurze Truhenanimation,Animation courte du coffre,Короткая анимация сундука,Animasi peti singkat,宝箱の演出を短く,짧은 상자 연출,縮短寶箱動畫,缩短宝箱动画
 options.colorblind,Modo daltônico,Colorblind mode,Modo daltónico,Farbenblind-Modus,Mode daltonien,Режим для дальтоников,Mode buta warna,色覚サポート,색각 보조 모드,色盲模式,色盲模式
 options.damage_numbers,Números de dano,Damage numbers,Números de daño,Schadenszahlen,Chiffres de dégâts,Числа урона,Angka damage,ダメージ表示,피해 숫자,傷害數字,伤害数字
 options.damage_show_crit,Dano crítico,Critical damage,Daño crítico,Kritischer Schaden,Dégâts critiques,Критический урон,Damage kritis,クリティカル,치명타 피해,暴擊傷害,暴击伤害

@@ -25,7 +25,7 @@ func run(host: Node, check: Callable) -> void:
 	hud.show_chest(rewards)
 	await host.get_tree().process_frame
 	check.call(hud.chest_animating() and not hud.chest_burst_active(), "queda e tremor do baú ainda sem explosão")
-	check.call(await _wait(host, hud.chest_burst_active, 3.0), "baú abre com explosão atrás")
+	check.call(await _wait(host, hud.chest_burst_active, 5.0), "baú abre com explosão atrás")
 	await host.get_tree().process_frame
 	check.call(burst.color == panel.rarity_color() and burst.color == ChestPanel.RARITIES[1][1],
 			"explosão na cor da raridade (3 itens = raro)")
@@ -33,19 +33,19 @@ func run(host: Node, check: Callable) -> void:
 	check.call(burst.size == Vector2.ZERO, "explosão não ocupa espaço no layout")
 	check.call(await _wait(host, func() -> bool: return not hud.chest_burst_active(), 1.5)
 			and hud.chest_animating(), "explosão some sozinha sem esperar os itens")
-	await _wait(host, func() -> bool: return not hud.chest_animating(), 4.0)
+	await _wait(host, func() -> bool: return not hud.chest_animating(), 7.0)
 	check.call(not hud.chest_burst_active(), "fim natural sem explosão")
 
 	hud.show_chest(rewards)
-	await _wait(host, hud.chest_burst_active, 3.0)
+	await _wait(host, hud.chest_burst_active, 5.0)
 	hud.call("_chest_skip")
 	check.call(not hud.chest_burst_active() and not burst.visible, "pular apaga a explosão")
 
 	hud.show_chest(rewards)
-	await _wait(host, hud.chest_burst_active, 3.0)
+	await _wait(host, hud.chest_burst_active, 5.0)
 	hud.show_chest(rewards)
 	check.call(not hud.chest_burst_active(), "novo baú recomeça sem a explosão do anterior")
-	await _wait(host, hud.chest_burst_active, 3.0)
+	await _wait(host, hud.chest_burst_active, 5.0)
 	hud.start_run()
 	check.call(not hud.chest_burst_active() and not burst.visible, "nova partida apaga a explosão")
 	check.call(chest.get_child_count() == 1, "um nó de explosão só, reaproveitado a cada baú")

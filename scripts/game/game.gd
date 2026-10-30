@@ -355,6 +355,8 @@ func start_run(cfg: Dictionary) -> void:
 		rng.seed = run_seed
 	else:
 		rng.randomize()
+	# Omikuji do baú: fluxo próprio da semente; baús generosos do save só fora do bot.
+	chests.reset(rng.seed, not _bot)
 	var hero_id := StringName(cfg.get("hero", "aki"))
 	var hero: Dictionary = DB.heroes.get(hero_id, DB.heroes[&"aki"])
 	player.setup(hero)
@@ -906,7 +908,7 @@ func _on_banish(index: int) -> void:
 func _open_chest(from_boss: bool) -> void:
 	GameClock.paused = true
 	var rewards := chests.open(from_boss)
-	hud.show_chest(rewards)
+	hud.show_chest(rewards, chests.last_fortune)
 	AudioManager.duck(6.0, 3.0)
 	Settings.vibrate(30)
 
@@ -1135,9 +1137,10 @@ func _finish_headless() -> void:
 
 ## Resumo do estado da simulação; o hash permite comparar partidas (plano 15.1).
 func state_summary(tag: String) -> String:
-	var body := "t=%.3f nivel=%d xp=%d abates=%d inimigos=%d brasas=%d vida=%.2f pos=(%.3f, %.3f) passos=%d armas=%s" % [
+	var body := ("t=%.3f nivel=%d xp=%d abates=%d inimigos=%d brasas=%d vida=%.2f pos=(%.3f, %.3f) passos=%d armas=%s"
+			+ " sorte=%s") % [
 		GameClock.game_time, level, xp, tracker.kills, enemies.count_alive, pickups.count_alive,
-		player.hp, player.sim_pos.x, player.sim_pos.y, step_index, _weapon_summary(),
+		player.hp, player.sim_pos.x, player.sim_pos.y, step_index, _weapon_summary(), chests.fortune_tag(),
 	]
 	return "%s %s hash=%d" % [tag, body, hash(body)]
 

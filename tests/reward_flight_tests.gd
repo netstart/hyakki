@@ -288,6 +288,10 @@ func _test_kami_flow() -> void:
 	# Bot e nova partida.
 	game.apply_scenario("kami")
 	var offered := panel.offer()[0]
+	# A luta segue em tempo real durante o teste: uma bênção de nível que abriu junto ficaria
+	# na frente do pacto no bot_answer (depende de quanto XP caiu até aqui).
+	while hud.level_up_open():
+		hud.bot_answer()
 	hud.bot_answer()
 	_check.call(chosen.back() == offered and not panel.visible and flight.flyer_count() == 0,
 			"bot aceita o primeiro, sem voo (%s/%s, tela %s, voo %d)" % [chosen.back(), offered, panel.visible,

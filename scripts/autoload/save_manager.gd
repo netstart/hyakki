@@ -64,6 +64,8 @@ static func default_profile() -> Dictionary:
 		"dialogue_seen": {},
 		# Dicas 心得 já mostradas (TipBook): ciclo atual, já vistas, recentes e total.
 		"tips": {"seen": [], "ever": [], "recent": [], "count": 0},
+		# Omikuji do baú (Omikuji): baús comuns com 中吉 garantido já usados no começo do save.
+		"omikuji": Omikuji.default_state(),
 	}
 
 
@@ -102,6 +104,9 @@ func _reapply_achievement_unlocks() -> void:
 ## Leva saves antigos para a versão atual e completa campos que faltam.
 static func migrate(old: Dictionary) -> Dictionary:
 	var fresh := default_profile()
+	# Save antigo sem o omikuji: os baús já abertos contam como generosos gastos.
+	if not old.get(Omikuji.SAVE_KEY) is Dictionary:
+		old[Omikuji.SAVE_KEY] = Omikuji.migrate_state(old)
 	_fill_missing(old, fresh)
 	for key: String in OBSOLETE_KEYS:
 		old.erase(key)

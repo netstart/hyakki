@@ -224,6 +224,9 @@ func _test_chest_flow() -> void:
 	_check.call(hud.chest_open() and hud.chest_animating() and not hud.chest_burst_active(),
 			"baú cai e treme sem explosão")
 	_check.call(chest.lid == 0.0, "tampa fechada no começo")
+	_check.call(panel.phase() == "omikuji" and not chest.visible, "omikuji primeiro, baú ainda fora do palco")
+	_check.call(await _wait(func() -> bool: return panel.phase() == "chest", 3.0) and chest.visible,
+			"depois do omikuji o baú cai")
 	await _seconds(DROP_WAIT)
 	_check.call(chest.position == panel.get("_chest_rest") and chest.crack > 0.0, "baú no chão com luz pela fresta")
 	_check.call(await _wait(hud.chest_burst_active, 2.0), "abre com a explosão")
@@ -232,11 +235,11 @@ func _test_chest_flow() -> void:
 	_check.call(panel.coin_count() > 0, "moedas jorram na abertura")
 	await _seconds(0.3)
 	_check.call(chest.lid > 0.9, "tampa aberta")
-	_check.call(await _wait(func() -> bool: return panel.lines_shown() >= 1, 1.5), "primeiro item pousa no cartão")
+	_check.call(await _wait(func() -> bool: return panel.lines_shown() >= 1, 3.0), "primeiro item pousa no cartão")
 	_check.call(panel.lines_shown() < panel.lines_total(), "os itens chegam um a um")
 	_check.call(await _wait(func() -> bool: return not hud.chest_burst_active(), 1.5) and hud.chest_animating(),
 			"explosão some sozinha sem esperar os itens")
-	_check.call(await _wait(func() -> bool: return not hud.chest_animating(), 4.0), "fim natural")
+	_check.call(await _wait(func() -> bool: return not hud.chest_animating(), 7.0), "fim natural")
 	_check.call(hud.chest_lines_shown() == hud.chest_lines_total() and panel.ryo_shown() == panel.ryo_total()
 			and panel.ryo_total() == 30, "todos os cartões e o ryō completo (%d)" % panel.ryo_shown())
 	_check.call(panel.button().text == tr("chest.close"), "botão vira Continuar")
@@ -259,7 +262,7 @@ func _test_chest_flow() -> void:
 	_check.call(not hud.chest_animating(), "tocar no fundo pula")
 	# Novo baú e nova partida no meio.
 	hud.show_chest(sample_rewards(3))
-	await _wait(hud.chest_burst_active, 3.0)
+	await _wait(hud.chest_burst_active, 5.0)
 	hud.show_chest(sample_rewards(1))
 	_check.call(not hud.chest_burst_active() and hud.chest_animating() and panel.lines_shown() == 0,
 			"novo baú recomeça do zero")
@@ -289,7 +292,7 @@ func _test_quality() -> void:
 		_check.call(panel.fx_level() == GfxQuality.budget("ui_fx"), "%s: baú usa ui_fx" % name)
 		_check.call(panel.overlay().blur_on() == (level == GfxQuality.HIGH) or panel.overlay().power == 0.0,
 				"%s: desfoque só em Alta" % name)
-		await _wait(hud.chest_burst_active, 3.0)
+		await _wait(hud.chest_burst_active, 5.0)
 		await _host.get_tree().process_frame
 		coins[level] = panel.coin_count()
 		_check.call(panel.overlay().blur_on() == (level == GfxQuality.HIGH), "%s: desfoque de tela cheia" % name)
@@ -405,6 +408,38 @@ func check_chest_layout(chest: ChestPanel, view: Vector2, state: String) -> void
 		_check.call(row.effect_fits(), "%s: efeito cabe em %s" % [state, row.name_label.text])
 		_check.call(not row.shortened or view.x < 600.0, "%s: efeito inteiro em %s" % [state, row.name_label.text])
 		_check.call(row.name_fits(), "%s: nome inteiro em %s" % [state, row.name_label.text])
+	check_omikuji_layout(chest, state)
+
+
+## Omikuji e roleta: papel com as duas linhas de leitura entre a linha da sorte e o ryō, tubo,
+## galho do 凶 longe da tampa aberta e da roleta, janela da roleta abaixo da linha da sorte e
+## longe do botão; a linha da sorte e as leituras das quatro sortes cabem no palco.
+func check_omikuji_layout(chest: ChestPanel, state: String) -> void:
+	var stage := chest.stage_rect()
+	var c := chest.chest()
+	var rest: Vector2 = chest.get("_chest_rest") + stage.position
+	var open_chest := Rect2(rest - Vector2(0, 9.0 * c.px), c.size + Vector2(0, 9.0 * c.px))
+	var top := stage.position.y + 44.0
+	var ryo_top := stage.end.y - ChestPanel.BUTTON_H - 30.0
+	var slip := chest.slip_block_rect()
+	_check.call(stage.encloses(slip) and slip.position.y >= top and slip.end.y <= ryo_top,
+			"%s: papel do omikuji e leitura entre a sorte e o ryō (%s em %s)" % [state, slip, stage])
+	var tube := chest.tube_global_rect()
+	_check.call(stage.encloses(tube) and tube.position.y >= top, "%s: tubo do omikuji no palco (%s)" % [state, tube])
+	var reel := chest.reel_global_rect()
+	_check.call(stage.encloses(reel) and reel.position.y >= top and not reel.intersects(chest.button().get_global_rect()),
+			"%s: roleta no palco, abaixo da sorte (%s)" % [state, reel])
+	_check.call(reel.end.y <= rest.y + c.mouth().y + 0.5, "%s: roleta acima da boca do baú" % state)
+	var branch := chest.branch_global_rect()
+	_check.call(stage.encloses(branch) and branch.position.y >= top and not branch.intersects(open_chest)
+			and not branch.intersects(reel), "%s: galho do 凶 longe do baú e da roleta (%s)" % [state, branch])
+	for fortune: StringName in Omikuji.ALL:
+		var kanji := Omikuji.kanji(fortune)
+		var line := UiPaint.text_width(kanji, 12, UiPaint.ja_font()) + 12.0 + UiPaint.text_width(Omikuji.reading(fortune))
+		_check.call(line <= stage.size.x - 4.0, "%s: linha da sorte %s cabe (%d)" % [state, fortune, line])
+		_check.call(UiPaint.text_width(Omikuji.reading(fortune)) <= stage.size.x - 4.0
+				and UiPaint.text_width(Omikuji.meaning(fortune)) <= stage.size.x - 4.0,
+				"%s: leitura de %s cabe (%s)" % [state, fortune, Omikuji.meaning(fortune)])
 
 
 # --- Utilidades --------------------------------------------------------------------------
