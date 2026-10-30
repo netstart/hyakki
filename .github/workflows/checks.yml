@@ -28,5 +28,11 @@ jobs:
           unzip -q godot.zip -d "$HOME/godot"
           echo "GODOT=$HOME/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
 
+      - name: Site (netstart.github.io)
+        run: |
+          if [ ! -d ../netstart.github.io ]; then
+            git clone --depth 1 https://github.com/netstart/netstart.github.io.git ../netstart.github.io
+          fi
+
       - name: Verificações
         run: bash tools/run_checks.sh

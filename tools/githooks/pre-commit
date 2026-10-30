@@ -1,0 +1,13 @@
+#!/bin/sh
+# Hook pre-commit do Hyakki (instalado com tools/install_hooks.ps1 ou .sh):
+# bloqueia cópias de arquivos publicados em netstart.github.io e sincroniza o app-ads.txt do site.
+top="$(git rev-parse --show-toplevel)"
+if command -v python >/dev/null 2>&1; then
+    PY=python
+elif command -v python3 >/dev/null 2>&1; then
+    PY=python3
+else
+    echo "ERRO pre-commit: python não encontrado" >&2
+    exit 1
+fi
+"$PY" -I "$top/tools/hooks/pre_commit.py" || exit 1

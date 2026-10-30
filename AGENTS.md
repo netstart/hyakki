@@ -166,6 +166,49 @@ Nenhum PR é mesclado e nenhuma versão é lançada sem que os testes unitários
 todas as resoluções-alvo), os testes E2E e o benchmark de rolagem passem **no Godot** em todas as
 resoluções-alvo. Teste no emulador ou no aparelho é só manual e não substitui nenhum deles.
 
+## Site público e documentação publicada (netstart.github.io) — obrigatório
+
+O site público https://netstart.github.io é o repositório irmão `C:\src\netstart.github.io`
+([github.com/netstart/netstart.github.io](https://github.com/netstart/netstart.github.io)), publicado pelo GitHub
+Pages a partir da **raiz** da branch `main` daquele repositório.
+
+**Regra:** tudo que é publicado no site é editado e commitado **no repositório do site**, nunca em `docs/` do
+hyakki. A pasta `docs/` do hyakki guarda só material da Play Console (`docs/store/`: ficha, guia, arte) e os
+snapshots de licenças (`docs/licenses/`, lidos por `licenses/registry.json` e `tools/check_licenses.py`), e
+**não é publicada**.
+
+**O que vive no site** (`C:\src\netstart.github.io`):
+
+- `privacy-policy.html` (raiz): a política de privacidade do Hyakki. URL oficial
+  `https://netstart.github.io/privacy-policy.html`, usada na Play Console e em
+  `scripts/app/screens/options_screen.gd`.
+- `hyakki/privacy-policy.md`: fonte da política (mesma data e mesmo conteúdo do HTML).
+- `hyakki/index.html`: landing do jogo.
+- `app-ads.txt` (raiz): **gerado** pelo hyakki com `python -I tools/sync_site.py` a partir de
+  `general/android/app_id` do `project.godot`. Nunca editado à mão.
+- Redirecionamentos `games/hyakki/privacy-policy.html` e `hyakki/privacy-policy.html` (endereços antigos),
+  `.nojekyll`, licenças/créditos do site e o hook `.githooks/pre-commit` (instalado com `.githooks/install.ps1`).
+
+**Obrigações:**
+
+1. Mudou `general/android/app_id` no `project.godot`? Rode `python -I tools/sync_site.py` e commite (e envie) o
+   `app-ads.txt` no site. O hook de pre-commit do hyakki faz isso sozinho (`--commit`); `--push` também envia.
+2. A URL da política é estável: `privacy-policy.html` **nunca** é apagado nem renomeado depois de publicado.
+3. Mudou SDK, anúncios, compras, backup, servidor ou qualquer coleta de dados? Revise a política **no site**
+   (`hyakki/privacy-policy.md` e `privacy-policy.html`, com a mesma data nos dois), commite e faça `git push`
+   lá, no mesmo trabalho.
+4. Nunca crie `docs/index.html`, `docs/privacy-policy.*`, `docs/app-ads.txt` ou `docs/.nojekyll` no hyakki.
+
+**Hooks e verificações:**
+
+- No hyakki, uma vez por clone: `powershell -ExecutionPolicy Bypass -File tools\install_hooks.ps1` (ou
+  `tools/install_hooks.sh`). O hook `tools/githooks/pre-commit` bloqueia commits que tragam os arquivos do site de
+  volta para `docs/` e, quando o `app_id` do AdMob muda, regenera e commita o `app-ads.txt` no site.
+- No site: `.githooks/install.ps1` instala o `.githooks/pre-commit`, que confere a política (`.md` e `.html`).
+- O hook do Claude Code em `.claude/settings.json` bloqueia `Edit`/`Write` nos caminhos antigos de `docs/`.
+- `tools/run_checks.ps1`/`.sh` rodam `tools/test_sync_site.py` e `python -I tools/sync_site.py --check`; o site é
+  localizado por `NETSTART_SITE_DIR` ou por `../netstart.github.io`.
+
 ## Versionamento (SemVer, obrigatório em todo commit)
 
 A versão do jogo segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) no formato `MAIOR.MENOR.CORREÇÃO` (ex.: `1.4.12`).

@@ -104,7 +104,8 @@ O APK inclui arm64-v8a (celulares) e x86_64 (emulador, para teste manual).
 
 Passo a passo da Play Console, com as respostas prontas: [docs/store/play-console-guia.md](docs/store/play-console-guia.md).
 Arte da loja: [docs/store/graphics/](docs/store/graphics/README.md) · ficha: [docs/store/listing.md](docs/store/listing.md) ·
-política de privacidade: https://netstart.github.io/privacy-policy.html.
+política de privacidade: https://netstart.github.io/privacy-policy.html (fonte `hyakki/privacy-policy.md` e página
+`privacy-policy.html` no repositório do site, veja abaixo).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
@@ -118,6 +119,24 @@ nem testa no emulador; para jogar a build à mão use `Testar release no emulado
 - **Otimização:** template de release do Godot, R8/minify do Gradle (`admob/general/android/enable_r8_optimization`),
   texturas ETC2/ASTC, só os recursos do jogo (testes, ferramentas, docs, mocks e binários iOS dos plugins
   ficam de fora) e AAB com uma ABI por aparelho.
+
+### Site público (netstart.github.io)
+
+Tudo que é publicado em https://netstart.github.io (política de privacidade em HTML e sua fonte `.md`,
+páginas HTML, `app-ads.txt`, licenças/créditos do site) vive no repositório irmão `C:\src\netstart.github.io`
+([github.com/netstart/netstart.github.io](https://github.com/netstart/netstart.github.io), GitHub Pages da raiz
+da `main`) e é editado e commitado **lá**, nunca em `docs/` deste repositório. `docs/` aqui guarda só material
+da Play Console e os snapshots de licenças, e **não** é publicado. O `app-ads.txt` do site é gerado a partir do
+`general/android/app_id` do `project.godot`, nunca editado à mão (regra completa no [AGENTS.md](AGENTS.md)).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\install_hooks.ps1   # uma vez por clone: hook de pre-commit
+python -I tools/sync_site.py --check                                # confere o app-ads.txt do site
+```
+
+O hook bloqueia commits que tragam os arquivos do site de volta para `docs/` e, quando o `app_id` do AdMob muda,
+regenera e commita o `app-ads.txt` no site (`python -I tools/sync_site.py` faz o mesmo à mão; `--commit`/`--push`
+também commitam/enviam lá). O site é localizado por `NETSTART_SITE_DIR` ou por `../netstart.github.io`.
 - **Chave de envio:** `C:\src\keys\hyakki-upload.keystore`, com usuário e senha em
   `C:\src\keys\hyakki-release.env`. **Fora do repositório; faça backup dos dois arquivos.** Na Play Console,
   ative a "Assinatura de apps do Google Play": o Google guarda a chave final e esta vira só a chave de envio
@@ -166,7 +185,8 @@ Depois abra o jogo: ele lê e apaga o arquivo. Cenários: `chest`, `kami`, `revi
 | Textos (11 idiomas) | `tools/i18n/*.py` → `i18n/strings.csv` | `python -I tools/build_i18n.py` |
 | Assets usados | `assets/` (cópia do que é usado; o pack bruto fica fora do repositório) | `python -I tools/sync_assets.py` |
 | Licenças | `licenses/registry.json` → `licenses/index.json`, `ASSET_LICENSES.md`, `CREDITS.md` | `python -I tools/fetch_licenses.py` e `python -I tools/build_license_index.py` |
-| Loja e privacidade | `docs/store/listing.md`, `docs/privacy-policy.md`, `docs/app-ads.txt` | preencher os campos marcados antes de publicar |
+| Loja | `docs/store/listing.md` | preencher os campos marcados antes de publicar |
+| Privacidade e site | repositório do site `C:\src\netstart.github.io` ([github.com/netstart/netstart.github.io](https://github.com/netstart/netstart.github.io)): `hyakki/privacy-policy.md` (fonte) + `privacy-policy.html` (raiz); `app-ads.txt` gerado | editar e commitar no site; `python -I tools/sync_site.py` gera o `app-ads.txt` (`--check` confere) |
 
 ## Estrutura
 
@@ -181,5 +201,6 @@ scripts/weapons/             armas (uma classe por comportamento)
 scripts/meta/                meta-progressão, conquistas, registro da partida
 scripts/ui/ e scripts/app/   HUD, joystick, tema e telas
 tests/                       testes de regras e de integração
-tools/                       verificações, geradores, pipeline de assets e licenças
+tools/                       verificações, geradores, pipeline de assets e licenças, sync do site
+docs/                        material da Play Console (store/) e snapshots de licenças; não é publicado
 ```

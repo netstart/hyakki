@@ -15,3 +15,7 @@
 # Binários iOS que o plugin AdMob baixa sozinho (não usados; o export Android os exclui)
 /addons/admob/ios/bin/
 /graphify-out/
+
+# Claude Code: só o .claude/settings.json (hooks) é versionado
+/.claude/worktrees/
+/.claude/settings.local.json

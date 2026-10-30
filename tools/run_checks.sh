@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Verificações do Hyakki para Linux/CI (mesmo conteúdo de tools/run_checks.ps1, sem o estresse):
-# importação, testes de regras, gdlint, textos, licenças, ficha da loja, integração e
-# determinismo 1x/2x/3x.  Uso: GODOT=/caminho/godot tools/run_checks.sh
+# importação, testes de regras, gdlint, textos, licenças, ficha da loja, site irmão
+# (netstart.github.io: app-ads.txt gerado do ID do AdMob, política e página do jogo lá,
+# sem cópias em docs/), integração e determinismo 1x/2x/3x.  Uso: GODOT=/caminho/godot tools/run_checks.sh
 set -u
 cd "$(dirname "$0")/.."
 GODOT="${GODOT:-godot}"
@@ -22,10 +23,13 @@ if [ $rc -ne 0 ] || grep -qE "FALHOU|SCRIPT ERROR" <<<"$out"; then failed=1; fi
 echo "== 3. Lint"
 gdlint scripts tests || failed=1
 
-echo "== 4. Textos, licenças e ficha da loja"
+echo "== 4. Textos, licenças, ficha da loja e site irmão"
 "$PY" -I tools/build_i18n.py --check || failed=1
 "$PY" -I tools/check_licenses.py || failed=1
 "$PY" -I tools/check_store_listing.py || failed=1
+"$PY" -I tools/test_sync_site.py || failed=1
+"$PY" -I tools/test_pre_commit.py || failed=1
+"$PY" -I tools/sync_site.py --check || failed=1
 
 echo "== 5. Testes de integração"
 out=$(run_godot res://tests/integration_tests.tscn); rc=$?

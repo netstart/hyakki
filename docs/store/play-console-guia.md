@@ -65,10 +65,11 @@ Visão geral do caminho (conta pessoal nova):
 
 O catálogo público está publicado no repositório [`netstart/netstart.github.io`](https://github.com/netstart/netstart.github.io), na raiz da branch `main`, em `https://netstart.github.io/`. A página inicial agrega os registros de licença dos jogos; a política do Hyakki fica em **`https://netstart.github.io/privacy-policy.html`** e o `app-ads.txt` em `https://netstart.github.io/app-ads.txt`.
 
-1. O repositório público usado pelo site é `netstart/netstart.github.io`. A política publicada mora
-   **lá**: sempre que mudar `docs/privacy-policy.html` neste projeto, copie o arquivo para a raiz de
-   `netstart/netstart.github.io` (como `privacy-policy.html`) e faça o commit lá; senão a Play continua
-   vendo o texto antigo.
+1. A política é editada **diretamente** no repositório do site, `C:\src\netstart.github.io`
+   (`netstart/netstart.github.io`): a fonte é `hyakki/privacy-policy.md` e a página publicada é
+   `privacy-policy.html` na raiz, com a **mesma data** nas duas. Faça o commit e o `git push` lá; o hook
+   `.githooks/pre-commit` do site (instalado com `.githooks/install.ps1`) confere os dois arquivos. Nada da
+   política fica neste repositório.
 2. Em **Settings › Pages**, confirme `Deploy from a branch`, branch `main`, pasta `/`.
 3. Abra no celular e confira:
    - <https://netstart.github.io/>
@@ -78,8 +79,10 @@ O catálogo público está publicado no repositório [`netstart/netstart.github.
 5. O endereço antigo `https://netstart.github.io/games/hyakki/privacy-policy.html` continua no ar só como
    redirecionamento (*meta-refresh*) para a URL nova. **Não** use o antigo na Play Console: cole sempre
    `https://netstart.github.io/privacy-policy.html`.
-> Atenção: com o Pages saindo de `/docs`, tudo dentro de `docs/` fica público (inclusive
-> `docs/licenses/*.pdf` e este guia). Não coloque nada sensível nessa pasta.
+> Nota: a pasta `docs/` do hyakki **não** é mais publicada (o Pages do site sai da raiz do repositório
+> `netstart.github.io`). O `app-ads.txt` do site é gerado com `python -I tools/sync_site.py` a partir do
+> `general/android/app_id` do `project.godot` (o hook de pre-commit do hyakki faz isso quando o ID muda);
+> `--check` só confere.
 
 O app já inclui o botão que abre a política em Opções; o endereço precisa continuar público e acessível.
 
@@ -375,7 +378,8 @@ Em <https://admob.google.com>, com a mesma conta Google (o app e os blocos já e
    com o ID de publicidade do seu celular (Configurações do Android › Google › Anúncios). Faça isso
    **antes** de abrir o APK ou a versão de teste interno. Nunca clique em anúncio real do próprio app.
 4. **app-ads.txt:** o arquivo já está em <https://netstart.github.io/app-ads.txt> com
-   `pub-6552169828297838`. O AdMob o procura na raiz do domínio do **site da ficha da Play**
+   `pub-6552169828297838` (gerado por `python -I tools/sync_site.py` a partir do `app_id` do
+   `project.godot`; não edite à mão). O AdMob o procura na raiz do domínio do **site da ficha da Play**
    (`https://netstart.github.io/`), então só verifica depois que a ficha estiver pública. Em
    **Apps › app-ads.txt**, acompanhe o status; a verificação pode levar até 24 h depois do vínculo.
 5. **Vincular à ficha da Play** (depois que o app estiver **público** na produção): **Apps › Hyakki ›
@@ -560,7 +564,7 @@ O jogo não precisa de credenciais de login para o robô.
 - [ ] Conta pessoal criada, taxa de US$ 25 paga, identidade verificada
 - [ ] Aparelho Android verificado pelo app Play Console
 - [ ] Backup da chave de envio e do `.env` em dois lugares fora do PC
-- [ ] Política atualizada em `netstart/netstart.github.io` a partir de `docs/privacy-policy.html`
+- [ ] Política atualizada e enviada em `netstart/netstart.github.io` (`hyakki/privacy-policy.md` + `privacy-policy.html`, mesma data); `python -I tools/sync_site.py --check` passa
 - [ ] `https://netstart.github.io/privacy-policy.html` e `https://netstart.github.io/app-ads.txt` abrem no celular
 - [x] Link para a política de privacidade dentro do jogo (Opções) — conferido
 - [ ] App criado: nome, pt-BR, Jogo, Gratuito

@@ -1,6 +1,8 @@
 ﻿# Verificações do protótipo (plano 14 e 15.1):
 #   1. importa o projeto (valida a sintaxe de todos os scripts)
 #   2. testes das regras puras
+#   2b. textos, licenças, ficha da loja e site irmão (netstart.github.io: app-ads.txt gerado do
+#       ID do AdMob, política de privacidade e página do jogo lá, sem cópias em docs/)
 #   3. partida com o bot em 1x, 2x e 3x: o estado tem de ser idêntico (determinismo)
 #   4. teste de estresse com 500 inimigos (custo da simulação neste PC)
 #
@@ -50,6 +52,12 @@ if ($LASTEXITCODE -ne 0) { $failed = $true }
 & python -I (Join-Path $PSScriptRoot 'check_licenses.py')
 if ($LASTEXITCODE -ne 0) { $failed = $true }
 & python -I (Join-Path $PSScriptRoot 'check_store_listing.py')
+if ($LASTEXITCODE -ne 0) { $failed = $true }
+& python -I (Join-Path $PSScriptRoot 'test_sync_site.py')
+if ($LASTEXITCODE -ne 0) { $failed = $true }
+& python -I (Join-Path $PSScriptRoot 'test_pre_commit.py')
+if ($LASTEXITCODE -ne 0) { $failed = $true }
+& python -I (Join-Path $PSScriptRoot 'sync_site.py') --check
 if ($LASTEXITCODE -ne 0) { $failed = $true }
 
 Write-Host '== 2c. Testes de integração (dados, idiomas, fontes, Loja, Santuário, save)' -ForegroundColor Cyan
