@@ -274,13 +274,21 @@ func subtitle_text() -> String:
 	return tr("levelup.banish_hint") if _banish_mode else tr("levelup.title")
 
 
-## Cor, categoria, marcas de nível, texto e sinergia de uma carta do LevelUpSystem.
+## Cor, categoria, marcas de nível, texto e sinergias de uma carta do LevelUpSystem.
+## "combos" lista SEMPRE todas as sinergias do item (mesmo as que o jogador ainda não tem e sem
+## depender da descoberta do Diário), cada uma {label, names, icons, ready}:
+## - arma: a relíquia que a evolui ("Evolui com") e, se a evolução entra numa união, a arma base
+##   parceira ("Une com");
+## - relíquia: todas as armas base que ela evolui ("Evolui"; jade, pergaminho e máscara nō têm duas).
+## `ready` acende o rodapé quando o jogador já tem a parte que falta.
 static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 	var kind := String(card.get("kind", ""))
 	var id := StringName(card.get("id", &""))
 	var path := String(card.get("icon", ""))
+	var combos: Array[Dictionary] = []
 	var info := {"category": LevelCard.Cat.NEW, "element": RYO_GLOW, "max_level": 1, "text": String(card.get("text", "")),
-			"icon": load(path) as Texture2D if not path.is_empty() and ResourceLoader.exists(path) else null}
+			"icon": load(path) as Texture2D if not path.is_empty() and ResourceLoader.exists(path) else null,
+			"combos": combos}
 	match kind:
 		"weapon_new", "weapon_up":
 			var data := DB.weapon(id)
@@ -291,13 +299,19 @@ static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 			var evolution := StringName(data.get("evolution", ""))
 			if passive != &"" and DB.passives.has(passive):
 				var passive_name := TranslationServer.translate("passive.%s.name" % passive)
-				info["evo_label"] = TranslationServer.translate("lvchest.evolves_with")
-				info["evo_name"] = passive_name
-				info["evo_icon"] = _load(String(DB.passives[passive].get("icon", "")))
-				info["evo_ready"] = game != null and game.level_up.has_passive(passive)
+				combos.append(_combo(TranslationServer.translate("lvchest.evolves_with"), [passive_name],
+						[_load(String(DB.passives[passive].get("icon", "")))],
+						game != null and game.level_up.has_passive(passive)))
 				# A linha "Evolui com: X" do texto vira o rodapé da carta.
 				var line := TranslationServer.translate("levelup.evolves_with") % passive_name
 				info["text"] = String(info["text"]).replace("\n" + line, "").replace(line, "").strip_edges()
+			# A evolução entra numa união: a arma base parceira ("Une com"), acesa quando o jogador
+			# já tem a evolução parceira.
+			for partner: Array in union_partners(evolution):
+				var base: StringName = partner[0]
+				combos.append(_combo(TranslationServer.translate("lvchest.unites_with"),
+						[TranslationServer.translate("weapon.%s.name" % base)],
+						[_load(String(DB.weapon(base).get("icon", "")))], game != null and game.has_weapon(partner[1])))
 			var owned_evolution := game != null and evolution != &"" and game.has_weapon(evolution)
 			if kind == "weapon_up" and evolution != &"" and not owned_evolution \
 					and int(card.get("level", 1)) >= int(info["max_level"]):
@@ -307,15 +321,16 @@ static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 			info["element"] = PASSIVE_GLOW
 			if DB.passives.has(id):
 				info["max_level"] = int(DB.passives[id].get("max", 5))
-			if game != null:
-				for weapon: Weapon in game.weapons:
-					if StringName(weapon.data.get("evolves_with", "")) == id \
-							and String(weapon.data.get("kind", "")) == "base":
-						info["evo_label"] = TranslationServer.translate("lvchest.evolves")
-						info["evo_name"] = TranslationServer.translate("weapon.%s.name" % weapon.id)
-						info["evo_icon"] = _load(String(weapon.data.get("icon", "")))
-						info["evo_ready"] = weapon.level >= weapon.max_level
-						break
+			var names: Array[String] = []
+			var icons: Array[Texture2D] = []
+			var ready := false
+			for weapon_id: StringName in weapons_evolved_by(id):
+				names.append(TranslationServer.translate("weapon.%s.name" % weapon_id))
+				icons.append(_load(String(DB.weapon(weapon_id).get("icon", ""))))
+				var owned: Weapon = game.get_weapon(weapon_id) if game != null else null
+				ready = ready or (owned != null and owned.level >= owned.max_level)
+			if not names.is_empty():
+				combos.append(_combo(TranslationServer.translate("lvchest.evolves"), names, icons, ready))
 		"heal":
 			info["category"] = LevelCard.Cat.HEAL
 			info["element"] = HEAL_GLOW
@@ -323,6 +338,42 @@ static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 			info["category"] = LevelCard.Cat.RYO
 			info["element"] = RYO_GLOW
 	return info
+
+
+## Armas base (na ordem de data/weapons.json) que a relíquia `passive` evolui.
+static func weapons_evolved_by(passive: StringName) -> Array[StringName]:
+	var list: Array[StringName] = []
+	for weapon_id: StringName in DB.ids("weapons"):
+		var data := DB.weapon(weapon_id)
+		if String(data.get("kind", "")) == "base" and StringName(data.get("evolves_with", "")) == passive:
+			list.append(weapon_id)
+	return list
+
+
+## Parceiros de união da evolução `evolution`: [arma base parceira, evolução parceira, união] para
+## cada arma "union" cujo "requires" traz `evolution`.
+static func union_partners(evolution: StringName) -> Array[Array]:
+	var list: Array[Array] = []
+	if evolution == &"":
+		return list
+	for union_id: StringName in DB.ids("weapons"):
+		var data := DB.weapon(union_id)
+		var parts: Array = data.get("requires", [])
+		if String(data.get("kind", "")) != "union" or not parts.has(String(evolution)):
+			continue
+		for part: Variant in parts:
+			var other := StringName(part)
+			if other == evolution:
+				continue
+			for base_id: StringName in DB.ids("weapons"):
+				var base := DB.weapon(base_id)
+				if String(base.get("kind", "")) == "base" and StringName(base.get("evolution", "")) == other:
+					list.append([base_id, other, union_id])
+	return list
+
+
+static func _combo(label: String, names: Array[String], icons: Array[Texture2D], ready: bool) -> Dictionary:
+	return {"label": label, "names": names, "icons": icons, "ready": ready}
 
 
 static func element_color(tags: Variant) -> Color:

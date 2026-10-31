@@ -31,6 +31,7 @@ func run(host: Node, check: Callable) -> void:
 	_host = host
 	_check = check
 	_test_rules()
+	await _test_combo_ready()
 	await _test_level_flow()
 	await _test_chest_flow()
 	await _test_quality()
@@ -44,7 +45,8 @@ func run(host: Node, check: Callable) -> void:
 # --- Amostras (também usadas pelo runner de capturas) ------------------------------------
 
 ## Quatro cartas que esticam o layout no idioma atual: lendária (nível máximo com a linha de
-## evolução), arma nova com a descrição mais longa, item com dois atributos e melhoria comum.
+## evolução, de uma arma que também entra numa união: rodapé com relíquia + parceiro), arma nova
+## com a descrição mais longa, item com dois atributos que evolui duas armas e melhoria comum.
 static func sample_cards() -> Array[Dictionary]:
 	var longest := &""
 	var longest_len := -1
@@ -57,7 +59,8 @@ static func sample_cards() -> Array[Dictionary]:
 		if desc.length() > longest_len:
 			longest_len = desc.length()
 			longest = id
-		if legend == &"" and id != longest:
+		if legend == &"" and id != longest \
+				and not LevelUpPanel.union_partners(StringName(data.get("evolution", ""))).is_empty():
 			legend = id
 	var ldata := DB.weapon(legend)
 	var levels: Array = ldata["levels"]
@@ -106,9 +109,12 @@ func _test_rules() -> void:
 	var cards := sample_cards()
 	var legend := LevelUpPanel.card_info(cards[0], null)
 	_check.call(int(legend["category"]) == LevelCard.Cat.LEGEND, "nível máximo com evolução = carta lendária")
+	var legend_combos: Array = legend["combos"]
 	_check.call(not String(legend["text"]).contains(tr("levelup.evolves_with").split("%")[0].strip_edges())
-			and not String(legend["evo_name"]).is_empty() and legend["evo_icon"] != null,
+			and not legend_combos.is_empty() and not (legend_combos[0]["names"] as Array).is_empty()
+			and (legend_combos[0]["icons"] as Array)[0] != null,
 			"linha \"Evolui com\" vira rodapé com mini-ícone")
+	_test_combo_rules()
 	_check.call(int(LevelUpPanel.card_info(cards[1], null)["category"]) == LevelCard.Cat.NEW, "arma nova")
 	_check.call(int(LevelUpPanel.card_info(cards[2], null)["category"]) == LevelCard.Cat.PASSIVE, "item")
 	var up := LevelUpPanel.card_info(cards[3], null)
@@ -118,6 +124,99 @@ func _test_rules() -> void:
 	_check.call(int(LevelUpPanel.card_info({"kind": "heal", "id": &"onigiri", "level": 0}, null)["category"])
 			== LevelCard.Cat.HEAL, "carta de cura")
 	_check.call(ChestPanel._ryo_amount({"title": tr("chest.ryo") % 60}) == 60, "ryō lido do título")
+
+
+## Sinergias do rodapé: sempre todas, mesmo sem o jogador ter as peças.
+func _test_combo_rules() -> void:
+	var evolves_with := tr("lvchest.evolves_with")
+	var unites_with := tr("lvchest.unites_with")
+	var evolves := tr("lvchest.evolves")
+	# Relíquia sem a arma possuída (game == null): mostra a arma que ela evolui.
+	var sake := _combos({"kind": "passive", "id": &"sake", "level": 1})
+	_check.call(sake.size() == 1 and String(sake[0]["label"]) == evolves
+			and _same(sake[0]["names"], [tr("weapon.katana.name")])
+			and (sake[0]["icons"] as Array).size() == 1 and (sake[0]["icons"] as Array)[0] != null
+			and not bool(sake[0]["ready"]), "relíquia sem a arma mostra a arma que evolui (%s)" % [sake])
+	# Relíquias que evoluem duas armas mostram as duas, na ordem dos dados.
+	for pair: Array in [[&"jade", &"smoke_bomb", &"kaminari"], [&"scroll", &"shuriken", &"inazuma"],
+			[&"noh_mask", &"hitodama", &"onikiri"]]:
+		var list := _combos({"kind": "passive", "id": pair[0], "level": 2})
+		var both := [tr("weapon.%s.name" % pair[1]), tr("weapon.%s.name" % pair[2])]
+		_check.call(list.size() == 1 and _same(list[0]["names"], both)
+				and (list[0]["icons"] as Array).size() == 2, "%s mostra as duas armas (%s)" % [pair[0], list])
+		_check.call(_same(LevelUpPanel.weapons_evolved_by(pair[0]), [pair[1], pair[2]]),
+				"%s evolui %s e %s" % pair)
+	# Arma com relíquia e união: "Evolui com" a relíquia e "Une com" a arma base parceira.
+	for pair: Array in [[&"katana", &"sake", &"kusarigama"], [&"kusarigama", &"sandals", &"katana"],
+			[&"raijin", &"rosary", &"fujin_fan"], [&"fujin_fan", &"kitsune_magnet", &"raijin"]]:
+		for kind: String in ["weapon_new", "weapon_up"]:
+			var list := _combos({"kind": kind, "id": pair[0], "level": 2})
+			_check.call(list.size() == 2 and String(list[0]["label"]) == evolves_with
+					and _same(list[0]["names"], [tr("passive.%s.name" % pair[1])])
+					and String(list[1]["label"]) == unites_with and _same(list[1]["names"], [tr("weapon.%s.name" % pair[2])])
+					and (list[1]["icons"] as Array)[0] != null,
+					"%s (%s): relíquia %s e união com %s (%s)" % [pair[0], kind, pair[1], pair[2], list])
+	# Arma sem união: só a relíquia.
+	var shuriken := _combos({"kind": "weapon_new", "id": &"shuriken", "level": 1})
+	_check.call(shuriken.size() == 1 and _same(shuriken[0]["names"], [tr("passive.scroll.name")]),
+			"arma sem união: só a relíquia")
+	_check.call(_same(LevelUpPanel.union_partners(&"dawn_blade"), [["kusarigama", "reaper_chain", "hundred_blades"]]),
+			"parceiro da união de dawn_blade")
+	_check.call(LevelUpPanel.union_partners(&"steel_storm").is_empty() and LevelUpPanel.union_partners(&"").is_empty(),
+			"evolução sem união não tem parceiro")
+	_check.call(_combos({"kind": "heal", "id": &"onigiri", "level": 0}).is_empty(), "cura sem sinergia")
+	# Rodapé da carta: uma linha por sinergia, nomes juntos com " / ".
+	var card := LevelCard.new()
+	card.setup({"kind": "passive", "id": &"jade", "level": 1, "title": "x"},
+			LevelUpPanel.card_info({"kind": "passive", "id": &"jade", "level": 1}, null))
+	_check.call(card.footer_text() == "%s %s / %s" % [evolves, tr("weapon.smoke_bomb.name"), tr("weapon.kaminari.name")],
+			"rodapé da relíquia com as duas armas (%s)" % card.footer_text())
+	card.setup({"kind": "weapon_new", "id": &"katana", "level": 1, "title": "x"},
+			LevelUpPanel.card_info({"kind": "weapon_new", "id": &"katana", "level": 1}, null))
+	_check.call(card.footer_text() == "%s %s\n%s %s" % [evolves_with, tr("passive.sake.name"), unites_with,
+			tr("weapon.kusarigama.name")], "rodapé da arma com relíquia e união (%s)" % card.footer_text())
+	card.free()
+
+
+func _test_combo_ready() -> void:
+	var game := await _new_game()
+	var hero_weapon := game.weapons[0]
+	var passive := StringName(hero_weapon.data.get("evolves_with", ""))
+	var weapon_card := {"kind": "weapon_up", "id": hero_weapon.id, "level": 2}
+	var before := _combos(weapon_card, game)
+	_check.call(not bool(before[0]["ready"]), "relíquia que falta: rodapé apagado")
+	game.level_up.apply(game.level_up.passive_card(passive, 1))
+	_check.call(game.level_up.has_passive(passive) and bool(_combos(weapon_card, game)[0]["ready"]),
+			"relíquia que o jogador tem: rodapé aceso")
+	var relic := _combos({"kind": "passive", "id": passive, "level": 2}, game)
+	_check.call(not bool(relic[0]["ready"]), "arma abaixo do máximo: relíquia apagada")
+	hero_weapon.level = hero_weapon.max_level
+	_check.call(bool(_combos({"kind": "passive", "id": passive, "level": 2}, game)[0]["ready"]),
+			"arma no máximo: relíquia acesa")
+	var partners := LevelUpPanel.union_partners(StringName(hero_weapon.data.get("evolution", "")))
+	if not partners.is_empty():
+		var union_row: Dictionary = _combos(weapon_card, game)[1]
+		_check.call(not bool(union_row["ready"]), "sem a evolução parceira: união apagada")
+		game.add_weapon(partners[0][1])
+		_check.call(bool(_combos(weapon_card, game)[1]["ready"]), "com a evolução parceira: união acesa")
+	await _free(game)
+
+
+## Listas iguais elemento a elemento (String e StringName contam como o mesmo texto).
+func _same(a: Array, b: Array) -> bool:
+	if a.size() != b.size():
+		return false
+	for i: int in range(a.size()):
+		if a[i] is Array and b[i] is Array:
+			if not _same(a[i], b[i]):
+				return false
+		elif String(a[i]) != String(b[i]):
+			return false
+	return true
+
+
+func _combos(card: Dictionary, game: HyakkiGame = null) -> Array:
+	return LevelUpPanel.card_info(card, game)["combos"]
 
 
 # --- Nova habilidade ---------------------------------------------------------------------
@@ -358,6 +457,10 @@ func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String) -> vo
 	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var cards := panel.level_cards()
 	_check.call(cards.size() == 4, "%s: 4 cartas" % state)
+	if cards.size() == 4:
+		_check.call(cards[0].combos.size() == 2 and cards[2].combos.size() == 1
+				and (cards[2].combos[0]["names"] as Array).size() == 2,
+				"%s: rodapés com relíquia + união e com as duas armas da relíquia" % state)
 	for i: int in range(cards.size()):
 		var c := cards[i]
 		var r := c.get_global_rect()

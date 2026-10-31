@@ -76,6 +76,8 @@ Antes de adicionar algo com licença incerta, abra uma issue ou pergunte ao mant
 2. **Testes end-to-end (E2E)**: testes que exercitam fluxos completos do jogo (partida do bot, cenários,
    telas em sequência), executados **só no Godot** do PC, em cada uma das resoluções-alvo abaixo.
 
+**Teste travado é encerrado e reiniciado.** Todo teste (Godot, `run_checks.ps1`/`.sh`, benchmarks) que passar **mais de 8 minutos sem atividade** (sem saída nova no log e com a CPU do processo parada) tem o processo encerrado à força (`Stop-Process -Force` / `kill -9`, incluindo o par `Godot_*_console.exe` + `Godot_*.exe` e o `run_checks` que o chamou) e é rodado de novo; nunca espere um teste parado. Não rode dois Godot de teste ao mesmo tempo no mesmo checkout (eles disputam os arquivos de `user://` e travam); se outra sessão ou agente estiver testando no mesmo diretório, espere ele terminar.
+
 **Testes por resolução só no Godot; emulador Android só para teste manual.** Os testes que simulam a
 tela dos aparelhos rodam **apenas no Godot** do PC: runners headless ou com janela que leem
 `tests/device_profiles.gd` (testes de layout de cada tela, painel e HUD), `tests/scroll_bench.tscn`, os

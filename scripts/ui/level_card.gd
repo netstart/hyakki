@@ -7,11 +7,15 @@ extends Button
 ## - fita no topo com a categoria e um selo com kanji; ícone grande em escala inteira sobre
 ##   um halo da cor do elemento da arma;
 ## - nome, etiqueta ("Novo!" ou "Nv 3 → 4") com as marcas de nível (a nova pisca), descrição
-##   com os números da melhoria em verde e, no rodapé, a sinergia ("Evolui com" + mini-ícone);
+##   com os números da melhoria em verde e, no rodapé, as sinergias, uma por linha ("Evolui com" +
+##   mini-ícone da relíquia, "Une com" + a arma parceira da união, "Evolui" + as armas da relíquia);
 ## - destaque ao passar/pressionar (a carta sobe e brilha) e, no modo banir, o carimbo 封.
 ## O texto do Button fica vazio: os testes tocam no centro da carta.
 
 enum Cat { NEW, UP, LEGEND, PASSIVE, HEAL, RYO }
+## Modos de uma linha do rodapé: tudo numa linha; rótulo + ícones e o nome embaixo (até 2 linhas);
+## compacta (ícones + nome cortado com "…", ou só os ícones).
+enum Row { ONE, TWO, COMPACT }
 
 ## [laca do topo, laca da base, destaque, kanji do selo]
 const STYLE := {
@@ -28,6 +32,9 @@ const PIP := Vector2(3, 5)
 const PIP_STEP := 5.0
 const LIFT := 6.0
 const STAMP_RED := Color("d0302a")
+## Mini-ícones do rodapé: lado (px) e passo entre ícones lado a lado.
+const COMBO_ICON := 12.0
+const COMBO_ICON_STEP := 14.0
 
 ## Dados da carta (LevelUpSystem) e o que a tela calculou para ela.
 var data: Dictionary = {}
@@ -35,10 +42,8 @@ var category: int = Cat.NEW
 var element: Color = Color(1.0, 0.85, 0.55)
 var level: int = 1
 var max_level: int = 1
-var evo_label: String = ""
-var evo_name: String = ""
-var evo_icon: Texture2D
-var evo_ready: bool = false
+## Sinergias (LevelUpPanel.card_info "combos"): {label, names, icons, ready}, uma linha cada.
+var combos: Array[Dictionary] = []
 ## Posição de repouso (a tela anima a entrada; a carta sobe a partir dela ao ser destacada).
 var base_position: Vector2 = Vector2.ZERO
 ## A carta está no lugar e reage ao toque (a tela libera depois da entrada e do bloqueio).
@@ -61,11 +66,11 @@ var _icon_center: Vector2 = Vector2.ZERO
 var _tag_y: float = 0.0
 var _pips_y: float = -1.0
 var _ornament_y: float = -1.0
+## Topo do rodapé (-1 = sem rodapé) e, por sinergia, {"y", "mode" (Row), "h"}.
 var _footer_y: float = -1.0
-var _footer_two_lines: bool = false
-var _evo: Label
-## Rodapé numa linha só, sem o rótulo: [ícone] Nome (cortado com "…" se preciso).
-var _footer_compact: bool = false
+var _rows: Array[Dictionary] = []
+## Nomes quebrados (modo Row.TWO), um Label por sinergia, criados conforme a necessidade.
+var _evo_labels: Array[Label] = []
 var _name: Label
 var _desc: RichTextLabel
 var _plain: String = ""
@@ -87,13 +92,6 @@ func _init() -> void:
 	_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_name.add_theme_constant_override("line_spacing", -1)
 	add_child(_name)
-	_evo = Label.new()
-	_evo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_evo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_evo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_evo.add_theme_constant_override("line_spacing", -1)
-	_evo.visible = false
-	add_child(_evo)
 	_desc = RichTextLabel.new()
 	_desc.bbcode_enabled = true
 	_desc.scroll_active = false
@@ -112,12 +110,10 @@ func setup(card: Dictionary, info: Dictionary) -> void:
 	element = info.get("element", element)
 	level = int(card.get("level", 1))
 	max_level = int(info.get("max_level", 1))
-	evo_label = String(info.get("evo_label", ""))
-	evo_name = String(info.get("evo_name", ""))
-	evo_icon = info.get("evo_icon", null)
-	evo_ready = bool(info.get("evo_ready", false))
+	combos.assign(info.get("combos", []))
 	_icon_tex = info.get("icon", null)
-	_evo.text = evo_name
+	for i: int in range(combos.size()):
+		_evo_label(i).text = combo_names(combos[i])
 	_name.text = String(card.get("title", ""))
 	_name.add_theme_color_override("font_color", accent().lerp(Color.WHITE, 0.45))
 	_plain = String(info.get("text", ""))
@@ -197,13 +193,24 @@ func name_fits() -> bool:
 	return _text_lines(_name.text, _name.size.x) <= 2
 
 
-## O nome da sinergia cabe (numa linha ao lado do rótulo ou quebrado em até 2 linhas).
+## Cada sinergia cabe: numa linha ao lado do rótulo, com o rótulo e os ícones numa linha e os
+## nomes quebrados em até 2 linhas embaixo, ou compacta (ícones, com o nome cortado ou sem ele).
 func footer_fits() -> bool:
-	if evo_name.is_empty():
-		return true
-	if not _evo.visible:
-		return true if _footer_compact else UiPaint.text_width("%s %s" % [evo_label, evo_name]) + 17.0 <= size.x - PAD * 2.0
-	return _text_lines(evo_name, _evo.size.x) <= 2
+	var inner := size.x - PAD * 2.0
+	for i: int in range(mini(combos.size(), _rows.size())):
+		var c := combos[i]
+		match int(_rows[i]["mode"]):
+			Row.ONE:
+				if _one_width(c) > inner:
+					return false
+			Row.TWO:
+				if UiPaint.text_width(String(c["label"])) + 3.0 + _icons_width(c) > inner \
+						or _text_lines(combo_names(c), _evo_labels[i].size.x) > 2:
+					return false
+			Row.COMPACT:
+				if _icons_width(c) > inner:
+					return false
+	return _rows.size() == combos.size()
 
 
 func name_label() -> Label:
@@ -226,8 +233,48 @@ func icon_texture() -> Texture2D:
 	return _icon_tex
 
 
+## Rodapé em texto, uma sinergia por linha ("Evolui com Saquê", "Une com Kusarigama").
 func footer_text() -> String:
-	return "" if evo_name.is_empty() else "%s %s" % [evo_label, evo_name]
+	var lines: PackedStringArray = []
+	for c: Dictionary in combos:
+		lines.append("%s %s" % [c["label"], combo_names(c)])
+	return "\n".join(lines)
+
+
+## Modo de cada linha do rodapé no último layout (Row), para os testes.
+func footer_modes() -> Array[int]:
+	var list: Array[int] = []
+	for row: Dictionary in _rows:
+		list.append(int(row["mode"]))
+	return list
+
+
+## Nomes da sinergia juntos: "Kaminari / Bomba de fumaça".
+static func combo_names(c: Dictionary) -> String:
+	return " / ".join(PackedStringArray(c.get("names", [])))
+
+
+func _icons_width(c: Dictionary) -> float:
+	var n := (c.get("icons", []) as Array).size()
+	return 0.0 if n == 0 else n * COMBO_ICON_STEP + 1.0
+
+
+## Largura da linha inteira: rótulo, ícones e nomes.
+func _one_width(c: Dictionary) -> float:
+	return UiPaint.text_width("%s %s" % [c["label"], combo_names(c)]) + 2.0 + _icons_width(c)
+
+
+func _evo_label(i: int) -> Label:
+	while _evo_labels.size() <= i:
+		var l := Label.new()
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.add_theme_constant_override("line_spacing", -1)
+		l.visible = false
+		add_child(l)
+		_evo_labels.append(l)
+	return _evo_labels[i]
 
 
 func _line_h() -> float:
@@ -262,26 +309,38 @@ func _try_layout(s: Vector2, scale: int, ornament: bool, pips: bool, compact: bo
 	if ornament:
 		_ornament_y = y + 2.0
 		y += 7.0
-	# Rodapé de sinergia: "Evolui com [ícone] Nome" numa linha; se não couber, o rótulo com o
-	# ícone numa linha e o nome embaixo (quebrando em até 2 linhas).
+	# Rodapé de sinergias, uma por linha: "Evolui com [ícone] Nome" numa linha; se não couber, o
+	# rótulo com os ícones numa linha e os nomes embaixo (quebrando em até 2 linhas); na carta
+	# compacta, só os ícones com o nome cortado.
 	var bottom := s.y - PAD
 	_footer_y = -1.0
-	_footer_two_lines = false
-	_evo.visible = false
-	_footer_compact = false
-	if not evo_name.is_empty():
-		var one := UiPaint.text_width("%s %s" % [evo_label, evo_name]) + 17.0
-		var footer_h := _line_h() + 2.0
-		_footer_compact = compact and one > inner
-		if one > inner and not _footer_compact:
-			_footer_two_lines = true
-			var lines := clampi(_text_lines(evo_name, inner), 1, 2)
-			footer_h += lines * _line_h()
-			_evo.visible = true
-			_evo.size = Vector2(inner, lines * _line_h() + 2.0)
+	_rows.clear()
+	for l: Label in _evo_labels:
+		l.visible = false
+	var footer_h := 0.0
+	for i: int in range(combos.size()):
+		var c := combos[i]
+		var row := {"mode": Row.ONE, "h": _line_h() + 2.0}
+		if _one_width(c) > inner:
+			if compact:
+				row["mode"] = Row.COMPACT
+			else:
+				row["mode"] = Row.TWO
+				var lines := clampi(_text_lines(combo_names(c), inner), 1, 2)
+				row["h"] = float(row["h"]) + lines * _line_h()
+				var l := _evo_label(i)
+				l.visible = true
+				l.size = Vector2(inner, lines * _line_h() + 2.0)
+		footer_h += float(row["h"])
+		_rows.append(row)
+	if not _rows.is_empty():
 		bottom -= footer_h
 		_footer_y = bottom + 2.0
-		_evo.position = Vector2(PAD, _footer_y + _line_h() - 1.0)
+		var row_y := _footer_y
+		for i: int in range(_rows.size()):
+			_rows[i]["y"] = row_y
+			_evo_label(i).position = Vector2(PAD, row_y + _line_h() - 1.0)
+			row_y += float(_rows[i]["h"])
 	_desc.position = Vector2(PAD - 1.0, y)
 	_desc.size = Vector2(inner + 2.0, maxf(bottom - y, 0.0))
 	return desc_fits() and footer_fits()
@@ -442,39 +501,60 @@ func _draw_tag(acc: Color) -> void:
 
 func _draw_footer() -> void:
 	var w := size.x
-	var color := ThemeFactory.ACCENT if evo_ready else UiPaint.DIM
-	var y := _footer_y
-	draw_rect(Rect2(PAD, y - 2.0, w - PAD * 2.0, 1.0), Color(color, 0.3))
-	_evo.add_theme_color_override("font_color", color)
-	if _footer_compact:
-		var room := w - PAD * 2.0 - 15.0
-		var shown := evo_name
-		while shown.length() > 1 and UiPaint.text_width(shown + "…") > room and UiPaint.text_width(shown) > room:
-			shown = shown.left(shown.length() - 1)
-		if shown != evo_name:
-			shown += "…"
-		var cx := floorf((w - (15.0 + UiPaint.text_width(shown))) * 0.5)
-		if evo_icon != null:
-			var nat := evo_icon.get_size()
-			draw_texture_rect(evo_icon, Rect2(Vector2(cx, y), nat * (12.0 / maxf(nat.x, nat.y))), false)
-		UiPaint.text(self, Vector2(cx + 15.0, y + 10.0), shown, 12, color, HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
-		return
-	var label_w := UiPaint.text_width(evo_label)
-	var name_w := 0.0 if _footer_two_lines else UiPaint.text_width(evo_name) + 3.0
-	var icon_w := 15.0 if evo_icon != null else 0.0
-	var total := label_w + 3.0 + icon_w + name_w
-	var x := floorf((w - total) * 0.5)
-	if _footer_two_lines and total > w - PAD * 2.0:
-		x = PAD
-	UiPaint.text(self, Vector2(x, y + 10.0), evo_label, 12, Color(color, 0.8), HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
-	x += label_w + 3.0
-	if evo_icon != null:
-		var native := evo_icon.get_size()
-		var k := 12.0 / maxf(native.x, native.y)
-		draw_texture_rect(evo_icon, Rect2(Vector2(x, y), native * k), false)
-		x += icon_w
-	if not _footer_two_lines:
-		UiPaint.text(self, Vector2(x, y + 10.0), evo_name, 12, color, HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
+	var first: Dictionary = combos[0] if not combos.is_empty() else {}
+	var line := ThemeFactory.ACCENT if bool(first.get("ready", false)) else UiPaint.DIM
+	draw_rect(Rect2(PAD, _footer_y - 2.0, w - PAD * 2.0, 1.0), Color(line, 0.3))
+	for i: int in range(mini(combos.size(), _rows.size())):
+		_draw_combo(combos[i], _rows[i], i)
+
+
+func _draw_combo(c: Dictionary, row: Dictionary, i: int) -> void:
+	var w := size.x
+	var color := ThemeFactory.ACCENT if bool(c.get("ready", false)) else UiPaint.DIM
+	var y := float(row["y"])
+	var label := String(c["label"])
+	var names := combo_names(c)
+	var icons_w := _icons_width(c)
+	_evo_label(i).add_theme_color_override("font_color", color)
+	match int(row["mode"]):
+		Row.COMPACT:
+			var room := w - PAD * 2.0 - icons_w
+			var shown := names
+			while shown.length() > 1 and UiPaint.text_width(shown + "…") > room and UiPaint.text_width(shown) > room:
+				shown = shown.left(shown.length() - 1)
+			if shown != names:
+				# Sobrou quase nada do nome: fica só com os ícones.
+				shown = "" if shown.strip_edges().length() < 3 else shown.strip_edges() + "…"
+			var shown_w := UiPaint.text_width(shown) if not shown.is_empty() else -1.0
+			var cx := floorf((w - (icons_w + shown_w)) * 0.5)
+			_draw_combo_icons(c, cx, y)
+			if not shown.is_empty():
+				UiPaint.text(self, Vector2(cx + icons_w, y + 10.0), shown, 12, color, HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
+		Row.TWO:
+			var total := UiPaint.text_width(label) + 3.0 + icons_w
+			var x := floorf((w - total) * 0.5)
+			if total > w - PAD * 2.0:
+				x = PAD
+			UiPaint.text(self, Vector2(x, y + 10.0), label, 12, Color(color, 0.8), HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
+			_draw_combo_icons(c, x + UiPaint.text_width(label) + 3.0, y)
+		_:
+			var label_w := UiPaint.text_width(label)
+			var total := label_w + 3.0 + icons_w + UiPaint.text_width(names) + 3.0
+			var x := floorf((w - total) * 0.5)
+			UiPaint.text(self, Vector2(x, y + 10.0), label, 12, Color(color, 0.8), HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
+			x += label_w + 3.0
+			_draw_combo_icons(c, x, y)
+			UiPaint.text(self, Vector2(x + icons_w, y + 10.0), names, 12, color, HORIZONTAL_ALIGNMENT_LEFT, -1, 2)
+
+
+## Mini-ícones da sinergia lado a lado a partir de `x`.
+func _draw_combo_icons(c: Dictionary, x: float, y: float) -> void:
+	for icon: Variant in c.get("icons", []):
+		var tex := icon as Texture2D
+		if tex != null:
+			var native := tex.get_size()
+			draw_texture_rect(tex, Rect2(Vector2(x, y), native * (COMBO_ICON / maxf(native.x, native.y))), false)
+		x += COMBO_ICON_STEP
 
 
 ## Borda dourada viva: um brilho percorre o contorno e a moldura respira.

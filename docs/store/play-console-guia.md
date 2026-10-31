@@ -528,6 +528,19 @@ New: the Lacquered Chest now draws your omikuji fortune (吉, 中吉, 大吉 and
 </en-US>
 ```
 
+### 9.5.2 Notas da versão 1.17.0 (versionCode 34)
+Para o envio com o Guia do Guardião (1.16.0), as opções ligadas por padrão (1.16.1) e os combos nas
+cartas de nível (1.17.0):
+
+```
+<pt-BR>
+Novidades: o Diário ganhou o Guia do Guardião, com 9 capítulos sobre como jogar, evoluções, uniões, chefes e como ficar mais forte. Ao subir de nível, cada carta agora mostra todos os combos possíveis: as armas que a relíquia evolui e, nas armas, a relíquia da evolução e a arma da união, mesmo as que você ainda não tem. Avisos da Loja e diálogos dos chefes vêm ligados por padrão.
+</pt-BR>
+<en-US>
+New: the Journal now has the Guardian's Guide, with 9 chapters on how to play, evolutions, unions, bosses and getting stronger. On level-up, every card now shows all possible combos: the weapons a relic evolves and, on weapons, the evolution relic and the union partner, even ones you don't have yet. Shop-ready alerts and boss dialogues are on by default.
+</en-US>
+```
+
 ### 9.6 Relatório de pré-lançamento (*Pre-launch report*)
 Roda sozinho em aparelhos reais do Google sempre que um AAB entra num teste (interno, fechado ou
 aberto). Abra em **Testar e lançar › Relatório de pré-lançamento** e confira:
