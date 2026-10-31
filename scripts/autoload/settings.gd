@@ -34,10 +34,10 @@ const DEFAULTS := {
 	"hurt_sounds": true,
 	"hp_bar_below": false,
 	"speed": 1,
-	"notifications": false,
+	"notifications": true,
 	"show_fps": false,
 	## Diálogo antes dos chefes em todo encontro, e não só no primeiro (DialogueScript).
-	"dialogues_always": false,
+	"dialogues_always": true,
 	## Dicas 心得 no balão da guardiã (título) e nos Resultados (TipDeck).
 	"tips": true,
 	## Baú com a sequência curta (omikuji, abertura e roleta duas vezes mais rápidas).

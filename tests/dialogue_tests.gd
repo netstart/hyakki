@@ -62,8 +62,9 @@ func run_unit(check: Callable) -> void:
 		_check.call(ids.has(id), "diálogo: %s é chefe das 10:00 ou Guardião" % id)
 	var settings := load("res://scripts/autoload/settings.gd") as GDScript
 	var defaults: Dictionary = settings.get_script_constant_map()["DEFAULTS"]
-	_check.call(defaults.has("dialogues_always") and defaults["dialogues_always"] == false,
-			"opção dialogues_always vem desligada por padrão")
+	_check.call(defaults.has("dialogues_always") and defaults["dialogues_always"] == true,
+			"opção dialogues_always vem ligada por padrão")
+	_check.call(defaults.get("notifications") == true, "opção notifications vem ligada por padrão")
 
 
 func _check_script(id: String, entry: Variant, heroes: Array[String], csv_keys: Dictionary) -> void:
