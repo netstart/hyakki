@@ -225,6 +225,20 @@ func _test_hero_behaviour() -> void:
 	GfxQuality.clear_override()
 	_ok(screen.call("_attr_level", 0.2) == 5 and screen.call("_attr_level", -0.1) == 2
 			and screen.call("_attr_level", 0.0) == 3, "Guardiões: barras de atributo por modificador")
+	# Voltar aos Guardiões sem nada mudar: a mesma fila de retratos (sem remontar), com o escolhido;
+	# um guardião liberado nesse meio-tempo remonta a fila.
+	screen.call("on_show")
+	var kept: Dictionary = (screen.get("_portraits") as Dictionary).duplicate()
+	screen.call("on_show")
+	portraits = screen.get("_portraits")
+	_ok(portraits.keys().all(func(id: StringName) -> bool: return portraits[id] == kept[id])
+			and screen.call("selected_hero") == StringName(String(app.selection["hero"])),
+			"Guardiões: reabrir sem mudança mantém a fila")
+	(SaveManager.data["unlocked"]["heroes"] as Array).append("goro")
+	screen.call("on_show")
+	portraits = screen.get("_portraits")
+	_ok(portraits[&"goro"] != kept[&"goro"] and bool((portraits[&"goro"] as Object).get("unlocked")),
+			"Guardiões: guardião liberado remonta a fila")
 	close_screen(screen)
 	await _host.get_tree().process_frame
 

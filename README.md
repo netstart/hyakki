@@ -83,8 +83,8 @@ bot que conclui missões): `Godot_v4.7.2-stable_win64_console.exe --headless --p
 
 Os testes que simulam a tela de cada aparelho rodam **só no Godot do PC**, com as resoluções de
 [tests/device_profiles.gd](tests/device_profiles.gd): testes de layout de todas as telas e do HUD em todas
-as resoluções-alvo (com furo de câmera dos dois lados), o benchmark de rolagem `tests/scroll_bench.tscn` e
-os testes de desempenho. Os comandos e critérios estão no `AGENTS.md`.
+as resoluções-alvo (com furo de câmera dos dois lados), o benchmark de rolagem `tests/scroll_bench.tscn`, o
+benchmark de navegação entre os menus `tests/nav_bench.tscn` e os testes de desempenho. Os comandos e critérios estão no `AGENTS.md`.
 
 **Testes automatizados no emulador Android são proibidos.** O emulador (e o aparelho) servem só para
 teste manual: uma pessoa instala, joga e confere (veja "Testes manuais no aparelho" abaixo).

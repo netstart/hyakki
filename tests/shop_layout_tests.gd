@@ -154,6 +154,22 @@ func _relayout_cases() -> void:
 		check_layout(screen, fixed_area(), tag)
 		_check_cards(screen, tag)
 		check_speed_card(screen, tag)
+	# Voltar à Loja sem nada mudar (tela, recorte, vagas, textos): os mesmos cartões, sem remontar;
+	# o saldo e os estados, sim. O valor da vaga de ryō mudou: aí remonta.
+	var cards: Dictionary = screen.get("_cards")
+	var button: Button = (cards[&"slot_ryo"] as Dictionary)["button"]
+	SaveManager.data["ryo"] = 4321
+	screen.call("on_show")
+	cards = screen.get("_cards")
+	_check.call((cards[&"slot_ryo"] as Dictionary)["button"] == button
+			and (screen.get("_ryo") as Label).text == Locale.format_number(4321),
+			"Loja: reabrir sem mudança mantém os cartões e atualiza o saldo")
+	SaveManager.stage_best(&"village")["won"] = true
+	screen.call("on_show")
+	cards = screen.get("_cards")
+	_check.call((cards[&"slot_ryo"] as Dictionary)["button"] != button
+			and ((cards[&"slot_ryo"] as Dictionary)["name"] as Label).text == screen.call("_slot_name", &"slot_ryo"),
+			"Loja: vaga de ryō com outro valor remonta os cartões")
 	screen.get_parent().queue_free()
 	await _host.get_tree().process_frame
 

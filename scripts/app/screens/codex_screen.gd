@@ -200,8 +200,8 @@ func open_entry(index: int) -> void:
 	_actions.visible = _actions.get_child_count() > 0
 	_detail_scroll.scroll_vertical = 0
 	if MenuKit.ui_fx() >= 1 and is_inside_tree():
-		var tween := create_tween()
-		tween.tween_property(_right, "modulate:a", 1.0, 0.18).from(0.25)
+		_right.modulate.a = 0.25  # começo do esmaecer já neste quadro (não só quando o Tween começa)
+		create_tween().tween_property(_right, "modulate:a", 1.0, 0.18)
 	else:
 		_right.modulate.a = 1.0
 
@@ -225,7 +225,8 @@ func _open_chapter(index: int, e: Dictionary) -> void:
 	if index < _cards.size() and is_inside_tree():
 		_grid_scroll.ensure_control_visible.call_deferred(_cards[index])
 	if MenuKit.ui_fx() >= 1 and is_inside_tree():
-		create_tween().tween_property(_right, "modulate:a", 1.0, 0.18).from(0.25)
+		_right.modulate.a = 0.25
+		create_tween().tween_property(_right, "modulate:a", 1.0, 0.18)
 	else:
 		_right.modulate.a = 1.0
 

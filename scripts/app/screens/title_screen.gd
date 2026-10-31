@@ -11,6 +11,8 @@ extends Screen
 ## Com recorte de câmera (MenuKit.safe_insets), título, menu e versão andam para dentro pela
 ## esquerda e saldo e bloco de ação pela direita (_layout, a cada exibição,
 ## redimensionamento e troca do lado do furo).
+## A entrada animada (_play_intro) toca na 1ª aparição e na volta de uma partida, dos Resultados ou
+## da história; voltando de um submenu (SUBMENUS) o título reaparece parado, como foi deixado.
 
 const JA_FONT := "res://assets/fonts/fusion_pixel_12_ja.woff2"
 const COIN_SHEET := "res://assets/art/items/treasure/Coin2.png"
@@ -37,6 +39,12 @@ const SEAL_RED := Color("b3261e")
 const SHADOW := Color(0.08, 0.03, 0.03)
 const MUTED := Color("d9c3a0")
 const BADGE_RED := Color("e0403a")
+## Entrada: o título desce INTRO_DROP px; linhas do menu e bloco de ação andam INTRO_SHIFT px.
+const INTRO_DROP := 6.0
+const INTRO_SHIFT := 8.0
+## Telas que voltam ao título pelo "voltar" (ou pelo próprio botão): dali não há entrada de novo.
+const SUBMENUS: Array[StringName] = [&"heroes", &"stages", &"sanctuary", &"shop", &"codex", &"options",
+		&"credits", &"licenses"]
 
 var _shop_button: Button
 var _ryo: Label
@@ -58,6 +66,10 @@ var _glow: TextureRect
 var _rows: Array[Button] = []
 var _row_base: Array[Vector2] = []
 var _intro: Tween
+## A entrada já tocou nesta tela (a volta de um submenu não a repete).
+var _intro_played := false
+## Estado das caixas do bloco de ação já aplicado (0 = Jogar principal, 1 = Continuar; -1 = nenhum).
+var _cta_look := -1
 var _divider: ColorRect
 ## Largura atual do bloco de ação (cresce com o texto do idioma).
 var _cta_width := CTA_WIDTH
@@ -121,7 +133,10 @@ func on_show() -> void:
 	_goals.set_goals(MissionGoals.live_goals())
 	_layout()
 	_layout_cta()
-	_play_intro()
+	if _intro_played and app != null and app.previous in SUBMENUS:
+		_rest()
+	else:
+		_play_intro()
 	_primary().grab_focus()
 	_tips.restart()
 
@@ -515,11 +530,17 @@ func _build_cta() -> void:
 func _layout_cta() -> void:
 	var stack: Array[Button] = [_daily]
 	if _continue.visible:
-		_apply_card(_play)
 		stack.append_array([_play, _continue])
 	else:
 		stack.append(_play)
-	_apply_primary(_primary())
+	# Caixas e cores só quando o principal muda: trocar override (mesmo igual) refaz o layout da tela,
+	# e isso pesava no quadro de cada volta ao título.
+	var look := 1 if _continue.visible else 0
+	if look != _cta_look:
+		_cta_look = look
+		if _continue.visible:
+			_apply_card(_play)
+		_apply_primary(_primary())
 	# Largura única do bloco: CTA_WIDTH, ou o texto mais largo do idioma (ex.: "Tägliche
 	# Herausforderung"). Cresce para a esquerda, então a borda direita fica sempre na tela.
 	var width := CTA_WIDTH
@@ -616,26 +637,48 @@ func _flat(bg: Color, border: Color, width: int, shift: int) -> StyleBoxFlat:
 
 
 ## Entrada: título desce, linhas do menu entram da esquerda em cascata e o bloco de ação
-## da direita. Volta tudo às posições de base antes, então chamar de novo não acumula.
+## da direita. Os valores de início vão para os nós já aqui, antes do Tween: o .from() de um
+## tweener só vale quando ele começa (com set_delay, depois da espera), e até lá o nó aparecia
+## pronto e depois pulava para o começo da entrada (a "piscada" ao voltar ao título). Chamar de
+## novo não acumula deslocamento (as bases são fixas).
 func _play_intro() -> void:
 	if _intro and _intro.is_valid():
 		_intro.kill()
-	_title_box.position = Vector2(_title_x(), TITLE_AT.y)
-	_cta.position = Vector2.ZERO
+	_intro_played = true
+	_title_box.position = Vector2(_title_x(), TITLE_AT.y - INTRO_DROP)
+	_cta.position = Vector2(INTRO_SHIFT, 0.0)
+	for node: CanvasItem in [_title_box, _chip, _goals, _cta]:
+		node.modulate.a = 0.0
 	for i: int in _rows.size():
-		_rows[i].position = _row_base[i]
+		_rows[i].position = _row_base[i] - Vector2(INTRO_SHIFT, 0.0)
+		_rows[i].modulate.a = 0.0
 	_intro = create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_intro.tween_property(_title_box, "position:y", TITLE_AT.y, 0.3).from(TITLE_AT.y - 6.0)
-	_intro.tween_property(_title_box, "modulate:a", 1.0, 0.3).from(0.0)
-	_intro.tween_property(_chip, "modulate:a", 1.0, 0.3).from(0.0)
-	_intro.tween_property(_goals, "modulate:a", 1.0, 0.3).from(0.0).set_delay(0.12)
+	_intro.tween_property(_title_box, "position:y", TITLE_AT.y, 0.3)
+	_intro.tween_property(_title_box, "modulate:a", 1.0, 0.3)
+	_intro.tween_property(_chip, "modulate:a", 1.0, 0.3)
+	_intro.tween_property(_goals, "modulate:a", 1.0, 0.3).set_delay(0.12)
 	for i: int in _rows.size():
 		var row := _rows[i]
 		var delay := 0.08 + i * 0.04
-		_intro.tween_property(row, "position:x", _row_base[i].x, 0.22).from(_row_base[i].x - 8).set_delay(delay)
-		_intro.tween_property(row, "modulate:a", 1.0, 0.22).from(0.0).set_delay(delay)
-	_intro.tween_property(_cta, "position:x", 0.0, 0.28).from(8.0).set_delay(0.12)
-	_intro.tween_property(_cta, "modulate:a", 1.0, 0.28).from(0.0).set_delay(0.12)
+		_intro.tween_property(row, "position:x", _row_base[i].x, 0.22).set_delay(delay)
+		_intro.tween_property(row, "modulate:a", 1.0, 0.22).set_delay(delay)
+	_intro.tween_property(_cta, "position:x", 0.0, 0.28).set_delay(0.12)
+	_intro.tween_property(_cta, "modulate:a", 1.0, 0.28).set_delay(0.12)
+
+
+## Volta de um submenu: sem entrada; tudo no lugar e inteiro já neste quadro (uma entrada que
+## ainda corria, de quem saiu no meio dela, termina na hora).
+func _rest() -> void:
+	if _intro and _intro.is_valid():
+		_intro.kill()
+	_intro = null
+	_title_box.position = Vector2(_title_x(), TITLE_AT.y)
+	_cta.position = Vector2.ZERO
+	for node: CanvasItem in [_title_box, _chip, _goals, _cta]:
+		node.modulate.a = 1.0
+	for i: int in _rows.size():
+		_rows[i].position = _row_base[i]
+		_rows[i].modulate.a = 1.0
 
 
 ## Termina a entrada na hora (testes e capturas).

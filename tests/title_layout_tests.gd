@@ -5,9 +5,15 @@ extends RefCounted
 ## entrada animada que não acumula deslocamento; balão de dicas da guardiã (TipBalloon) com a
 ## dica mais longa de cada idioma, sem cobrir nada e sem corte; Próximas metas (MissionGoals) sob o
 ## saldo, inteiras, sem encostar em nada e sem texto cortado (o balão as evita ou as esconde enquanto
-## fala). Chamado por tests/integration_tests.gd.
+## fala). Troca de telas (tests/nav_probe.gd): a entrada começa no começo já no 1º quadro, sem
+## piscar, e a volta de um submenu pelo "voltar" do Android deixa o título parado e inteiro.
+## Chamado por tests/integration_tests.gd.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+const NavProbe := preload("res://tests/nav_probe.gd")
+## Quadros observados na volta de um submenu e tempo da entrada inteira (a mais longa termina em ~0,46 s).
+const BACK_FRAMES := 12
+const INTRO_WATCH := 0.6
 
 ## Tela lógica do caso atual e a área segura (fora do furo da câmera).
 var _view := Rect2(Vector2.ZERO, DeviceProfiles.main_view())
@@ -43,6 +49,10 @@ func run(host: Node, check: Callable) -> void:
 				_check_tip(screen, check, tag)
 				if state == 0:
 					await _check_repeat(host, app, screen, check, tag)
+				if state == 0 and lang == c["langs"][0]:
+					await _check_back(host, app, screen, check, tag)
+					if c["insets"] == Vector2.ZERO:
+						await _check_cold_intro(host, c["view"], check, tag)
 				app.queue_free()
 				await host.get_tree().process_frame
 	DeviceProfiles.clear_insets()
@@ -256,3 +266,59 @@ func _positions(screen: Control) -> Array[Vector2]:
 		list.append(b.get_global_rect().position)
 	list.append((screen.get("_title_box") as Control).get_global_rect().position)
 	return list
+
+
+## Volta de um submenu pelo "voltar" do Android: nenhum quadro com título, saldo, metas, menu ou
+## bloco de ação fora do lugar ou transparente (sem refazer a entrada e sem piscar), e as metas
+## iguais ficam com as mesmas linhas.
+func _check_back(host: Node, app: App, screen: Control, check: Callable, tag: String) -> void:
+	var goals := screen.call("goals") as MissionGoals
+	var row: Control = goals.rows[0]["row"] if not goals.rows.is_empty() else null
+	var nodes := NavProbe.title_nodes(screen)
+	_drop_splash(app)
+	for sub: StringName in [&"options", &"heroes"]:
+		app.go(sub)
+		await host.get_tree().process_frame
+		app.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+		var samples: Array[PackedFloat32Array] = []
+		for _k: int in BACK_FRAMES:
+			await host.get_tree().process_frame
+			samples.append(NavProbe.sample(screen, nodes))
+		var r := NavProbe.summarize(nodes, samples)
+		check.call(app.current == &"title" and int(r["flickers"]) == 0 and int(r["unsettled_frames"]) == 0,
+				"%s: voltar de %s deixa o título parado (piscadas %d, quadros fora do lugar %d, %s)" % [tag, sub,
+				r["flickers"], r["unsettled_frames"], r["flicker_nodes"]])
+	check.call(row != null and not goals.rows.is_empty() and goals.rows[0]["row"] == row,
+			"%s: voltar ao título mantém as linhas das metas" % tag)
+
+
+## 1ª aparição do título (App novo): a entrada começa já no 1º quadro no começo (nada aparece pronto
+## para depois sumir), só avança até o fim e termina tudo no lugar.
+func _check_cold_intro(host: Node, view: Vector2, check: Callable, tag: String) -> void:
+	var app := App.new()
+	host.add_child(app)
+	await host.get_tree().process_frame
+	_drop_splash(app)
+	_fit_game_view(app, view)
+	app.go(&"title")
+	var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
+	var nodes := NavProbe.title_nodes(screen)
+	var samples: Array[PackedFloat32Array] = []
+	var start := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - start < INTRO_WATCH * 1000.0:
+		await host.get_tree().process_frame
+		samples.append(NavProbe.sample(screen, nodes))
+	var r := NavProbe.summarize(nodes, samples)
+	var last := samples[-1]
+	var settled := Array(last).all(func(v: float) -> bool: return v <= NavProbe.SETTLED)
+	check.call(float(r["first_min"]) >= 0.2 and int(r["flickers"]) == 0 and settled,
+			"%s: entrada do título sem piscar (1º quadro %.2f, piscadas %d %s, terminou %s)" % [tag, r["first_min"],
+			r["flickers"], r["flicker_nodes"], settled])
+	app.queue_free()
+	await host.get_tree().process_frame
+
+
+## Sem a abertura: no fim dela o App seguiria para o consentimento ou a história no meio da conferência.
+static func _drop_splash(app: App) -> void:
+	for node: Node in app.find_children("*", "SplashScreen", true, false):
+		node.get_parent().queue_free()

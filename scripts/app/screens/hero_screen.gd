@@ -58,6 +58,8 @@ var _go: Button
 var _selected: StringName = &""
 var _portraits: Dictionary = {}
 var _switch: Tween
+## Assinatura da última montagem da fila (_signature); igual, on_show não remonta.
+var _shown: Array = []
 
 
 func _ready() -> void:
@@ -87,6 +89,18 @@ func _ready() -> void:
 
 
 func on_show() -> void:
+	var current := StringName(String(app.selection.get("hero", "aki")))
+	var target := current if DB.heroes.has(current) and MetaProgress.is_hero_unlocked(current) else &"aki"
+	# Nada mudou desde a última vez (heróis liberados, lanternas, escolha): a fila de retratos e o
+	# seletor ficam como estão, sem remontar a tela no quadro da troca.
+	var signature := _signature()
+	if signature == _shown and target == _selected:
+		_scroll.scroll_vertical = 0
+		_layout()
+		_apply_quality()
+		_go.grab_focus.call_deferred()
+		return
+	_shown = signature
 	for child: Node in _grid.get_children():
 		_grid.remove_child(child)
 		child.queue_free()
@@ -108,11 +122,19 @@ func on_show() -> void:
 	# Só a lanterna comum: o seletor some (nada a escolher).
 	_cosmetic.get_parent().visible = _cosmetic.item_count > 1
 	_selected = &""
-	var current := StringName(String(app.selection.get("hero", "aki")))
-	_select(current if DB.heroes.has(current) and MetaProgress.is_hero_unlocked(current) else &"aki")
+	_select(target)
 	_layout()
 	_apply_quality()
 	_go.grab_focus.call_deferred()
+
+
+## O que monta a fila e o seletor: heróis liberados, lanternas liberadas e a escolhida.
+func _signature() -> Array:
+	var unlocked: Array[bool] = []
+	for id: StringName in DB.ids("heroes"):
+		unlocked.append(MetaProgress.is_hero_unlocked(id))
+	return [unlocked, (SaveManager.data["unlocked"]["cosmetics"] as Array).duplicate(),
+			String(app.selection.get("cosmetic", ""))]
 
 
 func _select(id: StringName) -> void:
@@ -191,9 +213,12 @@ func _animate_panel(direction: float) -> void:
 	if MenuKit.ui_fx() == 0:
 		content.modulate.a = 1.0
 		return
+	# Início da troca já neste quadro (não só quando o Tween começa).
+	content.modulate.a = 0.0
+	_name.position.x = 10.0 * direction
 	_switch = create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_switch.tween_property(content, "modulate:a", 1.0, SWITCH_TIME).from(0.0)
-	_switch.tween_property(_name, "position:x", 0.0, SWITCH_TIME).from(10.0 * direction)
+	_switch.tween_property(content, "modulate:a", 1.0, SWITCH_TIME)
+	_switch.tween_property(_name, "position:x", 0.0, SWITCH_TIME)
 
 
 # --- Montagem ------------------------------------------------------------------------
@@ -480,9 +505,11 @@ class HeroStage extends Control:
 			_slide = 0.0
 			_alpha = 1.0
 		else:
+			_slide = 26.0 * direction
+			_alpha = 0.0
 			_tween = create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			_tween.tween_property(self, "_slide", 0.0, 0.26).from(26.0 * direction)
-			_tween.tween_property(self, "_alpha", 1.0, 0.2).from(0.0)
+			_tween.tween_property(self, "_slide", 0.0, 0.26)
+			_tween.tween_property(self, "_alpha", 1.0, 0.2)
 		queue_redraw()
 		_back.queue_redraw()
 		_kanji_layer.queue_redraw()

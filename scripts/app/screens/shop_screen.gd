@@ -129,6 +129,8 @@ var _cards: Dictionary = {}
 ## id -> {"button": Button, "price": Label, "coin": TextureRect, "pill": PanelContainer, "dim": Array}
 var _coin_cards: Dictionary = {}
 var _refresh_timer: float = 0.0
+## Assinatura da última montagem dos cartões (_signature); igual, on_show só atualiza os estados.
+var _built: Array = []
 ## Posição da rolagem quando o dedo apertou um cartão (-1: nenhum aperto registrado).
 var _press_scroll: int = -1
 ## Texto que o aviso mostrou por último e quanto tempo ainda fica na tela.
@@ -205,16 +207,34 @@ func _ready() -> void:
 		on_show())
 
 
+## Monta os cartões só quando muda o que define a grade (_signature: tela, recorte, vagas, nomes e
+## textos); senão só atualiza os estados, sem remontar a Loja no quadro da troca de tela.
 func on_show() -> void:
+	var signature := _signature()
+	if signature == _built and not _cards.is_empty():
+		_refresh()
+		return
+	_built = signature
+	_rebuild()
+
+
+## Tudo de que dependem a grade e as alturas dos cartões.
+func _signature() -> Array:
+	var names: PackedStringArray = []
+	for id: StringName in ShopManager.ad_slots():
+		names.append("%s=%s" % [id, _slot_name(id)])
+	for id: StringName in ShopManager.coin_items():
+		names.append("%s=%s" % [id, ShopManager.coin_effect(id)])
+	return [MenuKit.safe_insets(self), _screen_width(), TranslationServer.get_locale(), claim_text(), names]
+
+
+func _rebuild() -> void:
 	for child: Node in _row.get_children():
 		child.queue_free()
 	for child: Node in _coin_row.get_children():
 		child.queue_free()
 	_cards.clear()
 	_coin_cards.clear()
-	_offer_hint.text = tr("shop.hint_free") if AdsManager.rewards_are_gifts() else tr("shop.hint")
-	for node: Control in _support:
-		node.visible = PurchaseManager.available()
 	_insets = MenuKit.safe_insets(self)
 	_laid_width = _screen_width()
 	_apply_frame(_insets)
@@ -288,6 +308,14 @@ func on_show() -> void:
 		inner.add_child(price_pill)
 		_coin_cards[id] = {"button": b, "price": price, "coin": coin, "pill": price_pill,
 				"dim": [well, name_label, chip]}
+	_refresh()
+
+
+## Estados que mudam sem mexer na grade: aviso das vagas, "Apoie o jogo", cartões, Ampulheta e compra.
+func _refresh() -> void:
+	_offer_hint.text = tr("shop.hint_free") if AdsManager.rewards_are_gifts() else tr("shop.hint")
+	for node: Control in _support:
+		node.visible = PurchaseManager.available()
 	_update_cards()
 	_layout_speed()
 	var owned := PurchaseManager.owns()

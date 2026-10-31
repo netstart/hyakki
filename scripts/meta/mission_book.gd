@@ -275,10 +275,15 @@ static func reward_parts(id: StringName) -> Array[Dictionary]:
 
 
 ## Peso da missão (ryō da recompensa, desbloqueio = UNLOCK_WEIGHT): desempate das metas.
+## Lê só o texto da recompensa (as mesmas partes de reward_parts, sem montar ícones e textos): é
+## chamada para cada missão em next_goals, a cada vez que o título aparece.
 static func difficulty(id: StringName) -> int:
 	var total := 0
-	for part: Dictionary in reward_parts(id):
-		total += int(part["amount"]) if part["kind"] == "ryo" else UNLOCK_WEIGHT
+	for part: String in String(data(id).get("reward", "")).split(",", false):
+		var kv := part.split(":")
+		if kv.size() != 2:
+			continue
+		total += kv[1].to_int() if kv[0] == "ryo" else UNLOCK_WEIGHT
 	return total
 
 

@@ -29,6 +29,8 @@ var selection: Dictionary = {}
 var last_result: Dictionary = {}
 var game: HyakkiGame
 var current: StringName = &""
+## Tela de onde veio a última troca (o título não refaz a entrada na volta de um submenu).
+var previous: StringName = &""
 
 var _layer: CanvasLayer
 var _root: Control
@@ -164,6 +166,7 @@ func go(name: StringName) -> void:
 		_screens[name] = screen
 	for key: StringName in _screens:
 		(_screens[key] as Screen).visible = key == name
+	previous = current
 	current = name
 	if name == &"title":
 		_preload_screens()

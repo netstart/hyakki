@@ -391,10 +391,13 @@ func show_tip(tip: Dictionary, animate: bool = true) -> void:
 	modulate.a = 1.0
 	if animate and fx > 0 and not bool(Settings.get_value("reduce_flashes")):
 		pivot_offset = (_layout["tail"] as PackedVector2Array)[2] - position
+		# Começo do estalo já neste quadro (sem um quadro do balão inteiro antes de encolher).
+		scale = Vector2(0.86, 0.86)
+		modulate.a = 0.0
 		_tween = create_tween().set_parallel()
-		_tween.tween_property(self, "scale", Vector2.ONE, POP_TIME).from(Vector2(0.86, 0.86)) \
-				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		_tween.tween_property(self, "modulate:a", 1.0, POP_TIME * 0.7).from(0.0)
+		_tween.tween_property(self, "scale", Vector2.ONE, POP_TIME).set_trans(Tween.TRANS_BACK) \
+				.set_ease(Tween.EASE_OUT)
+		_tween.tween_property(self, "modulate:a", 1.0, POP_TIME * 0.7)
 
 
 ## Completa o texto que está aparecendo (testes e toque).

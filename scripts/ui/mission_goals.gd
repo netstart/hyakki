@@ -63,21 +63,43 @@ static func live_goals(count: int = 3) -> Array[Dictionary]:
 	return out
 
 
-## Mostra `goals` ([{id, before, after, target}]) já no estado final (play anima).
+## Mostra `goals` ([{id, before, after, target}]) já no estado final (play anima). As mesmas metas
+## com os mesmos valores das linhas já mostradas (o título a cada volta de um submenu) mantêm as
+## linhas: refazê-las era um tranco no quadro da troca de tela.
 func set_goals(goals: Array) -> void:
+	var wanted: Array[Dictionary] = []
+	for g: Variant in goals:
+		var goal: Dictionary = g
+		if MissionBook.has(StringName(String(goal["id"]))):
+			wanted.append(goal)
+	if _same(wanted):
+		finish()
+		return
 	_kill()
 	rows.clear()
 	for child: Node in _list.get_children():
 		_list.remove_child(child)
 		child.queue_free()
-	for g: Variant in goals:
-		var goal: Dictionary = g
-		var id := StringName(String(goal["id"]))
-		if not MissionBook.has(id):
-			continue
-		rows.append(_make_row(id, float(goal["before"]), float(goal["after"]), float(goal["target"])))
+	for goal: Dictionary in wanted:
+		rows.append(_make_row(StringName(String(goal["id"])), float(goal["before"]), float(goal["after"]),
+				float(goal["target"])))
 	_empty.visible = rows.is_empty()
 	finish()
+
+
+## As linhas atuais já mostram exatamente `goals` (ids e valores, na mesma ordem)?
+func _same(goals: Array[Dictionary]) -> bool:
+	if goals.size() != rows.size() or (goals.is_empty() and not _empty.visible):
+		return false
+	for i: int in goals.size():
+		var goal := goals[i]
+		var row := rows[i]
+		if String(goal["id"]) != String(row["id"]):
+			return false
+		for key: String in ["before", "after", "target"]:
+			if float(goal[key]) != float(row[key]):
+				return false
+	return true
 
 
 ## Barras crescem do "antes" ao "agora" e o "+N" aparece (sem animação com ui_fx 0 ou "Reduzir

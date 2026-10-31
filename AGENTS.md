@@ -80,7 +80,7 @@ Antes de adicionar algo com licença incerta, abra uma issue ou pergunte ao mant
 
 **Testes por resolução só no Godot; emulador Android só para teste manual.** Os testes que simulam a
 tela dos aparelhos rodam **apenas no Godot** do PC: runners headless ou com janela que leem
-`tests/device_profiles.gd` (testes de layout de cada tela, painel e HUD), `tests/scroll_bench.tscn`, os
+`tests/device_profiles.gd` (testes de layout de cada tela, painel e HUD), `tests/scroll_bench.tscn`, `tests/nav_bench.tscn`, os
 testes de desempenho (`tests/perf_tests.gd`) e o `tools/run_checks.ps1`. **É proibido executar testes
 automatizados no emulador Android** (roteiro E2E, AVDs de teste, `adb input`, medição de quadros ou
 qualquer script que instale, toque e confira sozinho). O emulador e o aparelho servem só para **teste
@@ -142,6 +142,17 @@ exemplos de cada resolução:
     passa com **p95 ≤ 6 ms**, **nenhum quadro > 33 ms** e **nenhuma travada** (quadro em que a lista
     parou no meio do movimento) por lista, em todas as resoluções. Rode antes e depois de mexer em
     telas, fundo ou tema (`-- --res=585x270 --screens=shop,codex --out=bench.json`).
+  - **Benchmark de navegação (`tests/nav_bench.tscn`, sem `--headless`):** em todas as resoluções,
+    para cada tela aberta pelo título (Guardiões, Fases, Santuário, Loja, Diário, Opções, Créditos e
+    Resultados), faz título → tela → "voltar" do Android várias vezes e mede o custo dos quadros logo
+    depois da troca (pior e p95 dos 10 primeiros, e o tempo do `go()`) e as **piscadas** do título
+    (`tests/nav_probe.gd`: transparência e deslocamento da entrada do título, saldo, metas, menu e
+    bloco de ação, quadro a quadro). **Critério** (`-- --strict`): nenhuma piscada, o título parado na
+    volta de um submenu (sem refazer a entrada) e, na volta ao título, pior quadro ≤ 33 ms e
+    p95 ≤ 20 ms (as aberturas são medidas e impressas, sem limite). Rode antes e depois de mexer em
+    telas, no App ou em entradas animadas (`-- --res=585x270 --screens=shop,heroes --out=nav.json`). A regra das entradas que ele protege:
+    valores de início vão para o nó antes de criar o Tween (o `.from()` de um tweener só vale quando ele
+    começa, depois do `set_delay`), e telas mostradas de novo sem mudança não remontam as listas.
   - **Unitários (`tests/perf_tests.gd`, `tests/menu_backdrop_tests.gd`):** medidor de quadros,
     rolagem pelo dedo começando em cima de botões (sem apertá-los), ritmo de quadros,
     silhuetas nativas iguais ao laço, janela das partículas vivas e o fundo dos menus redesenhando só

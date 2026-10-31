@@ -45,6 +45,7 @@ func run(host: Node, check: Callable) -> void:
 	_test_migration()
 	_test_next_goals()
 	_test_goals_delta()
+	_test_goals_reuse()
 	await _test_bot_run()
 	await _test_title_tap()
 	await _test_results_animation()
@@ -501,6 +502,28 @@ func _test_goals_delta() -> void:
 	if kills.size() == 1:
 		_check.call(is_equal_approx(float(kills[0]["before"]), 900.0) and is_equal_approx(float(kills[0]["after"]), 960.0)
 				and is_equal_approx(float(kills[0]["target"]), 1000.0), "metas: antes 900, depois 960 de 1000")
+
+
+## Próximas metas iguais às mostradas (o título a cada volta de um submenu): as linhas ficam; com
+## outra meta ou outro valor, são refeitas.
+func _test_goals_reuse() -> void:
+	_fresh()
+	var box := MissionGoals.new(true)
+	var goals := MissionGoals.live_goals()
+	box.set_goals(goals)
+	var first: Control = box.rows[0]["row"] if not box.rows.is_empty() else null
+	box.set_goals(goals.duplicate(true))
+	_check.call(first != null and box.rows.size() == 3 and box.rows[0]["row"] == first,
+			"metas: as mesmas metas mantêm as linhas")
+	var changed := goals.duplicate(true)
+	changed[0]["after"] = float(changed[0]["after"]) + 1.0
+	box.set_goals(changed)
+	_check.call(box.rows.size() == 3 and box.rows[0]["row"] != first
+			and is_equal_approx(float(box.rows[0]["after"]), float(changed[0]["after"])),
+			"metas: outro valor refaz as linhas")
+	box.set_goals([])
+	_check.call(box.rows.is_empty() and (box.get("_empty") as Label).visible, "metas: sem metas mostra o aviso")
+	box.free()
 
 
 # --- Partida pelo bot --------------------------------------------------------------------
