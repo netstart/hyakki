@@ -9,7 +9,9 @@ GODOT="${GODOT:-godot}"
 failed=0
 PY=python3
 for c in python3 python; do if "$c" -c "import sys" >/dev/null 2>&1; then PY=$c; break; fi; done
-run_godot() { timeout 600 "$GODOT" --headless --path . "$@" 2>&1; }
+# Limite por execução do Godot (s); a integração percorre todas as telas em todas as resoluções,
+# idiomas e com o furo dos dois lados e passa de 10 min (INTEGRATION_TIMEOUT).
+run_godot() { timeout "${GODOT_TIMEOUT:-600}" "$GODOT" --headless --path . "$@" 2>&1; }
 
 echo "== 1. Importação"
 out=$(run_godot --import)
@@ -32,7 +34,8 @@ echo "== 4. Textos, licenças, ficha da loja e site irmão"
 "$PY" -I tools/sync_site.py --check || failed=1
 
 echo "== 5. Testes de integração"
-out=$(run_godot res://tests/integration_tests.tscn); rc=$?
+out=$(GODOT_TIMEOUT="${INTEGRATION_TIMEOUT:-3600}" run_godot res://tests/integration_tests.tscn); rc=$?
+if [ $rc -eq 124 ]; then echo "FALHOU: integração passou do limite de ${INTEGRATION_TIMEOUT:-3600} s"; fi
 grep -E "verificações|FALHOU|SCRIPT ERROR" <<<"$out"
 if [ $rc -ne 0 ] || grep -qE "FALHOU|SCRIPT ERROR" <<<"$out"; then failed=1; fi
 

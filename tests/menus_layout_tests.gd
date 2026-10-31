@@ -1,9 +1,11 @@
 extends RefCounted
-## Guardiões, Opções e Diário do Guardião (e o botão "voltar") em cada resolução de
+## Guardiões, Opções e Diário do Guardião (com cada capítulo do Guia, tests/guide_tests.gd) e o
+## botão "voltar" em cada resolução de
 ## tests/device_profiles.gd, sem e com o furo da câmera de cada lado, nos 11 idiomas. Chamado
 ## por tests/integration_tests.gd e por tests/menus_layout_runner.gd.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+const GuideTests := preload("res://tests/guide_tests.gd")
 const SCREENS := {
 	&"heroes": "res://scripts/app/screens/hero_screen.gd",
 	&"options": "res://scripts/app/screens/options_screen.gd",
@@ -16,7 +18,8 @@ const SCREENS := {
 }
 ## Variantes das capturas: "tela" ou "tela:estado".
 const SHOT_VARIANTS: Array[String] = ["heroes", "heroes:locked", "options", "options:display",
-		"codex", "codex:detail", "codex:bosses", "codex:kami", "codex:recipe", "codex:evolution", "codex:relic"]
+		"codex", "codex:detail", "codex:bosses", "codex:kami", "codex:recipe", "codex:evolution", "codex:relic",
+		"codex:guide_play", "codex:guide_chests", "codex:guide_bosses", "codex:guide_stronger", "codex:guide_tips"]
 
 const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds",
 		"hurt_sounds", "joystick_mode", "joystick_side", "vibration", "fps", "graphics_quality", "colorblind",
@@ -55,6 +58,7 @@ func run(host: Node, check: Callable) -> void:
 			await _test_heroes(view, state)
 			await _test_options(view, state)
 			await _test_codex(view, state)
+			await _test_guide(view, state)
 	use_insets(Vector2.ZERO)
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
@@ -250,6 +254,21 @@ func open_screen(host: Node, view: Vector2, name: StringName, backdrop: bool = f
 
 func prepare_variant(host: Node, screen: Control, variant: String) -> void:
 	var state := variant.get_slice(":", 1) if variant.contains(":") else ""
+	if state.begins_with("guide_"):
+		# Capítulo do Guia com quase tudo descoberto (e as evoluções ainda "???").
+		GuideTests.full_profile()
+		(SaveManager.data["stats"]["evolved"] as Array).clear()
+		(SaveManager.data["stats"]["bosses_defeated"] as Dictionary).erase("kuroe")
+		screen.call("open_category", &"enemies", false)
+		screen.call("open_category", &"guide", false)
+		screen.call("open_entry", GuideBook.CHAPTERS.find(StringName(state.trim_prefix("guide_"))))
+		(screen.call("guide_page") as GuidePage).complete()
+		# Capturas: `--guide-scroll=<px>` rola a página do capítulo (ver o meio dos capítulos longos).
+		for arg: String in OS.get_cmdline_user_args():
+			if arg.begins_with("--guide-scroll="):
+				await host.get_tree().process_frame
+				await host.get_tree().process_frame
+				(screen.get("_detail_scroll") as ScrollContainer).scroll_vertical = arg.trim_prefix("--guide-scroll=").to_int()
 	match state:
 		"locked":
 			var all: Array = (SaveManager.data["unlocked"]["heroes"] as Array).duplicate()
@@ -485,11 +504,23 @@ func _test_codex_missions_layout(screen: Control, view: Vector2, sub: String) ->
 		check_common(screen, view, "%s %s" % [sub, id])
 
 
+## Guia: cada capítulo com tudo descoberto (os nomes mais longos) e a seção do Android.
+func _test_guide(view: Vector2, state: String) -> void:
+	GuideTests.full_profile()
+	var screen := await open_screen(_host, view, &"codex")
+	await GuideTests.new().check_layout(self, _host, screen, view, state, _check)
+	close_screen(screen)
+	await _host.get_tree().process_frame
+
+
 func _test_codex_behaviour() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	(SaveManager.data["stats"]["kills_by_enemy"] as Dictionary)["slime_rice"] = 150
 	(SaveManager.data["stats"]["kills_by_enemy"] as Dictionary)["bat"] = 5
 	var screen := await open_screen(_host, main_view(), &"codex")
+	_ok(screen.call("category") == &"guide", "Diário: abre no Guia na primeira vez")
+	screen.call("open_category", &"enemies", false)
+	await _host.get_tree().process_frame
 	var entries: Array = screen.call("entries")
 	var known: Array = entries.filter(func(e: Dictionary) -> bool: return bool(e["known"]))
 	_ok(known.size() >= 1 and known.size() < entries.size(), "Diário: só os yōkai vistos ficam conhecidos")

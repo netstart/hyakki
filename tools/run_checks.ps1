@@ -46,19 +46,24 @@ if (Get-Command gdlint -ErrorAction SilentlyContinue) {
     if ($LASTEXITCODE -ne 0) { $failed = $true }
 } else { Write-Host 'gdlint não instalado (pip install "gdtoolkit==4.*"); pulando' -ForegroundColor Yellow }
 
+# Passos em Python: o que vai para o stderr (ex.: aviso de LF->CRLF do git dentro dos testes do site)
+# não pode encerrar o script no PowerShell 5.1; vale só o código de saída.
+function Invoke-Python([string[]]$PyArgs) {
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & python -I @PyArgs 2>&1 | ForEach-Object { "$_" } | Write-Host
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $previous
+    return $code
+}
+
 Write-Host '== 2b. Textos (11 idiomas, marcadores) e licenças' -ForegroundColor Cyan
-& python -I (Join-Path $PSScriptRoot 'build_i18n.py') --check
-if ($LASTEXITCODE -ne 0) { $failed = $true }
-& python -I (Join-Path $PSScriptRoot 'check_licenses.py')
-if ($LASTEXITCODE -ne 0) { $failed = $true }
-& python -I (Join-Path $PSScriptRoot 'check_store_listing.py')
-if ($LASTEXITCODE -ne 0) { $failed = $true }
-& python -I (Join-Path $PSScriptRoot 'test_sync_site.py')
-if ($LASTEXITCODE -ne 0) { $failed = $true }
-& python -I (Join-Path $PSScriptRoot 'test_pre_commit.py')
-if ($LASTEXITCODE -ne 0) { $failed = $true }
-& python -I (Join-Path $PSScriptRoot 'sync_site.py') --check
-if ($LASTEXITCODE -ne 0) { $failed = $true }
+if ((Invoke-Python @((Join-Path $PSScriptRoot 'build_i18n.py'), '--check')) -ne 0) { $failed = $true }
+if ((Invoke-Python @((Join-Path $PSScriptRoot 'check_licenses.py'))) -ne 0) { $failed = $true }
+if ((Invoke-Python @((Join-Path $PSScriptRoot 'check_store_listing.py'))) -ne 0) { $failed = $true }
+if ((Invoke-Python @((Join-Path $PSScriptRoot 'test_sync_site.py'))) -ne 0) { $failed = $true }
+if ((Invoke-Python @((Join-Path $PSScriptRoot 'test_pre_commit.py'))) -ne 0) { $failed = $true }
+if ((Invoke-Python @((Join-Path $PSScriptRoot 'sync_site.py'), '--check')) -ne 0) { $failed = $true }
 
 Write-Host '== 2c. Testes de integração (dados, idiomas, fontes, Loja, Santuário, save)' -ForegroundColor Cyan
 $integration = Invoke-Godot @('res://tests/integration_tests.tscn')

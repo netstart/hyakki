@@ -135,4 +135,4 @@ static func use_generous(profile: Dictionary) -> void:
 
 ## Mínimo de itens do baú: chefe 3; comum 3 enquanto houver generoso, senão 1.
 static func min_items(from_boss: bool, generous: int) -> int:
-	return 3 if from_boss or generous > 0 else 1
+	return ChestSystem.BOSS_MIN_ITEMS if from_boss or generous > 0 else ChestSystem.COUNTS[0]

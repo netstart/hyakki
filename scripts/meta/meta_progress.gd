@@ -5,6 +5,8 @@ extends RefCounted
 
 const CODEX_KILLS := 100
 const ENDLESS_GOLD := 1.5
+## Santuário: cada compra (de qualquer melhoria) encarece todas em PRICE_STEP do preço base.
+const PRICE_STEP := 0.1
 const TELEMETRY_HEADER := "date,hero,stage,mode,moon,time,level,kills,ryo,result,weapons,damage_taken,cause"
 ## Tipos de recompensa que liberam conteúdo, com a lista de desbloqueados de cada um.
 const UNLOCK_KINDS := {"hero": "heroes", "weapon": "weapons", "passive": "passives",
@@ -17,7 +19,7 @@ static func powerup_price(id: StringName) -> int:
 	for key: String in SaveManager.data["powerups"]:
 		total_bought += int(SaveManager.data["powerups"][key])
 	var next_level := SaveManager.powerup_level(id) + 1
-	return roundi(float(data["price"]) * (1.0 + 0.1 * total_bought) * next_level)
+	return roundi(float(data["price"]) * (1.0 + PRICE_STEP * total_bought) * next_level)
 
 
 static func can_buy(id: StringName) -> bool:

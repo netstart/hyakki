@@ -283,7 +283,7 @@ func _select(id: StringName) -> void:
 	var best := SaveManager.stage_best(id)
 	_moon.clear()
 	_moon.add_item(tr("moon.none"))
-	var max_moon := mini(5, int(best["max_moon"]) + 1) if bool(best["won"]) else 0
+	var max_moon := mini(HyakkiGame.MAX_MOON, int(best["max_moon"]) + 1) if bool(best["won"]) else 0
 	for m: int in range(1, max_moon + 1):
 		_moon.add_item(tr("moon.level") % _roman(m))
 	var moon := mini(int(app.selection.get("moon", 0)), max_moon)

@@ -577,6 +577,11 @@ func _kill_tween() -> void:
 	scale = Vector2.ONE
 
 
+## Papel do balão (DialogueBoxSimple), para outros desenharem com o mesmo visual (Guia).
+static func box_style() -> StyleBoxTexture:
+	return _style()
+
+
 static func _style() -> StyleBoxTexture:
 	if _box_style == null:
 		_box_style = StyleBoxTexture.new()

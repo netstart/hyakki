@@ -14,7 +14,8 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   esses baús, então os testes de determinismo não dependem do save). Opção "Animação curta do baú".
 - Santuário (18 power-ups, reembolso total), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
   e mais 131 missões em 10 categorias, cada uma com recompensa e barra de progresso no Diário, e as
-  Próximas 3 metas no título e nos Resultados), Diário do Guardião,
+  Próximas 3 metas no título e nos Resultados), Diário do Guardião
+  (com o **Guia**: 9 capítulos de manual montados dos dados do jogo, sem revelar o que não foi descoberto),
   história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V.
 - Velocidade **1x / 2x / 3x** com passo fixo: a mesma semente gera a mesma partida em qualquer velocidade.
   2x e 3x são liberados pela **Ampulheta de Fūjin**, compra única e permanente na Loja: 3.000 ryō ou

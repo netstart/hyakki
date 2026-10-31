@@ -285,13 +285,19 @@ func _test_kami_flow() -> void:
 	await _seconds(KamiPanel.STAMP_TIME + 0.25)
 	_check.call(chosen.back() == by_button and game.kami.accepted.has(by_button), "Selar o pacto pelo botão")
 	await _wait(func() -> bool: return not panel.visible and not flight.active(), 3.0)
-	# Bot e nova partida.
+	# Bot e nova partida. A partida roda em tempo real nas esperas acima (o voo precisa do
+	# relógio), então, conforme o ritmo dos quadros da máquina, as brasas coletadas podem abrir um
+	# level-up antes daqui; o bot responde o painel de cima, e o pacto ficava sem resposta. Fecha
+	# antes o que estiver aberto (como o bot faz na partida) para o caso medir só o pacto.
+	await _close_overlays(hud)
 	game.apply_scenario("kami")
 	var offered := panel.offer()[0]
 	# A luta segue em tempo real durante o teste: uma bênção de nível que abriu junto ficaria
 	# na frente do pacto no bot_answer (depende de quanto XP caiu até aqui).
 	while hud.level_up_open():
 		hud.bot_answer()
+	_check.call(panel.is_open() and not hud.get("_level_panel").call("is_open")
+			and not hud.get("_chest_panel").call("is_open"), "só o pacto aberto antes da resposta do bot")
 	hud.bot_answer()
 	_check.call(chosen.back() == offered and not panel.visible and flight.flyer_count() == 0,
 			"bot aceita o primeiro, sem voo (%s/%s, tela %s, voo %d)" % [chosen.back(), offered, panel.visible,
@@ -332,6 +338,16 @@ func _free(game: HyakkiGame) -> void:
 	game.queue_free()
 	GameClock.paused = false
 	await _host.get_tree().process_frame
+
+
+## Responde (como o bot) os painéis abertos (level-up, baú, diálogo) até não sobrar nenhum, sem
+## deixar a partida andar entre um e outro (cada resposta pode abrir o próximo level-up da fila).
+func _close_overlays(hud: Node) -> void:
+	for _k: int in 200:
+		if not bool(hud.call("overlay_open")):
+			return
+		hud.call("bot_answer")
+		await _host.get_tree().process_frame
 
 
 func _seconds(value: float) -> void:

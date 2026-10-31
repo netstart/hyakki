@@ -23,6 +23,7 @@ const LANTERN_TINTS := {"golden_lantern": Color(1.0, 0.85, 0.2), "crimson_lanter
 const DEFAULT_LANTERN := Color(1.0, 0.8, 0.3)
 const MOON_HP := 0.25
 const MOON_REWARD := 0.15
+const MAX_MOON := 5  # Lua Vermelha máxima (V)
 
 var config: Dictionary = {}
 var stage: Dictionary = {}
@@ -93,8 +94,7 @@ var _night: CanvasModulate
 var _weapon_layer: Node2D
 var _shake: float = 0.0
 var _ad_revive_used: bool = false
-## Verdadeiro enquanto o anúncio do reviver passa: o Android pode mandar o jogo para o
-## segundo plano (foco perdido), e aí a partida não deve abrir o menu de pausa.
+## Anúncio do reviver passando: o Android pode tirar o foco do jogo, e a pausa não deve abrir.
 var _ad_in_progress: bool = false
 var _speed_min: int = 3
 var _speed_max: int = 1
@@ -153,7 +153,7 @@ func _cli_config() -> Dictionary:
 		elif arg.begins_with("--stage="):
 			cfg["stage"] = value
 		elif arg.begins_with("--moon="):
-			cfg["moon"] = clampi(value.to_int(), 0, 5)
+			cfg["moon"] = clampi(value.to_int(), 0, MAX_MOON)
 		elif arg.begins_with("--mode="):
 			cfg["mode"] = value
 		elif arg.begins_with("--speed="):
@@ -566,8 +566,7 @@ func enemy_damage_mult() -> float:
 			* sqrt(stage_difficulty()) * float(stage.get("damage_mult", 1.0))
 
 
-## Degrau da fase (data/stages.json "difficulty"), aplicado aos poucos nos primeiros
-## 5 minutos para o começo de cada fase continuar jogável sem upgrades.
+## Degrau da fase (stages.json "difficulty"), aos poucos nos primeiros 5 min: começo jogável sem upgrades.
 func stage_difficulty() -> float:
 	var full := float(stage.get("difficulty", 1.0))
 	return 1.0 + (full - 1.0) * clampf(minute() / 5.0, 0.0, 1.0)
@@ -824,7 +823,7 @@ func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: String
 	if was_elite:
 		pickups.spawn_item(&"chest", at)
 		fx.play_anim("explosion", at, 1.0)
-	elif rng.randf() < 0.012 * player.stats.get_stat("luck"):
+	elif rng.randf() < PickupManager.COIN_CHANCE * player.stats.get_stat("luck"):
 		pickups.spawn_item(&"coin", at + Vector2(4, 0))
 	for weapon: Weapon in weapons:
 		if weapon is Hitodama:
@@ -838,7 +837,7 @@ func on_boss_defeated(id: StringName, at: Vector2) -> void:
 		rift.on_midboss_defeated(at)  # dois baús e o portal para o Kakuriyo
 	else:
 		pickups.spawn_item(&"chest", at, {"boss": true})
-	add_run_ryo(100)
+	add_run_ryo(BossDirector.BOSS_RYO)
 	fx.play_anim("explosion", at, 3.0)
 	fx.add_ring(at, 160.0, Color(1.0, 0.9, 0.6))
 	shake(5.0)
@@ -985,8 +984,7 @@ func close_pause() -> void:
 	_resume_if_clear()
 
 
-## Contagem de 1,5 s só ao sair da pausa ou do reviver (15.2); depois de escolher uma
-## habilidade, baú ou Kami o jogo volta na hora, para manter o ritmo.
+## Contagem de 1,5 s só ao sair da pausa ou do reviver (15.2); habilidade, baú e Kami voltam na hora.
 func _resume_if_clear(with_countdown: bool = true) -> void:
 	if running and not hud.overlay_open():
 		GameClock.paused = false
@@ -1031,8 +1029,7 @@ func _on_death_offer_due() -> void:
 		death.show_notice()
 
 
-## Uma resposta por oferta: toque repetido, sinal duplicado ou o tempo da oferta acabando
-## enquanto o anúncio passa não abrem outro anúncio nem cortam o que está na tela.
+## Uma resposta por oferta: toque repetido, sinal duplicado ou fim do prazo no anúncio não abrem outro.
 func _on_revive_answered(accept: bool) -> void:
 	if _ad_in_progress:
 		return

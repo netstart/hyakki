@@ -36,6 +36,8 @@ const PORTAL_RADIUS := 14.0
 const CLEARANCE := 22.0
 ## Abaixo do ponto da morte, para não cair sobre os baús (que ficam no arco de cima).
 const PORTAL_OFFSET := Vector2(0.0, 46.0)
+## Baús de chefe deixados pelo Guardião do Limiar.
+const MIDBOSS_CHESTS := 2
 const CHEST_DIST := 30.0
 const CHEST_SPREAD := 0.62
 const CHEST_MIN_GAP := 14.0
@@ -249,7 +251,7 @@ func _on_boss_spawned(id: StringName) -> void:
 func on_midboss_defeated(at: Vector2) -> void:
 	midboss_done = true
 	var placed: Array[Vector2] = []
-	for k: int in 2:
+	for k: int in MIDBOSS_CHESTS:
 		var angle := -PI * 0.5 + (-1.0 if k == 0 else 1.0) * CHEST_SPREAD
 		placed.append(_drop_chest(at, angle, placed))
 	# O portal desce até não encostar nos baús (num canto apertado o ponto livre sobe).

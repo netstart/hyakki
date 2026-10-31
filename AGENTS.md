@@ -132,7 +132,7 @@ exemplos de cada resolução:
   engasgo, na qualidade gráfica **Alta**, em todas as resoluções. Os testes rodam no Godot do PC
   (nunca no emulador):
   - **Benchmark de rolagem (`tests/scroll_bench.tscn`, sem `--headless`):** em cada tela com lista
-    rolável (Guardiões, Fases, Loja, Diário, Opções, Créditos, Resultados, Santuário, Título), mede a
+    rolável (Guardiões, Fases, Loja, Diário e cada capítulo do Guia, Opções, Créditos, Resultados, Santuário, Título), mede a
     tela parada e, em cada lista, piparotes até o fim e de volta e um arrasto lento com o dedo
     simulado, em todas as resoluções de `tests/device_profiles.gd`, sem VSync (custo real do quadro),
     com média, p95, p99, pior quadro, travadas, tempo de render na CPU, chamadas de desenho e o tempo

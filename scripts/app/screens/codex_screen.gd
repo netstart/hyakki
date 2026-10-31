@@ -1,6 +1,6 @@
 extends Screen
 ## Diário do Guardião (plano 3.2 e 3.6.8): um livro aberto sobre capa de laca. Marcadores de
-## categoria em cima (Yōkai, Chefes, Armas, Relíquias, Kami, Guardiões, Conquistas e
+## categoria em cima (Guia, Yōkai, Chefes, Armas, Relíquias, Kami, Guardiões, Conquistas e
 ## História); na página esquerda, a grade de cartões com retrato (o que ainda não se conhece
 ## fica em silhueta com "?"); na direita, a entrada escolhida: retrato animado ampliado, nome,
 ## lore e números. Contador "x/y descobertos" no alto e por página. Trocar de categoria vira
@@ -9,6 +9,10 @@ extends Screen
 ## Bestiário: lore liberada com 100 abates (MetaProgress.CODEX_KILLS); chefes ao vencer;
 ## armas base sempre, evoluções e uniões ao descobrir; relíquias e guardiões pelo
 ## desbloqueio; kami sempre; conquistas e história conforme o progresso.
+##
+## Guia (1º marcador, aberto na 1ª vez; depois o Diário lembra o último): capítulos na esquerda
+## (GuidePage.ChapterRow) e a página montada dos dados (GuideBook) na direita, com a descoberta do
+## Diário (Discovery); "Ver no Diário" e os chips abrem a categoria ou o item.
 ##
 ## Receitas: armas e relíquias mostram, abaixo da descrição, com o que combinam e no que viram
 ## ("Com [ícone] Saquê, evolui em: [ícone] Lâmina da Aurora"), montadas dos dados (evolution,
@@ -27,9 +31,13 @@ const MARGIN := 8.0
 const CARD := 40.0
 const CARD_GAP := 4
 const FLIP_TIME := 0.16
-const CATEGORIES: Array[StringName] = [&"enemies", &"bosses", &"weapons", &"relics", &"kami", &"heroes",
+const TAB_PAD := 6.0
+const TAB_PAD_COMPACT := 3.0
+const TAB_GAP := 2.0
+const CATEGORIES: Array[StringName] = [&"guide", &"enemies", &"bosses", &"weapons", &"relics", &"kami", &"heroes",
 		&"achievements", &"story"]
 const TAB_ICONS := {
+	&"guide": "res://assets/art/ui/icons/items/Scroll.png",
 	&"enemies": "res://assets/art/ui/icons/spell/Necromancy.png",
 	&"bosses": "res://assets/art/ui/icons/spell/Death.png",
 	&"weapons": "res://assets/art/ui/icons/items/Shuriken.png",
@@ -44,17 +52,18 @@ const DAWN_ICON := "res://assets/art/ui/icons/meteo/Sun.png"
 ## Chip das receitas: 18x18 em escala 1 (pixel perfeito), da altura da linha da fonte 12 (16 px)
 ## mais a moldura. O miolo são os 16x16 centrais do ícone de habilidade 24x24 e a moldura de 1 px
 ## vem do bisel do próprio ícone (cor da categoria: arma, relíquia, evolução, união).
-const CHIP := 18
+const CHIP := InkChips.CHIP
 ## Chip de item desconhecido: as cores da silhueta dos cartões, com "?" no meio.
-const CHIP_UNKNOWN_FILL := Color(0.3, 0.2, 0.13)
-const CHIP_UNKNOWN_RIM := Color(0.55, 0.38, 0.24)
-const CHIP_UNKNOWN_INK := Color("f0d9a8")
-const CHIP_QUESTION: Array[String] = [".###.", "#...#", "....#", "..##.", "..#..", ".....", "..#.."]
-
-static var _chips: Dictionary = {}
+const CHIP_UNKNOWN_FILL := InkChips.UNKNOWN_FILL
+const CHIP_UNKNOWN_RIM := InkChips.UNKNOWN_RIM
+const CHIP_UNKNOWN_INK := InkChips.UNKNOWN_INK
 
 var _tabs: Array[Button] = []
 var _chip: Label
+## Marcadores: folga lateral e nome do escolhido; encolhem (folga, depois o nome) quando a faixa
+## não cabe até o contador (telas estreitas com o furo da câmera).
+var _tab_pad := TAB_PAD
+var _tab_titles := true
 var _book: Book
 var _left: Control
 var _page_title: Label
@@ -83,6 +92,8 @@ var _entries: Array[Dictionary] = []
 var _selected := -1
 var _cards: Array[Button] = []
 var _flip: Tween
+var _guide_book := GuideBook.new()
+var _guide: GuidePage
 ## Entrada a abrir quando a página virar (toque num chip de receita de outra categoria).
 var _pending := &""
 
@@ -127,6 +138,7 @@ func open_category(id: StringName, animate: bool = true) -> void:
 	_category = id
 	for i: int in _tabs.size():
 		_style_tab(_tabs[i], i == index)
+	_layout_tabs()
 	if animate and previous != &"" and MenuKit.ui_fx() >= 1 and is_inside_tree():
 		AudioManager.play_ui("ui_move")
 		if _flip != null and _flip.is_valid():
@@ -150,8 +162,13 @@ func open_entry(index: int) -> void:
 		return
 	_selected = index
 	for i: int in _cards.size():
-		(_cards[i] as Card).set_selected(i == index)
+		_cards[i].call("set_selected", i == index)
 	var e := _entries[index]
+	if _category == &"guide":
+		_open_chapter(index, e)
+		return
+	_guide.visible = false
+	_lore.visible = true
 	var known := bool(e["known"])
 	_hint.visible = false
 	_view.visible = true
@@ -187,6 +204,39 @@ func open_entry(index: int) -> void:
 		tween.tween_property(_right, "modulate:a", 1.0, 0.18).from(0.25)
 	else:
 		_right.modulate.a = 1.0
+
+
+## Capítulo `index` do Guia na página da direita (sem o retrato: o título e "Capítulo x de y").
+func _open_chapter(index: int, e: Dictionary) -> void:
+	_hint.visible = false
+	_view.visible = false
+	_lore.visible = false
+	_recipe.visible = false
+	_stats.visible = false
+	_actions.visible = false
+	_progress_row.visible = false
+	_rewards.visible = false
+	_name.text = String(e["title"])
+	_kind.text = tr("guide.chapter_of") % [index + 1, _entries.size()]
+	_kind.visible = true
+	_guide.visible = true
+	_guide.show_chapter(_guide_book.chapter(StringName(String(e["guide"]))))
+	_detail_scroll.scroll_vertical = 0
+	if index < _cards.size() and is_inside_tree():
+		_grid_scroll.ensure_control_visible.call_deferred(_cards[index])
+	if MenuKit.ui_fx() >= 1 and is_inside_tree():
+		create_tween().tween_property(_right, "modulate:a", 1.0, 0.18).from(0.25)
+	else:
+		_right.modulate.a = 1.0
+
+
+## Página do Guia (testes e capturas).
+func guide_page() -> GuidePage:
+	return _guide
+
+
+func guide_book() -> GuideBook:
+	return _guide_book
 
 
 func category() -> StringName:
@@ -230,6 +280,8 @@ func discovered_total() -> Array[int]:
 	var known := 0
 	var total := 0
 	for id: StringName in CATEGORIES:
+		if id == &"guide":
+			continue
 		for e: Dictionary in entries_for(id):
 			total += 1
 			known += int(bool(e["known"]))
@@ -253,8 +305,8 @@ func _fill_page() -> void:
 			_list.add_child(_section_header(s))
 		var grid := _new_grid()
 		for i: int in range(int(s["from"]), int(s["to"])):
-			var card := Card.new()
-			card.setup(_entries[i])
+			var card: Button = GuidePage.ChapterRow.new() if _category == &"guide" else Card.new()
+			card.call("setup", _entries[i])
 			card.pressed.connect(func() -> void:
 				AudioManager.play_ui("ui_accept")
 				open_entry(i))
@@ -263,11 +315,14 @@ func _fill_page() -> void:
 	var known := 0
 	for e: Dictionary in _entries:
 		known += int(bool(e["known"]))
-	var titles := {&"enemies": tr("codex.enemies"), &"bosses": tr("codex.bosses"), &"weapons": tr("codex.weapons"),
+	var titles := {&"guide": tr("guide.title"), &"enemies": tr("codex.enemies"), &"bosses": tr("codex.bosses"),
+			&"weapons": tr("codex.weapons"),
 			&"relics": tr("codex.relics"), &"kami": tr("codex.kami"), &"heroes": tr("codex.heroes"),
 			&"achievements": tr("codex.achievements"), &"story": tr("codex.story")}
 	_page_title.text = String(titles[_category])
-	if _category == &"achievements":
+	if _category == &"guide":
+		_page_count.text = tr("guide.count") % _entries.size()
+	elif _category == &"achievements":
 		_page_count.text = tr("codex.achievements_count") % [known, _entries.size()]
 	else:
 		_page_count.text = tr("codex.discovered") % [known, _entries.size()]
@@ -283,6 +338,8 @@ func _fill_page() -> void:
 	_progress_row.visible = false
 	_rewards.visible = false
 	_actions.visible = false
+	_guide.visible = false
+	_lore.visible = true
 	_hint.visible = true
 	# Abre a primeira conhecida (ou a primeira) para a página da direita nunca ficar vazia; vindo
 	# de um chip de receita, abre o item tocado.
@@ -305,6 +362,8 @@ func _fill_page() -> void:
 func entries_for(id: StringName) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	match id:
+		&"guide":
+			out = _guide_book.entries()
 		&"enemies":
 			var kills: Dictionary = SaveManager.data["stats"]["kills_by_enemy"]
 			for e: StringName in DB.ids("enemies"):
@@ -323,12 +382,11 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 								int(data.get("hp", 0)), tr("codex.stat_damage"), int(data.get("damage", 0)),
 								tr("heroes.attr_speed"), int(data.get("speed", 0))]]})
 		&"bosses":
-			var defeated: Dictionary = SaveManager.data["stats"]["bosses_defeated"]
 			for b: StringName in DB.ids("bosses"):
 				if b == &"shinigami":
 					continue
 				var data: Dictionary = DB.bosses[b]
-				var won := defeated.has(String(b))
+				var won := Discovery.boss_known(b)
 				var sprite: Dictionary = data["sprite"]
 				out.append({"title": tr("boss.%s.name" % b), "known": won,
 						"icon": String(data.get("faceset", String(sprite["path"]).get_base_dir().path_join("Faceset.png"))),
@@ -366,7 +424,7 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 		&"heroes":
 			for h: StringName in DB.ids("heroes"):
 				var data: Dictionary = DB.heroes[h]
-				var unlocked := MetaProgress.is_hero_unlocked(h)
+				var unlocked := Discovery.hero_known(h)
 				out.append({"title": tr("hero.%s.name" % h), "known": unlocked, "icon": String(data["face"]), "face": true,
 						"kind": tr("hero.%s.role" % h), "hero": data,
 						"text": tr("hero.%s.story" % h) if unlocked else tr("heroes.locked") % tr("achievement.%s.desc" % data["unlock"]),
@@ -393,25 +451,19 @@ func _weapon_entries() -> Array[Dictionary]:
 
 # --- Receitas (combinações) ------------------------------------------------------------
 
-## Arma conhecida pelo Diário: base sempre; evolução e união depois de descobertas.
+## Arma conhecida pelo Diário (Discovery: base sempre; evolução e união depois de descobertas).
 func _weapon_known(w: StringName) -> bool:
-	var stats: Dictionary = SaveManager.data["stats"]
-	return String(DB.weapon(w).get("kind", "base")) == "base" or (stats["evolved"] as Array).has(String(w)) \
-			or (stats.get("unions", []) as Array).has(String(w))
+	return Discovery.weapon_known(w)
 
 
-## Relíquia conhecida pelo Diário: liberada (as sem condição desde o início).
+## Relíquia conhecida pelo Diário (Discovery: liberada).
 func _passive_known(p: StringName) -> bool:
-	return MetaProgress.is_content_available("passives", p, DB.passives.get(p, {}) as Dictionary)
+	return Discovery.passive_known(p)
 
 
 ## Item citado numa receita: {category, id, known, icon, name}; desconhecido sai como "???".
 func recipe_ref(cat: StringName, id: String) -> Dictionary:
-	var weapon := cat == &"weapons"
-	var known := _weapon_known(StringName(id)) if weapon else _passive_known(StringName(id))
-	var name_key := ("weapon.%s.name" if weapon else "passive.%s.name") % id
-	return {"category": cat, "id": id, "known": known,
-			"icon": UiIcons.skill_path("weapons" if weapon else "passives", id), "name": tr(name_key) if known else "???"}
+	return Discovery.recipe_ref(cat, id)
 
 
 ## Linha de receita: o modelo traduzido (cada %s vira um chip, na ordem do idioma) e os itens.
@@ -476,71 +528,24 @@ func _fill_recipe(lines: Array) -> void:
 				_add_chip(refs[j] as Dictionary)
 
 
-## Chip de um item: ícone 18x18 centrado na linha e o nome em tinta vermelha (marrom se
-## desconhecido), num link só (tocar no ícone ou no nome abre a entrada).
+## Chip de um item (InkChips.add_ref): ícone 18x18 e nome num link só.
 func _add_chip(ref: Dictionary) -> void:
-	var known := bool(ref["known"])
-	var label := String(ref["name"])
-	_recipe.push_meta({"category": ref["category"], "id": ref["id"]}, RichTextLabel.META_UNDERLINE_NEVER, label)
-	_recipe.add_image(recipe_chip(String(ref["icon"]), known), CHIP, CHIP, Color.WHITE, INLINE_ALIGNMENT_CENTER,
-			Rect2(), null, false, label)
-	_recipe.push_color(ThemeFactory.RED_INK if known else ThemeFactory.PAPER_INK_SOFT)
-	# Espaço fino inquebrável: o nome não se separa do ícone na quebra de linha.
-	_recipe.add_text(" " + label)
-	_recipe.pop()
-	_recipe.pop()
+	InkChips.add_ref(_recipe, ref)
 
 
 func _on_recipe_meta(meta: Variant) -> void:
+	# O fim de uma rolagem que começou num chip não abre o item (o link chega ao soltar o dedo).
+	if TouchScroll.busy():
+		return
 	if meta is Dictionary:
 		AudioManager.play_ui("ui_accept")
 		open_item(StringName(String(meta["category"])), StringName(String(meta["id"])))
 
 
-## Textura do chip (em cache): conhecido, miolo 16x16 do ícone com a moldura do bisel dele e os
-## cantos vazados; desconhecido (ou sem ícone), silhueta de papel escuro com "?".
+## Textura do chip (InkChips, em cache): conhecido, miolo 16x16 do ícone com a moldura do bisel;
+## desconhecido (ou sem ícone), silhueta de papel escuro com "?".
 static func recipe_chip(path: String, known: bool) -> Texture2D:
-	var key := "%s|%s" % [path, known]
-	if _chips.has(key):
-		return _chips[key]
-	var src: Image = null
-	if known and ResourceLoader.exists(path):
-		var tex := load(path) as Texture2D
-		src = tex.get_image() if tex != null else null
-		if src != null:
-			if src.is_compressed():
-				src.decompress()
-			src.convert(Image.FORMAT_RGBA8)
-	var img := Image.create_empty(CHIP, CHIP, false, Image.FORMAT_RGBA8)
-	var last := CHIP - 1
-	for y: int in CHIP:
-		for x: int in CHIP:
-			var edge := x == 0 or y == 0 or x == last or y == last
-			if (x == 0 or x == last) and (y == 0 or y == last):
-				continue
-			if src != null:
-				img.set_pixel(x, y, src.get_pixel(_chip_src(x, src.get_width()), _chip_src(y, src.get_height())))
-			else:
-				img.set_pixel(x, y, CHIP_UNKNOWN_RIM if edge else CHIP_UNKNOWN_FILL)
-	if src == null:
-		var at := Vector2i((CHIP - CHIP_QUESTION[0].length()) / 2, (CHIP - CHIP_QUESTION.size()) / 2)
-		for row: int in CHIP_QUESTION.size():
-			for col: int in CHIP_QUESTION[row].length():
-				if CHIP_QUESTION[row][col] == "#":
-					img.set_pixel(at.x + col, at.y + row, CHIP_UNKNOWN_INK)
-	var out := ImageTexture.create_from_image(img)
-	_chips[key] = out
-	return out
-
-
-## Pixel do ícone (lado `side`, 24) para a coordenada `c` do chip: a borda pega o bisel (1 px
-## para dentro da borda do ícone) e o miolo 1..16 pega os 16 pixels centrais (4..19).
-static func _chip_src(c: int, side: int) -> int:
-	if c == 0:
-		return 1
-	if c == CHIP - 1:
-		return side - 2
-	return c + (side - CHIP) / 2
+	return InkChips.recipe_chip(path, known)
 
 
 func _story_entries() -> Array[Dictionary]:
@@ -598,7 +603,7 @@ func _build_chip() -> void:
 
 
 func _build_tabs() -> void:
-	var titles := [tr("codex.enemies"), tr("codex.bosses"), tr("codex.weapons"), tr("codex.relics"),
+	var titles := [tr("guide.tab"), tr("codex.enemies"), tr("codex.bosses"), tr("codex.weapons"), tr("codex.relics"),
 			tr("codex.kami"), tr("codex.heroes"), tr("codex.achievements"), tr("codex.story")]
 	for i: int in CATEGORIES.size():
 		var b := Button.new()
@@ -618,10 +623,11 @@ func _build_tabs() -> void:
 
 ## Marcador: o escolhido mostra o nome e fica vermelhão; os outros só o ícone, em laca.
 func _style_tab(b: Button, on: bool) -> void:
-	b.text = String(b.get_meta("title")) if on else ""
+	b.set_meta("on", on)
+	b.text = String(b.get_meta("title")) if on and _tab_titles else ""
 	var bg := Color("b8322a") if on else Color(0.12, 0.06, 0.06, 0.88)
 	var normal := ThemeFactory.flat_box(bg, ThemeFactory.ACCENT if on else Color(ThemeFactory.GOLD, 0.45), 1, 3,
-			Vector2(6, 1))
+			Vector2(_tab_pad, 1))
 	normal.corner_radius_bottom_left = 0
 	normal.corner_radius_bottom_right = 0
 	normal.border_width_bottom = 0
@@ -637,7 +643,6 @@ func _style_tab(b: Button, on: bool) -> void:
 	b.add_theme_constant_override("outline_size", 3)
 	b.add_theme_color_override("font_outline_color", Color(0.25, 0.04, 0.03))
 	b.modulate = Color.WHITE if on else Color(0.85, 0.82, 0.8)
-	_layout_tabs()
 
 
 func _build_left() -> void:
@@ -791,6 +796,12 @@ func _build_right() -> void:
 	_actions = HBoxContainer.new()
 	_actions.name = "Actions"
 	body.add_child(_actions)
+	_guide = GuidePage.new()
+	_guide.visible = false
+	_lore.visible = true
+	_guide.link_pressed.connect(func(cat: StringName) -> void: open_category(cat))
+	_guide.ref_pressed.connect(func(cat: StringName, id: String) -> void: open_item(cat, StringName(id)))
+	body.add_child(_guide)
 
 
 ## Barra do progresso da missão e "312 / 500" ao lado, e as recompensas com ícone.
@@ -864,9 +875,9 @@ func _layout() -> void:
 	var inset := MenuKit.safe_insets(self)
 	var w := size.x - inset.x - inset.y
 	var h := size.y
-	_layout_tabs()
 	var total := discovered_total()
 	_chip.text = tr("codex.discovered") % total if w >= 600.0 else "%d/%d" % total
+	_layout_tabs()
 	var top := HEADER_H + TAB_H
 	_book.position = Vector2(inset.x + MARGIN - 2, top)
 	_book.size = Vector2(w - MARGIN * 2.0 + 4, h - top - 4)
@@ -883,15 +894,51 @@ func _layout() -> void:
 
 
 func _layout_tabs() -> void:
-	var x := MenuKit.safe_insets(self).x + MARGIN + 4
+	var inset := MenuKit.safe_insets(self)
+	var start := inset.x + MARGIN + 4
+	var chip_box := _chip.get_parent().get_parent() as Control
+	var limit := size.x - inset.y - MARGIN - chip_box.get_combined_minimum_size().x - 4.0
+	# Do mais folgado ao mais compacto: o primeiro modo que cabe até o contador.
+	for mode: Array in [[TAB_PAD, true], [TAB_PAD_COMPACT, true], [TAB_PAD_COMPACT, false]]:
+		_set_tab_mode(float(mode[0]), bool(mode[1]))
+		if start + _tabs_width() <= limit or not bool(mode[1]):
+			break
+	var x := start
 	for b: Button in _tabs:
-		b.custom_minimum_size = Vector2(28, TAB_H)
-		b.size = Vector2(maxf(28.0, b.get_combined_minimum_size().x), TAB_H)
+		b.size = Vector2(_tab_width(b), TAB_H)
 		b.position = Vector2(x, HEADER_H)
-		x += b.size.x + 2
+		x += b.size.x + TAB_GAP
+
+
+func _set_tab_mode(pad: float, titles: bool) -> void:
+	if is_equal_approx(pad, _tab_pad) and titles == _tab_titles:
+		return
+	_tab_pad = pad
+	_tab_titles = titles
+	for b: Button in _tabs:
+		_style_tab(b, bool(b.get_meta("on", false)))
+
+
+func _tab_width(b: Button) -> float:
+	b.custom_minimum_size = Vector2(16.0 + _tab_pad * 2.0, TAB_H)
+	return b.get_combined_minimum_size().x
+
+
+func _tabs_width() -> float:
+	var total := 0.0
+	for b: Button in _tabs:
+		total += _tab_width(b) + TAB_GAP
+	return total - TAB_GAP
 
 
 func _layout_grid() -> void:
+	if _category == &"guide":
+		# Capítulos: uma coluna da largura da página.
+		for grid: GridContainer in _grids:
+			grid.columns = 1
+		for row: Button in _cards:
+			row.custom_minimum_size.x = maxf(0.0, _left.size.x - 8.0)
+		return
 	for grid: GridContainer in _grids:
 		grid.columns = _columns()
 

@@ -24,7 +24,9 @@ extends Node
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
-const SCREENS: Array[StringName] = [&"heroes", &"stages", &"shop", &"codex", &"options", &"credits",
+const GuideTests := preload("res://tests/guide_tests.gd")
+## "codex" mede o Diário na grade dos yōkai; "codex_guide", a página de cada capítulo do Guia.
+const SCREENS: Array[StringName] = [&"heroes", &"stages", &"shop", &"codex", &"codex_guide", &"options", &"credits",
 		&"results", &"sanctuary", &"title"]
 ## Limites do modo custo (sem VSync) no desktop: p95 e pior quadro (ms), travadas.
 const DESKTOP_LIMITS := {"p95_ms": 6.0, "max_ms": 33.0, "stalls": 0}
@@ -118,18 +120,27 @@ func _fill_profile() -> void:
 	SaveManager.data["ryo"] = 12840
 	SaveManager.data["consent"]["asked"] = true
 	SaveManager.data["story"]["intro_seen"] = true
+	# Guia com tudo descoberto: receitas, chefes e dicas com os nomes (as páginas mais longas).
+	GuideTests.full_profile()
 
 
 func _bench_screen(app: App, screen_name: StringName, res: String, fps: int) -> void:
 	if screen_name == &"results":
 		app.last_result = ResultsLayoutTests.make_result("victory", 8)
-	var first := not (app.get("_screens") as Dictionary).has(screen_name)
+	var real := &"codex" if screen_name == &"codex_guide" else screen_name
+	var first := not (app.get("_screens") as Dictionary).has(real)
 	var opened := Time.get_ticks_usec()
-	app.go(screen_name)
+	app.go(real)
 	await get_tree().process_frame
 	var open_ms := (Time.get_ticks_usec() - opened) / 1000.0
 	print("BENCH %s %s abrir%s: %.1f ms" % [res, screen_name, " (1ª vez)" if first else "", open_ms])
-	var screen := (app.get("_screens") as Dictionary)[screen_name] as Control
+	var screen := (app.get("_screens") as Dictionary)[real] as Control
+	if real == &"codex":
+		screen.call("open_category", &"guide" if screen_name == &"codex_guide" else &"enemies", false)
+		await get_tree().process_frame
+	if screen_name == &"codex_guide":
+		await _bench_guide(screen, res, fps)
+		return
 	if screen.has_method("skip_intro"):
 		screen.call("skip_intro")
 	await _frames(30)
@@ -148,6 +159,21 @@ func _bench_screen(app: App, screen_name: StringName, res: String, fps: int) -> 
 			if scroll.name == "GridScroll":
 				await _bench_scroller(scroll, res, &"codex_missions", fps)
 		screen.call("open_category", &"enemies", false)
+
+
+## Guia: a lista dos capítulos e a página de cada capítulo (troca de capítulo medida também).
+func _bench_guide(screen: Control, res: String, fps: int) -> void:
+	for i: int in GuideBook.CHAPTERS.size():
+		var opened := Time.get_ticks_usec()
+		screen.call("open_entry", i)
+		await get_tree().process_frame
+		print("BENCH %s codex_guide capítulo %s abrir: %.1f ms" % [res, GuideBook.CHAPTERS[i],
+				(Time.get_ticks_usec() - opened) / 1000.0])
+		await _frames(20)
+		for scroll: ScrollContainer in _scrollers(screen):
+			if scroll.name == "GridScroll" and i > 0:
+				continue
+			await _bench_scroller(scroll, res, StringName("codex_guide %s" % GuideBook.CHAPTERS[i]), fps)
 
 
 ## Listas roláveis visíveis da tela com conteúdo maior que a área (só as que rolam de fato).

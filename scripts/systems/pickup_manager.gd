@@ -6,6 +6,8 @@ extends Node2D
 ## - A coleta de brasas em sequência sobe o tom numa escala pentatônica (plano 15.7).
 
 const CAPACITY := 400
+## Chance de moeda por abate comum (multiplicada pela sorte; HyakkiGame._on_enemy_killed).
+const COIN_CHANCE := 0.012
 const MERGE_AT := 300
 const COLLECT_RADIUS := 8.0
 const ITEM_RADIUS := 10.0

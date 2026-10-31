@@ -6,9 +6,14 @@ extends RefCounted
 ## mais o 凶 de consolo (fluxo próprio da semente da partida) e os baús generosos do começo
 ## do save (fora do bot).
 
+## Melhorias possíveis num baú (1, 3 ou 5) e as chances base das duas maiores.
+const COUNTS: Array[int] = [1, 3, 5]
 const BASE_THREE := 0.25
 const BASE_FIVE := 0.05
 const RYO_PER_ITEM := 10
+## Baú de chefe: no mínimo BOSS_MIN_ITEMS melhorias e ryō multiplicado por BOSS_RYO_MULT.
+const BOSS_MIN_ITEMS := 3
+const BOSS_RYO_MULT := 2
 
 var game: HyakkiGame
 ## Fluxo do omikuji (Omikuji.stream_seed): não mexe no `game.rng` da luta.
@@ -36,12 +41,12 @@ func reset(run_seed: int, generous: bool) -> void:
 func roll_count(min_items: int = 1) -> int:
 	var luck := game.player.stats.get_stat("luck")
 	var roll := game.rng.randf()
-	var count := 1
+	var count := COUNTS[0]
 	if roll < BASE_FIVE * luck:
-		count = 5
+		count = COUNTS[2]
 	elif roll < (BASE_FIVE + BASE_THREE) * luck:
-		count = 3
-	return maxi(count, mini(5, maxi(min_items, game.chest_min)))
+		count = COUNTS[1]
+	return maxi(count, mini(COUNTS[2], maxi(min_items, game.chest_min)))
 
 
 ## Sorteia e aplica as recompensas. Devolve a lista para a tela da roleta.
@@ -59,7 +64,7 @@ func open(from_boss: bool) -> Array[Dictionary]:
 	# Um sorteio do fluxo por baú (mesma posição no fluxo, qualquer que seja a contagem).
 	last_fortune = Omikuji.fortune_for(rewards.size(), fortune_rng.randf())
 	fortunes.append(last_fortune)
-	var ryo := RYO_PER_ITEM * count * (2 if from_boss else 1)
+	var ryo := RYO_PER_ITEM * count * (BOSS_RYO_MULT if from_boss else 1)
 	if last_fortune == Omikuji.KYO:
 		ryo += Omikuji.KYO_RYO
 	game.add_run_ryo(ryo)

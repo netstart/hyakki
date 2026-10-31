@@ -75,6 +75,8 @@ const RealmTests := preload("res://tests/realm_tests.gd")
 const DialogueTests := preload("res://tests/dialogue_tests.gd")
 ## Dicas 心得: catálogo, regras, balão do título, cartão dos Resultados e a opção "Dicas".
 const TipTests := preload("res://tests/tip_tests.gd")
+## Guia do Diário: capítulos dos dados, números, descoberta, Android, dicas e a tela.
+const GuideTests := preload("res://tests/guide_tests.gd")
 ## Números de dano coloridos: causado × recebido × cura, alto, crítico, contínuo e daltonismo.
 const DamageNumberTests := preload("res://tests/damage_number_tests.gd")
 ## Anel, limite, soma, estresse, opções por tipo e a tela de Opções dos números de dano.
@@ -142,6 +144,8 @@ func _ready() -> void:
 	await DialogueTests.new().run(self, _check)
 	TipTests.new().run_unit(_check)
 	await TipTests.new().run(self, _check)
+	GuideTests.new().run_data(_check)
+	await GuideTests.new().run(self, _check)
 	await EnemyFxTests.new().run(self, _check)
 	await DamageNumberTests.new().run(self, _check)
 	await DamageNumberFlowTests.new().run(self, _check)

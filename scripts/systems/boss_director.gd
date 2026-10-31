@@ -10,6 +10,8 @@ extends Node2D
 ## e --force-elite=ID põe uma elite perto da guardiã no mesmo instante. Mudam a partida: só
 ## para capturas e testes manuais.
 
+## Ryō por chefe vencido (HyakkiGame.on_boss_defeated).
+const BOSS_RYO := 100
 const MOVE_TIME := 1.7
 const ENTRY_DISTANCE := 1.15
 
