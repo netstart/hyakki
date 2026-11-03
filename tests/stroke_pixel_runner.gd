@@ -119,6 +119,26 @@ func _build_cases() -> void:
 				Stroke.convex(ci, poly, col)
 			else:
 				ci.draw_colored_polygon(poly, col))
+	# Meia-lua do Onikiri (Stroke.band): faixa entre o arco de fora e o de dentro, mais grossa no meio.
+	for spec: Array in [[-1.2, 1.2, 28.0, 9.0], [0.4, 2.8, 22.0, 5.0]]:
+		var outer := PackedVector2Array()
+		var inner := PackedVector2Array()
+		for k: int in range(15):
+			var u := k / 14.0
+			var angle := lerpf(spec[0], spec[1], u)
+			var w := maxf(2.0, float(spec[3]) * sin(PI * u))
+			outer.append((c + Vector2.from_angle(angle) * float(spec[2])).round())
+			inner.append(c + Vector2.from_angle(angle) * (float(spec[2]) - w))
+		var closed := outer.duplicate()
+		var back := inner.duplicate()
+		back.reverse()
+		closed.append_array(back)
+		_cases.append(func(ci: CanvasItem, mine: bool) -> void:
+			var col := Color(0.75, 0.9, 1.0, 0.8)
+			if mine:
+				Stroke.band(ci, outer, inner, col)
+			else:
+				ci.draw_colored_polygon(closed, col))
 
 
 func _check(condition: bool, label: String) -> void:

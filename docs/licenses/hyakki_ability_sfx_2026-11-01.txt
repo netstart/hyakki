@@ -1,0 +1,16 @@
+Registro de origem - hyakki_ability_sfx (2026-11-01)
+
+Arquivos: assets/audio/sfx/a_*.wav (41 arquivos: a_dash x 2, a_light_ring x 2, a_fire_column x 2,
+a_caltrops x 3, a_barrier x 2, a_seal x 2, a_diamond x 2, a_shakujo x 3, a_mantra x 3,
+a_holy_arrow x 2, a_trap x 2, a_anvil x 3, a_chain_spin x 2, a_steam x 2, a_claw x 3,
+a_oni_roar x 2, a_whirl x 2, a_denied x 1, a_ready x 1) e assets/audio/voice/goro_3.ogg
+(o "Om" entoado do Mantra do Mestre).
+Origem: gerados pelo próprio projeto. Os a_*.wav com tools/gen_ability_sfx.py (síntese
+procedural, só biblioteca padrão do Python, sementes fixas; rodar de novo reproduz os mesmos
+bytes). O goro_3.ogg com tools/gen_ability_voices.py (fonte glotal aditiva e formantes em
+cascata, numpy/scipy, sementes fixas; o áudio se repete, o número de série do Ogg muda).
+Não há página externa de origem: a fonte são os scripts versionados neste repositório.
+Nenhuma gravação, sample de terceiros ou modelo de IA de áudio foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comandos: python -I tools/gen_ability_sfx.py
+          python -E -P tools/gen_ability_voices.py

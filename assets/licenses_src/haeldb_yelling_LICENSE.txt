@@ -1,0 +1,9 @@
+Male grunt/yelling sounds (4 vocalistas masculinos, ~10-12 gritos e grunhidos cada)
+Autor: HaelDB (https://opengameart.org/users/haeldb)
+Fonte: https://opengameart.org/content/male-gruntyelling-sounds
+Arquivo: yelling sounds.zip (9,7 MB), baixado em 2026-11-01
+Licença: a página oferece "OGA-BY 3.0" ou "CC0" (licença dupla, à escolha de quem usa).
+O Hyakki usa estes arquivos sob CC0 1.0 (domínio público); crédito dado mesmo assim.
+Uso no Hyakki: 1yell7/9/15/16, 3grunt3/5, 3yell4, yell3/7/12/13 tratados por
+tools/gen_ability_voices.py nas vozes de Kenta, Goro e Tora (assets/audio/voice/).
+Texto da licença: licenses/texts/CC0-1.0.txt

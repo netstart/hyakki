@@ -16,6 +16,8 @@ const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
 ## Onikiri e Dōjigiri, a espada da Yuki: combo, meia-lua, golpe final e onda.
 const OnikiriTests := preload("res://tests/onikiri_tests.gd")
+## Habilidades dos guardiões: dados, AbilitySystem, primitivas, Aki, save e o bot (tests/ability_tests.gd).
+const AbilityTests := preload("res://tests/ability_tests.gd")
 ## Mão, tamanho e pose de ataque dos heróis "side" (Yuki).
 const HeroHandTests := preload("res://tests/hero_hand_tests.gd")
 ## Santuário sem rolagem: cartões, painel de detalhes e estados, em todos os idiomas.
@@ -122,6 +124,7 @@ func _ready() -> void:
 	await _test_raijin_bolts()
 	await OnikiriTests.new().run(self, _check)
 	await _test_hero_hand()
+	await AbilityTests.new().run(self, _check)
 	await WeaponAudioTests.new().run(self, _check)
 	await WeaponFxTests.new().run(self, _check)
 	await _test_sound_options()

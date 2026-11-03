@@ -1,7 +1,7 @@
 extends RefCounted
 ## Guia do Diário (scripts/systems/guide_book.gd, scripts/ui/guide_page.gd, marcador "Guia" de
 ## scripts/app/screens/codex_screen.gd):
-##   - dados (run_data): os 9 capítulos montam dos dados nos 11 idiomas, sem chave crua nem %s
+##   - dados (run_data): os 10 capítulos montam dos dados nos 11 idiomas, sem chave crua nem %s
 ##     sobrando; os números batem com data/*.json e com as constantes do código (noite, cartas,
 ##     espaços, níveis máximos, chances e ryō dos baús, itens do chão, horários dos chefes, aviso
 ##     do Guardião do Limiar, Santuário, Kami, Lua Vermelha, terrenos, perigos); a descoberta
@@ -70,6 +70,7 @@ func run_data(check: Callable) -> void:
 	Locale.set_language("pt_BR", false)
 	_test_numbers()
 	_test_discovery()
+	_test_abilities()
 	_test_platform()
 	_test_tips()
 	SaveManager.data = original
@@ -82,8 +83,8 @@ func _test_all_languages() -> void:
 	var bad: Array[String] = []
 	for lang: String in LANGS:
 		Locale.set_language(lang, false)
-		_ok(book.entries().size() == GuideBook.CHAPTERS.size() and GuideBook.CHAPTERS.size() == 9,
-				"Guia [%s]: 9 capítulos" % lang)
+		_ok(book.entries().size() == GuideBook.CHAPTERS.size() and GuideBook.CHAPTERS.size() == 10,
+				"Guia [%s]: 10 capítulos" % lang)
 		for id: StringName in GuideBook.CHAPTERS:
 			var ch := book.chapter(id)
 			var blocks: Array = ch.get("blocks", [])
@@ -288,6 +289,48 @@ func _test_discovery() -> void:
 	_ok(kami_known == DB.ids("kami").size(), "Guia descoberta: Kami pela regra do Diário (todos conhecidos)")
 
 
+## Capítulo das habilidades: números de data/abilities.json e do AbilitySystem, a regra da Yuki,
+## o link para os guardiões e a descoberta (guardiã bloqueada como ???, sem as habilidades dela).
+func _test_abilities() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	full_profile()
+	var book := GuideBook.new()
+	var text := chapter_text(book.chapter(&"abilities"))
+	var missing: Array[String] = []
+	for h: StringName in DB.ids("heroes"):
+		var data := DB.hero_abilities(h)
+		if not text.contains(TranslationServer.translate("energy.%s.name" % data["energy"]["id"])):
+			missing.append("energia de %s" % h)
+		for a: Dictionary in data["abilities"]:
+			var line := TranslationServer.translate("guide.abilities.ability_line") % [
+					TranslationServer.translate("ability.%s.name" % a["id"]), str(int(a["level"])),
+					str(roundi(float(a["cost"]))), AbilitySheet.seconds(float(a["cooldown"]))]
+			if not text.contains(line) or not text.contains(String(a["kanji"])):
+				missing.append(String(a["id"]))
+	_ok(missing.is_empty(), "Guia habilidades: energia e nível/custo/recarga de cada habilidade dos dados %s" % [missing])
+	_ok(text.contains(GuideBook.pct(AbilitySystem.POWER_PER_LEVEL)), "Guia habilidades: poder por nível do AbilitySystem")
+	var yuki: Dictionary = DB.hero_abilities(&"yuki")["energy"]
+	var blood := TranslationServer.translate("guide.abilities.blood") % [
+			TranslationServer.translate("energy.oni_blood.name"), str(roundi(1.0 / float(yuki["hp_price"]))),
+			GuideBook.pct(float(yuki["hp_floor"]))]
+	_ok(text.contains(blood), "Guia habilidades: Yuki paga com vida (%s)" % blood.left(40))
+	var blocks: Array = book.chapter(&"abilities")["blocks"]
+	_ok(blocks.any(func(b: Dictionary) -> bool: return String(b["type"]) == "link" and b["category"] == &"heroes"),
+			"Guia habilidades: Ver guardiões no Diário")
+	_ok(not text.contains(TranslationServer.translate("guide.abilities.unknown")),
+			"Guia habilidades: tudo liberado, sem o aviso dos bloqueados")
+	var play := chapter_text(book.chapter(&"play"))
+	_ok(play.contains(TranslationServer.translate("energy.%s.name" % DB.hero_abilities(book._hero())["energy"]["id"])),
+			"Guia: Como jogar cita as habilidades e a energia da guardiã escolhida")
+	SaveManager.data["unlocked"]["heroes"] = ["aki"]
+	text = chapter_text(book.chapter(&"abilities"))
+	_ok(text.contains(TranslationServer.translate("ability.dawn_step.name")) and text.contains("???")
+			and not text.contains(TranslationServer.translate("ability.oni_claw.name"))
+			and not text.contains(TranslationServer.translate("energy.shadow.name"))
+			and not text.contains(blood) and text.contains(TranslationServer.translate("guide.abilities.unknown")),
+			"Guia habilidades descoberta: só a guardiã liberada mostra energia e habilidades; Yuki bloqueada sem a regra")
+
+
 func _test_platform() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	var book := GuideBook.new()
@@ -372,9 +415,10 @@ func run(host: Node, check: Callable) -> void:
 	_ok(not (screen.get("_view") as Control).visible
 			and (screen.get("_name") as Label).text == TranslationServer.translate("guide.ch.play"),
 			"Guia: cabeçalho com o título do capítulo, sem retrato")
-	(rows[2] as Button).pressed.emit()
+	var chests := GuideBook.CHAPTERS.find(&"chests")
+	(rows[chests] as Button).pressed.emit()
 	await host.get_tree().process_frame
-	_ok(String(page.chapter()["id"]) == "chests" and (rows[2] as GuidePage.ChapterRow).is_selected()
+	_ok(String(page.chapter()["id"]) == "chests" and (rows[chests] as GuidePage.ChapterRow).is_selected()
 			and not (rows[0] as GuidePage.ChapterRow).is_selected(), "Guia: tocar no capítulo troca a página e o destaque")
 	var link := page.find_child("Link_weapons", true, false) as Button
 	_ok(link != null and link.is_visible_in_tree(), "Guia: botão Ver armas no Diário")
@@ -383,7 +427,7 @@ func run(host: Node, check: Callable) -> void:
 		await host.get_tree().create_timer(0.5).timeout
 		_ok(screen.call("category") == &"weapons" and not page.is_visible_in_tree(), "Guia: Ver no Diário abre Armas")
 	screen.call("open_category", &"guide", false)
-	screen.call("open_entry", 4)
+	screen.call("open_entry", GuideBook.CHAPTERS.find(&"bosses"))
 	await host.get_tree().process_frame
 	# Rolagem que começou num chip: o link chega ao soltar o dedo e não pode abrir o item.
 	page.set("_press_moved", true)
@@ -395,7 +439,7 @@ func run(host: Node, check: Callable) -> void:
 	await host.get_tree().create_timer(0.5).timeout
 	_ok(screen.call("category") == &"weapons", "Guia: toque parado num chip abre o item")
 	screen.call("open_category", &"guide", false)
-	screen.call("open_entry", 4)
+	screen.call("open_entry", GuideBook.CHAPTERS.find(&"bosses"))
 	await host.get_tree().process_frame
 	page.ref_pressed.emit(&"weapons", "katana")
 	await host.get_tree().create_timer(0.5).timeout

@@ -1,0 +1,11 @@
+Registro de origem - hyakki_ability_icons (2026-11-01)
+
+Arquivos: assets/art/ui/ability_icons/<id>.png (21 ícones 24x24, 3 habilidades por guardião) e
+assets/art/ui/ability_icons/energy_<energia>.png (7 glifos 12x12, a energia de cada guardião).
+Origem: gerados pelo próprio projeto com tools/gen_ability_icons.py (só biblioteca padrão do
+Python, PNG escrito à mão com zlib, sem aleatoriedade: rodar de novo reproduz os mesmos bytes).
+Molduras, fundos, silhuetas e glifos são pixel art original desenhada no script.
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma arte de terceiros nem modelo de IA de imagem foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_ability_icons.py

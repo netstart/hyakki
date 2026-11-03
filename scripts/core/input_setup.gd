@@ -18,6 +18,13 @@ static func ensure_actions() -> void:
 	_add_keys(&"speed", [KEY_TAB])
 	_add_keys(&"ultimate", [KEY_SPACE, KEY_E])
 	_add_button(&"ultimate", JOY_BUTTON_A)
+	# Habilidades dos guardiões (AbilitySystem.ACTIONS): 1/2/3 ou J/K/L; no controle X, Y e B.
+	_add_keys(&"ability_1", [KEY_1, KEY_J])
+	_add_button(&"ability_1", JOY_BUTTON_X)
+	_add_keys(&"ability_2", [KEY_2, KEY_K])
+	_add_button(&"ability_2", JOY_BUTTON_Y)
+	_add_keys(&"ability_3", [KEY_3, KEY_L])
+	_add_button(&"ability_3", JOY_BUTTON_B)
 	_add_keys(&"debug_overlay", [KEY_F3])
 	_add_keys(&"debug_hitbox", [KEY_F4])
 

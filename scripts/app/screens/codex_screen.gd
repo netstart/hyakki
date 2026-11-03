@@ -80,6 +80,8 @@ var _detail_scroll: ScrollContainer
 var _lore: Label
 var _recipe: RichTextLabel
 var _stats: Label
+## Ficha do guardião: energia e as 3 habilidades (só de guardião conhecido).
+var _abilities := AbilitySheet.new(AbilitySheet.Style.PAPER)
 ## Missões: barra e "312 / 500" do progresso e as recompensas com ícone.
 var _progress_row: HBoxContainer
 var _progress_bar: ProgressBar
@@ -185,6 +187,9 @@ func open_entry(index: int) -> void:
 	CodexMissions.fill_rewards(_rewards, e.get("rewards", []) as Array)
 	_stats.text = "\n".join(e.get("stats", []) as Array) if known else ""
 	_stats.visible = _stats.text != ""
+	_abilities.visible = known and _category == &"heroes"
+	if _abilities.visible:
+		_abilities.show_hero(StringName(String(e.get("id", ""))))
 	for child: Node in _actions.get_children():
 		_actions.remove_child(child)
 		child.queue_free()
@@ -216,6 +221,7 @@ func _open_chapter(index: int, e: Dictionary) -> void:
 	_actions.visible = false
 	_progress_row.visible = false
 	_rewards.visible = false
+	_abilities.visible = false
 	_name.text = String(e["title"])
 	_kind.text = tr("guide.chapter_of") % [index + 1, _entries.size()]
 	_kind.visible = true
@@ -427,7 +433,7 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 				var data: Dictionary = DB.heroes[h]
 				var unlocked := Discovery.hero_known(h)
 				out.append({"title": tr("hero.%s.name" % h), "known": unlocked, "icon": String(data["face"]), "face": true,
-						"kind": tr("hero.%s.role" % h), "hero": data,
+						"kind": tr("hero.%s.role" % h), "hero": data, "id": String(h),
 						"text": tr("hero.%s.story" % h) if unlocked else tr("heroes.locked") % tr("achievement.%s.desc" % data["unlock"]),
 						"stats": [tr("heroes.weapon") % tr("weapon.%s.name" % data["weapon"]),
 								tr("heroes.ultimate") % tr("ultimate.%s.name" % data["ultimate"]["type"])]})
@@ -793,6 +799,7 @@ func _build_right() -> void:
 	_stats.name = "Stats"
 	_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_child(_stats)
+	body.add_child(_abilities)
 	_build_mission_rows(body)
 	_actions = HBoxContainer.new()
 	_actions.name = "Actions"
@@ -807,39 +814,11 @@ func _build_right() -> void:
 
 ## Barra do progresso da missão e "312 / 500" ao lado, e as recompensas com ícone.
 func _build_mission_rows(body: VBoxContainer) -> void:
-	_progress_row = HBoxContainer.new()
-	_progress_row.name = "MissionProgress"
-	_progress_row.add_theme_constant_override("separation", 6)
-	_progress_row.tooltip_text = tr("mission.progress")
-	_progress_bar = ProgressBar.new()
-	_progress_bar.show_percentage = false
-	_progress_bar.max_value = 1.0
-	_progress_bar.step = 0.0
-	_progress_bar.custom_minimum_size = Vector2(24, 8)
-	_progress_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_progress_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_progress_bar.mouse_filter = Control.MOUSE_FILTER_PASS
-	_progress_bar.add_theme_stylebox_override("background", ThemeFactory.flat_box(Color(0.3, 0.2, 0.1, 0.2),
-			Color(ThemeFactory.RED_INK, 0.6), 1, 2))
-	_progress_bar.add_theme_stylebox_override("fill", ThemeFactory.flat_box(ThemeFactory.GOLD, ThemeFactory.RED_INK, 1, 2))
-	_progress_row.add_child(_progress_bar)
-	_progress_text = _ink("", 12, ThemeFactory.PAPER_INK)
-	_progress_text.name = "ProgressValue"
-	_progress_row.add_child(_progress_text)
-	_progress_row.visible = false
-	body.add_child(_progress_row)
-	_rewards = RichTextLabel.new()
-	_rewards.name = "Rewards"
-	_rewards.fit_content = true
-	_rewards.scroll_active = false
-	_rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_rewards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_rewards.mouse_filter = Control.MOUSE_FILTER_PASS
-	_rewards.add_theme_color_override("default_color", ThemeFactory.PAPER_INK)
-	_rewards.add_theme_constant_override("outline_size", 0)
-	_rewards.add_theme_constant_override("line_separation", 2)
-	_rewards.visible = false
-	body.add_child(_rewards)
+	var rows := CodexMissions.build_rows(body, _ink("", 12, ThemeFactory.PAPER_INK))
+	_progress_row = rows[0]
+	_progress_bar = rows[1]
+	_progress_text = rows[2]
+	_rewards = rows[3]
 
 
 func _ink(value: String, font_size: int, color: Color) -> Label:

@@ -89,3 +89,42 @@ static func reward_chip(path: String, face: bool) -> Texture2D:
 	var out := ImageTexture.create_from_image(img)
 	_chips[key] = out
 	return out
+
+
+## Linhas da página da direita de uma missão, já postas em `body`: a barra do progresso com
+## `label` ("312 / 500") ao lado e as recompensas com ícone. Devolve [linha, barra, rótulo,
+## recompensas].
+static func build_rows(body: VBoxContainer, label: Label) -> Array:
+	var row := HBoxContainer.new()
+	row.name = "MissionProgress"
+	row.add_theme_constant_override("separation", 6)
+	row.tooltip_text = TranslationServer.translate("mission.progress")
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.max_value = 1.0
+	bar.step = 0.0
+	bar.custom_minimum_size = Vector2(24, 8)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.mouse_filter = Control.MOUSE_FILTER_PASS
+	bar.add_theme_stylebox_override("background", ThemeFactory.flat_box(Color(0.3, 0.2, 0.1, 0.2),
+			Color(ThemeFactory.RED_INK, 0.6), 1, 2))
+	bar.add_theme_stylebox_override("fill", ThemeFactory.flat_box(ThemeFactory.GOLD, ThemeFactory.RED_INK, 1, 2))
+	row.add_child(bar)
+	label.name = "ProgressValue"
+	row.add_child(label)
+	row.visible = false
+	body.add_child(row)
+	var rewards := RichTextLabel.new()
+	rewards.name = "Rewards"
+	rewards.fit_content = true
+	rewards.scroll_active = false
+	rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rewards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rewards.mouse_filter = Control.MOUSE_FILTER_PASS
+	rewards.add_theme_color_override("default_color", ThemeFactory.PAPER_INK)
+	rewards.add_theme_constant_override("outline_size", 0)
+	rewards.add_theme_constant_override("line_separation", 2)
+	rewards.visible = false
+	body.add_child(rewards)
+	return [row, bar, label, rewards]

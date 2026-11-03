@@ -19,7 +19,8 @@ const SCREENS := {
 ## Variantes das capturas: "tela" ou "tela:estado".
 const SHOT_VARIANTS: Array[String] = ["heroes", "heroes:locked", "options", "options:display",
 		"codex", "codex:detail", "codex:bosses", "codex:kami", "codex:recipe", "codex:evolution", "codex:relic",
-		"codex:guide_play", "codex:guide_chests", "codex:guide_bosses", "codex:guide_stronger", "codex:guide_tips"]
+		"heroes:abilities", "codex:hero_abilities", "codex:guide_play", "codex:guide_abilities", "codex:guide_chests",
+		"codex:guide_bosses", "codex:guide_stronger", "codex:guide_tips"]
 
 const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds",
 		"hurt_sounds", "joystick_mode", "joystick_side", "vibration", "fps", "graphics_quality", "colorblind",
@@ -170,9 +171,8 @@ func _test_heroes(view: Vector2, state: String) -> void:
 				_ok(not o.intersects(r), "%s: retratos sem sobrepor" % st)
 			rects.append(r)
 		var ids := DB.ids("heroes")
-		var picks: Array[StringName] = [ids[0], ids[ids.size() - 1], &"goro"]
-		if locked:
-			picks = ids
+		# Todos: cada um tem a sua energia e as suas 3 habilidades (textos de tamanhos diferentes).
+		var picks: Array[StringName] = ids
 		for id: StringName in picks:
 			screen.call("_select", id)
 			await _host.get_tree().process_frame
@@ -193,10 +193,43 @@ func _test_heroes(view: Vector2, state: String) -> void:
 			_ok(not stage.get_global_rect().intersects(panel.get_global_rect()), "%s: palco fora do painel" % sub)
 			for r: Rect2 in rects:
 				_ok(not r.intersects(panel.get_global_rect()), "%s: retratos fora do painel" % sub)
+			_check_ability_sheet(screen.get("_abilities") as Control, screen.get("_scroll") as Control, id, true, sub)
 			check_common(screen, view, sub)
 		close_screen(screen)
 		await _host.get_tree().process_frame
 		SaveManager.data["unlocked"]["heroes"] = SaveManager.default_profile()["unlocked"]["heroes"]
+
+
+## Energia e as 3 habilidades (scripts/ui/ability_sheet.gd) do guardião `id` na área de rolagem:
+## visível só se `shown`, com o glifo e os 3 ícones carregados, inteira na largura da rolagem e com
+## o aviso do preço em vida só na Yuki.
+func _check_ability_sheet(sheet: Control, scroll: Control, id: StringName, shown: bool, st: String) -> void:
+	_ok(sheet != null and sheet.is_visible_in_tree() == shown, "%s: energia e habilidades %s" % [st,
+			"à vista" if shown else "escondidas"])
+	if sheet == null or not shown:
+		return
+	var data := DB.hero_abilities(id)
+	var clip := scroll.get_global_rect()
+	var rows := 0
+	for a: Dictionary in data["abilities"]:
+		var row := sheet.find_child("Ability_%s" % a["id"], false, false) as Control
+		rows += int(row != null)
+		if row == null:
+			continue
+		var icon := row.find_child("Icon", true, false) as TextureRect
+		_ok(icon != null and icon.texture != null and icon.size == Vector2(24, 24), "%s: ícone 24x24 de %s" % [st, a["id"]])
+		var r := row.get_global_rect()
+		_ok(r.position.x >= clip.position.x - 0.5 and r.end.x <= clip.end.x + 0.5,
+				"%s: linha de %s na largura da rolagem (%s em %s)" % [st, a["id"], r, clip])
+		var meta := row.find_child("Meta", true, false) as Label
+		_ok(meta != null and meta.text.contains(str(int(a["cost"]))) and meta.text.contains(str(int(a["level"]))),
+				"%s: nível e custo de %s" % [st, a["id"]])
+	_ok(rows == 3, "%s: 3 habilidades (%d)" % [st, rows])
+	var energy := sheet.find_child("Energy", false, false) as Control
+	_ok(energy != null and (energy.find_child("Icon", true, false) as TextureRect).texture != null,
+			"%s: glifo da energia" % st)
+	var blood := sheet.find_child("BloodPrice", false, false)
+	_ok((blood != null) == (float(data["energy"].get("hp_price", 0.0)) > 0.0), "%s: preço em vida só na Yuki" % st)
 
 
 func _test_hero_behaviour() -> void:
@@ -291,6 +324,14 @@ func prepare_variant(host: Node, screen: Control, variant: String) -> void:
 			await host.get_tree().process_frame
 			screen.call("_select", &"yuki")
 			SaveManager.data["unlocked"]["heroes"] = all
+		"abilities":
+			# Energia e habilidades da Yuki (com o preço em vida), roladas até a seção.
+			screen.call("_select", &"yuki")
+			await _scroll_to_sheet(host, screen, "_scroll")
+		"hero_abilities":
+			screen.call("open_category", &"heroes", false)
+			screen.call("open_entry", screen.call("index_of", &"goro"))
+			await _scroll_to_sheet(host, screen, "_detail_scroll")
 		"display":
 			if screen.has_method("show_section"):
 				screen.call("show_section", 2, false)
@@ -307,6 +348,15 @@ func prepare_variant(host: Node, screen: Control, variant: String) -> void:
 			screen.call("open_category", target[0], false)
 			screen.call("open_entry", screen.call("index_of", target[1]))
 	await host.get_tree().process_frame
+
+
+## Capturas: rola a área `scroll_key` da tela até a seção de energia e habilidades.
+func _scroll_to_sheet(host: Node, screen: Control, scroll_key: String) -> void:
+	await host.get_tree().process_frame
+	await host.get_tree().process_frame
+	var scroll := screen.get(scroll_key) as ScrollContainer
+	var sheet := screen.get("_abilities") as Control
+	scroll.scroll_vertical = int(sheet.get_global_rect().position.y - scroll.get_global_rect().position.y) - 4
 
 
 func close_screen(screen: Control) -> void:
@@ -479,9 +529,14 @@ func _test_codex(view: Vector2, state: String) -> void:
 			_ok(r.position.x >= grid_area.position.x - 0.5 and r.end.x <= grid_area.end.x + 0.5,
 					"%s: cartão dentro da página" % sub)
 		var entries: Array = screen.call("entries")
-		for i: int in [0, entries.size() - 1]:
+		var picks: Array = range(entries.size()) if id == &"heroes" else [0, entries.size() - 1]
+		for i: int in picks:
 			screen.call("open_entry", i)
 			await _host.get_tree().process_frame
+			if id == &"heroes":
+				var hero := StringName(String(entries[i]["id"]))
+				_check_ability_sheet(screen.get("_abilities") as Control, screen.get("_detail_scroll") as Control, hero,
+						Discovery.hero_known(hero), "%s %s" % [sub, hero])
 			check_common(screen, view, "%s entrada %d" % [sub, i])
 		if id in [&"weapons", &"relics"]:
 			await _test_codex_recipe_layout(screen, view, sub)

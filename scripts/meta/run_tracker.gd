@@ -9,6 +9,9 @@ var damage_by_weapon: Dictionary = {}
 var weapon_level: Dictionary = {}
 var chests: int = 0
 var ultimates: int = 0
+## Habilidades dos guardiões usadas na partida (total e por id), só registro (Missões).
+var abilities: int = 0
+var ability_uses: Dictionary = {}
 var evolutions: Array[StringName] = []
 var unions: Array[StringName] = []
 var bosses: Array[StringName] = []
@@ -44,6 +47,12 @@ func on_kill(enemy_id: StringName, time: float, dark: bool = false) -> void:
 	max_kills_10s = maxi(max_kills_10s, _kill_times.size())
 
 
+## Uma habilidade saiu (AbilitySystem.activate).
+func on_ability(id: StringName) -> void:
+	abilities += 1
+	ability_uses[id] = int(ability_uses.get(id, 0)) + 1
+
+
 ## Entrada do chefe (fim do diálogo): guarda o instante e quantos golpes dele a guardiã já levou.
 func on_boss_start(id: StringName, time: float, damage: DamageControl) -> void:
 	boss_fights[id] = {"start": time, "hits": _hits(damage, id)}
@@ -69,9 +78,13 @@ func snapshot() -> Dictionary:
 	var items_out := {}
 	for id: StringName in items:
 		items_out[String(id)] = int(items[id])
+	var uses_out := {}
+	for id: StringName in ability_uses:
+		uses_out[String(id)] = int(ability_uses[id])
 	return {"dark_kills": dark_kills, "items": items_out, "boss_fights": _str_keys(boss_fights),
 			"boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
 			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
+			"abilities": abilities, "ability_uses": uses_out,
 			"kami": Array(kami).map(func(k: StringName) -> String: return String(k))}
 
 
@@ -86,6 +99,9 @@ func restore(s: Dictionary) -> void:
 	max_dark_streak = float(s.get("max_dark_streak", 0.0))
 	max_no_damage = float(s.get("max_no_damage", 0.0))
 	ultimates = int(s.get("ultimates", 0))
+	abilities = int(s.get("abilities", 0))
+	for id: String in (s.get("ability_uses", {}) as Dictionary):
+		ability_uses[StringName(id)] = int(s["ability_uses"][id])
 	chests = int(s.get("chests", 0))
 	for k: Variant in s.get("kami", []):
 		kami.append(StringName(String(k)))

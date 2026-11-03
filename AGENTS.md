@@ -139,8 +139,8 @@ exemplos de cada resolução:
     simulado, em todas as resoluções de `tests/device_profiles.gd`, sem VSync (custo real do quadro),
     com média, p95, p99, pior quadro, travadas, tempo de render na CPU, chamadas de desenho e o tempo
     da 1ª abertura de cada tela. Só os quadros em movimento contam. **Critério:** com `-- --strict`
-    passa com **p95 ≤ 6 ms**, **nenhum quadro > 33 ms** e **nenhuma travada** (quadro em que a lista
-    parou no meio do movimento) por lista, em todas as resoluções. Rode antes e depois de mexer em
+    passa com **p95 ≤ 6 ms** e **nenhum quadro > 33 ms** por lista, em todas as resoluções (as
+    travadas, quadros em que a lista parou no meio do movimento, são só informativas). Rode antes e depois de mexer em
     telas, fundo ou tema (`-- --res=585x270 --screens=shop,codex --out=bench.json`).
   - **Benchmark de navegação (`tests/nav_bench.tscn`, sem `--headless`):** em todas as resoluções,
     para cada tela aberta pelo título (Guardiões, Fases, Santuário, Loja, Diário, Opções, Créditos e

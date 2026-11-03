@@ -12,6 +12,8 @@ extends Node
 
 const MUSIC_DIR := "res://assets/audio/music/"
 const SFX_DIR := "res://assets/audio/sfx/"
+## Vozes dos guardiões ao soltar uma habilidade (AbilitySystem): importantes, nunca sem canal.
+const VOICE_DIR := "res://assets/audio/voice/"
 const MAX_PER_SOUND := 4
 const SOUND_COOLDOWN_MS := 30
 const POOL_SIZE := 32
@@ -89,6 +91,27 @@ const VARIANTS := {
 	"teleport": ["p_teleport_0", "p_teleport_1"],
 	"midboss_roar": ["p_midboss_roar_0", "p_midboss_roar_1", "p_midboss_roar_2"],
 	"midboss_intro": ["p_midboss_intro_0"],
+	# Habilidades dos guardiões (a_*, CC0, tools/gen_ability_sfx.py): camadas de assinatura
+	# dos cues "ab_<id>" de WeaponSfx. Ids "a_*" são importantes (nunca ficam sem canal).
+	"a_dash": ["a_dash_0", "a_dash_1"],
+	"a_light_ring": ["a_light_ring_0", "a_light_ring_1"],
+	"a_fire_column": ["a_fire_column_0", "a_fire_column_1"],
+	"a_caltrops": ["a_caltrops_0", "a_caltrops_1", "a_caltrops_2"],
+	"a_barrier": ["a_barrier_0", "a_barrier_1"],
+	"a_seal": ["a_seal_0", "a_seal_1"],
+	"a_diamond": ["a_diamond_0", "a_diamond_1"],
+	"a_shakujo": ["a_shakujo_0", "a_shakujo_1", "a_shakujo_2"],
+	"a_mantra": ["a_mantra_0", "a_mantra_1", "a_mantra_2"],
+	"a_holy_arrow": ["a_holy_arrow_0", "a_holy_arrow_1"],
+	"a_trap": ["a_trap_0", "a_trap_1"],
+	"a_anvil": ["a_anvil_0", "a_anvil_1", "a_anvil_2"],
+	"a_chain_spin": ["a_chain_spin_0", "a_chain_spin_1"],
+	"a_steam": ["a_steam_0", "a_steam_1"],
+	"a_claw": ["a_claw_0", "a_claw_1", "a_claw_2"],
+	"a_oni_roar": ["a_oni_roar_0", "a_oni_roar_1"],
+	"a_whirl": ["a_whirl_0", "a_whirl_1"],
+	"a_denied": ["a_denied_0"],
+	"a_ready": ["a_ready_0"],
 }
 
 ## Último som pedido e quantos pedidos por id (inclusive os descartados), para os testes,
@@ -306,9 +329,11 @@ func _beat_again() -> void:
 		_heartbeat.play()
 
 
-## Sons que sempre acham canal: perigo (PRIORITY) e o golpe da lanterna ("ult_*").
+## Sons que sempre acham canal: perigo (PRIORITY), o golpe da lanterna ("ult_*"), as vozes
+## dos guardiões (VOICE_DIR) e a assinatura das habilidades ("a_*").
 static func is_important(id: String) -> bool:
-	return PRIORITY.has(id) or id.begins_with("ult_")
+	return PRIORITY.has(id) or id.begins_with("ult_") or id.begins_with(VOICE_DIR) \
+			or id.begins_with("a_")
 
 
 ## Quantas instâncias de `id` estão contadas como tocando (testes do limite de vozes).
@@ -391,8 +416,11 @@ func _release(player: AudioStreamPlayer) -> void:
 	_playing_ids[id] = maxi(0, int(_playing_ids.get(id, 0)) - 1)
 
 
-## Efeito por nome: .wav (Ninja Adventure), .ogg (Kenney) ou .mp3 (効果音ラボ).
+## Efeito por nome: .wav (Ninja Adventure), .ogg (Kenney) ou .mp3 (効果音ラボ). Um caminho
+## completo ("res://...", ex.: as vozes dos guardiões em assets/audio/voice) toca como está.
 func _sfx(file: String) -> AudioStream:
+	if file.begins_with("res://"):
+		return _load(file)
 	for ext: String in [".wav", ".ogg", ".mp3"]:
 		if ResourceLoader.exists(SFX_DIR + file + ext):
 			return _load(SFX_DIR + file + ext)

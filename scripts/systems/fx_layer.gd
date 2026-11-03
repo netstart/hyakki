@@ -465,6 +465,12 @@ func style(weapon_id: StringName) -> Dictionary:
 	return _styles[weapon_id]
 
 
+## Estilo de um dano que não é arma (habilidades dos guardiões): `row` no formato de uma linha
+## de data/weapons.json ("fx" com color/hot e "tags"/"sfx.impact" para o tipo de impacto).
+func register_style(id: StringName, row: Dictionary) -> void:
+	_styles[id] = WeaponStyle.of(row)
+
+
 ## Impacto conforme o tipo do golpe. Na Baixa só uma faísca (e um pouco mais no crítico).
 func impact(weapon_id: StringName, at: Vector2, dir: Vector2, crit: bool = false) -> void:
 	var s := style(weapon_id)

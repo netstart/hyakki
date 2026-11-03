@@ -21,6 +21,7 @@ const TARGET_DIST := 24.0
 func run(host: Node, check: Callable) -> void:
 	_test_groups(check)
 	_test_cues(check)
+	_test_abilities(check)
 	_test_pool_priority(check)
 	_test_voice_limits(check)
 	var scene := load(GAME_SCENE) as PackedScene
@@ -91,6 +92,45 @@ func _test_cues(check: Callable) -> void:
 			played += 1
 	check.call(played == 1, "cue de rajada toca 1 vez em 100 pedidos no mesmo instante (%d)" % played)
 	WeaponSfx.reset_gaps()
+
+
+## Habilidades dos guardiões (data/abilities.json): cada uma tem cue de lançamento "ab_<id>"
+## com a assinatura a_* (som importante) e voz carregável (com a variação _b, se houver);
+## os cues de recusa e de pronta existem; as vozes também são importantes.
+func _test_abilities(check: Callable) -> void:
+	var heroes: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/abilities.json"))
+	check.call(heroes is Array and not (heroes as Array).is_empty(), "data/abilities.json carrega")
+	if not heroes is Array:
+		return
+	var count := 0
+	for hero: Dictionary in heroes:
+		for ability: Dictionary in hero.get("abilities", []):
+			count += 1
+			var cue := String(ability.get("sfx", ""))
+			check.call(cue == "ab_" + String(ability.get("id", "")) and WeaponSfx.CUES.has(cue),
+					"habilidade %s tem cue de lançamento (%s)" % [ability.get("id", "?"), cue])
+			var signature := WeaponSfx.layers(cue).any(func(layer: Array) -> bool:
+				return String(layer[0]).begins_with("a_"))
+			var hit_signature := WeaponSfx.layers(cue + "_hit").any(func(layer: Array) -> bool:
+				return String(layer[0]).begins_with("a_"))
+			# Assinatura própria (a_*) no lançamento ou no impacto; as que não têm (Purificação,
+			# Passo Sombrio, Troca de Corpo) somam ao menos 3 grupos das armas.
+			check.call(signature or hit_signature or WeaponSfx.layers(cue).size() >= 3,
+					"%s tem assinatura em camadas" % cue)
+			var voice := String(ability.get("voice", ""))
+			var path := AudioManager.VOICE_DIR + voice + ".ogg"
+			check.call(AudioManager._sfx(path) is AudioStream, "voz %s carrega" % voice)
+			check.call(AudioManager.is_important(path), "voz %s é som importante" % voice)
+			var alt := AudioManager.VOICE_DIR + voice + "_b.ogg"
+			if ResourceLoader.exists(alt):
+				check.call(AudioManager._sfx(alt) is AudioStream, "variação %s_b carrega" % voice)
+	check.call(count == 21, "21 habilidades com som e voz (%d)" % count)
+	for cue: String in ["ab_denied", "ab_ready"]:
+		check.call(WeaponSfx.CUES.has(cue), "cue %s existe" % cue)
+	for group: String in AudioManager.VARIANTS:
+		if group.begins_with("a_"):
+			check.call(AudioManager.is_important(group), "assinatura %s é som importante" % group)
+	check.call(not AudioManager.is_important("achievement"), "prefixo a_ não pega outros sons")
 
 
 ## 100 projéteis e 100 acertos num quadro: cada som fica no teto de vozes, os acertos em 2/3

@@ -22,6 +22,16 @@ const STUCK_SECONDS := 3.0
 const SHADE_DARK_SPEED := 1.2
 const SHADE_DARK_ALPHA := 0.4
 const FROZEN_TINT := Color(0.6, 0.85, 1.0)
+## Habilidades dos guardiões: velocidade de quem foge com medo (× a própria), lentidão padrão
+## (slow sem fator) e a fração do atordoamento em área que um chefe sofre (stun_circle). Chefes
+## são movidos pelo BossDirector e ignoram lentidão, raiz, medo, isca e puxão.
+const FEAR_SPEED := 1.15
+const DEFAULT_SLOW := 0.5
+const BOSS_STUN := 0.4
+## Puxão (pull_to): duração do arraste; a velocidade é calculada para chegar no ponto pedido
+## com o mesmo amortecimento do atordoado (vel × 0,8 por passo).
+const PULL_TIME := 0.35
+const PULL_DAMPING := 0.8
 ## Chave da ordem de desenho (order_key): bits do índice e limite do Y (em 1/16 px).
 const ORDER_INDEX_BITS := 12
 const ORDER_INDEX_MASK := (1 << ORDER_INDEX_BITS) - 1
@@ -65,7 +75,15 @@ var phase := PackedFloat32Array()
 var contact_cd := PackedFloat32Array()
 var ai_timer := PackedFloat32Array()
 var stun := PackedFloat32Array()
+## Lentidão: tempo restante e o fator de velocidade enquanto dura (slow_circle).
 var slow := PackedFloat32Array()
+var slow_mult := PackedFloat32Array()
+## Controle das habilidades (tempo restante): preso no lugar, fugindo de `goal` (medo) e
+## perseguindo `goal` (isca). Medo e isca dividem o ponto: vale o último aplicado.
+var root := PackedFloat32Array()
+var fear := PackedFloat32Array()
+var lure := PackedFloat32Array()
+var goal := PackedVector2Array()
 var stuck := PackedFloat32Array()
 var resist := PackedFloat32Array()
 var kind := PackedInt32Array()
@@ -96,6 +114,8 @@ var _order: Array[int] = []
 var _order_keys := PackedInt64Array()
 var _order_dirty: bool = true
 var _near: Array[int] = []
+## Resultado reaproveitado das primitivas das habilidades (sem alocar por chamada).
+var _hits: Array[int] = []
 var _under: Node2D
 var _over: Node2D
 
@@ -103,7 +123,8 @@ var _over: Node2D
 func _ready() -> void:
 	for packed: StringName in [&"pos", &"prev", &"vel", &"push", &"ai_dir", &"hp", &"max_hp",
 			&"dmg", &"speed", &"radius", &"flash", &"phase", &"contact_cd", &"ai_timer", &"stun",
-			&"slow", &"stuck", &"resist", &"kind", &"xp_value", &"state", &"facing", &"alive",
+			&"slow", &"slow_mult", &"root", &"fear", &"lure", &"goal", &"stuck", &"resist", &"kind",
+			&"xp_value", &"state", &"facing", &"alive",
 			&"elite", &"controlled", &"decoy", &"submerged", &"marching", &"born", &"hit_at", &"pose"]:
 		var array: Variant = get(packed)
 		array.resize(CAPACITY)
@@ -220,6 +241,11 @@ func spawn(id: StringName, at: Vector2, hp_mult: float, damage_mult: float,
 	ai_timer[i] = game.rng.randf_range(0.5, 2.0)
 	stun[i] = 0.0
 	slow[i] = 0.0
+	slow_mult[i] = DEFAULT_SLOW
+	root[i] = 0.0
+	fear[i] = 0.0
+	lure[i] = 0.0
+	goal[i] = at
 	stuck[i] = 0.0
 	resist[i] = float(data.get("knock_resist", 0.0))
 	kind[i] = t
@@ -292,6 +318,13 @@ func step(dt: float) -> void:
 			pos[i] = p + vel[i] * dt
 			continue
 		var r: float = radius[i]
+		if root[i] > 0.0:
+			# Preso (armadilha, habilidade): não anda, mas ainda fere quem encosta.
+			root[i] -= dt
+			vel[i] = Vector2.ZERO
+			if dist < r * HURT_RADIUS_FACTOR + contact_reach:
+				_contact(i, dist, player)
+			continue
 		if i % SEPARATION_EVERY == parity:
 			push[i] = _separation(i, p, r)
 		if dist > far and ai != AI.SWARM:
@@ -303,9 +336,14 @@ func step(dt: float) -> void:
 		var spd: float = speed[i] * speed_mult * (1.0 if surf == null or type_flying[t] == 1 else surf.enemy_factor(i, p, r))
 		if slow[i] > 0.0:
 			slow[i] -= dt
-			spd *= 0.5
+			spd *= slow_mult[i]
 		var desired := dir * spd
-		if marching[i] == 1:
+		# Medo (foge de goal) e isca (persegue goal) mandam no lugar do arquétipo.
+		var steered := fear[i] > 0.0 or lure[i] > 0.0
+		if steered:
+			desired = _steer(i, p, spd, dt)
+			ai = -1
+		elif marching[i] == 1:
 			ai = AI.SWARM
 		match ai:
 			AI.SWARM:
@@ -332,7 +370,7 @@ func step(dt: float) -> void:
 		if bounds.y > 0.0:
 			next.y = clampf(next.y, -bounds.y, bounds.y)
 		# Preso atrás de obstáculo por muito tempo: reaparece perto (plano 8.7.2).
-		if ai != AI.SWARM and (next - p).length() < spd * dt * 0.15 and dist > 40.0:
+		if ai != AI.SWARM and not steered and (next - p).length() < spd * dt * 0.15 and dist > 40.0:
 			stuck[i] += dt
 			if stuck[i] > STUCK_SECONDS:
 				stuck[i] = 0.0
@@ -351,7 +389,11 @@ func _contact(i: int, dist: float, player: Player) -> void:
 		return
 	if dist < radius[i] * HURT_RADIUS_FACTOR + Player.RADIUS and contact_cd[i] <= 0.0 and player.is_alive:
 		contact_cd[i] = CONTACT_INTERVAL
-		player.take_damage(dmg[i], type_ids[kind[i]])
+		var taken := player.take_damage(dmg[i], type_ids[kind[i]])
+		# Espinhos (Corpo de Diamante): devolve parte do dano de contato a quem encostou.
+		var back := player.thorns_damage(dmg[i]) if taken > 0.0 else 0.0
+		if back > 0.0:
+			game.deal_damage(player.thorns_source, i, back, (pos[i] - player.sim_pos).normalized(), 60.0)
 
 
 func _charger(i: int, dir: Vector2, dist: float, spd: float, dt: float) -> Vector2:
@@ -559,6 +601,228 @@ func stun_all(seconds: float, center: Vector2 = Vector2.ZERO, r: float = INF) ->
 	for i: int in range(CAPACITY):
 		if alive[i] == 1 and not is_prop(i) and not is_boss(i) and center.distance_to(pos[i]) <= r:
 			stun[i] = maxf(stun[i], seconds)
+
+
+# --- Primitivas das habilidades dos guardiões -------------------------------------------
+# Todas no passo fixo e sem sorteio: só leem posições e escrevem nos arrays. As de área
+# consultam a grade (SpatialHash, refeita no começo do passo dos inimigos) e reaproveitam
+# `_hits`, sem alocar por inimigo. Devolvem quantos inimigos foram afetados. Props (lanternas)
+# nunca são afetados; chefes ignoram lentidão, raiz, medo, isca e puxão (o BossDirector os
+# move) e sofrem só BOSS_STUN do atordoamento em área.
+
+
+## Pode receber controle (lentidão, raiz, medo, isca, puxão): vivo, nem prop nem chefe.
+func is_controllable(i: int) -> bool:
+	return alive[i] == 1 and type_ai[kind[i]] != AI.PROP and type_ai[kind[i]] != AI.BOSS
+
+
+## Inimigos comuns e elites vivos no círculo (sem props e chefes), em `_hits`.
+func _controllable_in(center: Vector2, r: float) -> Array[int]:
+	query_circle(center, r, _hits)
+	var k := 0
+	for j: int in _hits:
+		if is_controllable(j):
+			_hits[k] = j
+			k += 1
+	_hits.resize(k)
+	return _hits
+
+
+## Velocidade × (1 - `amount`) por `seconds` para quem está no círculo (vale a mais forte).
+func slow_circle(center: Vector2, r: float, amount: float, seconds: float) -> int:
+	var factor := clampf(1.0 - amount, 0.0, 1.0)
+	var list := _controllable_in(center, r)
+	for j: int in list:
+		apply_slow(j, factor, seconds)
+	return list.size()
+
+
+## Lentidão num inimigo: fator de velocidade `factor` (0,6 = −40%) por `seconds`.
+func apply_slow(i: int, factor: float, seconds: float) -> void:
+	if not is_controllable(i):
+		return
+	slow_mult[i] = minf(slow_mult[i], factor) if slow[i] > 0.0 else factor
+	slow[i] = maxf(slow[i], seconds)
+
+
+## Prende no lugar por `seconds` os do círculo (até `max_count`, 0 = todos), na ordem da grade.
+func root_circle(center: Vector2, r: float, seconds: float, max_count: int = 0) -> int:
+	var count := 0
+	for j: int in _controllable_in(center, r):
+		if max_count > 0 and count >= max_count:
+			break
+		if root_one(j, seconds):
+			count += 1
+	return count
+
+
+func root_one(i: int, seconds: float) -> bool:
+	if not is_controllable(i):
+		return false
+	root[i] = maxf(root[i], seconds)
+	vel[i] = Vector2.ZERO
+	return true
+
+
+## Medo: os do círculo fogem de `from` por `seconds` (FEAR_SPEED × a velocidade).
+func fear_circle(center: Vector2, r: float, seconds: float, from: Vector2 = Vector2.INF) -> int:
+	var source := center if from == Vector2.INF else from
+	var list := _controllable_in(center, r)
+	for j: int in list:
+		fear[j] = maxf(fear[j], seconds)
+		lure[j] = 0.0
+		goal[j] = source
+		state[j] = State.MOVE
+	return list.size()
+
+
+## Isca: os do círculo perseguem `at` (e não o herói) por `seconds`.
+func lure_circle(center: Vector2, r: float, at: Vector2, seconds: float) -> int:
+	var list := _controllable_in(center, r)
+	for j: int in list:
+		lure[j] = maxf(lure[j], seconds)
+		fear[j] = 0.0
+		goal[j] = at
+		state[j] = State.MOVE
+	return list.size()
+
+
+## Puxa os do círculo até ficarem a `keep` px de `center`, arrastados em PULL_TIME s (como um
+## atordoamento curto, com o amortecimento do atordoado). Elites e tanques resistem pela metade
+## do knock_resist.
+func pull_to(center: Vector2, r: float, keep: float = 12.0) -> int:
+	var list := _controllable_in(center, r)
+	# O atordoado faz vel × PULL_DAMPING e depois anda: o total é v × STEP × D / (1 − D).
+	var gain := (1.0 - PULL_DAMPING) / (PULL_DAMPING * GameClock.STEP)
+	for j: int in list:
+		var d := center - pos[j]
+		var dist := d.length()
+		if dist <= keep + 0.5:
+			continue
+		var travel := (dist - keep) * (1.0 - resist[j] * 0.5)
+		vel[j] = d / dist * travel * gain
+		stun[j] = maxf(stun[j], PULL_TIME)
+		state[j] = State.MOVE
+	return list.size()
+
+
+## Quem está dentro do círculo vai para a borda (a `r` + o próprio raio) e ganha velocidade
+## para fora (`force`): barreiras que empurram (Muralha da Lanterna). Chefes não.
+func push_out_of(center: Vector2, r: float, force: float) -> int:
+	var count := 0
+	for j: int in _controllable_in(center, r):
+		var d := pos[j] - center
+		var dist := d.length()
+		var out := d / dist if dist > 0.001 else Vector2.from_angle(float(j))
+		var edge := r + radius[j]
+		if dist >= edge:
+			continue
+		pos[j] = center + out * edge
+		vel[j] = out * force * (1.0 - resist[j] * 0.5)
+		count += 1
+	return count
+
+
+## Atordoa os do círculo por `seconds` (chefes por `seconds` × `boss_factor`).
+func stun_circle(center: Vector2, r: float, seconds: float, boss_factor: float = BOSS_STUN) -> int:
+	query_circle(center, r, _hits)
+	var count := 0
+	for j: int in _hits:
+		if is_prop(j):
+			continue
+		stun_one(j, seconds * (boss_factor if is_boss(j) else 1.0))
+		count += 1
+	return count
+
+
+## Atordoa um inimigo (ou chefe, pelo tempo cheio) por `seconds`.
+func stun_one(i: int, seconds: float) -> void:
+	if alive[i] == 1 and not is_prop(i) and seconds > 0.0:
+		stun[i] = maxf(stun[i], seconds)
+
+
+## Vivos (inclui chefes, sem props) que tocam o segmento a→b de meia-largura `width`.
+func query_segment(a: Vector2, b: Vector2, width: float, out: Array[int]) -> void:
+	var mid := (a + b) * 0.5
+	spatial.query(mid, a.distance_to(b) * 0.5 + width + 30.0, _near)
+	out.clear()
+	for j: int in _near:
+		if alive[j] == 1 and not is_prop(j) and Geometry.segment_hits_circle(a, b, pos[j], radius[j] + width):
+			out.append(j)
+
+
+## Vivos (inclui chefes, sem props) no leque de `center` para `dir`, abertura total
+## 2 × `half_angle` rad e alcance `reach`. Quem encosta no herói (dentro do próprio raio) conta.
+func query_cone(center: Vector2, dir: Vector2, half_angle: float, reach: float, out: Array[int]) -> void:
+	spatial.query(center, reach + 30.0, _near)
+	out.clear()
+	var facing_dir := dir.normalized() if dir != Vector2.ZERO else Vector2.RIGHT
+	var min_dot := cos(half_angle)
+	for j: int in _near:
+		if alive[j] == 0 or is_prop(j):
+			continue
+		var d := pos[j] - center
+		var dist := d.length()
+		if dist > reach + radius[j]:
+			continue
+		if dist <= radius[j] or facing_dir.dot(d / dist) >= min_dot:
+			out.append(j)
+
+
+## Inimigos vivos (sem props, com chefes) que tocam o círculo: decide o bot e mira as
+## habilidades. Com `enough` > 0, para de contar ao chegar nele (a horda inteira não é percorrida).
+func count_in_circle(center: Vector2, r: float, enough: int = 0) -> int:
+	spatial.query(center, r + 30.0, _near)
+	var count := 0
+	var alive_l := alive
+	var pos_l := pos
+	var radius_l := radius
+	for j: int in _near:
+		if alive_l[j] == 1 and center.distance_to(pos_l[j]) <= r + radius_l[j] and not is_prop(j):
+			count += 1
+			if count == enough:
+				break
+	return count
+
+
+## Centro do maior grupo: entre os inimigos até `reach` de `center` (no máximo `candidates`,
+## os mais próximos da ordem da grade), o que tem mais vizinhos num raio `r`. Vector2.INF sem
+## ninguém. Empate: o mais perto de `center`.
+func densest_point(center: Vector2, reach: float, r: float, candidates: int = 48) -> Vector2:
+	query_circle(center, reach, _hits)
+	var pool: Array[int] = []
+	for j: int in _hits:
+		if not is_prop(j):
+			pool.append(j)
+			if pool.size() >= candidates:
+				break
+	var best := Vector2.INF
+	var best_count := 0
+	var best_d2 := INF
+	var r2 := r * r
+	for j: int in pool:
+		var at := pos[j]
+		var n := 0
+		for k: int in pool:
+			if at.distance_squared_to(pos[k]) <= r2:
+				n += 1
+		var d2 := center.distance_squared_to(at)
+		if n > best_count or (n == best_count and d2 < best_d2):
+			best = at
+			best_count = n
+			best_d2 = d2
+	return best
+
+
+func _steer(i: int, p: Vector2, spd: float, dt: float) -> Vector2:
+	if fear[i] > 0.0:
+		fear[i] -= dt
+		var away := p - goal[i]
+		return (away.normalized() if away.length_squared() > 0.01 else Vector2.from_angle(float(i))) \
+				* spd * FEAR_SPEED
+	lure[i] -= dt
+	var to_goal := goal[i] - p
+	return to_goal.normalized() * spd if to_goal.length_squared() > 4.0 else Vector2.ZERO
 
 
 func _process(delta: float) -> void:

@@ -272,9 +272,9 @@ func _crescent(canvas: CanvasItem, at: Vector2, from: float, to: float, sweep: f
 		var w := maxf(0.4, thick * sin(PI * u))
 		outer.append((at + Vector2.from_angle(angle) * r).round())
 		inner.append(at + Vector2.from_angle(angle) * maxf(0.0, r - w))
-	inner.reverse()
-	outer.append_array(inner)
-	canvas.draw_colored_polygon(outer, color)
+	# Faixa em quadriláteros (Stroke.band): sem buffer novo por quadro e sem a triangulação do
+	# motor, que falhava ("Invalid polygon data") com as pontas finas quase no mesmo ponto.
+	Stroke.band(canvas, outer, inner, color)
 
 
 ## Faíscas curtas na ponta do golpe final, em leque fixo (sem sorteio).

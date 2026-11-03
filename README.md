@@ -8,6 +8,12 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 
 - 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos,
   37 yōkai, 12 chefes, 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
+- **Habilidades dos guardiões** ([.ai/04-habilidades-dos-guardioes.md](.ai/04-habilidades-dos-guardioes.md)):
+  21 habilidades (3 por guardião, ligadas à história de cada um, liberadas nos níveis 1, 5 e 10 da partida)
+  e 7 energias próprias (Chama da Ordem, Sombra, Prece, Penitência, Foco, Calor da Forja e Sangue Oni, que
+  a Yuki pode pagar com vida), com recarga, efeitos, som em camadas, grito do guardião e o letreiro
+  kanji + nome. Números em `data/abilities.json`; o bot usa as três por regras fixas (determinístico).
+  No toque, 3 botões em arco ao lado do Golpe; ficha na tela do guardião, no Diário e um capítulo no Guia.
 - Omikuji do baú (おみくじ): antes de abrir, o tubo de madeira solta a sorte (吉 1 item, 中吉 3, 大吉 5,
   e às vezes 凶 com consolo em ryō, amarrado no galho) e uma roleta para em cada item. A sorte só mostra a
   contagem já sorteada; os 3 primeiros baús comuns do save saem com 中吉 garantido (o bot não usa nem gasta
@@ -54,7 +60,7 @@ Yuki no perfil local, preservando o restante do progresso. Esse desbloqueio auto
 de desenvolvimento; na build de produção, os heróis continuam sendo liberados pela progressão normal.
 
 Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espaço/E** Golpe da Lanterna ·
-**F3** desempenho · **F4** hitboxes. O mouse simula o toque (arraste na metade esquerda para o joystick).
+**1/2/3** ou **J/K/L** habilidades (controle: **X/Y/B**) · **F3** desempenho · **F4** hitboxes. O mouse simula o toque (arraste na metade esquerda para o joystick).
 
 ## Verificações
 
@@ -62,7 +68,7 @@ Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espa�
 powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 ```
 
-Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (1066 chaves ×
+Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (1326 chaves ×
 11 idiomas, marcadores `%s/%d`), licenças (cobertura de todos os arquivos de `assets/`, hashes, licenças
 permitidas), limites da ficha da loja, testes de integração (dados, idiomas, cobertura de glifos, Loja,
 Santuário, save, regras de anúncio), determinismo 1x/2x/3x e estresse com 500 inimigos.
@@ -74,6 +80,13 @@ powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1
 ```
 
 `-SkipStress` pula o estresse e `-NoOpen` não abre o navegador.
+
+Habilidades dos guardiões sozinhas (energias, AbilitySystem, primitivas, as 21 habilidades em cenários
+montados, marcadores de estado, partida suspensa e o bot com o mesmo hash na Baixa e na Alta):
+`Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/ability_tests.tscn` (também rodam
+dentro de `tests/integration_tests.tscn`; a HUD das habilidades em todas as resoluções fica em
+`tests/ability_hud_tests.gd`, chamada pelos testes de layout do HUD). No fim de uma partida do bot com
+`--quit-at`, a linha `HABILIDADES` mostra o nível e quantas vezes cada habilidade saiu.
 
 Missões do Santuário sozinhas (dados, cada condição, recompensas, save, Próximas metas e uma partida pelo
 bot que conclui missões): `Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/mission_tests.tscn`

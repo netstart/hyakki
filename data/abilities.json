@@ -1,0 +1,765 @@
+[
+	{
+		"id": "aki",
+		"energy": {
+			"id": "order_flame",
+			"color": "ffb347",
+			"max": 100,
+			"start": 100,
+			"icon": "res://assets/art/ui/ability_icons/energy_order_flame.png",
+			"regen": 5,
+			"light_mult": 2,
+			"dark_mult": 0.5
+		},
+		"abilities": [
+			{
+				"id": "dawn_step",
+				"kanji": "暁閃",
+				"level": 1,
+				"cost": 25,
+				"cooldown": 4,
+				"icon": "res://assets/art/ui/ability_icons/dawn_step.png",
+				"voice": "aki_1",
+				"sfx": "ab_dawn_step",
+				"params": {
+					"distance": 90,
+					"dash_time": 0.16,
+					"invuln": 0.12,
+					"damage": 40,
+					"width": 12,
+					"knockback": 90,
+					"trail_time": 0.8
+				},
+				"bot": {
+					"near": 2,
+					"radius": 70
+				},
+				"hit": {
+					"tags": [
+						"blade"
+					],
+					"fx": {
+						"color": "#ffb347",
+						"hot": "#fff1c8"
+					}
+				}
+			},
+			{
+				"id": "lantern_wall",
+				"kanji": "灯籠結界",
+				"level": 5,
+				"cost": 40,
+				"cooldown": 12,
+				"icon": "res://assets/art/ui/ability_icons/lantern_wall.png",
+				"voice": "aki_2",
+				"sfx": "ab_lantern_wall",
+				"params": {
+					"radius": 70,
+					"time": 3.0,
+					"grow_time": 0.2,
+					"burn": 12,
+					"tick": 0.25,
+					"band": 10,
+					"push": 140
+				},
+				"bot": {
+					"near": 8,
+					"radius": 90
+				},
+				"hit": {
+					"tags": [
+						"fire"
+					],
+					"fx": {
+						"color": "#ffb347",
+						"hot": "#ffe7a8"
+					}
+				}
+			},
+			{
+				"id": "century_flame",
+				"kanji": "百年の焔",
+				"level": 10,
+				"cost": 60,
+				"cooldown": 16,
+				"icon": "res://assets/art/ui/ability_icons/century_flame.png",
+				"voice": "aki_3",
+				"sfx": "ab_century_flame",
+				"params": {
+					"reach": 160,
+					"delay": 0.5,
+					"radius": 55,
+					"damage": 120,
+					"knockback": 70,
+					"ground_time": 4.0,
+					"ground_damage": 15,
+					"ground_tick": 0.5
+				},
+				"bot": {
+					"near": 6,
+					"radius": 160
+				},
+				"hit": {
+					"tags": [
+						"fire"
+					],
+					"fx": {
+						"color": "#ff6a1f",
+						"hot": "#ffd27a"
+					}
+				}
+			}
+		]
+	},
+	{
+		"id": "kenta",
+		"energy": {
+			"id": "shadow",
+			"color": "8f7cf0",
+			"max": 100,
+			"start": 50,
+			"icon": "res://assets/art/ui/ability_icons/energy_shadow.png",
+			"regen_moving": 8,
+			"regen_still": 2,
+			"dark_mult": 1.5
+		},
+		"abilities": [
+			{
+				"id": "shadow_step",
+				"kanji": "瞬身",
+				"level": 1,
+				"cost": 20,
+				"cooldown": 3,
+				"icon": "res://assets/art/ui/ability_icons/shadow_step.png",
+				"voice": "kenta_1",
+				"sfx": "ab_shadow_step",
+				"params": {
+					"distance": 110,
+					"damage": 30,
+					"width": 10,
+					"smoke_radius": 30,
+					"slow": 0.5,
+					"slow_time": 1.5,
+					"invuln": 0.25,
+					"knockback": 60
+				},
+				"bot": {
+					"near": 3,
+					"radius": 60
+				},
+				"hit": {
+					"tags": [
+						"blade"
+					],
+					"fx": {
+						"color": "#8f7cf0",
+						"hot": "#ece6ff"
+					}
+				}
+			},
+			{
+				"id": "kawarimi",
+				"kanji": "変わり身",
+				"level": 5,
+				"cost": 45,
+				"cooldown": 14,
+				"icon": "res://assets/art/ui/ability_icons/kawarimi.png",
+				"voice": "kenta_2",
+				"sfx": "ab_kawarimi",
+				"params": {
+					"lure_radius": 180,
+					"lure_time": 3.0,
+					"damage": 80,
+					"radius": 60,
+					"invuln": 1.0,
+					"hop": 36,
+					"knockback": 160
+				},
+				"bot": {
+					"near": 10,
+					"radius": 120
+				},
+				"hit": {
+					"tags": [
+						"area"
+					],
+					"fx": {
+						"color": "#a58cf5",
+						"hot": "#f1e8ff"
+					}
+				}
+			},
+			{
+				"id": "makibishi",
+				"kanji": "撒菱",
+				"level": 10,
+				"cost": 55,
+				"cooldown": 15,
+				"icon": "res://assets/art/ui/ability_icons/makibishi.png",
+				"voice": "kenta_3",
+				"sfx": "ab_makibishi",
+				"params": {
+					"count": 12,
+					"radius": 90,
+					"time": 6.0,
+					"damage": 18,
+					"slow": 0.4,
+					"slow_time": 1.0,
+					"kunai": 8,
+					"kunai_damage": 25
+				},
+				"bot": {
+					"near": 8,
+					"radius": 100
+				},
+				"hit": {
+					"tags": [
+						"projectile"
+					],
+					"fx": {
+						"color": "#8f7cf0",
+						"hot": "#e6e2ff"
+					}
+				}
+			}
+		]
+	},
+	{
+		"id": "hana",
+		"energy": {
+			"id": "prayer",
+			"color": "9fffc4",
+			"max": 120,
+			"start": 120,
+			"icon": "res://assets/art/ui/ability_icons/energy_prayer.png",
+			"regen": 4,
+			"regen_per_stat": {
+				"regen": 2.0
+			}
+		},
+		"abilities": [
+			{
+				"id": "harae",
+				"kanji": "祓",
+				"level": 1,
+				"cost": 25,
+				"cooldown": 3.5,
+				"icon": "res://assets/art/ui/ability_icons/harae.png",
+				"voice": "hana_1",
+				"sfx": "ab_harae",
+				"params": {
+					"angle": 100,
+					"reach": 80,
+					"damage": 35,
+					"knockback": 180
+				},
+				"bot": {
+					"near": 3,
+					"radius": 80
+				},
+				"hit": {
+					"tags": [
+						"wind"
+					],
+					"fx": {
+						"color": "#9fffc4",
+						"hot": "#f2fff8"
+					}
+				}
+			},
+			{
+				"id": "kekkai",
+				"kanji": "結界",
+				"level": 5,
+				"cost": 50,
+				"cooldown": 15,
+				"icon": "res://assets/art/ui/ability_icons/kekkai.png",
+				"voice": "hana_2",
+				"sfx": "ab_kekkai",
+				"params": {
+					"radius": 80,
+					"time": 5.0,
+					"slow": 0.6,
+					"damage": 8,
+					"tick": 0.5,
+					"heal_pct": 0.02
+				},
+				"bot": {
+					"near": 8,
+					"radius": 80
+				},
+				"hit": {
+					"tags": [
+						"aura"
+					],
+					"fx": {
+						"color": "#9fffc4",
+						"hot": "#e6fff1"
+					}
+				}
+			},
+			{
+				"id": "grandmother_seal",
+				"kanji": "祖母の封印",
+				"level": 10,
+				"cost": 70,
+				"cooldown": 20,
+				"icon": "res://assets/art/ui/ability_icons/grandmother_seal.png",
+				"voice": "hana_3",
+				"sfx": "ab_grandmother_seal",
+				"params": {
+					"reach": 200,
+					"ofuda": 5,
+					"seal_time": 1.0,
+					"boss_stun": 2.5,
+					"boss_damage": 200
+				},
+				"bot": {
+					"near": 1,
+					"radius": 200
+				},
+				"hit": {
+					"tags": [
+						"orbit"
+					],
+					"fx": {
+						"color": "#9fffc4",
+						"hot": "#fffbe8"
+					}
+				}
+			}
+		]
+	},
+	{
+		"id": "goro",
+		"energy": {
+			"id": "penance",
+			"color": "ffd36b",
+			"max": 100,
+			"start": 0,
+			"icon": "res://assets/art/ui/ability_icons/energy_penance.png",
+			"regen": 1.5,
+			"per_hp_lost": 1.5,
+			"per_kill": 0.6,
+			"decay": 2,
+			"decay_after": 4
+		},
+		"abilities": [
+			{
+				"id": "diamond_body",
+				"kanji": "金剛身",
+				"level": 1,
+				"cost": 30,
+				"cooldown": 10,
+				"icon": "res://assets/art/ui/ability_icons/diamond_body.png",
+				"voice": "goro_1",
+				"sfx": "ab_diamond_body",
+				"params": {
+					"time": 4.0,
+					"reduction": 0.6,
+					"thorns": 0.5
+				},
+				"bot": {
+					"near": 6,
+					"radius": 50
+				},
+				"hit": {
+					"tags": [
+						"orbit"
+					],
+					"fx": {
+						"color": "#ffd36b",
+						"hot": "#fff6d6"
+					}
+				}
+			},
+			{
+				"id": "shakujo",
+				"kanji": "錫杖",
+				"level": 5,
+				"cost": 40,
+				"cooldown": 8,
+				"icon": "res://assets/art/ui/ability_icons/shakujo.png",
+				"voice": "goro_2",
+				"sfx": "ab_shakujo",
+				"params": {
+					"radius": 110,
+					"damage": 70,
+					"stun": 1.2
+				},
+				"bot": {
+					"near": 6,
+					"radius": 100
+				},
+				"hit": {
+					"tags": [
+						"area"
+					],
+					"fx": {
+						"color": "#ffd36b",
+						"hot": "#fff1c0"
+					}
+				}
+			},
+			{
+				"id": "master_mantra",
+				"kanji": "師の真言",
+				"level": 10,
+				"cost": 70,
+				"cooldown": 18,
+				"icon": "res://assets/art/ui/ability_icons/master_mantra.png",
+				"voice": "goro_3",
+				"sfx": "ab_master_mantra",
+				"params": {
+					"pulses": 3,
+					"interval": 0.6,
+					"radius": 140,
+					"damage": 45,
+					"heal_per_hit": 1,
+					"heal_max": 15
+				},
+				"bot": {
+					"near": 10,
+					"radius": 130
+				},
+				"hit": {
+					"tags": [
+						"aura"
+					],
+					"fx": {
+						"color": "#ffd36b",
+						"hot": "#fff6d6"
+					}
+				}
+			}
+		]
+	},
+	{
+		"id": "rin",
+		"energy": {
+			"id": "focus",
+			"color": "ffe08a",
+			"max": 100,
+			"start": 100,
+			"icon": "res://assets/art/ui/ability_icons/energy_focus.png",
+			"regen_moving": 4,
+			"regen_still": 14
+		},
+		"abilities": [
+			{
+				"id": "hamaya",
+				"kanji": "破魔矢",
+				"level": 1,
+				"cost": 25,
+				"cooldown": 2.5,
+				"icon": "res://assets/art/ui/ability_icons/hamaya.png",
+				"voice": "rin_1",
+				"sfx": "ab_hamaya",
+				"params": {
+					"length": 320,
+					"damage": 60,
+					"width": 6,
+					"speed": 1400,
+					"knockback": 40
+				},
+				"bot": {
+					"near": 1,
+					"radius": 200
+				},
+				"hit": {
+					"tags": [
+						"projectile"
+					],
+					"fx": {
+						"color": "#ffe08a",
+						"hot": "#fffbe6"
+					}
+				}
+			},
+			{
+				"id": "hunting_trap",
+				"kanji": "罠",
+				"level": 5,
+				"cost": 35,
+				"cooldown": 6,
+				"icon": "res://assets/art/ui/ability_icons/hunting_trap.png",
+				"voice": "rin_2",
+				"sfx": "ab_hunting_trap",
+				"params": {
+					"life": 12.0,
+					"max_traps": 2,
+					"radius": 40,
+					"max_catch": 6,
+					"root_time": 3.0,
+					"damage": 40
+				},
+				"bot": {
+					"near": 4,
+					"radius": 80
+				},
+				"hit": {
+					"tags": [
+						"blade"
+					],
+					"fx": {
+						"color": "#c9ccd4",
+						"hot": "#fff1c8"
+					}
+				}
+			},
+			{
+				"id": "swallow_leap",
+				"kanji": "燕返し",
+				"level": 10,
+				"cost": 50,
+				"cooldown": 9,
+				"icon": "res://assets/art/ui/ability_icons/swallow_leap.png",
+				"voice": "rin_3",
+				"sfx": "ab_swallow_leap",
+				"params": {
+					"distance": 80,
+					"arrows": 9,
+					"spread": 60,
+					"damage": 35,
+					"pierce": 3,
+					"reach": 200,
+					"leap_time": 0.22,
+					"invuln": 0.15,
+					"range": 220,
+					"speed": 520,
+					"width": 4,
+					"knockback": 50
+				},
+				"bot": {
+					"near": 5,
+					"radius": 50
+				},
+				"hit": {
+					"tags": [
+						"projectile"
+					],
+					"fx": {
+						"color": "#ffe08a",
+						"hot": "#ffffff"
+					}
+				}
+			}
+		]
+	},
+	{
+		"id": "tora",
+		"energy": {
+			"id": "forge_heat",
+			"color": "ff7a3a",
+			"max": 100,
+			"start": 0,
+			"icon": "res://assets/art/ui/ability_icons/energy_forge_heat.png",
+			"per_hit": 0.5,
+			"per_kill": 1,
+			"decay": 3,
+			"decay_after": 3
+		},
+		"abilities": [
+			{
+				"id": "anvil_hammer",
+				"kanji": "鉄槌",
+				"level": 1,
+				"cost": 30,
+				"cooldown": 5,
+				"icon": "res://assets/art/ui/ability_icons/anvil_hammer.png",
+				"voice": "tora_1",
+				"sfx": "ab_anvil_hammer",
+				"params": {
+					"offset": 40,
+					"radius": 60,
+					"damage": 70,
+					"stun": 0.8
+				},
+				"bot": {
+					"near": 3,
+					"radius": 80
+				},
+				"hit": {
+					"tags": [
+						"area"
+					],
+					"fx": {
+						"color": "#ff7a3a",
+						"hot": "#ffe2a0"
+					}
+				}
+			},
+			{
+				"id": "chain_pull",
+				"kanji": "鎖引き",
+				"level": 5,
+				"cost": 45,
+				"cooldown": 12,
+				"icon": "res://assets/art/ui/ability_icons/chain_pull.png",
+				"voice": "tora_2",
+				"sfx": "ab_chain_pull",
+				"params": {
+					"radius": 170,
+					"damage": 30,
+					"delay": 0.4,
+					"blast_radius": 50,
+					"blast_damage": 60
+				},
+				"bot": {
+					"near": 10,
+					"radius": 170
+				},
+				"hit": {
+					"tags": [
+						"fire"
+					],
+					"fx": {
+						"color": "#ff7a3a",
+						"hot": "#ffd27a"
+					}
+				}
+			},
+			{
+				"id": "quench",
+				"kanji": "焼き入れ",
+				"level": 10,
+				"cost": 70,
+				"cooldown": 18,
+				"icon": "res://assets/art/ui/ability_icons/quench.png",
+				"voice": "tora_3",
+				"sfx": "ab_quench",
+				"params": {
+					"radius": 120,
+					"damage": 90,
+					"knockback": 380,
+					"time": 6.0,
+					"armor": 5,
+					"heal_pct": 0.1
+				},
+				"bot": {
+					"near": 10,
+					"radius": 110
+				},
+				"hit": {
+					"tags": [
+						"wind"
+					],
+					"fx": {
+						"color": "#f0f4ff",
+						"hot": "#ffb27a"
+					}
+				}
+			}
+		]
+	},
+	{
+		"id": "yuki",
+		"energy": {
+			"id": "oni_blood",
+			"color": "ff4a4a",
+			"max": 100,
+			"start": 30,
+			"icon": "res://assets/art/ui/ability_icons/energy_oni_blood.png",
+			"per_kill": 3,
+			"regen_in_light": -2,
+			"regen_out_light": 2,
+			"hp_price": 0.5,
+			"hp_floor": 0.3
+		},
+		"abilities": [
+			{
+				"id": "oni_claw",
+				"kanji": "鬼爪",
+				"level": 1,
+				"cost": 25,
+				"cooldown": 3.5,
+				"icon": "res://assets/art/ui/ability_icons/oni_claw.png",
+				"voice": "yuki_1",
+				"sfx": "ab_oni_claw",
+				"params": {
+					"distance": 100,
+					"claws": 3,
+					"radius": 45,
+					"damage": 30,
+					"reach": 160,
+					"leap_time": 0.16,
+					"invuln": 0.12
+				},
+				"bot": {
+					"near": 1,
+					"radius": 100
+				},
+				"hit": {
+					"tags": [
+						"blade"
+					],
+					"fx": {
+						"color": "#ff4a4a",
+						"hot": "#ffd0c8"
+					}
+				}
+			},
+			{
+				"id": "oni_roar",
+				"kanji": "鬼哭",
+				"level": 5,
+				"cost": 40,
+				"cooldown": 13,
+				"icon": "res://assets/art/ui/ability_icons/oni_roar.png",
+				"voice": "yuki_2",
+				"sfx": "ab_oni_roar",
+				"params": {
+					"radius": 150,
+					"fear_time": 2.5,
+					"damage": 25,
+					"knockback": 110
+				},
+				"bot": {
+					"near": 10,
+					"radius": 120
+				},
+				"hit": {
+					"tags": [
+						"area"
+					],
+					"fx": {
+						"color": "#ff4a4a",
+						"hot": "#ffb0a8"
+					}
+				}
+			},
+			{
+				"id": "onikiri_whirl",
+				"kanji": "鬼神斬",
+				"level": 10,
+				"cost": 65,
+				"cooldown": 16,
+				"icon": "res://assets/art/ui/ability_icons/onikiri_whirl.png",
+				"voice": "yuki_3",
+				"sfx": "ab_onikiri_whirl",
+				"params": {
+					"time": 2.0,
+					"radius": 70,
+					"hits": 12,
+					"damage": 22,
+					"lifesteal": 0.1,
+					"lifesteal_max": 30,
+					"speed": 0.3
+				},
+				"bot": {
+					"near": 8,
+					"radius": 70
+				},
+				"hit": {
+					"tags": [
+						"blade"
+					],
+					"fx": {
+						"color": "#ff3b3b",
+						"hot": "#ffe0dc"
+					}
+				}
+			}
+		]
+	}
+]

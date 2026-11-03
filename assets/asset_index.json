@@ -2832,6 +2832,174 @@
   "sha256": "6787c6e22a4d44ceee4f158309b2519707bdb70c59aca00b3d49006cadcca06e"
  },
  {
+  "file": "assets/art/ui/ability_icons/anvil_hammer.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "669d74cd775db18a609fa829954e289824b73cb5eb4e15dbf5eb9886742f509e"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/century_flame.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "8a6ea4deedd6a0b3befe6b138fe65c36d80da793911e46c13d7b62d8760f6a2b"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/chain_pull.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "8aa657020e519ddff52dd7f649989839771ac41d5c24ec75f5d29994059c15b3"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/dawn_step.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "77e1672720d83153bdb188f8b7aef1f4b780b561bd06fe4dcf275561d944343e"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/diamond_body.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "929853fa178ff879accad256d60b1b476e898220f368bd910d25391ac67ea76a"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_focus.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "fabe73c4a17ace6896dbd3382671ef75796d0cc7570bdd399cb5a08791fcd061"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_forge_heat.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "d190362eb5d2c04eefb18cd1ec84d75be5636a6d74f36b9cb189b8a4cefac8e8"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_oni_blood.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "dca799ccdd6439ab51a51c4b484ae8c9f2ced295b96ac4d0601d19a9edbac6ac"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_order_flame.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "a50b795953a83e99072709bf27dbabf39fc7645a4665a7837cdebcf961f09f53"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_penance.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "9a1ffff8e3072f927d846c6c68fe708a442c336adcd17f0331407f29cd83ae62"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_prayer.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "6a16f45628d95116048946ed686cc42660ef12fc4e39a1ae47ec803e7f5948a6"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/energy_shadow.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "94324dd477f9191b3659bdceaa9e42f5bd22ff5cf01169212d03cb94cc25cbe4"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/grandmother_seal.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "b692db03169704f35fc2cc5bd9f94e6fa8d2a6745242625932d30b6c71bf5d3d"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/hamaya.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "c35dca42d3becc46e45e01887b17db504f803bb57dc31c5766f941c628b232b1"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/harae.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "942f3cde8877248fc1ffb3b80e2ae8db8ef9777b14309ce766fc17730b9bd881"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/hunting_trap.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "5bb5458cb921628498f9cf711a7a1b727b0ec2d40eca2abe0c9e16288b9aee34"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/kawarimi.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "ceacf3e2cb14b5661fdfc281c5fbad2ac1eacb6c8de90e905aa2db59e9a756c1"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/kekkai.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "1a9fb988dc579e829a0df3396e9d06521e2ef8bf0cd9b809118a73b28c620bbd"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/lantern_wall.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "86f0046407151ee11e95f4d2aee6636f020393e67bda02db67ae089e645edbe8"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/makibishi.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "3a64d85e45b3c67868aa35288016e5c96593a3065ee50b88937f18b888ea5562"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/master_mantra.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "0bd9dc91e9e67c23f618eab47252e9ac46cf90f05093dd04288650835764eb7f"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/oni_claw.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "ad2eabfdbe5f6362ef0800df03732d53ac84022ed3d0336ef283504285d18c7f"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/oni_roar.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "056105c7a5202041a29fdac3e1ef8e8d36791d85fe2ea779cb5b69b09247a345"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/onikiri_whirl.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "3684d3de2422db190fa16e74c4c47eef6dfadab6867d966a079c23b5c015b241"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/quench.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "176bd2ec2d679fd285b147687de6771c1fc939615e0e1636f09feb037f88fdad"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/shadow_step.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "f6ec2ca01ba3d335023c1ca17178fe9839fe8e0afaf1f88db765d97e4bedef10"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/shakujo.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "0f0aa099cccc3255e3066a24a41fefee790e6d342c5d619272d0ad0a1dde5deb"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/swallow_leap.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "06e47e05885f062fe56c37610f84ec540d9afd58a662576be07b3c534d087435"
+ },
+ {
   "file": "assets/art/ui/arrow.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Ui/Arrow.png",
   "license_id": "ninja_adventure",
@@ -4470,6 +4638,252 @@
   "sha256": "d0dff44bb1d4e4ad56a68d3942a1d2ce25fbcbbecd167ad7b03ee7d8c866f6b4"
  },
  {
+  "file": "assets/audio/sfx/a_anvil_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "0d3eefc000e86543152d190e9345fc6687d9a9ccd2a16a14af179c73f3c57d63"
+ },
+ {
+  "file": "assets/audio/sfx/a_anvil_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "cdef3525dadef39406be9fe369962bf05abceac23bb6c64663fac2c02b8dab1f"
+ },
+ {
+  "file": "assets/audio/sfx/a_anvil_2.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "fd5d5162062818aacc7d78b0f7ec655c66b7ceddbbb316e384653a8d6c4483db"
+ },
+ {
+  "file": "assets/audio/sfx/a_barrier_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "4266d6f54f615f6771b9da5a1b2d7dc69b8d520e1004e5d4138cfde9983ab9ff"
+ },
+ {
+  "file": "assets/audio/sfx/a_barrier_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "e4b6658011bf5f433c5226196a5f8f12f46814a76e6ac30dc84f10de7b8c6b34"
+ },
+ {
+  "file": "assets/audio/sfx/a_caltrops_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "eec4731f09975c879d2a53a3b6fcfa8ed9b5c1c969c6ca5789385af822abd2f9"
+ },
+ {
+  "file": "assets/audio/sfx/a_caltrops_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "763b54f69c973aec9dce2225bb330ab81118caaf79238122acba48840b3146bc"
+ },
+ {
+  "file": "assets/audio/sfx/a_caltrops_2.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "9819a8ae206c23657b68f17795c2a33f85a3be0e1e4ace085ee6060aef6323fa"
+ },
+ {
+  "file": "assets/audio/sfx/a_chain_spin_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "a1e733837b8ed75123152aca160313fee578cb24493418cb08ebf6b7d1739302"
+ },
+ {
+  "file": "assets/audio/sfx/a_chain_spin_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "813d166944c8b77221576d03f50f1e724b75f2e1a505df1e192f3f68736798b6"
+ },
+ {
+  "file": "assets/audio/sfx/a_claw_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "7edba97bc654d080f0759d282b05dad948510a14ee95c8c5d5d6564b3dc6deaa"
+ },
+ {
+  "file": "assets/audio/sfx/a_claw_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "4316d763bdd2f237cde990670f3c1262de3eae9f2523aa6b98c6a3bdbf5ddaf4"
+ },
+ {
+  "file": "assets/audio/sfx/a_claw_2.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "521f2cbc5a5c2a7e6dd19f69750966d5aaf5379a1d99adf8f62a998ba21c7792"
+ },
+ {
+  "file": "assets/audio/sfx/a_dash_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "53d96ce43750bd87e1ca058881b6a541c41bdd36705d412225d28ffb958a32b3"
+ },
+ {
+  "file": "assets/audio/sfx/a_dash_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "8583e8e36456d65a4176f2f79e1e0ef32734e81651d2643992556caff19a925b"
+ },
+ {
+  "file": "assets/audio/sfx/a_denied_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "c40b8ce9f6799d6d4db810795da4dfbf6175e956c844b87ae7f0a33e25021b4d"
+ },
+ {
+  "file": "assets/audio/sfx/a_diamond_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "e7b5dca161b132e063eebd897c549673f81483eb7dd36c06fe7bb2246a69591a"
+ },
+ {
+  "file": "assets/audio/sfx/a_diamond_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "99c54752ebbb5ec26c4325f279dd54a01e6238b616391ae5c07a4b199715e211"
+ },
+ {
+  "file": "assets/audio/sfx/a_fire_column_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "823d20a53c7755092af79a81684ffa06f0eedca510fc3bd15e8be73e1835fd97"
+ },
+ {
+  "file": "assets/audio/sfx/a_fire_column_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "28ddb40ec6b62286eee3bebf7f681b973fb8defe52309d9a4bdf1a457193fdd0"
+ },
+ {
+  "file": "assets/audio/sfx/a_holy_arrow_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "d541bc28e2b31a5877982e1a280b233ffe12dc78ea5949ab97daf811177eefb5"
+ },
+ {
+  "file": "assets/audio/sfx/a_holy_arrow_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "79ab41539c09cc3dc9a13b5f7f70c04765f112c8236114e66e9ba978442ef375"
+ },
+ {
+  "file": "assets/audio/sfx/a_light_ring_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "3ed5f40ac3b3fc37763dba49d4a695252760e50c53ab1b484d53dcf98c3bb779"
+ },
+ {
+  "file": "assets/audio/sfx/a_light_ring_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "94f6136b912e3cb7f038a6e5fd0db8876c25c44ec9fd68ea6cdfdf5e6efcf2db"
+ },
+ {
+  "file": "assets/audio/sfx/a_mantra_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "638b0a64c070b81dbcba93fb17353c10f872e2556262e5fa70e6b86546ba57ed"
+ },
+ {
+  "file": "assets/audio/sfx/a_mantra_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "fbe3ba50bbf4d84fbeb714a1c679ae970b71383d1805230e09e8cd97279f802b"
+ },
+ {
+  "file": "assets/audio/sfx/a_mantra_2.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "43d4eb509c6ac8e1695a58f40945465e9236f20bfc1c63c7dcbbdab5fd8df1f1"
+ },
+ {
+  "file": "assets/audio/sfx/a_oni_roar_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "b6b1c99becbb855c16ecf3e87ebefff6945de400fdb1330aca31bb261533beea"
+ },
+ {
+  "file": "assets/audio/sfx/a_oni_roar_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "eaa7b0c12ff9eb16a9300dc746ecee2eead73dd0e3d6ae6628734463fe7f4f73"
+ },
+ {
+  "file": "assets/audio/sfx/a_ready_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "476aca547b5dcd5995d4d3547a3da02bafac370a5e2e58ff9c5a71fa2cbe0dcc"
+ },
+ {
+  "file": "assets/audio/sfx/a_seal_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "6e2cb2a8bb725ed24a6ae8bd43e1925ddefbc0fb66e4914d16879dd18564a856"
+ },
+ {
+  "file": "assets/audio/sfx/a_seal_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "3d613245f2540449226facb8df521e71ae1f9ec771506e592670a292ed8156fc"
+ },
+ {
+  "file": "assets/audio/sfx/a_shakujo_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "9cc58f821ac39673c983d166768aaf0f3807d60f032bdec516bb151fb5202d2b"
+ },
+ {
+  "file": "assets/audio/sfx/a_shakujo_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "f8479bf5829452f308e8fecc65b1362124f35b36bb43eaab25b84024893dbadb"
+ },
+ {
+  "file": "assets/audio/sfx/a_shakujo_2.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "abbe744403891334a1f38a6699481adba62a2ee63a4c4d74c00fb771310646ce"
+ },
+ {
+  "file": "assets/audio/sfx/a_steam_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "f2624c9bb2c9beed76aa915ad0612cc691fb9384f66ae76a5c10351a87e98b99"
+ },
+ {
+  "file": "assets/audio/sfx/a_steam_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "a30814102a3ea85a8bad9bc0e0d3c2841d28242a41ec0c31514f76c3543fe8ee"
+ },
+ {
+  "file": "assets/audio/sfx/a_trap_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "0650a3067b70c419d1d5189913863d542d3fca5f9db7e9385fa1aae42cf6b34a"
+ },
+ {
+  "file": "assets/audio/sfx/a_trap_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "aa19d2870f994bb2b769bc27ed0f96b9f54cb77509834f94c70d5318db970bdc"
+ },
+ {
+  "file": "assets/audio/sfx/a_whirl_0.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "68532c557855a17c8eec0adec00099f6360839225e42dd8e58db80dc09c2c709"
+ },
+ {
+  "file": "assets/audio/sfx/a_whirl_1.wav",
+  "source": "tools/gen_ability_sfx.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "3ae6d0c63d48110e6017b28ec3c5618120644da0dece9e0208f99c65a53bf1fc"
+ },
+ {
   "file": "assets/audio/sfx/alert.wav",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Alert/Alert.wav",
   "license_id": "ninja_adventure",
@@ -5950,6 +6364,174 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Creature/Wings.wav",
   "license_id": "ninja_adventure",
   "sha256": "48dc3c7926feeb0a960a7706088f58d862e1434ba7e95a9fb4a5b61969bc48c8"
+ },
+ {
+  "file": "assets/audio/voice/aki_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "a31467101d693f811fc89caa398c2427f5b2d9dc9f2cc17b4ce9cac1d115a9ba"
+ },
+ {
+  "file": "assets/audio/voice/aki_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "877239798e107b0622d52beee273f6b33bae07f0a41751d254e1fe1c2ace5079"
+ },
+ {
+  "file": "assets/audio/voice/aki_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "a9f172394c44a5074627fc1294856090d27f7bdba4bbdcd1796b4c17f65db6b1"
+ },
+ {
+  "file": "assets/audio/voice/aki_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "bfcefa9f712e37e581ad4b70f2ec6595f2cfa57ce9673dbcd9d16799b08f48e9"
+ },
+ {
+  "file": "assets/audio/voice/goro_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "b7c5847400a9ffbba5d2882f40bf44d56a82ce36af67383229c52d4500dbbac1"
+ },
+ {
+  "file": "assets/audio/voice/goro_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "02c7d56f7223794cf10d3cfbfc8e54aaa897c9ac2a860f85a0482b4c6c2a40e5"
+ },
+ {
+  "file": "assets/audio/voice/goro_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "9dc99b1d0b9f7bfab53ce77cbf9bcb24582376f9fee51969dfc4b272f1950e10"
+ },
+ {
+  "file": "assets/audio/voice/goro_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "hyakki_ability_sfx",
+  "sha256": "c3cbc7a8de736a4e51d48e35e8ad2bbbd4932151a8798b3a9ad8d6de1fe496fd"
+ },
+ {
+  "file": "assets/audio/voice/hana_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "96a5a0e1884e17d0b6d2c8c8b0665d1dd38a0f81e25b1138766086626f17774d"
+ },
+ {
+  "file": "assets/audio/voice/hana_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "7f56de54927191b13b5f4d66890d71de9ee85be889b1a831f22769bb7d268204"
+ },
+ {
+  "file": "assets/audio/voice/hana_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "e64662d96505de72ce5d716ced59ff9ca7302f60d7b53b0233dbc7fc95ff9d54"
+ },
+ {
+  "file": "assets/audio/voice/hana_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "13c7a7f8d895c85434fefe7324a75ba2adc52773d5b5debb88965e349c4bad0e"
+ },
+ {
+  "file": "assets/audio/voice/kenta_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "c99871d23459e809b22a9b2d91f455bc094ac8126409cc92b6b56b2b172db6fe"
+ },
+ {
+  "file": "assets/audio/voice/kenta_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "4290f8127ce40f15709d8a2d0c640274cad1bf151c132f66dd6063e1222276b4"
+ },
+ {
+  "file": "assets/audio/voice/kenta_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "3edc613c16a7194616d47562040033a5cc2504bd7b9222cc57ba09cf5d25a489"
+ },
+ {
+  "file": "assets/audio/voice/kenta_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "8e8ea4ed3e7cfb4a6420b8ded5c836af948c325b96f2be4cdf1876ab8ae80448"
+ },
+ {
+  "file": "assets/audio/voice/rin_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "0bd4bee3085f8da090064c5ab5544176c92defe5e110b654981e960170ff6c27"
+ },
+ {
+  "file": "assets/audio/voice/rin_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "5b3ca3c1943eb63906d5536bde783780d6f6eb5efacfb70fbf4cd5a331dff0ce"
+ },
+ {
+  "file": "assets/audio/voice/rin_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "1fe322e07136e5a9f7a81d05c07b1c92e43ee1ca271112af68faf9ce898f197a"
+ },
+ {
+  "file": "assets/audio/voice/rin_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "dfd4cf624c3dff4122bb6fe1f43791aec24a1a279ef7b6a2da21805b99306423"
+ },
+ {
+  "file": "assets/audio/voice/tora_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "304f58e327098f99a7619253ce0a74a36e72edf8a65d8fe2ecdaf0cc2a48c0b2"
+ },
+ {
+  "file": "assets/audio/voice/tora_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "c6b045000443d0d97ac67154b717d2f0882cb5d7f465d3a912c37ef013ff1bf2"
+ },
+ {
+  "file": "assets/audio/voice/tora_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "6642a0eb3008731a73f70ad7bac650e6c7a6165234eea7d6c931b08367c1b4a6"
+ },
+ {
+  "file": "assets/audio/voice/tora_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "haeldb_yelling",
+  "sha256": "d4580cd6335cac9b49da458caf1efd2d33edd34750a4624af3fb12f41fa4a3c3"
+ },
+ {
+  "file": "assets/audio/voice/yuki_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "93542d8e8cb7574d0079ac06280a6e299863e8ef9d34ccf45c3a3403b5f73643"
+ },
+ {
+  "file": "assets/audio/voice/yuki_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "5bfc97c134a8b1e3ecce2670b7a09eb7a3da5c93a991ef84082174f2adc5671b"
+ },
+ {
+  "file": "assets/audio/voice/yuki_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "3147ad6d180f6b277abb4166e6cea2af2771cbb77e797bd643da6bc2b133dadb"
+ },
+ {
+  "file": "assets/audio/voice/yuki_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "519be868c517bda69f85a9224a6aed44de5f2798cd3ee016b93d95d639161714"
  },
  {
   "file": "assets/fonts/fusion_pixel_12_ja.woff2",

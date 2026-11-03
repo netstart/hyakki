@@ -2,7 +2,8 @@ class_name GuideBook
 extends RefCounted
 ## Guia do Diário (manual dentro do jogo): monta os capítulos a partir dos dados (data/*.json
 ## pelo DB), das constantes do código e do save, no idioma atual. Nenhum número é repetido aqui:
-## duração da noite (HyakkiGame.RUN_LENGTH), cartas por nível e espaços (LevelUpSystem), chances
+## duração da noite (HyakkiGame.RUN_LENGTH), habilidades e energias (data/abilities.json, poder por
+## nível de AbilitySystem), cartas por nível e espaços (LevelUpSystem), chances
 ## e ryō dos baús (ChestSystem), itens do chão (data/items.json), horários dos chefes e dos Kami
 ## (data/stages.json), aviso do Guardião do Limiar (RiftPortal), Santuário (data/powerups.json,
 ## MetaProgress.PRICE_STEP), Lua Vermelha (HyakkiGame), clima e terreno (data/weather.json,
@@ -24,10 +25,11 @@ extends RefCounted
 ## (chip com nome, toque abre o item no Diário), {chip: caminho, known, kind ("skill"|"face"|
 ## "plain")} (só o ícone).
 
-const CHAPTERS: Array[StringName] = [&"play", &"levels", &"chests", &"items", &"bosses", &"stronger",
-		&"stages", &"saving", &"tips"]
+const CHAPTERS: Array[StringName] = [&"play", &"abilities", &"levels", &"chests", &"items", &"bosses",
+		&"stronger", &"stages", &"saving", &"tips"]
 const ICONS := {
 	&"play": "res://assets/art/ui/icons/items/Boot.png",
+	&"abilities": "res://assets/art/ui/icons/spell/MagicWeapon.png",
 	&"levels": "res://assets/art/ui/icons/spell/Upgrade.png",
 	&"chests": "res://assets/art/ui/icons/items/Money.png",
 	&"items": "res://assets/art/ui/icons/job/Dish.png",
@@ -51,8 +53,8 @@ func platform() -> String:
 
 ## Títulos dos capítulos, na ordem.
 func titles() -> Array[String]:
-	return [tr("guide.ch.play"), tr("guide.ch.levels"), tr("guide.ch.chests"), tr("guide.ch.items"),
-			tr("guide.ch.bosses"), tr("guide.ch.stronger"), tr("guide.ch.stages"), tr("guide.ch.saving"),
+	return [tr("guide.ch.play"), tr("guide.ch.abilities"), tr("guide.ch.levels"), tr("guide.ch.chests"),
+			tr("guide.ch.items"), tr("guide.ch.bosses"), tr("guide.ch.stronger"), tr("guide.ch.stages"), tr("guide.ch.saving"),
 			tr("guide.ch.tips")]
 
 
@@ -74,6 +76,8 @@ func chapter(id: StringName) -> Dictionary:
 	match id:
 		&"play":
 			blocks = _play()
+		&"abilities":
+			blocks = _abilities()
 		&"levels":
 			blocks = _levels()
 		&"chests":
@@ -101,7 +105,7 @@ func _play() -> Array[Dictionary]:
 	var mode := String(Settings.get_value("joystick_mode"))
 	var side := String(Settings.get_value("joystick_side"))
 	var lantern := LanternSystem.MAX_BOOST
-	return [
+	var out: Array[Dictionary] = [
 		_h(tr("guide.play.first_h")),
 		_p(tr("guide.play.first")),
 		_h(tr("guide.play.goal_h")),
@@ -116,9 +120,84 @@ func _play() -> Array[Dictionary]:
 		_p(tr("guide.play.lantern"), [pct(lantern), pct(1.0 - LanternSystem.BOSS_EAT)]),
 		_p(tr("guide.play.ultimate"), [tr("hero.%s.name" % hero),
 				tr("ultimate.%s.name" % String((data["ultimate"] as Dictionary)["type"]))]),
-		_h(tr("guide.play.pause_h")),
-		_p(tr("guide.play.pause")),
 	]
+	var energy: Dictionary = DB.hero_abilities(hero).get("energy", {})
+	if not energy.is_empty():
+		out.append(_p(tr("guide.play.abilities"), [tr("hero.%s.name" % hero), tr("energy.%s.name" % energy["id"])]))
+	out.append(_h(tr("guide.play.pause_h")))
+	out.append(_p(tr("guide.play.pause")))
+	return out
+
+
+## Habilidades e energias: desbloqueio pelo nível, custo, recarga e poder (AbilitySystem), a
+## energia e as 3 habilidades de cada guardiã conhecida (data/abilities.json), a regra da Yuki,
+## os controles e o link para os guardiões do Diário. Guardiã bloqueada vira "?" (Discovery).
+func _abilities() -> Array[Dictionary]:
+	var first := DB.hero_abilities(DB.ids("heroes")[0]).get("abilities", []) as Array
+	var levels: Array = []
+	for row: Variant in first:
+		levels.append(str(int((row as Dictionary).get("level", 1))))
+	var out: Array[Dictionary] = [
+		_p(tr("guide.abilities.intro")),
+		_h(tr("guide.abilities.unlock_h")),
+		_p(tr("guide.abilities.unlock"), levels),
+		_h(tr("guide.abilities.energy_h")),
+		_p(tr("guide.abilities.energy"), [(tr("stat.cooldown") % "").strip_edges(), tr("heroes.attr_might"),
+				pct(AbilitySystem.POWER_PER_LEVEL)]),
+		_h(tr("guide.abilities.heroes_h")),
+		_p(tr("guide.abilities.heroes")),
+	]
+	var hidden := false
+	var blood: Dictionary = {}
+	for h: StringName in DB.ids("heroes"):
+		var data := DB.hero_abilities(h)
+		if data.is_empty():
+			continue
+		var known := Discovery.hero_known(h)
+		hidden = hidden or not known
+		out.append(_rich(hero_ability_lines(h, known)))
+		var energy: Dictionary = data["energy"]
+		if known and float(energy.get("hp_price", 0.0)) > 0.0:
+			blood = energy
+	if not blood.is_empty():
+		out.append(_p(tr("guide.abilities.blood"), [tr("energy.%s.name" % blood["id"]),
+				_num(1.0 / float(blood["hp_price"])), pct(float(blood.get("hp_floor", 0.0)))]))
+	if hidden:
+		out.append(_p(tr("guide.abilities.unknown")))
+	out.append(_h(tr("guide.abilities.keys_h")))
+	out.append(_p(tr("guide.abilities.keys")))
+	out.append(_p(tr("guide.abilities.hint")))
+	out.append(_link(&"heroes", tr("guide.link.heroes")))
+	return out
+
+
+## Linhas de uma guardiã no capítulo das habilidades: rosto e nome — glifo e nome da energia, como
+## ela enche, e uma linha por habilidade (ícone, selo do kanji, nome, nível, custo e recarga).
+## Desconhecida: só o chip "?" com "???".
+func hero_ability_lines(h: StringName, known: bool) -> Array:
+	var ref := {"category": &"heroes", "id": String(h), "known": known, "face": true,
+			"icon": String((DB.heroes[h] as Dictionary)["face"]),
+			"name": tr("hero.%s.name" % h) if known else Discovery.UNKNOWN}
+	if not known:
+		return [[{"ref": ref}]]
+	var data := DB.hero_abilities(h)
+	var energy: Dictionary = data["energy"]
+	var energy_name := tr("energy.%s.name" % energy["id"])
+	var head := _parts(tr("guide.abilities.hero_line"), [{"ref": ref}, {"n": energy_name}])
+	for i: int in head.size():
+		if head[i].has("n"):
+			head.insert(i, {"t": " "})
+			head.insert(i, {"chip": String(energy.get("icon", "")), "known": true, "kind": "plain"})
+			break
+	var lines: Array = [head, [{"t": tr("energy.%s.desc" % energy["id"])}]]
+	for row: Variant in data.get("abilities", []):
+		var a: Dictionary = row
+		var line: Array = [{"chip": String(a.get("icon", "")), "known": true, "kind": "skill"}, {"t": " "},
+				{"seal": String(a.get("kanji", ""))}, {"t": " "}]
+		lines.append(line + _parts(tr("guide.abilities.ability_line"), [tr("ability.%s.name" % a["id"]),
+				str(int(a.get("level", 1))), str(roundi(float(a.get("cost", 0)))),
+				AbilitySheet.seconds(float(a.get("cooldown", 0)))]))
+	return lines
 
 
 func _levels() -> Array[Dictionary]:

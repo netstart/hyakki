@@ -188,6 +188,9 @@ func _start(app: App) -> void:
 	game.tracker.kills = 999999
 	game.tracker.ryo = 9999999
 	game.ultimate.charge = 60.0
+	# Habilidades em estados diferentes: a 1ª em recarga e a 3ª sem energia para pagar.
+	game.abilities.cooldowns[0] = game.abilities.cooldown_total(0) * 0.6
+	game.abilities.energy.value = 45.0
 	GameClock.game_time = 59.0 * 60.0 + 59.0
 	GameClock.paused = true
 

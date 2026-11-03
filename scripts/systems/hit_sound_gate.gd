@@ -49,6 +49,11 @@ func hit(weapon_id: StringName, crit: bool, step: int) -> void:
 		AudioManager.play("crit", 1.0, 0.08, -10.0)
 
 
+## Som do golpe de um dano que não é arma (habilidades): `row` no formato de data/weapons.json.
+func register(id: StringName, row: Dictionary) -> void:
+	_cache[id] = HitSounds.for_weapon(row)
+
+
 func _on_setting(key: String) -> void:
 	if key == "damage_sounds":
 		_enabled = -1

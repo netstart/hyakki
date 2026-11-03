@@ -161,6 +161,30 @@ depois de escolher habilidade; itens do chão que chamem atenção; barra de vid
 - Resoluções lógicas exigidas nos testes de layout: 678×305 (Redmi), 600×270 (Galaxy M55 e Pixel) e 585×270
   (Galaxy A15), furo dos dois lados.
 
+### Habilidades dos guardiões (01/11/2026, 1.18.0)
+Pedido: três habilidades por guardião ligadas à história, com recarga e energia própria, efeitos
+fortes, sons e grito. Especificação e números: [04-habilidades-dos-guardioes.md](04-habilidades-dos-guardioes.md).
+- ✅ Núcleo: `HeroEnergy` (7 energias movidas por eventos), `AbilitySystem` (desbloqueio nos níveis 1/5/10,
+  custo, recarga × atributo, poder pelo nível, pagamento com vida da Yuki, save da partida suspensa, hash de
+  determinismo, `RunTracker.abilities`/`ability_uses`) e um comportamento por herói em
+  `scripts/systems/abilities/` (21 habilidades sobre primitivas comuns: lentidão, prender, medo, isca,
+  puxar, atordoar, dano em linha/leque, apagar tiros, avanço invulnerável, redução de dano, espinhos,
+  armadura).
+- ✅ Retorno: grito por guardião (CC0, `assets/audio/voice/`), cues `ab_*` em camadas no `WeaponSfx`,
+  clarão de lançamento comum (luz, anel com borda escura e faíscas na cor da energia), letreiro kanji +
+  nome numa faixa escura com estalo, marcadores de estado nos inimigos (`enemy_look.gd`), armadilha da Rin
+  e Kekkai com borda forte por cima da horda.
+- ✅ UI: 3 botões em arco em volta do Golpe e barra de energia (`ability_pad.gd`), ficha na tela do
+  guardião e no Diário (`ability_sheet.gd`), capítulo no Guia, ícones próprios (`tools/gen_ability_icons.py`),
+  textos em 11 idiomas (`tools/i18n/abilities.py`); teclas 1/2/3 ou J/K/L, controle X/Y/B.
+- ✅ Bot usa as três por regras fixas; mesmo hash em 1x/2x/3x e na Baixa para os 7 heróis; linha
+  `HABILIDADES` no fim da partida do bot (nível e usos por habilidade).
+- ✅ Correção junto: meia-lua do Onikiri (Yuki) desenhada com `Stroke.band` (quadriláteros) no lugar de
+  `draw_colored_polygon`, que falhava com "Invalid polygon data, triangulation failed".
+- ✅ Testes: `tests/ability_tests.tscn` (unitários das energias, sistema, primitivas, cada herói em cenário
+  montado, estados, save e bot), HUD das habilidades em todas as resoluções × 11 idiomas × furo dos dois
+  lados, Guia e fichas.
+
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.
 - 21/10 — 629 textos em 11 idiomas; registro e verificação de licenças; testes de integração.

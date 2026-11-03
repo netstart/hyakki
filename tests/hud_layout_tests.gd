@@ -24,9 +24,13 @@ extends RefCounted
 ## - diálogo antes do chefe (scripts/ui/dialogue_panel.gd): caixa, retrato 38x38 na moldura, nome,
 ##   fala e "Pular" na área segura com 4 px de folga, sem se sobrepor, com a fala mais longa de
 ##   cada idioma do lado do chefe e do herói, e toda fala do idioma cabendo nas linhas da caixa;
+## - habilidades (tests/ability_hud_tests.gd): os 3 botões em arco em volta do Golpe, a barra de
+##   energia e o nome da habilidade liberada em cada estado, com o joystick fixo dos dois lados, e o
+##   toque (multitoque com o joystick);
 ## - a HUD refaz o layout quando a tela muda de tamanho e quando o recorte troca de lado.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+const AbilityHudTests := preload("res://tests/ability_hud_tests.gd")
 ## Pior caso dos números do topo (nível, tempo e contadores longos) e o começo da partida.
 const NUMBERS: Array[Array] = [[99, "59:59", 999999, 9999999], [1, "00:00", 0, 0]]
 const ICON_SLOTS := 6
@@ -45,6 +49,7 @@ func run(host: Node, check: Callable) -> void:
 		var safe := DeviceProfiles.safe_rect(c["view"], c["insets"])
 		var hud := await _open(c["view"])
 		await _check_controls(hud, safe, String(c["label"]))
+		await AbilityHudTests.new().check_layout(_host, hud, safe, c["langs"], String(c["label"]), _check)
 		_check_portal_arrows(hud, c["view"], safe, "HUD [%s]" % c["label"])
 		for lang: String in c["langs"]:
 			Locale.set_language(lang, false)
@@ -59,6 +64,7 @@ func run(host: Node, check: Callable) -> void:
 	DeviceProfiles.clear_insets()
 	Locale.set_language("pt_BR", false)
 	await _check_relayout()
+	await AbilityHudTests.new().run_touch(_host, _check, DeviceProfiles.main_view())
 	Settings.set_value("joystick_side", side)
 	Settings.set_value("joystick_mode", mode)
 

@@ -1,0 +1,9 @@
+Female RPG Voice Starter Pack (três vozes femininas: gritos de ataque, pulos, dano e falas de magia)
+Autor: cicifyre (Cici Fyre, https://cicifyre.itch.io/)
+Fonte: https://opengameart.org/content/female-rpg-voice-starter-pack
+Arquivo: RPG Voice Starter Pack.zip (8,8 MB), baixado em 2026-11-01
+Licença: CC0 1.0 (domínio público), como declarada na página de origem ("License(s): CC0");
+crédito apreciado, mas não exigido.
+Uso no Hyakki: attack1-3, jump1-3 e damaged1/3 (sem palavras) tratados por
+tools/gen_ability_voices.py nas vozes de Aki, Hana, Rin e Yuki (assets/audio/voice/).
+Texto da licença: licenses/texts/CC0-1.0.txt

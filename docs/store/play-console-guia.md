@@ -11,7 +11,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 |---|---|
 | Nome do app | Hyakki: Até o Amanhecer |
 | ID do aplicativo (pacote) | `io.github.netstart.hyakki` (**não muda nunca mais** depois do primeiro envio) |
-| Versão do 1º envio | `1.7.0` (versionCode 19) |
+| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.18.0`, versionCode 36) |
 | Desenvolvedor | conta pessoal, GitHub `netstart` |
 | E-mail público | netstart@gmail.com |
 | Site | https://netstart.github.io/ |
@@ -96,7 +96,8 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
   `build\release\hyakki-release.apk` (para conferir no emulador ou aparelho).
 - Cada envio à Play Console precisa de um **versionCode maior** que o anterior. O versionCode e o
   versionName seguem o SemVer do `AGENTS.md` (sobem a cada commit); o script também aceita
-  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é `1.7.0` (versionCode 19).
+  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.18.0`,
+  versionCode 36).
 - Os IDs reais do AdMob **já estão no projeto** (`admob/general/android/app_id` no `project.godot` e
   `RELEASE_UNITS` em `scripts/ads/admob_provider.gd`), então o build de release sai com anúncios e
   compra ligados.
@@ -147,9 +148,9 @@ Fica em **Monitorar e melhorar › Política › Conteúdo do app** (ou pelo pai
 (Não use o endereço antigo `/games/hyakki/privacy-policy.html`: ele é só um redirecionamento.)
 
 ### 5.2 Anúncios (*Ads*)
-**Sim, meu app contém anúncios.** A 1ª versão mostra um anúncio ao abrir o jogo (removível pela
-compra) e anúncios premiados opcionais. Com "Sim", a Play exibe o selo "Contém anúncios" na ficha.
-Declarar errado é violação de política.
+**Sim, meu app contém anúncios.** O jogo tem só anúncios premiados opcionais (Loja, Reviver, Dobrar
+ryō); não há anúncio ao abrir o jogo e nenhum anúncio interrompe uma partida. Com "Sim", a Play exibe
+o selo "Contém anúncios" na ficha. Declarar errado é violação de política.
 
 ### 5.3 Acesso ao app (*App access*)
 **Todas as funcionalidades estão disponíveis sem restrições de acesso** (não há login nem conta).
@@ -163,7 +164,8 @@ Declarar errado é violação de política.
 |---|---|---|
 | Violência | **Sim**, violência de fantasia | a guardiã combate yōkai, demônios e espíritos com armas mágicas e lâminas, em pixel art, visto de cima |
 | Violência realista / contra humanos reais | **Não** | todos os inimigos são criaturas sobrenaturais; nada fotorrealista |
-| Sangue, gore, desmembramento | **Não** | inimigos somem em cinzas, névoa, ossos de pixel, respingo de slime; sem sangue humano |
+| Sangue | **Sim, leve / fantasia** (a partir da 1.18.0) | quando a Yuki paga uma habilidade com vida ("preço de sangue"), o corpo dela pulsa em vermelho e algumas gotas de sangue em pixel escorrem por meio segundo; inimigos continuam sumindo em cinzas, névoa, ossos de pixel e respingo de slime. Até a 1.17.1 a resposta era **Não** |
+| Gore, desmembramento, mutilação | **Não** | nenhum corpo ferido, corte ou desmembramento mostrado |
 | Medo / terror | **Sim, leve** (criaturas e cenas assustadoras de fantasia, sem susto realista) | ambientação noturna com yōkai e chefes como Shinigami e Izanami |
 | Conteúdo sexual / nudez | **Não** | |
 | Linguagem imprópria | **Não** | |
@@ -178,8 +180,8 @@ Declarar errado é violação de política.
 
 3. Classificação esperada (aproximada; o IARC decide): **ESRB Everyone 10+** (Fantasy Violence;
    pode vir "Alcohol Reference" e o aviso "In-Game Purchases"), **PEGI 7**, **USK 6 ou 12**,
-   **ClassInd 10** (Violência fantasiosa; pode subir para 12 por menção a álcool), e
-   "Classificação 10+/12+" na Play. Qualquer resultado até 12 é compatível com o público-alvo 13+ abaixo.
+   **ClassInd 10** (Violência fantasiosa; pode subir para 12 por menção a álcool ou pelo sangue leve
+   da 1.18.0; o PEGI também pode ir a 12 pelo sangue), e "Classificação 10+/12+" na Play. Qualquer resultado até 12 é compatível com o público-alvo 13+ abaixo.
 4. Refaça o questionário sempre que mudar algo nas respostas (por exemplo, se um dia entrar outra
    compra, chat ou conteúdo novo que mude a classificação).
 
@@ -397,7 +399,7 @@ bloqueado.
 A Play **só deixa criar produto no app depois que um AAB com a permissão `BILLING` foi enviado para
 alguma faixa**. O teste interno serve. A ordem é:
 
-1. Envie o AAB `1.7.0` no **teste interno** ([seção 9.2](#92-teste-interno-primeiro-para-você)).
+1. Envie o AAB da versão atual (hoje `1.18.0`) no **teste interno** ([seção 9.2](#92-teste-interno-primeiro-para-você)).
 2. **Monetizar › Produtos › Produtos no app › Criar produto** (*In-app products*):
    - ID do produto: **`remove_open_ad`** (a constante `PRODUCT`; o ID **não pode ser mudado** nem
      reaproveitado depois);
@@ -460,7 +462,7 @@ conteúdo regional). Se algum país pedir documentação extra, remova só ele.
 ### 9.2 Teste interno (primeiro, para você)
 1. **Testar e lançar › Testes › Teste interno › Criar nova versão.**
 2. Aceite a **Assinatura de apps do Google Play** (seção 3).
-3. Envie `build\release\hyakki-release.aab`. Nome da versão: o `version/name` (`1.7.0`).
+3. Envie `build\release\hyakki-release.aab`. Nome da versão: o `version/name` (hoje `1.18.0`).
 4. Notas da versão: as da [seção 9.5](#95-notas-da-versão-1-versão).
 5. Em **Testadores**, crie uma lista de e-mails com a sua conta, salve e abra o **link de inscrição**
    (*opt-in URL*) no celular. A versão aparece em minutos.
@@ -506,14 +508,14 @@ Cole no campo de notas (cada idioma tem limite de 500 caracteres):
 
 ```
 <pt-BR>
-Primeira versão de Hyakki: Até o Amanhecer. Enfrente a procissão dos cem yōkai com 7 guardiões, 26 armas e pactos com 15 Kami em 6 fases. Partidas de 15 minutos, jogáveis com um dedo, offline e em 11 idiomas. Anúncios premiados são opcionais e há um anúncio ao abrir o jogo, removível com uma compra única. Nenhum anúncio interrompe uma partida. Encontrou um problema? Escreva para netstart@gmail.com.
+Primeira versão de Hyakki: Até o Amanhecer. Enfrente a procissão dos cem yōkai com 7 guardiões, 26 armas e pactos com 15 Kami em 6 fases. Partidas de 15 minutos, jogáveis com um dedo, offline e em 11 idiomas. Só há anúncios premiados opcionais: nenhum anúncio ao abrir o jogo nem no meio de uma partida. Encontrou um problema? Escreva para netstart@gmail.com.
 </pt-BR>
 <en-US>
-First release of Hyakki: Until Dawn. Face the parade of a hundred yōkai with 7 guardians, 26 weapons and pacts with 15 Kami across 6 stages. 15-minute runs, playable with one finger, offline and in 11 languages. Rewarded ads are optional, and one ad shows when the game opens, removable with a one-time purchase. No ad ever interrupts a run. Found a problem? Write to netstart@gmail.com.
+First release of Hyakki: Until Dawn. Face the parade of a hundred yōkai with 7 guardians, 26 weapons and pacts with 15 Kami across 6 stages. 15-minute runs, playable with one finger, offline and in 11 languages. There are only optional rewarded ads: no ad when the game opens and none during a run. Found a problem? Write to netstart@gmail.com.
 </en-US>
 ```
 
-(pt-BR: 401 caracteres; en-US: 387.)
+(pt-BR: 359 caracteres; en-US: 344.)
 
 ### 9.5.1 Notas da versão 1.15.0 (versionCode 31)
 Para o envio com o Omikuji do baú (1.14.0) e as Missões do Santuário (1.15.0). Gere o AAB com
@@ -538,6 +540,18 @@ Novidades: o Diário ganhou o Guia do Guardião, com 9 capítulos sobre como jog
 </pt-BR>
 <en-US>
 New: the Journal now has the Guardian's Guide, with 9 chapters on how to play, evolutions, unions, bosses and getting stronger. On level-up, every card now shows all possible combos: the weapons a relic evolves and, on weapons, the evolution relic and the union partner, even ones you don't have yet. Shop-ready alerts and boss dialogues are on by default.
+</en-US>
+```
+
+### 9.5.3 Notas da versão 1.18.0 (versionCode 36)
+Para o envio com as habilidades dos guardiões (1.18.0):
+
+```
+<pt-BR>
+Novidades: cada guardião ganhou 3 habilidades ligadas à sua história, liberadas nos níveis 1, 5 e 10 da partida, com recarga e uma energia própria: a Chama da Ordem da Aki enche na luz da lanterna, a Sombra do Kenta cresce em movimento, o Sangue Oni da Yuki vem dos abates e pode ser pago com vida. São 21 habilidades com efeitos, sons e o grito de cada guardião. Use os 3 botões ao lado do Golpe da Lanterna, as teclas 1/2/3 ou X/Y/B no controle.
+</pt-BR>
+<en-US>
+New: every guardian now has 3 abilities tied to their story, unlocked at run levels 1, 5 and 10, with cooldowns and an energy of their own: Aki's Order's Flame fills in the lantern light, Kenta's Shadow grows while moving, Yuki's Oni Blood comes from kills and can be paid with health. 21 abilities with their own effects, sounds and each guardian's battle cry. Use the 3 buttons next to the Lantern Strike, keys 1/2/3 or X/Y/B on a controller.
 </en-US>
 ```
 
@@ -610,7 +624,7 @@ O jogo não precisa de credenciais de login para o robô.
 - [ ] AdMob: mensagem GDPR publicada (estados dos EUA opcional)
 - [ ] AdMob: aparelho cadastrado como dispositivo de teste
 - [ ] Play Console: perfil de pagamentos (comerciante) com dados fiscais
-- [ ] AAB `1.7.0` gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
+- [ ] AAB da versão atual (hoje `1.18.0`) gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
       anúncio, premiados, consentimento, "Privacidade e anúncios", "Restaurar compras")
 - [ ] Assinatura de apps do Google Play aceita
 - [ ] Teste interno enviado (1º AAB com `BILLING`)

@@ -5,6 +5,10 @@ extends Node2D
 
 signal died
 
+## Mira das habilidades (aim_direction): movimento atual (ou a última direção), ou o inimigo
+## mais próximo dentro do alcance (sem inimigo, cai na direção do movimento).
+enum Aim { MOVE, NEAREST }
+
 ## Hitbox ~60% da largura do sprite: na dúvida, a favor do jogador (plano 8.7.2).
 const RADIUS := 4.0
 const ACCEL_TIME := 0.08
@@ -35,6 +39,9 @@ const SLASH_GHOST_LAG: Array[float] = [0.022, 0.045]
 const SLASH_GHOST_ALPHA: Array[float] = [0.35, 0.18]
 ## Tempo para os vultos sumirem depois do corte.
 const SLASH_GHOST_FADE := 0.07
+## Avanço das habilidades (dash/blink): passo máximo de cada sub-passo, para o deslize nos
+## obstáculos (WorldMap.resolve) não deixar atravessar um tronco num passo largo.
+const DASH_SUBSTEP := 4.0
 
 var hero: Dictionary = {}
 var stats := StatBlock.new()
@@ -57,6 +64,9 @@ var lava_cd: float = 0.0
 var no_regen: bool = false
 var aura_radius: float = 0.0
 var aura_color := Color(1.0, 0.85, 0.5)
+## Contorno das habilidades (Corpo de Diamante, Têmpera): cor do aro em volta do corpo, que
+## também tinge o corpo de leve (alpha 0 = sem). Só desenho; o comportamento do herói escreve.
+var ability_rim := Color(1.0, 1.0, 1.0, 0.0)
 var clone_time: float = 0.0
 var clone_offset := Vector2(-18, -6)
 var damage_taken_time: float = 0.0
@@ -76,6 +86,20 @@ var glow: float = 1.0
 ## Golpe de espada (só desenho): tempo restante, de SLASH_TIME (ou SLASH_FINISHER_TIME) até 0.
 ## O lado do corte vira o corpo só no desenho (facing_x, da simulação, não muda).
 var slash_time: float = 0.0
+## Habilidades dos guardiões (AbilitySystem), todas no passo fixo e zeradas no reset():
+## avanço em curso (tempo restante, velocidade e o tempo total), redução de dano recebido
+## (multiplicador), espinhos (fração do dano de contato devolvida e a fonte do dano para o
+## registro) e armadura extra temporária.
+var dash_time: float = 0.0
+var dash_velocity := Vector2.ZERO
+var dash_total: float = 0.0
+var guard_time: float = 0.0
+var guard_mult: float = 1.0
+var thorns_time: float = 0.0
+var thorns_fraction: float = 0.0
+var thorns_source: StringName = &""
+var armor_time: float = 0.0
+var armor_bonus: float = 0.0
 
 var _sheet: SpriteSheet
 var _shadow: Texture2D
@@ -147,12 +171,22 @@ func reset() -> void:
 	lava_cd = 0.0
 	no_regen = false
 	aura_radius = 0.0
+	ability_rim.a = 0.0
 	clone_time = 0.0
 	damage_taken_time = 0.0
 	cast_time = 0.0
 	_cast_lock = 0.0
 	slash_time = 0.0
 	_slash_len = 0.0
+	dash_time = 0.0
+	dash_velocity = Vector2.ZERO
+	dash_total = 0.0
+	guard_time = 0.0
+	guard_mult = 1.0
+	thorns_time = 0.0
+	thorns_fraction = 0.0
+	armor_time = 0.0
+	armor_bonus = 0.0
 	down = 0.0
 	chill = 0.0
 	glow = 1.0
@@ -167,6 +201,10 @@ func max_hp() -> float:
 func step(dt: float) -> void:
 	prev_pos = sim_pos
 	if not is_alive:
+		return
+	_step_buffs(dt)
+	if dash_time > 0.0:
+		_step_dash(dt)
 		return
 	var wish := move_input.limit_length(1.0)
 	# Superfícies lentas (SurfaceSystem): mais lento só sobre o solo; ao sair recupera até 1.0.
@@ -200,6 +238,132 @@ func step(dt: float) -> void:
 	_walk_time += dt * (velocity.length() / maxf(top_speed, 1.0))
 
 
+# --- Habilidades dos guardiões (primitivas do jogador) ------------------------------
+
+## Durações das habilidades (redução de dano, espinhos, armadura) no passo fixo.
+func _step_buffs(dt: float) -> void:
+	if guard_time > 0.0:
+		guard_time -= dt
+		if guard_time <= 0.0:
+			guard_mult = 1.0
+	if thorns_time > 0.0:
+		thorns_time -= dt
+	if armor_time > 0.0:
+		armor_time -= dt
+		if armor_time <= 0.0:
+			armor_bonus = 0.0
+
+
+## Passo do avanço: anda na velocidade do dash deslizando nos obstáculos (como o andar) e sem
+## sair da arena; o resto do passo normal (invencibilidade, regeneração) continua.
+func _step_dash(dt: float) -> void:
+	var step_dt := minf(dt, dash_time)
+	dash_time -= dt
+	sim_pos = _slide(sim_pos, dash_velocity * step_dt)
+	velocity = dash_velocity
+	if dash_time <= 0.0:
+		# Sai do avanço na velocidade de corrida, sem tranco.
+		velocity = dash_velocity.normalized() * stats.get_stat("speed")
+		dash_velocity = Vector2.ZERO
+	if invuln > 0.0:
+		invuln -= dt
+	if lava_cd > 0.0:
+		lava_cd -= dt
+	if clone_time > 0.0:
+		clone_time -= dt
+	if not no_regen:
+		heal(stats.get_stat("regen") * dt)
+	damage_taken_time += dt
+	_walk_time += dt
+
+
+## Move `delta` a partir de `from` em sub-passos de DASH_SUBSTEP px, cada um empurrado para fora
+## dos obstáculos e preso aos limites da arena (o mesmo do movimento normal).
+func _slide(from: Vector2, delta: Vector2) -> Vector2:
+	var world := game().world
+	var parts := maxi(1, ceili(delta.length() / DASH_SUBSTEP))
+	var at := from
+	for _k: int in range(parts):
+		at = world.clamp_to_bounds(world.resolve(at + delta / parts, RADIUS + 1.0))
+	return at
+
+
+## Avanço de `distance` px em `seconds` na direção `toward` (habilidades), invencível durante o
+## avanço e mais `extra_invuln` s. Desliza nos obstáculos e para na borda da arena.
+func dash(toward: Vector2, distance: float, seconds: float, extra_invuln: float = 0.1) -> void:
+	if not is_alive or toward == Vector2.ZERO:
+		return
+	var d := toward.normalized()
+	seconds = maxf(seconds, GameClock.STEP)
+	dash_time = seconds
+	dash_total = seconds
+	dash_velocity = d * distance / seconds
+	invuln = maxf(invuln, seconds + extra_invuln)
+	_face(d)
+
+
+## Teleporte instantâneo de até `distance` px (habilidades): o mesmo deslize do avanço, num passo
+## só. Devolve a posição final; fica invencível `invuln_time` s.
+func blink(toward: Vector2, distance: float, invuln_time: float = 0.2) -> Vector2:
+	if not is_alive or toward == Vector2.ZERO:
+		return sim_pos
+	var d := toward.normalized()
+	sim_pos = _slide(sim_pos, d * distance)
+	prev_pos = sim_pos
+	invuln = maxf(invuln, invuln_time)
+	_face(d)
+	return sim_pos
+
+
+func is_dashing() -> bool:
+	return dash_time > 0.0
+
+
+func _face(d: Vector2) -> void:
+	facing = d
+	if absf(d.x) > 0.2:
+		facing_x = signf(d.x)
+	dir = SpriteSheet.dir_from_vector(d, dir)
+
+
+## Dano recebido × `mult` por `seconds` (vale a redução mais forte em curso).
+func add_guard(mult: float, seconds: float) -> void:
+	guard_mult = minf(guard_mult, mult) if guard_time > 0.0 else mult
+	guard_time = maxf(guard_time, seconds)
+
+
+## Devolve `fraction` do dano de contato a quem encostar, por `seconds` (EnemyManager._contact);
+## `source` é o id do dano devolvido (registro por arma/habilidade).
+func add_thorns(fraction: float, seconds: float, source: StringName) -> void:
+	thorns_fraction = maxf(thorns_fraction, fraction) if thorns_time > 0.0 else fraction
+	thorns_time = maxf(thorns_time, seconds)
+	thorns_source = source
+
+
+## Dano devolvido a um inimigo que causou `contact` de dano por contato (0 sem espinhos).
+func thorns_damage(contact: float) -> float:
+	return contact * thorns_fraction if thorns_time > 0.0 else 0.0
+
+
+## Armadura extra de `amount` por `seconds` (soma com o atributo "armor").
+func add_armor(amount: float, seconds: float) -> void:
+	armor_bonus = maxf(armor_bonus, amount) if armor_time > 0.0 else amount
+	armor_time = maxf(armor_time, seconds)
+
+
+## Direção das habilidades: Aim.MOVE = o movimento pedido agora ou, parado, a última direção;
+## Aim.NEAREST = o inimigo mais próximo até `reach` px (sem ele, como MOVE). Só lê a simulação.
+func aim_direction(mode: int = Aim.MOVE, reach: float = 200.0) -> Vector2:
+	if mode == Aim.NEAREST:
+		var enemies := game().enemies
+		var target := enemies.nearest(sim_pos, reach)
+		if target >= 0 and enemies.pos[target].distance_squared_to(sim_pos) > 0.01:
+			return (enemies.pos[target] - sim_pos).normalized()
+	if move_input.length_squared() > 0.01:
+		return move_input.normalized()
+	return facing if facing != Vector2.ZERO else Vector2.RIGHT
+
+
 func _surface_speed() -> float:
 	var surfaces := SurfaceSystem.of(get_parent())
 	return 1.0 if surfaces == null else surfaces.player_factor(sim_pos)
@@ -229,20 +393,26 @@ func play_hurt_sound() -> bool:
 
 
 ## Única porta de entrada do dano recebido (plano 4.15). `source` é o id do inimigo, do
-## chefe ou do perigo, para o registro e a causa da morte.
-func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> void:
+## chefe ou do perigo, para o registro e a causa da morte. A redução (add_guard) e a armadura
+## extra (add_armor) das habilidades entram aqui. Devolve o dano que de fato tirou da vida.
+func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> float:
 	if not is_alive:
-		return
+		return 0.0
 	if invuln > 0.0:
 		damage.blocked += 1
-		return
+		return 0.0
 	var now := GameClock.game_time
-	var final := damage.resolve(amount, stats.get_stat("armor"), max_hp(), game().mode == "brisa", now)
+	if guard_time > 0.0:
+		amount *= guard_mult
+	var armor := stats.get_stat("armor") + (armor_bonus if armor_time > 0.0 else 0.0)
+	var final := damage.resolve(amount, armor, max_hp(), game().mode == "brisa", now)
 	invuln = INVULN_TIME
 	if final <= 0.0:
-		return
+		return 0.0
 	damage.record(source, final, now)
 	hp -= final
+	if game().abilities != null:
+		game().abilities.on_damage_taken(final)
 	_hit_flash = 0.12
 	damage_taken_time = 0.0
 	game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), final,
@@ -254,15 +424,16 @@ func take_damage(amount: float, source: StringName = DamageControl.UNKNOWN) -> v
 	if god_mode:
 		hp = maxf(hp, 1.0)
 	if hp > 0.0:
-		return
+		return final
 	hp = 0.0
 	# Revive do Santuário/Kami primeiro (plano 17.6).
 	if revives_used < int(stats.get_stat("revive")) and not game().no_revive:
 		revives_used += 1
 		revive()
-		return
+		return final
 	is_alive = false
 	died.emit()
+	return final
 
 
 func revive(fraction: float = 0.5) -> void:
@@ -444,6 +615,10 @@ func _draw_body(offset: Vector2, tint: Color, main: bool) -> void:
 		var rim := Color(CORPSE_RIM.r, CORPSE_RIM.g, CORPSE_RIM.b, CORPSE_RIM.a * chill)
 		for d: Vector2 in RIM_DIRS:
 			_draw_sprite(_sheet.flash_texture, offset + d, false, rim, angle, frame)
+	if main and ability_rim.a > 0.0:
+		tint = tint.lerp(Color(ability_rim, 1.0), ability_rim.a * 0.3)
+		for d: Vector2 in RIM_DIRS:
+			_draw_sprite(_sheet.flash_texture, offset + d, false, ability_rim, angle, frame)
 	_draw_sprite(tex, offset, moving, tint, angle, frame)
 	if main and glow > 0.0:
 		# Brilho da lanterna carregada pela guardiã (na mão, para heróis com "hand").

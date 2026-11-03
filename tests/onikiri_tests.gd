@@ -33,6 +33,7 @@ func run(host: Node, check: Callable) -> void:
 	_check_finisher(game, weapon, check)
 	_check_trails(game, weapon, check)
 	_check_wave(game, check)
+	_check_no_polygons(check)
 	game.queue_free()
 	GameClock.paused = false
 	await host.get_tree().process_frame
@@ -182,3 +183,15 @@ func _clear(game: HyakkiGame) -> void:
 		if game.enemies.alive[i] == 1:
 			game.enemies.despawn(i)
 	game.enemies.spatial.clear()
+
+
+## A meia-lua é redesenhada a cada quadro: nada de draw_colored_polygon (buffer novo na GPU e
+## "Invalid polygon data, triangulation failed" com as pontas finas), só Stroke.band.
+func _check_no_polygons(check: Callable) -> void:
+	var source := (load("res://scripts/weapons/onikiri.gd") as GDScript).source_code
+	var offenders: PackedStringArray = []
+	for call: String in ["draw_polygon(", "draw_colored_polygon(", "draw_polyline(", "draw_arc(", "draw_multiline("]:
+		if source.contains(call):
+			offenders.append(call)
+	check.call(offenders.is_empty() and source.contains("Stroke.band("),
+			"Onikiri desenha a meia-lua com Stroke.band, sem polígono do motor %s" % [offenders])

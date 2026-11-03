@@ -24,6 +24,10 @@ const DEFAULT_LANTERN := Color(1.0, 0.8, 0.3)
 const MOON_HP := 0.25
 const MOON_REWARD := 0.15
 const MAX_MOON := 5  # Lua Vermelha máxima (V)
+## Comportamentos de arma ("behavior" em data/weapons.json): scripts/weapons/<behavior>.gd.
+const WEAPON_BEHAVIORS: Array[String] = ["katana", "shuriken", "kunai", "ofuda", "incense", "kusarigama",
+		"smoke_bomb", "raijin", "fujin_fan", "hurricane", "yumi", "taiko", "hitodama", "typhoon",
+		"blade_cyclone", "kaminari", "inazuma", "onikiri"]
 
 var config: Dictionary = {}
 var stage: Dictionary = {}
@@ -51,6 +55,8 @@ var fx: FxLayer
 var level_up: LevelUpSystem
 var chests: ChestSystem
 var ultimate: UltimateSystem
+## Habilidades dos guardiões: energia, recargas, efeitos e entrada (scripts/systems/ability_system.gd).
+var abilities: AbilitySystem
 var tracker: RunTracker
 var hud: Hud
 var death: DeathSequence
@@ -201,7 +207,8 @@ func snapshot() -> Dictionary:
 		"banished": Array(level_up.banished).map(func(b: StringName) -> String: return String(b)),
 		"rerolls": level_up.rerolls, "skips": level_up.skips, "banishes": level_up.banishes,
 		"kami": Array(kami.accepted).map(func(k: StringName) -> String: return String(k)),
-		"ult_charge": ultimate.charge, "kills": tracker.kills, "ryo_run": tracker.ryo,
+		"ult_charge": ultimate.charge, "abilities": abilities.state(), "kills": tracker.kills,
+		"ryo_run": tracker.ryo,
 		"evolutions": Array(tracker.evolutions).map(func(e: StringName) -> String: return String(e)),
 		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
@@ -242,6 +249,7 @@ func restore_snapshot(s: Dictionary) -> void:
 	player.revives_used = int(s.get("revives_used", 0))
 	player.damage.restore(s.get("damage", {}))
 	ultimate.charge = float(s.get("ult_charge", 0.0))
+	abilities.load_state(s.get("abilities", {}))
 	tracker.kills = int(s.get("kills", 0))
 	tracker.ryo = int(s.get("ryo_run", 0))
 	for id: Variant in s.get("evolutions", []):
@@ -318,6 +326,7 @@ func _build() -> void:
 	level_up = LevelUpSystem.new(self)
 	chests = ChestSystem.new(self)
 	ultimate = UltimateSystem.new(self)
+	abilities = AbilitySystem.new(self)
 	hud = Hud.new()
 	hud.game = self
 	add_child(hud)
@@ -379,6 +388,7 @@ func start_run(cfg: Dictionary) -> void:
 	kami.reset()
 	lantern.reset()
 	ultimate.reset()
+	abilities.reset()
 	tracker = RunTracker.new()
 	rift.reset()
 	no_revive = false
@@ -446,6 +456,7 @@ func _on_tick(dt: float) -> void:
 	rift.step(dt)
 	lantern.step(dt)
 	ultimate.step(dt)
+	abilities.step(dt)
 	fx.step(dt)
 	tracker.step(dt, lantern.radius, player.damage_taken_time)
 	var t4 := Time.get_ticks_usec()
@@ -527,6 +538,7 @@ func _handle_actions() -> void:
 		cycle_speed()
 	if Input.is_action_just_pressed(&"ultimate") and running and not GameClock.paused:
 		ultimate.activate()
+	abilities.handle_input()
 	if Input.is_action_just_pressed(&"debug_overlay"):
 		hud.toggle_debug()
 	if Input.is_action_just_pressed(&"debug_hitbox"):
@@ -674,45 +686,11 @@ func _make_weapon(id: StringName) -> Weapon:
 	var data := DB.weapon(id)
 	if data.is_empty():
 		return null
-	match String(data.get("behavior", "")):
-		"katana":
-			return Katana.new(self, id)
-		"shuriken":
-			return Shuriken.new(self, id)
-		"kunai":
-			return Kunai.new(self, id)
-		"ofuda":
-			return Ofuda.new(self, id)
-		"incense":
-			return Incense.new(self, id)
-		"kusarigama":
-			return Kusarigama.new(self, id)
-		"smoke_bomb":
-			return SmokeBomb.new(self, id)
-		"raijin":
-			return Raijin.new(self, id)
-		"fujin_fan":
-			return FujinFan.new(self, id)
-		"hurricane":
-			return HurricaneWeapon.new(self, id)
-		"yumi":
-			return Yumi.new(self, id)
-		"taiko":
-			return Taiko.new(self, id)
-		"hitodama":
-			return Hitodama.new(self, id)
-		"typhoon":
-			return Typhoon.new(self, id)
-		"blade_cyclone":
-			return BladeCyclone.new(self, id)
-		"kaminari":
-			return Kaminari.new(self, id)
-		"inazuma":
-			return Inazuma.new(self, id)
-		"onikiri":
-			return Onikiri.new(self, id)
-	push_error("Arma sem comportamento: %s" % id)
-	return null
+	var behavior := String(data.get("behavior", ""))
+	if not WEAPON_BEHAVIORS.has(behavior):
+		push_error("Arma sem comportamento: %s" % id)
+		return null
+	return (load("res://scripts/weapons/%s.gd" % behavior) as GDScript).new(self, id) as Weapon
 
 
 func _draw_weapons() -> void:
@@ -736,6 +714,8 @@ func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2,
 	if prop:
 		return
 	tracker.on_damage(weapon_id, amount)
+	if not dot:
+		abilities.on_hit(weapon_id)
 	fx.on_hit(weapon_id, at, amount, crit, dir, dot, enemy)
 	hit_sounds.hit(weapon_id, crit, step_index)
 
@@ -815,6 +795,7 @@ func on_prop_destroyed(index: int, at: Vector2) -> void:
 
 func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: StringName,
 		was_elite: bool, ai: int) -> void:
+	abilities.on_kill()
 	if ai == EnemyManager.AI.BOSS:
 		return
 	tracker.on_kill(enemy_id, GameClock.game_time, at.distance_squared_to(player.sim_pos) > lantern.radius ** 2)
@@ -1094,6 +1075,7 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 		if _quit_at <= 0.0:
 			print(state_summary("FIM"))
 			print(player.damage.report_line())
+			print(abilities.uses_line())
 			# Reinicia no próximo quadro, fora do passo que matou a guardiã.
 			start_run.call_deferred(config)
 		return
@@ -1129,6 +1111,7 @@ func _finish_headless() -> void:
 	_finished = true
 	print(state_summary("FIM"))
 	print(player.damage.report_line())
+	print(abilities.uses_line())
 	running = false
 	GameClock.paused = true
 	get_tree().quit()
@@ -1148,7 +1131,8 @@ func _weapon_summary() -> String:
 	var parts: PackedStringArray = []
 	for weapon: Weapon in weapons:
 		parts.append("%s%d" % [weapon.id, weapon.level])
-	return ",".join(parts) + SurfaceSystem.hash_tag_of(self)  # + lentidão das superfícies (determinismo)
+	# + lentidão das superfícies e as habilidades (determinismo).
+	return ",".join(parts) + SurfaceSystem.hash_tag_of(self) + abilities.hash_tag()
 
 
 # --- Câmera, amanhecer, velocidade ------------------------------------------------

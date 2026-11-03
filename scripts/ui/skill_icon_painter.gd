@@ -152,6 +152,15 @@ static func draw_star(ci: CanvasItem, corner: Vector2) -> void:
 				ci.draw_rect(Rect2(o + Vector2(x + 1, y + 1), Vector2.ONE), BADGE_MAX if y > 0 or x != 2 else Color("fff6b8"))
 
 
+## Número em dígitos 3x5 com o canto superior esquerdo em `at` (4 px por dígito).
+static func draw_digits(ci: CanvasItem, at: Vector2, text: String, color: Color) -> void:
+	var x := at.x
+	for ch: String in text:
+		if ch >= "0" and ch <= "9":
+			_digit(ci, Vector2(x, at.y), int(ch), color)
+		x += 4.0
+
+
 static func _digit(ci: CanvasItem, at: Vector2, d: int, color: Color) -> void:
 	var rows: Array = DIGITS[clampi(d, 0, 9)]
 	for y: int in range(5):

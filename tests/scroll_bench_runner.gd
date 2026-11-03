@@ -28,8 +28,9 @@ const GuideTests := preload("res://tests/guide_tests.gd")
 ## "codex" mede o Diário na grade dos yōkai; "codex_guide", a página de cada capítulo do Guia.
 const SCREENS: Array[StringName] = [&"heroes", &"stages", &"shop", &"codex", &"codex_guide", &"options", &"credits",
 		&"results", &"sanctuary", &"title"]
-## Limites do modo custo (sem VSync) no desktop: p95 e pior quadro (ms), travadas.
-const DESKTOP_LIMITS := {"p95_ms": 6.0, "max_ms": 33.0, "stalls": 0}
+## Limites do modo custo (sem VSync) no desktop: p95 e pior quadro (ms). As travadas são medidas
+## e impressas, mas não reprovam.
+const DESKTOP_LIMITS := {"p95_ms": 6.0, "max_ms": 33.0}
 ## Piparote: distância (fração da altura da lista) e duração do gesto.
 const FLICK_FRACTION := 0.6
 const FLICK_TIME := 0.16

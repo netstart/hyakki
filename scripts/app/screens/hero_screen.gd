@@ -2,8 +2,9 @@ extends Screen
 ## Escolha do guardião (plano 3.4): palco à esquerda com o guardião ampliado (respira, olha
 ## de lado), aura e partículas do elemento dele e o kanji do nome ao fundo; fila de retratos
 ## em molduras embaixo (bloqueados em silhueta com cadeado); painel de laca à direita com
-## nome, kanji, papel, história, atributos em barras, arma inicial, Golpe da Lanterna,
-## lanterna (cosmético) e "Escolher fase" em destaque. Bloqueados mostram como liberar.
+## nome, kanji, papel, história, atributos em barras, arma inicial, Golpe da Lanterna, energia e
+## as 3 habilidades (AbilitySheet), lanterna (cosmético) e "Escolher fase" em destaque.
+## Bloqueados mostram como liberar.
 ##
 ## Efeitos seguem GfxQuality.budget("ui_fx"): 0 = parado (sem partículas nem deslize),
 ## 1 = aura que pulsa e poucas partículas, 2 = raios de luz e partículas cheias.
@@ -52,6 +53,8 @@ var _weapon_name: Label
 var _ult_icon: TextureRect
 var _ult_name: Label
 var _ult_desc: Label
+## Energia e as 3 habilidades do guardião (scripts/ui/ability_sheet.gd).
+var _abilities: AbilitySheet
 var _bottom: BoxContainer
 var _cosmetic: OptionButton
 var _go: Button
@@ -166,6 +169,7 @@ func _select(id: StringName) -> void:
 	_ult_icon.texture = _load("res://assets/art/ui/icons/%s.png" % look["ult"])
 	_ult_name.text = tr("ultimate.%s.name" % ult)
 	_ult_desc.text = tr("ultimate.%s.desc" % ult)
+	_abilities.show_hero(id)
 	_lock_box.visible = not unlocked
 	_lock_text.text = tr("achievement.%s.desc" % data["unlock"]) if not unlocked else ""
 	_go.disabled = not unlocked
@@ -299,6 +303,8 @@ func _build_panel() -> void:
 	_ult_desc = MenuKit.text("", 12, Color(ThemeFactory.TEXT, 0.7))
 	_ult_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(_ult_desc)
+	_abilities = AbilitySheet.new()
+	info.add_child(_abilities)
 	var attrs := GridContainer.new()
 	attrs.name = "Attributes"
 	attrs.columns = 2

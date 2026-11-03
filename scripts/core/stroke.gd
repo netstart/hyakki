@@ -141,6 +141,25 @@ static func convex(ci: CanvasItem, points: PackedVector2Array, color: Color) -> 
 		ci.draw_primitive(tri, colors, _no_uv)
 
 
+## Faixa entre duas linhas com o mesmo número de pontos (meia-lua, anel aberto, fita de largura
+## variável): um quadrilátero por trecho, outer[k], outer[k+1], inner[k+1], inner[k]. Cobre o mesmo
+## que draw_colored_polygon(outer + inner invertido), mas não depende da triangulação do motor
+## (que falha com "Invalid polygon data" quando as pontas se tocam ou a faixa se cruza).
+static func band(ci: CanvasItem, outer: PackedVector2Array, inner: PackedVector2Array, color: Color) -> void:
+	var n := mini(outer.size(), inner.size())
+	if n < 2:
+		return
+	drawn += 1
+	var colors := PackedColorArray([color])
+	var quad := PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO])
+	for k: int in range(n - 1):
+		quad[0] = outer[k]
+		quad[1] = outer[k + 1]
+		quad[2] = inner[k + 1]
+		quad[3] = inner[k]
+		ci.draw_primitive(quad, colors, _no_uv)
+
+
 ## Deslocamento da borda num ponto da polilinha (bissetriz com a meia-esquadria limitada a 3x),
 ## como compute_polyline_edge_offset_clamped do motor.
 static func edge_offset(segment_dir: Vector2, prev_dir: Vector2) -> Vector2:

@@ -61,6 +61,7 @@ def data_keys() -> set:
         keys |= {f"mission.{kind}.name", f"mission.{kind}.desc", f"mission.cat.{m['cat']}"}
     keys |= {f"mission.cat.{c}" for c in ("stages", "heroes", "weapons", "bosses", "lantern", "kami",
                                           "endless", "kills", "daily", "collection")}
+    keys |= ability_keys()
     for i in data("items"):
         keys.add(f"item.{i['id']}.name")
     for s in data("shop"):
@@ -100,6 +101,48 @@ def data_keys() -> set:
              "cooldown", "amount", "duration", "magnet", "luck", "growth", "greed", "curse", "light")}
     keys |= {"levelup.reroll", "levelup.skip", "levelup.banish", "results.weapon", "results.level",
              "results.damage", "results.dps"}
+    return keys
+
+
+# Habilidades dos guardiões (.ai/04-habilidades-dos-guardioes.md): IDs fixos por herói
+# (energia, habilidades 1-3). Com data/abilities.json presente, os IDs vêm de lá.
+ABILITY_IDS = {
+    "aki": ("order_flame", ("dawn_step", "lantern_wall", "century_flame")),
+    "kenta": ("shadow", ("shadow_step", "kawarimi", "makibishi")),
+    "hana": ("prayer", ("harae", "kekkai", "grandmother_seal")),
+    "goro": ("penance", ("diamond_body", "shakujo", "master_mantra")),
+    "rin": ("focus", ("hamaya", "hunting_trap", "swallow_leap")),
+    "tora": ("forge_heat", ("anvil_hammer", "chain_pull", "quench")),
+    "yuki": ("oni_blood", ("oni_claw", "oni_roar", "onikiri_whirl")),
+}
+# Textos da UI e do capítulo do Guia das habilidades; ficam aqui até o código usá-los em tr("...")
+# (aí a busca literal já os encontra e esta lista pode sair).
+ABILITY_UI_KEYS = (
+    "ability.locked", "ability.no_energy", "ability.cooldown", "ability.cost", "ability.level_req",
+    "ability.blood_price", "heroes.abilities_label", "heroes.energy_label", "tutorial.abilities",
+    "guide.ch.abilities", "guide.abilities.intro", "guide.abilities.unlock_h", "guide.abilities.unlock",
+    "guide.abilities.energy_h", "guide.abilities.energy", "guide.abilities.heroes_h", "guide.abilities.heroes",
+    "guide.abilities.hero_line", "guide.abilities.ability_line", "guide.abilities.blood",
+    "guide.abilities.unknown", "guide.abilities.keys_h", "guide.abilities.keys", "guide.abilities.hint",
+    "guide.link.heroes",
+)
+
+
+def ability_keys() -> set:
+    table = {h: (e, list(a)) for h, (e, a) in ABILITY_IDS.items()}
+    path = ROOT / "data" / "abilities.json"
+    if path.exists():
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        heroes = raw.get("heroes", raw) if isinstance(raw, dict) else {h["id"]: h for h in raw}
+        table = {}
+        for hid, h in heroes.items():
+            if isinstance(h, dict) and "energy" in h:
+                energy = h["energy"]["id"] if isinstance(h["energy"], dict) else h["energy"]
+                table[hid] = (energy, [a["id"] for a in h.get("abilities", [])])
+    keys = set(ABILITY_UI_KEYS)
+    for energy, abilities in table.values():
+        keys |= {f"energy.{energy}.name", f"energy.{energy}.desc"}
+        keys |= {f"ability.{a}.{x}" for a in abilities for x in ("name", "desc")}
     return keys
 
 

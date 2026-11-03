@@ -8,7 +8,7 @@ Regras seguidas (política de metadados do Google Play): sem ranking ou superlat
 sem chamada para ação ("baixe já"), sem emoji, sem CAIXA ALTA, sem preço ou promoção, e só afirmações
 verdadeiras sobre o conteúdo. Números conferidos com o README em 25/10/2026: 7 guardiões, 6 fases
 (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos, 37 yōkai, 12 chefes, 15 Kami,
-172 missões (41 conquistas + 131 missões novas). Nomes de modos iguais aos do jogo (`i18n/strings.csv`).
+172 missões (41 conquistas + 131 missões novas), 21 habilidades e 7 energias (1.18.0). Nomes de modos iguais aos do jogo (`i18n/strings.csv`).
 
 **Atenção:** o jogo tem só anúncios premiados opcionais (o anúncio na abertura saiu do
 jogo) e duas compras únicas: "Apoiar o jogo", que dá a Lanterna Dourada e entrega as
@@ -31,6 +31,7 @@ Hyakki é um roguelike no estilo survivors, em pixel art e inspirado no folclore
 • Partidas de 15 minutos, jogáveis com um dedo: você só se move, as armas atacam sozinhas.
 • 26 armas: 12 básicas, 12 evoluções e 2 uniões secretas, além de 12 passivos. Cada nível traz uma escolha nova.
 • 7 guardiões com estilos próprios, 6 fases (uma delas secreta), 37 tipos de yokai e 12 chefes com padrões únicos.
+• 21 habilidades: cada guardião tem 3 poderes ligados à sua história, com recarga e uma energia própria, como a Chama da Ordem da Aki ou o Sangue Oni da Yuki.
 • Pactos com 15 Kami: bênçãos poderosas que cobram um preço.
 • Santuário com melhorias permanentes, 172 missões que desbloqueiam conteúdo e o Diário do Guardião, onde a história se revela aos poucos.
 • Lua Vermelha (I a V), Noite Sem Fim e Desafio Diário para quem quer mais.
@@ -54,6 +55,7 @@ Hyakki is a survivors-style roguelike in pixel art, inspired by Japanese folklor
 • 15-minute runs, playable with one finger: you only move, your weapons attack on their own.
 • 26 weapons: 12 base weapons, 12 evolutions and 2 secret unions, plus 12 passives. Every level-up is a new choice.
 • 7 guardians with their own playstyles, 6 stages (one of them secret), 37 kinds of yokai and 12 bosses with unique patterns.
+• 21 abilities: each guardian has 3 powers tied to their story, with cooldowns and an energy of their own, like Aki's Order's Flame or Yuki's Oni Blood.
 • Pacts with 15 Kami: powerful blessings that come at a price.
 • A Sanctuary of permanent upgrades, 172 missions that unlock content and the Guardian's Journal, where the story unfolds bit by bit.
 • Red Moon (I to V), Endless Night and a Daily Challenge for those who want more.
@@ -77,6 +79,7 @@ Hyakki es un roguelike de estilo survivors en pixel art, inspirado en el folclor
 • Partidas de 15 minutos que se juegan con un dedo: solo te mueves, tus armas atacan solas.
 • 26 armas: 12 básicas, 12 evoluciones y 2 uniones secretas, además de 12 pasivas. Cada nivel es una nueva decisión.
 • 7 guardianes con estilos propios, 6 fases (una de ellas secreta), 37 tipos de yokai y 12 jefes con patrones únicos.
+• 21 habilidades: cada guardián tiene 3 poderes ligados a su historia, con recarga y una energía propia, como la Llama de la Orden de Aki o la Sangre Oni de Yuki.
 • Pactos con 15 kami: bendiciones poderosas que tienen un precio.
 • Santuario con mejoras permanentes, 172 misiones que desbloquean contenido y el Diario del guardián, donde la historia se revela poco a poco.
 • Luna Roja (I a V), Noche Sin Fin y Desafío diario para quien quiera más.
@@ -100,6 +103,7 @@ Hyakki ist ein Roguelike im Survivors-Stil, in Pixel-Art und inspiriert von japa
 • 15-Minuten-Läufe, mit einem Finger spielbar: Du bewegst dich nur, deine Waffen greifen von selbst an.
 • 26 Waffen: 12 Grundwaffen, 12 Entwicklungen und 2 geheime Vereinigungen, dazu 12 passive Gegenstände. Jeder Stufenaufstieg ist eine neue Wahl.
 • 7 Wächter mit eigenem Spielstil, 6 Gebiete (eines davon geheim), 37 Arten von Yokai und 12 Bosse mit eigenen Mustern.
+• 21 Fähigkeiten: Jeder Wächter hat 3 Kräfte aus seiner Geschichte, mit Abklingzeit und eigener Energie, etwa Akis Ordensflamme oder Yukis Oni-Blut.
 • Pakte mit 15 Kami: mächtige Segen, die ihren Preis haben.
 • Ein Heiligtum mit dauerhaften Verbesserungen, 172 Missionen, die Inhalte freischalten, und das Wächtertagebuch, in dem sich die Geschichte Stück für Stück enthüllt.
 • Blutmond (I bis V), Endlose Nacht und Tägliche Herausforderung für alle, die mehr wollen.
@@ -123,6 +127,7 @@ Hyakki est un roguelike de type survivors en pixel art, inspiré du folklore jap
 • Parties de 15 minutes, jouables d'un seul doigt : tu te déplaces, tes armes attaquent seules.
 • 26 armes : 12 de base, 12 évolutions et 2 unions secrètes, plus 12 objets passifs. Chaque niveau est un nouveau choix.
 • 7 gardiens au style unique, 6 niveaux (dont un secret), 37 types de yokai et 12 boss aux attaques uniques.
+• 21 compétences : chaque gardien a 3 pouvoirs liés à son histoire, avec un temps de recharge et sa propre énergie, comme la Flamme de l'Ordre d'Aki ou le Sang oni de Yuki.
 • Pactes avec 15 kami : des bénédictions puissantes, mais qui ont un prix.
 • Un Sanctuaire d'améliorations permanentes, 172 missions qui débloquent du contenu et le Journal du gardien, où l'histoire se révèle peu à peu.
 • Lune rouge (I à V), Nuit sans fin et Défi du jour pour aller plus loin.
@@ -146,6 +151,7 @@ Seules des annonces récompensées facultatives sont proposées, et aucune n'int
 • Забеги по 15 минут, играть можно одним пальцем: ты только двигаешься, оружие атакует само.
 • 26 видов оружия: 12 базовых, 12 эволюций и 2 тайных союза, а также 12 пассивных предметов. Каждый уровень — новый выбор.
 • 7 стражей со своим стилем игры, 6 уровней (один из них секретный), 37 видов ёкаев и 12 боссов с уникальными атаками.
+• 21 умение: у каждого стража 3 силы из его истории, с перезарядкой и собственной энергией, например Пламя Ордена у Аки или Кровь они у Юки.
 • Договоры с 15 ками: сильные благословения, за которые придётся платить.
 • Святилище с постоянными улучшениями, 172 задания, открывающих контент, и Дневник стража, где история раскрывается постепенно.
 • Красная луна (I–V), Бесконечная ночь и Ежедневное испытание для тех, кому мало.
@@ -169,6 +175,7 @@ Hyakki adalah roguelike bergaya survivors dengan pixel art, terinspirasi cerita 
 • Permainan 15 menit, cukup dengan satu jari: kamu hanya bergerak, senjata menyerang sendiri.
 • 26 senjata: 12 senjata dasar, 12 evolusi, dan 2 penyatuan rahasia, ditambah 12 item pasif. Setiap naik level adalah pilihan baru.
 • 7 penjaga dengan gaya bermain masing-masing, 6 tahap (satu di antaranya rahasia), 37 jenis yokai, dan 12 bos dengan pola unik.
+• 21 kemampuan: tiap penjaga punya 3 kekuatan dari kisahnya, dengan jeda pakai dan energi sendiri, seperti Api Ordo milik Aki atau Darah Oni milik Yuki.
 • Perjanjian dengan 15 Kami: berkah kuat yang ada harganya.
 • Kuil dengan peningkatan permanen, 172 misi yang membuka konten, dan Jurnal Penjaga tempat cerita terungkap sedikit demi sedikit.
 • Bulan Merah (I–V), Malam Tanpa Akhir, dan Tantangan Harian untuk yang ingin lebih.
@@ -192,6 +199,7 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 1回15分、指一本で遊べる：動くだけで、武器は自動で攻撃する。
 • 武器26種：基本武器12種、進化12種、隠された合体2種。さらにパッシブ12種。レベルアップのたびに新しい選択を。
 • 個性豊かな守り人7人、ステージ6つ（うち1つは隠しステージ）、妖怪37種、独自の攻撃を持つボス12体。
+• 技21種：守り人それぞれに物語にちなんだ3つの技があり、再使用時間と固有の気力（灯の「教団の灯火」、雪の「鬼血」など）で放ちます。
 • 15柱の神との契り：強力な加護には代償がある。
 • 永続強化の神社、コンテンツを解放する172のミッション、物語が少しずつ明かされる「守り人の日記」。
 • 紅月（I〜V）、終わらぬ夜、デイリーチャレンジでさらなる挑戦を。
@@ -215,6 +223,7 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 15분 플레이, 손가락 하나로 즐기기: 움직이기만 하면 무기가 알아서 공격합니다.
 • 무기 26종: 기본 무기 12종, 진화 12종, 숨겨진 합체 2종, 그리고 패시브 12종. 레벨업마다 새로운 선택.
 • 저마다 플레이 스타일이 다른 수호자 7명, 스테이지 6개(그중 하나는 비밀), 요괴 37종, 고유한 패턴의 보스 12체.
+• 기술 21종: 수호자마다 자신의 이야기에서 나온 3가지 기술이 있으며, 재사용 대기시간과 고유한 기력(아키의 결사의 불꽃, 유키의 오니의 피 등)을 씁니다.
 • 15신과의 계약: 강력한 축복에는 대가가 따릅니다.
 • 영구 강화를 위한 신사, 콘텐츠를 해금하는 미션 172개, 이야기가 조금씩 드러나는 수호자의 일지.
 • 붉은 달(I~V), 끝없는 밤, 일일 도전으로 더 높은 난이도에 도전하세요.
@@ -238,6 +247,7 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 每局15分鐘，單指即可遊玩：你只需移動，武器會自動攻擊。
 • 26種武器：12種基礎武器、12種進化與2種隱藏合體，另有12種被動道具。每次升級都是新的抉擇。
 • 7位風格各異的守護者、6個關卡（其中1個為隱藏關卡）、37種妖怪，以及12位各具攻擊模式的首領。
+• 21種技能：每位守護者都有3種源自自身故事的力量，具冷卻時間與專屬氣力，例如燈的「教團燈火」或雪的「鬼血」。
 • 與15位神明締結契約：強大的祝福也有代價。
 • 提供永久強化的神社、可解鎖內容的172項任務，以及逐步揭曉故事的「守護者日誌」。
 • 紅月（I～V）、無盡之夜與每日挑戰，滿足想要更多挑戰的玩家。
@@ -261,6 +271,7 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 每局15分钟，单指即可游玩：你只需移动，武器会自动攻击。
 • 26种武器：12种基础武器、12种进化与2种隐藏合体，另有12种被动道具。每次升级都是新的抉择。
 • 7位风格各异的守护者、6个关卡（其中1个为隐藏关卡）、37种妖怪，以及12位各具攻击模式的首领。
+• 21种技能：每位守护者都有3种源自自身故事的力量，具冷却时间与专属气力，例如灯的“教团灯火”或雪的“鬼血”。
 • 与15位神明缔结契约：强大的祝福也有代价。
 • 提供永久强化的神社、可解锁内容的172项任务，以及逐步揭晓故事的“守护者日志”。
 • 红月（I～V）、无尽之夜与每日挑战，满足想要更多挑战的玩家。

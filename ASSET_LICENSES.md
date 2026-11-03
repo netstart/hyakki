@@ -32,6 +32,10 @@ Licenças do jogo, lidos do motor exportado (`Engine.get_copyright_info()`).
 | Hyakki - Kakuriyo portal art | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_portal_fx.py (2026-10-28) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_portal_fx.py |
 | Hyakki - procedural portal and mid-boss sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_portal_sfx.py (2026-10-28) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_portal_sfx.py |
 | Hyakki - Android backup export plugin | Hyakki project (Clayton K. N. Passos) | MIT | 1.0.0 (2026-10-29) | sim | não | `licenses/texts/MIT-Hyakki.txt` | addons/hyakki_android_backup/ |
+| Cici Fyre - Female RPG Voice Starter Pack | cicifyre (Cici Fyre) | CC0-1.0 | RPG Voice Starter Pack.zip (OpenGameArt, 2019-04-26); 15 of 90 files used | sim | não | `licenses/texts/CC0-1.0.txt` | https://opengameart.org/content/female-rpg-voice-starter-pack |
+| HaelDB - Male grunt/yelling sounds | HaelDB | CC0-1.0 | yelling sounds.zip (OpenGameArt, 2012-04-12); 11 of 63 files used | sim | não | `licenses/texts/CC0-1.0.txt` | https://opengameart.org/content/male-gruntyelling-sounds |
+| Hyakki - procedural guardian ability sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_ability_sfx.py and tools/gen_ability_voices.py (2026-11-01) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_ability_sfx.py |
+| Hyakki - guardian ability icons | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_ability_icons.py (2026-11-01) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_ability_icons.py |
 
 Verificação: `python -I tools/check_licenses.py` (cobertura de todos os arquivos de `assets/`,
 hash das cópias, licenças permitidas, data de verificação). Snapshots das páginas de origem em

@@ -14,6 +14,10 @@ extends RefCounted
 ##   em partes (cabeça, asas, corpo e cauda que seguem o caminho da cabeça).
 ## - Chefes de frente, sem folha de andar (Onibi, Yomi-hebi, Nuppeppō: data "breathe"): respiram
 ##   (squash lento, parados ou não) e, preparando um golpe, a silhueta pulsa na cor da aura.
+## - Estados das habilidades dos guardiões (status_flags): lento (tom azulado e flocos caindo
+##   devagar), preso (argola de ferro aos pés), com medo (treme, gota e linhas de pavor acima),
+##   atraído pela isca (seta no chão para a isca) e atordoado (estrelas). Só retângulos e o
+##   próprio sprite tingido, desenhados só em quem está afetado (500 inimigos sem custo extra).
 
 const SPAWN_TIME := 0.35
 const BOSS_SPAWN_TIME := 1.4
@@ -27,6 +31,23 @@ const STEP_SHAKE_GAP := 0.35
 const DRAGON_GAP := 11.0
 const DRAGON_SEGMENTS := 6
 const DRAGON_DIR := "res://assets/art/bosses/dragon/"
+## Estados das habilidades (status_flags): bits e as cores dos indicadores.
+const STATUS_SLOW := 1
+const STATUS_ROOT := 2
+const STATUS_FEAR := 4
+const STATUS_LURE := 8
+const STATUS_STUN := 16
+const SLOW_TINT := Color(0.55, 0.75, 1.0)
+const SLOW_FLAKE := Color(0.75, 0.9, 1.0, 0.85)
+const ROOT_IRON := Color(0.3, 0.31, 0.36)
+const ROOT_SHINE := Color(0.86, 0.88, 0.92)
+const FEAR_DROP := Color(0.55, 0.82, 1.0)
+const FEAR_GLOOM := Color(0.62, 0.55, 1.0, 0.8)
+const LURE_MARK := Color(1.0, 0.84, 0.4)
+## Inimigos com marca de estado (atordoado, lento, preso, medo, isca) desenhada por quadro.
+const MAX_STATUS_MARKS := 48
+## Elos da argola de quem está preso (pontos de uma elipse unitária, feitos uma vez).
+const ROOT_LINKS := 10
 
 var m: EnemyManager
 ## Qualidade atual (GfxQuality): sombras suaves, nível de efeitos e brilho aditivo.
@@ -44,6 +65,8 @@ var composite := PackedStringArray()
 ## Amplitude do "respiro" do chefe (data "breathe"; 0 = sem) e a cor da aura dele.
 var breathe := PackedFloat32Array()
 var aura := PackedColorArray()
+## Indicadores de estado desenhados no último quadro (testes e benchmark).
+var status_drawn: int = 0
 
 var _shadow: Texture2D
 var _soft: Texture2D
@@ -57,10 +80,18 @@ var _shake_left: float = 0.0
 var _trails: Dictionary = {}
 var _dragon: Dictionary = {}
 var _look := RandomNumberGenerator.new()
+var _ring := PackedVector2Array()
+## Inimigos com marca neste quadro (desenhadas depois de todos os corpos) e onde desenhar.
+var _marks := PackedInt32Array()
+var _mark_body := PackedVector2Array()
+var _mark_top := PackedFloat32Array()
+var _mark_feet := PackedFloat32Array()
 
 
 func _init(manager: EnemyManager) -> void:
 	m = manager
+	for k: int in range(ROOT_LINKS):
+		_ring.append(Vector2.from_angle(TAU * k / ROOT_LINKS))
 	_shadow = load("res://assets/art/actors/shadow.png") as Texture2D
 	_soft = EnemyFx.soft_texture()
 	_step_frame.resize(EnemyManager.CAPACITY)
@@ -200,6 +231,7 @@ func draw(canvas: CanvasItem) -> void:
 	var light_r := m.game.lantern.radius
 	var player_pos := m.game.player.position
 	var frozen := m.freeze_time > 0.0
+	status_drawn = 0
 	for i: int in _visible:
 		var t := m.kind[i]
 		if composite[t] == "dragon" and not _dragon.is_empty():
@@ -214,6 +246,9 @@ func draw(canvas: CanvasItem) -> void:
 		if m.decoy[i] == 1:
 			color.a = 0.85
 		color = EnemyManager.frozen_tint(color, frozen)
+		var status := status_flags(i)
+		if status & STATUS_SLOW:
+			color = slow_tint(color)
 		var src: Rect2
 		var flip := false
 		if sheet.layout == "region":
@@ -231,6 +266,9 @@ func draw(canvas: CanvasItem) -> void:
 		color.a *= born
 		# Atolado numa superfície lenta: desce 1–2 px (SurfaceSystem), volta ao recuperar.
 		var body := foot + Vector2(0.0, bob * s + _sink(i))
+		if status & STATUS_FEAR:
+			# Com medo: treme de um lado para o outro (1 px).
+			body.x += roundf(sin(time * 47.0 + i * 1.3) * 0.8)
 		canvas.draw_set_transform(body, 0.0, Vector2((-s if flip else s) * squash.x, s * squash.y * (0.4 + 0.6 * born)))
 		var rect := Rect2(Vector2(-size.x * 0.5, -size.y + 2.0), size)
 		var tex: Texture2D = sheet.outline_texture if m.elite[i] == 1 else sheet.texture
@@ -243,15 +281,116 @@ func draw(canvas: CanvasItem) -> void:
 			var f := clampf(m.flash[i] / 0.08, 0.0, 1.0) * (0.55 if m.is_boss(i) else 1.0)
 			var flash_color := Color(1.0, 0.35, 0.3, 0.5 * f) if reduce_flash else Color(1, 1, 1, f * color.a)
 			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, flash_color)
-		canvas.draw_set_transform(body, 0.0, Vector2.ONE)
-		var top := -(size.y - 2.0) * s * squash.y
+		if status != 0 or m.elite[i] == 1 or m.state[i] == EnemyManager.State.WINDUP:
+			_marks.append(i)
+			_mark_body.append(body)
+			_mark_top.append(-(size.y - 2.0) * s * squash.y)
+			_mark_feet.append(-bob * s)
+	# Marcas (coroa, estrelas, alerta e estados das habilidades) numa 2ª passada, por cima de todos
+	# os corpos: retângulos no meio dos sprites quebravam o lote de desenho a cada inimigo marcado
+	# (centenas de chamadas com a horda atordoada), e por cima elas leem no meio da multidão.
+	var shown := 0
+	for k: int in range(_marks.size()):
+		var i := _marks[k]
+		var top := _mark_top[k]
+		canvas.draw_set_transform(_mark_body[k], 0.0, Vector2.ONE)
+		var status := status_flags(i)
+		# Teto de marcas de estado por quadro (horda inteira atordoada ou presa): o resto do bando
+		# já lê pelo efeito da habilidade, e cada marca custa várias chamadas em GDScript.
+		if status != 0:
+			shown += 1
+			if shown > MAX_STATUS_MARKS:
+				status = 0
 		if m.elite[i] == 1:
 			_draw_crown(canvas, Vector2(0, top - 4.0 + sin(time * 4.0 + i) * 1.0))
-		if m.stun[i] > 0.0:
+		if status & STATUS_STUN:
 			_draw_stars(canvas, Vector2(0, top - 2.0), time)
 		if m.state[i] == EnemyManager.State.WINDUP and not m.is_boss(i):
 			_draw_alert(canvas, Vector2(0, top - 5.0), time)
+		if status & ~STATUS_STUN:
+			_draw_status(canvas, i, status, Vector2(0.0, _mark_feet[k]), top, time)
+	_marks.clear()
+	_mark_body.clear()
+	_mark_top.clear()
+	_mark_feet.clear()
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Estados das habilidades no inimigo `i` agora (bits STATUS_*; 0 = nenhum). Só leitura.
+func status_flags(i: int) -> int:
+	var flags := 0
+	if m.slow[i] > 0.0:
+		flags |= STATUS_SLOW
+	if m.root[i] > 0.0:
+		flags |= STATUS_ROOT
+	if m.fear[i] > 0.0:
+		flags |= STATUS_FEAR
+	elif m.lure[i] > 0.0:
+		flags |= STATUS_LURE
+	if m.stun[i] > 0.0:
+		flags |= STATUS_STUN
+	return flags
+
+
+## Lento: o próprio sprite puxado para o azul (sem desenho extra).
+static func slow_tint(base: Color) -> Color:
+	var tint := base.lerp(SLOW_TINT, 0.4)
+	tint.a = base.a
+	return tint
+
+
+## Indicadores de lento, preso, medo e isca, no espaço do corpo (`feet` = chão, `top` = cabeça).
+func _draw_status(canvas: CanvasItem, i: int, status: int, feet: Vector2, top: float, time: float) -> void:
+	var r := maxf(5.0, m.radius[i] * 1.2)
+	if status & STATUS_ROOT:
+		status_drawn += 1
+		# Argola de ferro aos pés: elos alternados claro/escuro e um brilho que corre.
+		var shine := int(time * 12.0 + i) % ROOT_LINKS
+		for k: int in range(ROOT_LINKS):
+			var p := (feet + Vector2(_ring[k].x * r, _ring[k].y * r * 0.4)).round()
+			var c := ROOT_SHINE if k == shine else (ROOT_IRON if k % 2 == 0 else ROOT_IRON.lerp(ROOT_SHINE, 0.55))
+			canvas.draw_rect(Rect2(p - Vector2(1, 0), Vector2(3, 2)), Color(0.05, 0.05, 0.08, 0.8))
+			canvas.draw_rect(Rect2(p - Vector2(1, 0), Vector2(2, 1)), c)
+		# Cadeado de ferro acima da cabeça: a argola aos pés some atrás da horda, o cadeado não.
+		var lock := Vector2(-2.0, top - 7.0).round()
+		canvas.draw_rect(Rect2(lock + Vector2(-1, -1), Vector2(7, 7)), Color(0.05, 0.05, 0.08, 0.85))
+		canvas.draw_rect(Rect2(lock + Vector2(1, 0), Vector2(3, 1)), ROOT_SHINE)
+		canvas.draw_rect(Rect2(lock + Vector2(0, 1), Vector2(1, 2)), ROOT_SHINE)
+		canvas.draw_rect(Rect2(lock + Vector2(4, 1), Vector2(1, 2)), ROOT_SHINE)
+		canvas.draw_rect(Rect2(lock + Vector2(0, 2), Vector2(5, 3)), ROOT_IRON.lerp(ROOT_SHINE, 0.35))
+		canvas.draw_rect(Rect2(lock + Vector2(2, 3), Vector2(1, 1)), Color(0.05, 0.05, 0.08))
+	if status & STATUS_SLOW:
+		status_drawn += 1
+		# Dois flocos frios caindo devagar ao lado do corpo.
+		for k: int in range(2):
+			var fall := fmod(time * 5.0 + i * 1.7 + k * 4.0, 9.0)
+			var x := (-r * 0.8 if k == 0 else r * 0.8) + sin(time * 2.0 + k + i) * 0.8
+			canvas.draw_rect(Rect2(Vector2(x, top + 2.0 + fall).round(), Vector2(1, 1)),
+					Color(SLOW_FLAKE, SLOW_FLAKE.a * (1.0 - fall / 9.0)))
+	if status & STATUS_FEAR:
+		status_drawn += 1
+		# Gota de suor ao lado da cabeça e linhas de pavor acima.
+		var drop := Vector2(r * 0.7 + 1.0, top + 1.0 + fmod(time * 6.0 + i, 3.0)).round()
+		canvas.draw_rect(Rect2(drop + Vector2(1, 0), Vector2(1, 1)), FEAR_DROP)
+		canvas.draw_rect(Rect2(drop + Vector2(0, 1), Vector2(3, 2)), FEAR_DROP)
+		canvas.draw_rect(Rect2(drop + Vector2(0, 1), Vector2(1, 1)), Color(1, 1, 1, 0.9))
+		for k: int in range(3):
+			var h := 3.0 if k == 1 else 2.0
+			canvas.draw_rect(Rect2(Vector2(-2.0 + k * 2.0, top - 3.0 - h).round(), Vector2(1, h)), FEAR_GLOOM)
+	if status & STATUS_LURE:
+		status_drawn += 1
+		# Seta no chão apontando para a isca (pulsa).
+		var to: Vector2 = m.goal[i] - m.pos[i]
+		if to.length_squared() > 1.0:
+			var dir := to.normalized()
+			var side := dir.orthogonal()
+			var tip := feet + dir * (r + 4.0)
+			var a := 0.6 + 0.4 * sin(time * 9.0 + i)
+			var c := Color(LURE_MARK, a)
+			canvas.draw_rect(Rect2(tip.round(), Vector2(1, 1)), c)
+			for k: int in range(1, 3):
+				canvas.draw_rect(Rect2((tip - dir * k + side * k).round(), Vector2(1, 1)), c)
+				canvas.draw_rect(Rect2((tip - dir * k - side * k).round(), Vector2(1, 1)), c)
 
 
 func _sheet_for(i: int) -> SpriteSheet:

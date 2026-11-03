@@ -58,6 +58,8 @@ var _top: Control
 var _speed_button: Button
 var _pause_button: Button
 var _ult_button: Button
+## Botões das habilidades em arco em volta do Golpe e a barra de energia (scripts/ui/ability_pad.gd).
+var _abilities: AbilityPad
 var _toast: Label
 var _toast_left: float = 0.0
 var _debug: Label
@@ -70,6 +72,7 @@ var _countdown_label: Label
 var _countdown_left: float = 0.0
 var _hint: Label
 var _hint_step: int = 0
+var _hint_since: float = 0.0
 
 ## Telas de nova habilidade, baú e pacto (scripts/ui/level_up_panel.gd, chest_panel.gd e
 ## kami_panel.gd).
@@ -147,8 +150,17 @@ func _ready() -> void:
 	_ult_button.offset_top = -ULT_SIZE - 10.0
 	_ult_button.offset_bottom = -10.0
 	_ult_button.draw.connect(_draw_ultimate)
-	_ult_button.pressed.connect(func() -> void: ultimate_pressed.emit())
+	# O toque do Golpe vem do AbilityPad (qualquer dedo, junto com o joystick): o Button só desenha.
+	_ult_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_ult_button)
+	_abilities = AbilityPad.new()
+	_abilities.name = "AbilityPad"
+	_abilities.blocked = func() -> bool: return overlay_open() or _gameplay_alpha < 0.999 or _countdown_left > 0.0
+	_abilities.ultimate_tapped.connect(func() -> void: ultimate_pressed.emit())
+	_abilities.notice.connect(func(text: String) -> void:
+		if game == null or not game.is_bot():
+			toast(text, 1.6))
+	_root.add_child(_full_rect(_abilities))
 
 	_boss_label = _label("", HORIZONTAL_ALIGNMENT_CENTER)
 	_boss_label.anchor_right = 1.0
@@ -168,6 +180,8 @@ func _ready() -> void:
 	_toast.anchor_bottom = 1.0
 	_toast.offset_top = -52.0
 	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Aviso longo (3 linhas na tela estreita) cresce para cima, sem passar da base da tela.
+	_toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_toast.offset_left = 120.0
 	_toast.offset_right = -120.0
 	_toast.visible = false
@@ -177,6 +191,7 @@ func _ready() -> void:
 	_hint.anchor_right = 1.0
 	_hint.anchor_top = 0.5
 	_hint.offset_top = 40.0
+	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint.add_theme_color_override("font_color", Color("fff3b0"))
 	_hint.visible = false
 	_root.add_child(_hint)
@@ -204,7 +219,7 @@ func _ready() -> void:
 	_build_pause_panel()
 	_build_revive_panel()
 	_build_flight()
-	_gameplay = [joystick, _top, _pause_button, _speed_button, _ult_button, _boss_label, _boss_line,
+	_gameplay = [joystick, _top, _pause_button, _speed_button, _ult_button, _abilities, _boss_label, _boss_line,
 			_toast, _hint]
 	Settings.changed.connect(_on_setting)
 	# Velocidade sem a Ampulheta de Fūjin (negado) e compra/reembolso no meio da partida.
@@ -234,7 +249,10 @@ func start_run() -> void:
 	refresh_speed()
 	# Velocidade 2x/3x só a partir da 2ª partida (plano 4.14).
 	_speed_button.visible = int(SaveManager.data["stats"]["runs"]) >= 1 or game == null or game.is_bot()
-	_hint_step = 0 if not bool(SaveManager.data.get("tutorial_done", false)) else 99
+	_hint_step = 0 if not bool(SaveManager.data.get("tutorial_done", false)) else 3
+	_hint_since = 0.0
+	_abilities.source = game.abilities if game != null else null
+	_abilities.refresh()
 
 
 func overlay_open() -> bool:
@@ -750,7 +768,7 @@ func set_gameplay_alpha(alpha: float) -> void:
 	var live := alpha >= 0.999
 	for control: Control in _gameplay:
 		control.modulate.a = alpha
-	for button: Button in [_pause_button, _speed_button, _ult_button]:
+	for button: Button in [_pause_button, _speed_button]:
 		button.mouse_filter = Control.MOUSE_FILTER_STOP if live else Control.MOUSE_FILTER_IGNORE
 	if not live:
 		joystick.release()
@@ -1034,9 +1052,35 @@ func _update_hint() -> void:
 			_hint.visible = game.ultimate.is_ready()
 			_hint.text = tr("tutorial.ultimate")
 			if game.ultimate.uses > 0 or t > 120.0:
-				_hint_step = 99
+				_hint_step = 3
 				SaveManager.data["tutorial_done"] = true
 				SaveManager.save_profile()
+		3:
+			_ability_hint(t)
+
+
+## Dica das habilidades (tutorial.abilities), uma vez por save, depois da do Golpe: aparece com a
+## 1ª habilidade liberada e some ao usar uma (ou depois de 20 s).
+func _ability_hint(t: float) -> void:
+	if bool(SaveManager.data.get("tutorial_abilities", false)) or game.abilities == null \
+			or game.abilities.slot_count() == 0:
+		_hint_step = 99
+		_hint.visible = false
+		return
+	if _hint_since <= 0.0:
+		_hint_since = maxf(t, 0.01)
+	_hint.text = tr("tutorial.abilities")
+	_hint.visible = game.abilities.is_unlocked(0) and t >= 3.0
+	if game.abilities.uses > 0 or t - _hint_since > 20.0:
+		_hint_step = 99
+		_hint.visible = false
+		SaveManager.data["tutorial_abilities"] = true
+		SaveManager.save_profile()
+
+
+## Botões das habilidades e barra de energia (testes e capturas).
+func ability_pad() -> AbilityPad:
+	return _abilities
 
 
 func _on_setting(key: String) -> void:
@@ -1062,6 +1106,19 @@ func _layout_ultimate() -> void:
 		_ult_button.anchor_right = 0.0
 		_ult_button.offset_left = 10.0 + _insets.x
 		_ult_button.offset_right = ULT_SIZE + 10.0 + _insets.x
+	if _abilities == null or _root == null:
+		return
+	var r := ULT_SIZE * 0.5
+	var cx := _root.size.x - 10.0 - _insets.y - r if joystick.left_side else 10.0 + _insets.x + r
+	_abilities.place(Vector2(cx, _root.size.y - 10.0 - r), r, not joystick.left_side)
+	# Aviso e dica no centro, sem chegar no arco (margem igual dos dois lados, para ficar centrado).
+	# (A distância já conta o recorte do lado do arco; a do outro lado é a mesma.)
+	var reach := ceilf(_abilities.reach_from_edge(_root.size.x)) + 6.0
+	var margin := maxf(120.0, reach)
+	_toast.offset_left = margin
+	_toast.offset_right = -margin
+	_hint.offset_left = maxf(reach, _insets.x + 4.0)
+	_hint.offset_right = -maxf(reach, _insets.y + 4.0)
 
 
 ## Posições que dependem da área segura (recorte da câmera): botões dos cantos, golpe,
@@ -1074,10 +1131,10 @@ func _layout() -> void:
 		var right := -4.0 - slot * (CORNER_BUTTON.x + 4.0) - _insets.y
 		button.offset_right = right
 		button.offset_left = right - CORNER_BUTTON.x
-	_layout_ultimate()
 	joystick.insets = _insets
+	_layout_ultimate()
 	joystick.queue_redraw()
-	var wide: Array[Control] = [_boss_label, _boss_line, _hint, _revive_top, _revive_bottom]
+	var wide: Array[Control] = [_boss_label, _boss_line, _revive_top, _revive_bottom]
 	for control: Control in wide:
 		control.offset_left = _insets.x
 		control.offset_right = -_insets.y

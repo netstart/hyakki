@@ -4,7 +4,7 @@ extends Node
 ## sejam simples e o balanceamento possa ser feito sem o editor.
 
 const FILES := ["heroes", "weapons", "passives", "enemies", "bosses", "stages", "kami",
-		"powerups", "achievements", "missions", "items", "shop", "story"]
+		"powerups", "achievements", "missions", "items", "shop", "story", "abilities"]
 
 var heroes: Dictionary = {}
 var weapons: Dictionary = {}
@@ -20,6 +20,10 @@ var missions: Dictionary = {}
 var items: Dictionary = {}
 var shop: Dictionary = {}
 var story: Dictionary = {}
+## Energia e as 3 habilidades de cada guardião, por id do herói (data/abilities.json; ver
+## AbilitySystem). `ability_index` acha a linha de uma habilidade pelo id dela.
+var abilities: Dictionary = {}
+var ability_index: Dictionary = {}
 ## Diálogos antes dos chefes (data/dialogues.json, um bloco por id de chefe; ver DialogueScript).
 ## Sem o arquivo, nenhum chefe tem diálogo.
 var dialogues: Dictionary = {}
@@ -60,6 +64,7 @@ func load_all() -> void:
 		set(name, table)
 		order[name] = ids
 	dialogues = _load_dialogues()
+	_index_abilities()
 	for message: String in errors:
 		push_error("DB: " + message)
 
@@ -74,6 +79,18 @@ func _load_dialogues() -> Dictionary:
 		errors.append("não é um objeto JSON: " + path)
 		return {}
 	return parsed
+
+
+func _index_abilities() -> void:
+	ability_index.clear()
+	for hero: StringName in abilities:
+		for row: Variant in (abilities[hero] as Dictionary).get("abilities", []):
+			var ability: Dictionary = row
+			var id := StringName(String(ability.get("id", "")))
+			if ability_index.has(id):
+				errors.append("abilities: id repetido %s" % id)
+			ability["id"] = id
+			ability_index[id] = ability
 
 
 func ids(table: String) -> Array[StringName]:
@@ -92,3 +109,13 @@ func enemy(id: StringName) -> Dictionary:
 
 func stage(id: StringName) -> Dictionary:
 	return stages.get(id, {})
+
+
+## Energia e habilidades do herói (vazio se o herói não tem): {"energy": {...}, "abilities": [...]}.
+func hero_abilities(hero_id: StringName) -> Dictionary:
+	return abilities.get(hero_id, {})
+
+
+## Linha de uma habilidade pelo id (vazio se não existe).
+func ability(id: StringName) -> Dictionary:
+	return ability_index.get(id, {})

@@ -34,6 +34,9 @@ var kind := PackedInt32Array()
 ## Quem disparou (inimigo, chefe ou perigo), para o controle de dano (plano 4.15).
 var source: Array[StringName] = []
 var alive := PackedByteArray()
+## Onde estavam os tiros apagados pela última clear_circle/clear_cone (para o efeito de quem
+## apagou; reaproveitado entre chamadas).
+var cleared := PackedVector2Array()
 
 var _free: Array[int] = []
 var _kind_names: Array[String] = []
@@ -144,6 +147,42 @@ func clear_all() -> void:
 	for i: int in range(CAPACITY):
 		if alive[i] == 1:
 			_kill(i)
+
+
+## Apaga os tiros a até `r` px de `center` (e a pelo menos `inner` px: só a faixa de um anel).
+## Devolve quantos; as posições ficam em `cleared`. Habilidades (barreiras, rugido, purificação).
+func clear_circle(center: Vector2, r: float, inner: float = 0.0) -> int:
+	cleared.clear()
+	var r2 := r * r
+	var inner2 := inner * inner if inner > 0.0 else -1.0
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var d2 := center.distance_squared_to(pos[i])
+		if d2 <= r2 and d2 >= inner2:
+			cleared.append(pos[i])
+			_kill(i)
+	return cleared.size()
+
+
+## Apaga os tiros no leque de `center` para `dir` (abertura total 2 × `half_angle` rad, alcance
+## `reach`). Devolve quantos; as posições ficam em `cleared`.
+func clear_cone(center: Vector2, dir: Vector2, half_angle: float, reach: float) -> int:
+	cleared.clear()
+	var facing := dir.normalized() if dir != Vector2.ZERO else Vector2.RIGHT
+	var min_dot := cos(half_angle)
+	var reach2 := reach * reach
+	for i: int in range(CAPACITY):
+		if alive[i] == 0:
+			continue
+		var d := pos[i] - center
+		var d2 := d.length_squared()
+		if d2 > reach2:
+			continue
+		if d2 < 1.0 or facing.dot(d / sqrt(d2)) >= min_dot:
+			cleared.append(pos[i])
+			_kill(i)
+	return cleared.size()
 
 
 func _kill(i: int) -> void:
