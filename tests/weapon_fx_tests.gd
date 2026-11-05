@@ -3,6 +3,7 @@ extends RefCounted
 ## area_effects.gd, ultimate_system.gd, scripts/core/weapon_style.gd):
 ## - cota de partículas por nível (Baixa/Média/Alta) e troca ao vivo pelo Settings.changed;
 ## - rastro dos projéteis só na Média/Alta, brilho e distorção só na Alta, com teto;
+## - tamanho dos projéteis por arma ("proj_size"): raio de colisão e desenho pelo mesmo fator;
 ## - cada arma tem cor de efeito e tipo de impacto válidos, e o impacto solta partículas;
 ## - o golpe da lanterna abre o momento cinematográfico, desacelera só os efeitos e termina;
 ## - determinismo: a mesma partida (mesma semente, várias armas) dá o mesmo estado na Baixa e
@@ -23,6 +24,7 @@ func run(host: Node, check: Callable) -> void:
 	_check_budgets(game, check)
 	_check_live_switch(game, check)
 	_check_projectile_fx(game, check)
+	_check_projectile_size(game, check)
 	_check_waves(game, check)
 	_check_impacts(game, check)
 	_check_cinematic(game, check)
@@ -123,6 +125,50 @@ func _check_projectile_fx(game: HyakkiGame, check: Callable) -> void:
 	pm.reset()
 	check.call(ProjectileManager.KINDS.has("steel_shuriken") and ProjectileManager.KINDS.has("reaper_hook"),
 			"evoluções com projétil próprio (Tempestade de Aço, Corrente do Ceifador)")
+
+
+## Tamanho dos projéteis ("proj_size" em data/weapons.json): Shuriken e Tempestade de Aço a 0,6,
+## Kunai e Mil Agulhas a 0,8, com o raio de colisão e o desenho (sprite, rastro, brilho) reduzidos
+## pelo mesmo fator; as outras armas de projétil continuam com tamanho 1 e o raio de antes.
+func _check_projectile_size(game: HyakkiGame, check: Callable) -> void:
+	var pm := game.projectiles
+	# id -> [tamanho, raio de colisão esperado]
+	var expected := {
+		"shuriken": [0.6, 4.0 * 0.6], "steel_storm": [0.6, 4.0 * 0.6],
+		"kunai": [0.8, 3.0 * 0.8], "thousand_needles": [0.8, 3.0 * 0.8],
+	}
+	# Raio de antes das armas que não mudam (o da Kusarigama depende da Área).
+	var others := {"yumi": 3.0, "hitodama": 4.0, "kusarigama": 6.0}
+	for id: StringName in DB.ids("weapons"):
+		var data := DB.weapon(id)
+		var key := String(id)
+		var behavior := String(data.get("behavior", ""))
+		if not expected.has(key) and not others.has(behavior):
+			check.call(not data.has("proj_size"), "%s: sem proj_size (só as 4 armas de projétil reduzidas)" % id)
+			continue
+		var weapon: Weapon = game.call("_make_weapon", id)
+		var want_size := float(expected[key][0]) if expected.has(key) else 1.0
+		var want_r := float(expected[key][1]) if expected.has(key) else float(others[behavior])
+		if behavior == "kusarigama":
+			want_r *= weapon.area()
+		check.call(is_equal_approx(weapon.proj_size(), want_size), "%s: proj_size %.2f" % [id, weapon.proj_size()])
+		pm.reset()
+		weapon.fire(game.player.sim_pos)
+		var seen := 0
+		for i: int in range(ProjectileManager.CAPACITY):
+			if pm.alive[i] == 0 or pm.weapon_id[i] != id:
+				continue
+			seen += 1
+			check.call(is_equal_approx(pm.size[i], want_size) and is_equal_approx(pm.radius[i], want_r),
+					"%s: projétil com tamanho %.2f e raio %.2f (esperado %.2f e %.2f)"
+					% [id, pm.size[i], pm.radius[i], want_size, want_r])
+		check.call(seen > 0, "%s: disparo cria projétil" % id)
+	# Sem proj_size, o spawn mantém o raio e o tamanho de antes.
+	pm.reset()
+	var j := pm.spawn(&"shuriken", "shuriken", Vector2.ZERO, Vector2.RIGHT, 1.0, 5.0, 0, 1.0)
+	check.call(is_equal_approx(pm.radius[j], 5.0) and is_equal_approx(pm.size[j], 1.0),
+			"spawn sem tamanho: raio e desenho inalterados")
+	pm.reset()
 
 
 func _check_waves(game: HyakkiGame, check: Callable) -> void:

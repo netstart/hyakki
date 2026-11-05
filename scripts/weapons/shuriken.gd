@@ -5,6 +5,8 @@ extends Weapon
 
 const RANGE := 280.0
 const SPREAD := 0.18
+## Raio de colisão antes do "proj_size" da arma (0,6 no Shuriken e na Tempestade de Aço).
+const RADIUS := 4.0
 
 
 func fire(origin: Vector2) -> void:
@@ -15,7 +17,8 @@ func fire(origin: Vector2) -> void:
 	var count := amount()
 	for k: int in range(count):
 		var angle := (k - (count - 1) * 0.5) * SPREAD
-		game.projectiles.spawn(id, "steel_shuriken" if is_evolved() else "shuriken", origin,
-				aim.rotated(angle) * proj_speed(), damage(), 4.0, int(raw("pierce")), duration(), knockback())
+		var p := game.projectiles.spawn(id, "steel_shuriken" if is_evolved() else "shuriken", origin,
+				aim.rotated(angle) * proj_speed(), damage(), RADIUS, int(raw("pierce")), duration(), knockback())
+		game.projectiles.set_size(p, proj_size())
 	game.fx.muzzle(id, origin, aim)
 	WeaponSfx.launch(self)

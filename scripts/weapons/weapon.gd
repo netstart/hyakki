@@ -92,6 +92,13 @@ func knockback() -> float:
 	return raw("knockback")
 
 
+## Tamanho do projétil desta arma ("proj_size" em data/weapons.json, 1,0 se não houver): multiplica
+## o desenho (sprite, rastro e brilho) e o raio de colisão juntos, para o que se vê bater com o que
+## acerta. Não depende do atributo Área.
+func proj_size() -> float:
+	return float(data.get("proj_size", 1.0))
+
+
 func step(dt: float) -> void:
 	_timer -= dt
 	if _timer <= 0.0:

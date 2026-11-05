@@ -17,6 +17,8 @@ const CHAIN_REACH := 130.0
 const CHAIN_TAIL := 26.0
 ## "trail": cor do rastro; "width": largura; "glow": cor do brilho aditivo e "glow_r" o raio;
 ## "scale": tamanho do sprite; "ember": solta brasas da cor do rastro.
+## Além disso, cada projétil tem um `size` (o "proj_size" da arma): multiplica o raio de colisão,
+## o sprite, a largura do rastro e o raio do brilho.
 const KINDS := {
 	"shuriken": {"path": "res://assets/art/items/projectile/shuriken.png", "frame": 15, "spin": 14.0,
 			"tint": "#ffffff", "trail": "#c8d4e6", "width": 2.0, "glow": "#9fb8d8", "glow_r": 7.0},
@@ -51,6 +53,8 @@ var vel := PackedVector2Array()
 var origin := PackedVector2Array()
 var dmg := PackedFloat32Array()
 var radius := PackedFloat32Array()
+## Tamanho do projétil (o "proj_size" da arma): escala do desenho; o raio já sai multiplicado.
+var size := PackedFloat32Array()
 var life := PackedFloat32Array()
 var max_life := PackedFloat32Array()
 var rot := PackedFloat32Array()
@@ -107,7 +111,7 @@ func _ready() -> void:
 	_trail.resize(CAPACITY * TRAIL_MAX)
 	_trail_head.resize(CAPACITY)
 	_trail_n.resize(CAPACITY)
-	for packed: StringName in [&"pos", &"prev", &"vel", &"origin", &"dmg", &"radius", &"life",
+	for packed: StringName in [&"pos", &"prev", &"vel", &"origin", &"dmg", &"radius", &"size", &"life",
 			&"max_life", &"rot", &"turn", &"knock", &"explode", &"pierce", &"move", &"kind",
 			&"target", &"crit", &"alive"]:
 		var array: Variant = get(packed)
@@ -141,6 +145,7 @@ func spawn(id: StringName, kind_name: String, at: Vector2, velocity: Vector2, da
 	vel[i] = velocity
 	dmg[i] = damage
 	radius[i] = r
+	size[i] = 1.0
 	life[i] = lifetime
 	max_life[i] = lifetime
 	rot[i] = velocity.angle()
@@ -220,6 +225,15 @@ func step(dt: float) -> void:
 			_finish(i)
 
 
+## Muda o tamanho do projétil `i` recém-criado (o "proj_size" da arma): multiplica o raio de
+## colisão e o desenho (sprite, rastro e brilho) pelo mesmo fator. `i` < 0 (sem vaga) é ignorado.
+func set_size(i: int, size_mult: float) -> void:
+	if i < 0:
+		return
+	radius[i] = radius[i] / size[i] * size_mult
+	size[i] = size_mult
+
+
 ## Ponto novo do rastro (só desenho; nada aqui é lido pela simulação).
 func _note_trail(i: int, at: Vector2) -> void:
 	if FxLayer.trail_points <= 0:
@@ -288,10 +302,10 @@ func _draw() -> void:
 		var k := kind[i]
 		var at := prev[i].lerp(pos[i], a).round()
 		if points > 0 and _trail_n[i] > 1:
-			_draw_trail(i, at, mini(points, _trail_n[i]), _kind_trail[k], _kind_width[k])
+			_draw_trail(i, at, mini(points, _trail_n[i]), _kind_trail[k], _kind_width[k] * size[i])
 		var sheet := _kind_sheets[k]
 		var src := sheet.region(frame, 0)
-		draw_set_transform(at, rot[i], Vector2.ONE * _kind_scale[k])
+		draw_set_transform(at, rot[i], Vector2.ONE * (_kind_scale[k] * size[i]))
 		draw_texture_rect_region(sheet.texture, Rect2(-src.size * 0.5, src.size), src, _kind_tint[k])
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -343,4 +357,5 @@ func draw_glow(canvas: CanvasItem) -> void:
 		var k := kind[i]
 		if _kind_glow_r[k] <= 0.0:
 			continue
-		FxLayer.draw_soft(canvas, prev[i].lerp(pos[i], a), _kind_glow_r[k] * pulse, Color(_kind_glow[k], 0.55))
+		FxLayer.draw_soft(canvas, prev[i].lerp(pos[i], a), _kind_glow_r[k] * size[i] * pulse,
+				Color(_kind_glow[k], 0.55))
