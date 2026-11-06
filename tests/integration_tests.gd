@@ -71,6 +71,7 @@ const ReviveAdTests := preload("res://tests/revive_ad_tests.gd")
 const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
 ## Ampulheta de Fūjin: velocidade 2x/3x como compra (ryō ou dinheiro), posse, reembolso e partida.
 const SpeedUnlockTests := preload("res://tests/speed_unlock_tests.gd")
+const PlayBillingTests := preload("res://tests/play_billing_tests.gd")
 ## Guardião do Limiar, portal e Kakuriyo: dados, travessia, outro mundo, retomada e cenários.
 const RealmTests := preload("res://tests/realm_tests.gd")
 ## Altares do Selo e os afixos dos Elites (tests/altar_tests.gd, tests/elite_affix_tests.gd).
@@ -146,6 +147,7 @@ const SUITE_MS := {
 	&"SkillIconTests": 403,
 	&"_test_assets_exist": 322,
 	&"DamageNumberTests": 282,
+	&"PlayBillingTests": 178,
 	&"GfxQualityTests": 173,
 	&"MenuBackdropTests": 125,
 	&"_test_shop_scroll": 106,
@@ -221,6 +223,7 @@ func _suites() -> Array[Array]:
 		[&"AdsOffTests", true, func() -> void: await AdsOffTests.new().run(self, _check)],
 		[&"SupportPackTests", false, func() -> void: await SupportPackTests.new().run(self, _check)],
 		[&"SpeedUnlockTests", false, func() -> void: await SpeedUnlockTests.new().run(self, _check)],
+		[&"PlayBillingTests", false, func() -> void: await PlayBillingTests.new().run(self, _check)],
 		[&"_test_thunder_weapons", false, func() -> void: await _test_thunder_weapons()],
 		[&"_test_raijin_bolts", false, func() -> void: await _test_raijin_bolts()],
 		[&"OnikiriTests", false, func() -> void: await OnikiriTests.new().run(self, _check)],

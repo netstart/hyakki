@@ -203,7 +203,12 @@ também commitam/enviam lá). O site é localizado por `NETSTART_SITE_DIR` ou po
   da sua conta AdMob, a build de release fica **sem anúncios**: o SDK não é iniciado, as recompensas viram
   presente e a compra "Apoiar o jogo" some. Preenchidos os IDs, tudo volta sozinho.
 - **Compras:** Google Play Billing real; só funciona com o app publicado na Play Console (teste interno) e
-  um aparelho com Play Store. No emulador sem Play Store a compra responde "não concluída".
+  um aparelho com Play Store. O toque na compra espera a Play (`PlayBillingProvider`): sem conexão, conecta;
+  sem os detalhes do produto, consulta de novo; aí abre a tela de pagamento. Enquanto espera, o botão diz
+  "Abrindo a Google Play…" e fica desativado. Sem resposta em `PURCHASE_TIMEOUT` (12 s), produto fora da
+  resposta ou erro de conexão, o aviso é "A Google Play não respondeu" (no emulador sem Play Store, também);
+  fechar a tela de pagamento avisa "Compra cancelada"; "já é seu" na Play restaura a compra. Cada falha vai
+  para o logcat (`Billing: compra de <produto> <motivo> (<código>) <mensagem>`).
 - **Backup do save:** o addon `addons/hyakki_android_backup` (ligado no `project.godot`) liga o Auto Backup do
   Android a cada export Gradle: escreve em `android/build` (não versionada) as regras `res/xml/hyakki_*.xml` e
   os manifestos de `src/standardDebug`/`src/standardRelease` com `allowBackup="true"`, só para `save.json`,

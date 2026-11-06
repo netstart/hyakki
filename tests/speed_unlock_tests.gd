@@ -168,11 +168,12 @@ func _test_play_provider() -> void:
 			"purchase_state": BillingClient.PurchaseState.PENDING}]}, false)
 	_check.call(states == [[PurchaseManager.SPEED_PRODUCT, "pending"]], "Play: pendente por produto")
 	states.clear()
+	# Sem cliente (setup não chamado) a compra falha na hora; o resto do fluxo da Play (esperar a
+	# conexão, cancelar, já possuir) fica em tests/play_billing_tests.gd.
 	play.purchase(PurchaseManager.SPEED_PRODUCT)
 	play.call("_on_purchases", {"response_code": BillingClient.BillingResponseCode.USER_CANCELED}, false)
-	_check.call(states.size() == 2 and states.all(func(e: Array) -> bool:
-			return e == [PurchaseManager.SPEED_PRODUCT, "failed"]),
-			"Play: sem conexão e cancelada, a compra falha pelo produto pedido")
+	_check.call(states == [[PurchaseManager.SPEED_PRODUCT, "failed"]] and play.busy_product().is_empty(),
+			"Play: sem cliente a compra falha pelo produto pedido; cancelar sem pedido não responde")
 	play.free()
 
 

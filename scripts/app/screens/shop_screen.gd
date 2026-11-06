@@ -107,6 +107,8 @@ var _balance_coin: TextureRect
 var _coin_time: float = 0.0
 var _purchase: BoxContainer
 var _buy: Button
+## Último visual aplicado ao "Apoiar o jogo" desativado ("owned" ou "busy"; ver _refresh).
+var _buy_look := ""
 var _restore: Button
 ## Subtítulo das Oferendas (texto de anúncio ou de presente) e os nós da seção de compra.
 var _offer_hint: Label
@@ -199,12 +201,27 @@ func _ready() -> void:
 	MenuKit.on_insets_change(self, _relayout)
 	PurchaseManager.purchase_finished.connect(func(product: String, ok: bool) -> void:
 		var speed := product == PurchaseManager.SPEED_PRODUCT
-		var thanks := tr("shop.speed.thanks") if speed else tr("shop.thanks")
-		var pending := PurchaseManager.is_pending(product)
-		_show_status(thanks if ok else (tr("shop.pending") if pending else tr("shop.failed")))
+		_show_status(purchase_message(product, ok))
 		if ok and speed:
 			AudioManager.play("jingle_unlock")
 		on_show())
+
+
+## Aviso da resposta de uma compra com dinheiro: obrigado ou o motivo (PurchaseManager.last_error).
+func purchase_message(product: String, ok: bool) -> String:
+	if ok:
+		return tr("shop.speed.thanks") if product == PurchaseManager.SPEED_PRODUCT else tr("shop.thanks")
+	var reason := PurchaseManager.last_error
+	if reason.is_empty() and PurchaseManager.is_pending(product):
+		reason = "pending"
+	match reason:
+		"pending":
+			return tr("shop.pending")
+		"canceled":
+			return tr("shop.canceled")
+		"unavailable":
+			return tr("shop.unavailable")
+	return tr("shop.failed")
 
 
 ## Monta os cartões só quando muda o que define a grade (_signature: tela, recorte, vagas, nomes e
@@ -319,8 +336,22 @@ func _refresh() -> void:
 	_update_cards()
 	_layout_speed()
 	var owned := PurchaseManager.owns()
-	_buy.text = tr("shop.owned") if owned else tr("shop.support") % PurchaseManager.price_text()
-	_buy.disabled = owned
+	# Compra esperando a Play: "Abrindo a Google Play…" e os botões de dinheiro desativados (o
+	# toque duplo não faz nada); volta em purchase_finished.
+	var busy := PurchaseManager.is_busy("")
+	if owned:
+		_buy.text = tr("shop.owned")
+	elif PurchaseManager.is_busy(PurchaseManager.PRODUCT):
+		_buy.text = tr("shop.opening")
+	else:
+		_buy.text = tr("shop.support") % PurchaseManager.price_text()
+	_buy.disabled = owned or busy
+	var look := "owned" if owned else "busy"
+	if _buy_look != look:
+		_buy_look = look
+		_buy.add_theme_stylebox_override("disabled", _premium_style(OWNED, Color("8fd18a")) if owned
+				else _premium_style(LACQUER.darkened(0.25), Color(ThemeFactory.ACCENT, 0.5)))
+		_buy.add_theme_color_override("font_disabled_color", Color("d6f5d0") if owned else Color("fff1d6", 0.75))
 	# Tela estreita: "Restaurar compras" desce para baixo da compra em vez de alargar a linha.
 	var row_w := _buy.get_combined_minimum_size().x + PURCHASE_SEP + _restore.get_combined_minimum_size().x
 	_purchase.vertical = row_w > _content_width(_insets)
@@ -497,6 +528,7 @@ func _buy_coin(id: StringName) -> bool:
 
 func _on_buy() -> void:
 	PurchaseManager.purchase()
+	_refresh()
 
 
 ## Ampulheta de Fūjin com ryō (devolve se comprou; os testes chamam direto). O aviso de
@@ -519,6 +551,7 @@ func _buy_speed_money() -> void:
 	if _was_drag():
 		return
 	PurchaseManager.buy_speed_with_money()
+	_refresh()
 
 
 func _on_restore() -> void:
@@ -662,9 +695,7 @@ func _purchase_row() -> BoxContainer:
 	_buy.add_theme_stylebox_override("normal", _premium_style(LACQUER, ThemeFactory.ACCENT))
 	_buy.add_theme_stylebox_override("hover", _premium_style(LACQUER.lightened(0.15), Color("fff1c4")))
 	_buy.add_theme_stylebox_override("pressed", _premium_style(LACQUER.darkened(0.25), ThemeFactory.ACCENT))
-	_buy.add_theme_stylebox_override("disabled", _premium_style(OWNED, Color("8fd18a")))
 	_buy.add_theme_stylebox_override("focus", _focus_style())
-	_buy.add_theme_color_override("font_disabled_color", Color("d6f5d0"))
 	row.add_child(_buy)
 	_restore = button(tr("shop.restore"), _on_restore, Vector2(0, 26))
 	_restore.name = "Restore"
@@ -947,7 +978,10 @@ func _speed_section() -> PanelContainer:
 	_speed_money.add_theme_stylebox_override("normal", _premium_style(LACQUER, ThemeFactory.ACCENT, 8))
 	_speed_money.add_theme_stylebox_override("hover", _premium_style(LACQUER.lightened(0.15), Color("fff1c4"), 8))
 	_speed_money.add_theme_stylebox_override("pressed", _premium_style(LACQUER.darkened(0.25), ThemeFactory.ACCENT, 8))
+	_speed_money.add_theme_stylebox_override("disabled", _premium_style(LACQUER.darkened(0.25),
+			Color(ThemeFactory.ACCENT, 0.5), 8))
 	_speed_money.add_theme_color_override("font_color", Color("fff1d6"))
+	_speed_money.add_theme_color_override("font_disabled_color", Color("fff1d6", 0.75))
 	_speed_actions.add_child(_speed_money)
 	_speed_seal = PanelContainer.new()
 	_speed_seal.name = "SpeedOwned"
@@ -995,7 +1029,9 @@ func _update_speed_card() -> void:
 	_speed_ryo.visible = not owned
 	_speed_money.visible = PurchaseManager.speed_available_for_money()
 	_speed_seal.visible = owned
-	_speed_money.text = PurchaseManager.speed_price_text()
+	var speed_busy := PurchaseManager.is_busy(PurchaseManager.SPEED_PRODUCT)
+	_speed_money.text = tr("shop.opening") if speed_busy else PurchaseManager.speed_price_text()
+	_speed_money.disabled = PurchaseManager.is_busy("")
 	var short := not owned and not PurchaseManager.can_buy_speed_with_ryo()
 	# Caixas e cores só quando o estado muda (ver _update_cards): roda a cada segundo.
 	var look := "%s|%s" % [owned, short]

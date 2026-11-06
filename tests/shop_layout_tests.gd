@@ -18,11 +18,16 @@ extends RefCounted
 ## botões inteiros no cartão, sem sobreposição; preço em ryō em vermelho e apagado sem saldo;
 ## liberada, só o selo dourado.
 ##
+## Compra esperando a Google Play (BillingClient falso, tests/fake_billing_client.gd): "Apoiar o
+## jogo" e depois a Ampulheta em dinheiro dizem "Abrindo a Google Play…", desativados, com o
+## layout íntegro em cada resolução e idioma; os avisos de cancelada e de Play sem resposta cabem.
+##
 ## "Apoie o jogo" comprado (com anúncios ligados): as vagas dizem "Receber grátis", o subtítulo
 ## fala de presente, a compra vira o agradecimento e o layout continua íntegro.
 
 const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+const FakeBillingClient := preload("res://tests/fake_billing_client.gd")
 ## Contraste mínimo (WCAG AA) entre o texto e o fundo do cartão.
 const MIN_CONTRAST := 4.5
 
@@ -89,7 +94,8 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 
 	# Status (o texto mais longo de cada caso), escrito direto no Label: o aviso acompanha.
 	var long_reward := tr("shop.received") % tr("shop.slot_lantern.name")
-	for text: String in [tr("shop.failed"), tr("shop.pending"), tr("shop.watch_full"), long_reward]:
+	for text: String in [tr("shop.failed"), tr("shop.pending"), tr("shop.canceled"), tr("shop.unavailable"),
+			tr("shop.watch_full"), long_reward]:
 		status.text = text
 		await host.get_tree().process_frame
 		await host.get_tree().process_frame
@@ -98,6 +104,8 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 	# O aviso some sozinho depois do tempo dele.
 	screen.call("_update_toast", 3.0)
 	check.call(toast.modulate.a == 0.0, "%s: o aviso some depois de ~2,5 s", lang)
+
+	await check_busy(screen, view, lang)
 
 	# Sem anúncio disponível: as vagas prontas ficam desativadas com o aviso.
 	SaveManager.data = SaveManager.default_profile()
@@ -295,6 +303,42 @@ func _speed_purchase(screen: Control, status: Label) -> void:
 	SaveManager.data = SaveManager.default_profile()
 
 
+## Compra esperando a Play (cliente falso que não responde): "Apoiar o jogo" e a Ampulheta em
+## dinheiro com "Abrindo a Google Play…", desativados e com o layout inteiro; a resposta devolve.
+func check_busy(screen: Control, view: Rect2, lang: String) -> void:
+	var fake := FakeBillingClient.new()
+	var play := PlayBillingProvider.new()
+	PurchaseManager.call("_attach_play", play)
+	play.setup(PackedStringArray(PurchaseManager.PRODUCTS), fake)
+	fake.connect_now()
+	fake.answer_details(Array(PurchaseManager.PRODUCTS))
+	var buy := screen.get("_buy") as Button
+	var money := screen.get("_speed_money") as Button
+	for product: String in [PurchaseManager.PRODUCT, PurchaseManager.SPEED_PRODUCT]:
+		if product == PurchaseManager.PRODUCT and not PurchaseManager.available():
+			continue
+		var speed := product == PurchaseManager.SPEED_PRODUCT
+		screen.call("_buy_speed_money" if speed else "_on_buy")
+		await _host.get_tree().process_frame
+		await _host.get_tree().process_frame
+		var tag := "%s, %s esperando a Play" % [lang, "Ampulheta" if speed else "Apoiar o jogo"]
+		var waiting := money if speed else buy
+		_check.call(PurchaseManager.is_busy(product) and waiting.text == tr("shop.opening")
+				and buy.disabled and money.disabled, "%s: \"%s\" e os botões de dinheiro desativados", [tag,
+				tr("shop.opening")])
+		check_layout(screen, view, tag)
+		check_speed_card(screen, tag)
+		fake.purchase_update(BillingClient.BillingResponseCode.USER_CANCELED)
+		await _host.get_tree().process_frame
+		_check.call(not buy.disabled and not money.disabled and waiting.text != tr("shop.opening"),
+				"%s: cancelada, os botões voltam", tag)
+	PurchaseManager.call("_detach_play")
+	play.free()
+	screen.call("on_show")
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+
+
 ## Os três estados da Ampulheta (sem saldo, com saldo e liberada) com o layout inteiro.
 func check_speed_states(screen: Control, view: Rect2, lang: String) -> void:
 	SaveManager.data["ryo"] = 0
@@ -339,7 +383,9 @@ func check_speed_card(screen: Control, state: String) -> void:
 			and money.is_visible_in_tree() == (not owned and PurchaseManager.billing_available()),
 			"%s: botões da Ampulheta conforme a posse (liberada: %s)", [state, owned])
 	if not owned:
-		_check.call(money.text == PurchaseManager.speed_price_text(), "%s: preço da loja \"%s\"", [state, money.text])
+		var busy := PurchaseManager.is_busy(PurchaseManager.SPEED_PRODUCT)
+		var money_text := tr("shop.opening") if busy else PurchaseManager.speed_price_text()
+		_check.call(money.text == money_text, "%s: preço da loja \"%s\"", [state, money.text])
 		_check.call(ryo_button.text == Locale.format_number(PurchaseManager.SPEED_RYO_PRICE) and ryo_button.icon != null,
 				"%s: preço em ryō com a moeda", state)
 	var rect := card.get_global_rect()

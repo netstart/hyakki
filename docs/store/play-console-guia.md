@@ -453,6 +453,18 @@ Mesmo caminho da seção 8.3 (depois do 1º AAB com `BILLING`):
 2. Teste com a conta de **Teste de licença**: comprar, reinstalar e "Restaurar compras". Um reembolso
    pelo Play Console tira a velocidade só de quem pagou na Play; quem liberou com ryō nunca perde.
 
+### 8.5 Compra que não abre no aparelho
+A compra só funciona quando:
+- o app foi **instalado pela Play Store a partir de uma faixa** (teste interno, fechado ou produção) com a
+  mesma assinatura; APK instalado por cabo/`adb` não compra;
+- o produto (`remove_open_ad` ou `unlock_speed`) está **Ativo** em Monetizar › Produtos no app;
+- a conta Google do aparelho está em **Configurações › Teste de licença** (senão a compra é cobrada de verdade).
+
+O aviso **"A Google Play não respondeu"** quer dizer que a Play não mandou os detalhes do produto (rede, Play
+desatualizada, produto inativo ou app fora de uma faixa) em 12 s; "Compra cancelada" é a tela de pagamento
+fechada. O motivo exato aparece no logcat (`adb logcat | findstr Billing`: código e mensagem da Play). Com o
+preço de referência no botão ("US$ 2,99" em vez do preço da Play), os detalhes ainda não chegaram.
+
 ## 9. Lançamentos: teste interno → teste fechado → produção
 
 ### 9.1 Países e regiões

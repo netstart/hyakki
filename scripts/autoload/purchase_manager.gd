@@ -16,6 +16,9 @@ extends Node
 ## No modo "sem anúncios" (AdsManager.ads_enabled = false) "Apoie o jogo" fica indisponível
 ## (available() = false; as recompensas já são presentes) e as telas a escondem; o Play Billing
 ## conecta assim mesmo, pela Ampulheta.
+## Com a Play, a compra pode esperar a conexão e os detalhes do produto (PlayBillingProvider):
+## is_busy() fica verdadeiro do pedido até o estado final, e um novo purchase() nesse meio tempo
+## é ignorado. Toda resposta false de purchase_finished traz o motivo em last_error.
 
 signal purchase_finished(product: String, ok: bool)
 ## A Ampulheta passou a valer (compra com ryō, Play ou restauração): a partida libera 2x/3x na hora.
@@ -39,6 +42,10 @@ const PRODUCTS: Array[String] = [PRODUCT, SPEED_PRODUCT]
 var provider: String = "mock"
 ## Para testes: simula pagamento pendente (boleto, dinheiro).
 var mock_pending: bool = false
+## Motivo da última resposta false de purchase_finished (definido antes de emitir): "" (deu certo),
+## "canceled" (fechou a tela de pagamento), "unavailable" (a Play não respondeu ou o produto está
+## indisponível), "pending" (pagamento pendente) ou "failed" (outro erro).
+var last_error: String = ""
 
 var _play: PlayBillingProvider
 
@@ -48,15 +55,41 @@ func _ready() -> void:
 		if arg == "--purchase-pending":
 			mock_pending = true
 	if PlayBillingProvider.is_supported():
-		provider = "play"
-		_play = PlayBillingProvider.new()
-		add_child(_play)
-		_play.purchase_state.connect(_on_play_state)
-		_play.setup(PackedStringArray(PRODUCTS))
+		var play := PlayBillingProvider.new()
+		_attach_play(play)
+		play.setup(PackedStringArray(PRODUCTS))
 	elif OS.get_name() == "Android" and not OS.is_debug_build():
 		# Build de release sem o plugin: não há como cobrar (a Ampulheta segue à venda por ryō).
 		provider = "off"
 	restore()
+
+
+## Liga o provedor da Play (no jogo, o do plugin; nos testes, um com BillingClient falso).
+func _attach_play(play: PlayBillingProvider) -> void:
+	provider = "play"
+	_play = play
+	if play.get_parent() == null:
+		add_child(play)
+	play.purchase_state.connect(_on_play_state)
+
+
+## Desliga o provedor da Play (testes): volta ao simulado.
+func _detach_play() -> void:
+	if _play != null:
+		_play.purchase_state.disconnect(_on_play_state)
+		if _play.get_parent() == self:
+			remove_child(_play)
+	_play = null
+	provider = "mock"
+
+
+## Compra com dinheiro de `product` esperando a Play ou com a tela de pagamento aberta (só com a
+## Play; o simulado responde na hora). Com `product` vazio, qualquer produto.
+func is_busy(product: String = PRODUCT) -> bool:
+	if provider != "play" or _play == null:
+		return false
+	var busy := _play.busy_product()
+	return not busy.is_empty() and (product.is_empty() or busy == product)
 
 
 ## "Apoie o jogo" existe só enquanto há anúncios (sem eles as recompensas já são presentes).
@@ -79,25 +112,34 @@ func price_text() -> String:
 	return PRICE_TEXT
 
 
+## Compra com dinheiro. Com outra compra da Play em andamento (is_busy("")), não faz nada.
 func purchase(product: String = PRODUCT) -> void:
 	if not product in PRODUCTS:
-		purchase_finished.emit(product, false)
+		_fail(product, "failed")
 		return
 	if owns(product):
+		last_error = ""
 		purchase_finished.emit(product, true)
 		return
 	if (product == PRODUCT and not available()) or not billing_available():
-		purchase_finished.emit(product, false)
+		_fail(product, "failed")
 		return
 	if provider == "play":
-		_play.purchase(product)
+		if not is_busy(""):
+			_play.purchase(product)
 		return
 	if mock_pending:
 		_set_pending(product, true)
 		SaveManager.save_profile()
-		purchase_finished.emit(product, false)
+		_fail(product, "pending")
 		return
 	_deliver(product)
+
+
+## Resposta false de purchase_finished com o motivo em last_error.
+func _fail(product: String, reason: String) -> void:
+	last_error = reason
+	purchase_finished.emit(product, false)
 
 
 func is_pending(product: String = PRODUCT) -> bool:
@@ -140,6 +182,7 @@ func buy_speed_with_ryo() -> bool:
 	SaveManager.add_ryo(-SPEED_RYO_PRICE)
 	_grant_speed(SOURCE_RYO)
 	SaveManager.save_profile()
+	last_error = ""
 	purchase_finished.emit(SPEED_PRODUCT, true)
 	return true
 
@@ -173,6 +216,7 @@ func _deliver(product: String) -> void:
 		SaveManager.data["purchases"]["acknowledged"] = true
 		SaveManager.unlock("cosmetics", &"golden_lantern")
 	SaveManager.save_profile()
+	last_error = ""
 	purchase_finished.emit(product, true)
 
 
@@ -223,13 +267,16 @@ func _on_play_state(product: String, state: String) -> void:
 			elif not owns(product):
 				_deliver(product)
 			else:
+				last_error = ""
 				purchase_finished.emit(product, true)
 		"pending":
 			_set_pending(product, true)
 			SaveManager.save_profile()
-			purchase_finished.emit(product, false)
+			_fail(product, "pending")
 		"refunded":
 			if owns(product):
 				mock_refund(product)
+		"canceled", "unavailable":
+			_fail(product, state)
 		_:
-			purchase_finished.emit(product, false)
+			_fail(product, "failed")
