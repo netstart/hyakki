@@ -9,6 +9,8 @@ const ENDLESS_GOLD := 1.5
 const DAILY_MIN_TIME := 300.0
 ## Santuário: cada compra (de qualquer melhoria) encarece todas em PRICE_STEP do preço base.
 const PRICE_STEP := 0.1
+## Santuário simulado do bot (--meta=..., preset_levels).
+const META_PRESETS: Array[String] = ["none", "half", "max"]
 const TELEMETRY_HEADER := "date,hero,stage,mode,moon,time,level,kills,ryo,result,weapons,damage_taken,cause"
 ## Tipos de recompensa que liberam conteúdo, com a lista de desbloqueados de cada um.
 const UNLOCK_KINDS := {"hero": "heroes", "weapon": "weapons", "passive": "passives",
@@ -52,15 +54,42 @@ static func refund_all() -> int:
 
 ## Modificadores de todos os power-ups comprados, para o StatBlock.
 static func powerup_modifiers() -> Dictionary:
+	var levels: Dictionary = {}
+	for id: StringName in DB.ids("powerups"):
+		levels[id] = SaveManager.powerup_level(id)
+	return modifiers_for(levels)
+
+
+## Modificadores de um conjunto de níveis do Santuário ({id: nível}; o que falta conta 0).
+static func modifiers_for(levels: Dictionary) -> Dictionary:
 	var mods: Dictionary = {}
 	for id: StringName in DB.ids("powerups"):
-		var level := SaveManager.powerup_level(id)
+		var level := int(levels.get(id, 0))
 		if level <= 0:
 			continue
 		var data: Dictionary = DB.powerups[id]
 		var stat := String(data["stat"])
 		mods[stat] = float(mods.get(stat, 0.0)) + float(data["per_level"]) * level
 	return mods
+
+
+## Santuário simulado do bot (--meta): "none" nada, "half" a metade (para baixo) do máximo de cada
+## melhoria, "max" tudo no máximo. Só os níveis ({id: nível}); nunca grava no save.
+static func preset_levels(preset: String) -> Dictionary:
+	var levels: Dictionary = {}
+	if not META_PRESETS.has(preset) or preset == "none":
+		return levels
+	for id: StringName in DB.ids("powerups"):
+		var cap := int(DB.powerups[id]["max"])
+		var level := cap if preset == "max" else floori(cap / 2.0)
+		if level > 0:
+			levels[id] = level
+	return levels
+
+
+## Modificadores do Santuário simulado do bot (--meta=none|half|max).
+static func bot_modifiers(preset: String) -> Dictionary:
+	return modifiers_for(preset_levels(preset))
 
 
 static func is_hero_unlocked(id: StringName) -> bool:
@@ -76,17 +105,24 @@ static func is_content_available(kind: String, id: StringName, data: Dictionary)
 	return unlock.is_empty() or SaveManager.is_unlocked(kind, id)
 
 
+## Ryō que a partida leva para o perfil: na Noite Sem Fim só o ganho depois do amanhecer
+## (acima de tracker.endless_ryo_start) vale ×ENDLESS_GOLD; o anúncio de dobrar vale sobre tudo.
+static func run_ryo(result: Dictionary, tracker: RunTracker) -> int:
+	var ryo := tracker.ryo
+	if bool(result.get("endless", false)):
+		ryo += roundi(maxi(0, ryo - tracker.endless_ryo_start) * (ENDLESS_GOLD - 1.0))
+	if tracker.doubled_ryo:
+		ryo *= 2
+	return ryo
+
+
 ## Aplica o resultado da partida ao perfil. Devolve o ryō, as conquistas e missões novas
 ## ("achievements") e as próximas metas com o progresso de antes e depois ("goals", MissionBook).
 static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 	var data := SaveManager.data
 	var before := MissionBook.snapshot()
 	var stats: Dictionary = data["stats"]
-	var ryo := tracker.ryo
-	if bool(result.get("endless", false)):
-		ryo = roundi(ryo * ENDLESS_GOLD)
-	if tracker.doubled_ryo:
-		ryo *= 2
+	var ryo := run_ryo(result, tracker)
 	SaveManager.add_ryo(ryo)
 	# O ryō gasto na própria partida (Rerrolar pago) foi ganho: conta no total da vida, como o
 	# gasto no Santuário e na Loja (o saldo levado para casa já veio sem ele).

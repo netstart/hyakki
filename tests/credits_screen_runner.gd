@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/credits_screen_tests.gd sozinho, com os autoloads e arquivos de save e opções
-## próprios dos testes (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/credits_screen_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=credits`).
+##   godot --path . res://tests/credits_screen_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas dos Créditos em PNG, em cada
 ## resolução de tests/device_profiles.gd:
 ## topo, meio, parte de baixo e fim da rolagem, em pt_BR e ja (`--langs=pt_BR,en` troca os idiomas).
@@ -28,10 +28,12 @@ func _ready() -> void:
 			shots = arg.trim_prefix("--shots=")
 		elif arg.begins_with("--langs="):
 			langs = arg.trim_prefix("--langs=").split(",")
-	if shots != "":
-		await _screenshots(shots, langs)
-	else:
-		await CreditsScreenTests.new().run(self, _check)
+	if shots == "":
+		printerr("credits_screen_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=credits")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots, langs)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)

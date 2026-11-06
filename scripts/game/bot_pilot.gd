@@ -27,6 +27,17 @@ const ABILITY_EVERY := 6
 const PROGRESS_STEPS := 3600
 
 
+## Linhas do fim da partida do bot, depois da FIM (fora do hash): dano recebido, habilidades,
+## ryō por fonte (RunTracker.economy_line) e a vida (atual, máxima, reviveres, cura e sobra, comida).
+static func report(game: HyakkiGame) -> String:
+	var p := game.player
+	var vitals := "VIDA atual=%.2f max=%.2f reviveu=%d curado=%.0f sobra=%.0f onigiri=%d sushi=%d regen=%.2f" % [
+		p.hp, p.max_hp(), p.revives_used, p.healed, p.overhealed, int(game.tracker.items.get(&"onigiri", 0)),
+		int(game.tracker.items.get(&"sushi", 0)), p.stats.get_stat("regen")]
+	return "\n".join([p.damage.report_line(), game.abilities.uses_line(), game.rift.journey_line(),
+			game.tracker.economy_line(), vitals])
+
+
 ## Slot da habilidade que o bot solta neste passo (-1 = nenhuma). Chamado no passo fixo.
 static func ability_slot(game: HyakkiGame) -> int:
 	if game.step_index % ABILITY_EVERY != 0:

@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/level_chest_tests.gd sozinho, com os autoloads e arquivos de save e opções
-## próprios dos testes (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/level_chest_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=level_chest`).
+##   godot --path . res://tests/level_chest_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta> [--gfx=low|high]` (sem --headless) grava capturas das telas de
 ## nova habilidade e do baú numa partida de verdade, em cada resolução de tests/device_profiles.gd.
 
@@ -28,10 +28,12 @@ func _ready() -> void:
 			shots = arg.trim_prefix("--shots=")
 		if arg.begins_with("--langs="):
 			langs.assign(arg.trim_prefix("--langs=").split(","))
-	if shots != "":
-		await _screenshots(shots, langs)
-	else:
-		await LevelChestTests.new().run(self, _check)
+	if shots == "":
+		printerr("level_chest_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=level_chest")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots, langs)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)

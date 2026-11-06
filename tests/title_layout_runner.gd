@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/title_layout_tests.gd sozinho, com os arquivos de save e opções próprios dos testes
-## (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/title_layout_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=title_layout`).
+##   godot --path . res://tests/title_layout_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas do título em cada resolução de
 ## tests/device_profiles.gd, sem recorte e com o furo da câmera de cada lado (a faixa do
 ## recorte aparece em vermelho), com partida suspensa e o balão de dicas da guardiã com a dica mais
@@ -29,10 +29,12 @@ func _ready() -> void:
 			shots = arg.trim_prefix("--shots=")
 		elif arg.begins_with("--langs="):
 			langs = arg.trim_prefix("--langs=").split(",")
-	if shots != "":
-		await _screenshots(shots, langs)
-	else:
-		await TitleLayoutTests.new().run(self, _check)
+	if shots == "":
+		printerr("title_layout_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=title_layout")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots, langs)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)

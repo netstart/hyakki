@@ -71,6 +71,48 @@ static func owners(names: Array[StringName], layout: Array[bool], costs: Diction
 	return owner
 
 
+## Reparte os casos de layout pelo custo, para N = 1..MAX_SHARDS: as suítes sem layout já têm dono
+## (owners); cada fatia recebe casos de layout até todas somarem o mesmo custo (a fatia com uma suíte
+## sem layout cara, como AbilityTests, fica com menos casos). `layout_ms` é o custo de todos os casos
+## de todas as suítes de layout juntos (sem as partes ".resto"); cada caso custa o mesmo.
+static func plan_layout(names: Array[StringName], layout: Array[bool], costs: Dictionary, layout_ms: int) -> void:
+	for n: int in range(1, MAX_SHARDS + 1):
+		var owner := owners(names, layout, costs, n)
+		var loads: Array[float] = []
+		loads.resize(n)
+		loads.fill(0.0)
+		for i: int in names.size():
+			if owner[i] >= 0:
+				loads[owner[i]] += float(costs.get(names[i], DEFAULT_MS))
+		var shares := level_shares(loads, float(maxi(layout_ms, 1)))
+		var cuts := PackedFloat64Array([0.0])
+		var acc := 0.0
+		for k: int in n:
+			acc += shares[k]
+			cuts.append(acc / float(maxi(layout_ms, 1)))
+		cuts[n] = 1.0
+		DeviceProfiles.set_shard_cuts(n, cuts)
+
+
+## Quanto de `total` cada fatia recebe para todas chegarem ao mesmo nível (enchimento por água): com
+## nível T, a fatia k recebe max(0, T - loads[k]), e as partes somam `total`.
+static func level_shares(loads: Array[float], total: float) -> Array[float]:
+	var sorted := loads.duplicate()
+	sorted.sort()
+	var level := 0.0
+	var acc := 0.0
+	for i: int in sorted.size():
+		acc += sorted[i]
+		# Nível se só as i + 1 fatias menos carregadas recebessem: vale se não passa da próxima.
+		level = (total + acc) / float(i + 1)
+		if i + 1 == sorted.size() or level <= sorted[i + 1]:
+			break
+	var shares: Array[float] = []
+	for value: float in loads:
+		shares.append(maxf(0.0, level - value))
+	return shares
+
+
 ## Para N = 1..MAX_SHARDS: toda suíte sem layout cai em exatamente uma fatia, as de layout em todas, e
 ## as partes de layout_units() e das resoluções (DeviceProfiles.shard_range) cobrem tudo sem buraco
 ## nem repetição.

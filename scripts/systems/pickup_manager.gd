@@ -7,7 +7,7 @@ extends Node2D
 
 const CAPACITY := 400
 ## Chance de moeda por abate comum (multiplicada pela sorte; HyakkiGame._on_enemy_killed).
-const COIN_CHANCE := 0.012
+const COIN_CHANCE := 0.010
 const MERGE_AT := 300
 const COLLECT_RADIUS := 8.0
 const ITEM_RADIUS := 10.0

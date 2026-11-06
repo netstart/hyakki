@@ -21,11 +21,11 @@ static func xp_to_next(level: int) -> int:
 
 
 static func enemy_hp_mult(minute: float) -> float:
-	return 1.0 + 0.08 * minute
+	return 1.0 + 0.10 * minute
 
 
 static func enemy_damage_mult(minute: float) -> float:
-	return 1.0 + 0.04 * minute
+	return 1.0 + 0.05 * minute
 
 
 ## Inimigos que podem nascer por segundo. Controla o fluxo de XP: meta de nível 10

@@ -138,7 +138,7 @@ func apply(card: Dictionary) -> void:
 		"heal":
 			game.player.heal(30.0, true)
 		"ryo":
-			game.add_run_ryo(25)
+			game.add_run_ryo(25, &"card")
 
 
 ## Preço da próxima rolagem: 0 enquanto houver carga grátis.

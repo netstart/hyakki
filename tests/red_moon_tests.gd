@@ -8,7 +8,7 @@ extends RefCounted
 ##       escolha automática "Comida" e o baú pegando o ryō;
 ## - V   só RedMoon.PACTS Kami no santuário;
 ## - textos das regras com os números das constantes, somados até a lua escolhida.
-## Chamado por tests/integration_tests.gd e por tests/red_moon_runner.gd (sozinho).
+## Chamado por tests/integration_tests.gd (sozinho: `-- --suites=red_moon`).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "mode": "normal", "seed": 29, "speed": 1}

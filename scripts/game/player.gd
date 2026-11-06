@@ -58,6 +58,9 @@ var hp: float = 100.0
 var invuln: float = 0.0
 var is_alive: bool = true
 var revives_used: int = 0
+## Vida curada na partida e a cura que sobrou acima da vida máxima (só registro: linha VIDA do bot).
+var healed: float = 0.0
+var overhealed: float = 0.0
 var slow_time: float = 0.0
 var slow_factor: float = 1.0
 var lava_cd: float = 0.0
@@ -166,6 +169,8 @@ func reset() -> void:
 	invuln = 0.0
 	is_alive = true
 	revives_used = 0
+	healed = 0.0
+	overhealed = 0.0
 	slow_time = 0.0
 	slow_factor = 1.0
 	lava_cd = 0.0
@@ -452,6 +457,8 @@ func heal(amount: float, show_number: bool = false) -> void:
 		return
 	var before := hp
 	hp = minf(max_hp(), hp + amount)
+	healed += hp - before
+	overhealed += amount - (hp - before)
 	if show_number and hp - before >= 1.0:
 		game().fx.add_number(sim_pos + Vector2(0.0, sprite_top()), hp - before, DamagePalette.Kind.HEAL,
 				max_hp())

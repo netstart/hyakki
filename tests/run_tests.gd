@@ -88,7 +88,7 @@ func _test_target_count() -> void:
 	_check(Progression.target_count(0.0, 500) == 15, "alvo no minuto 0 = 15")
 	_check(Progression.target_count(1.0, 500) == 38, "alvo no minuto 1 = 38")
 	_check(Progression.target_count(15.0, 500) == 500, "alvo respeita o teto")
-	_check(is_equal_approx(Progression.enemy_hp_mult(10.0), 1.8), "HP ×1,8 no minuto 10")
+	_check(is_equal_approx(Progression.enemy_hp_mult(10.0), 2.0), "HP ×2 no minuto 10")
 	_check(Progression.spawn_rate(10.0) > Progression.spawn_rate(0.0), "ritmo de nascimento cresce com o tempo")
 
 

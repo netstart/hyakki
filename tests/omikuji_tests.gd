@@ -3,7 +3,7 @@ extends RefCounted
 ## - regras puras (run_unit, por tests/run_tests.gd): sorte pela contagem (吉 1, 中吉 3, 大吉 5),
 ##   凶 só em baú de 1 item e na chance certa, fluxo próprio pela semente (mesma semente = mesma
 ##   sequência), contador dos baús generosos e a migração do estado;
-## - jogo (run, por tests/integration_tests.gd ou tests/omikuji_tests.tscn): save novo e antigo
+## - jogo (run, por tests/integration_tests.gd, sozinho com `--suites=omikuji`): save novo e antigo
 ##   (migração conta os baús já abertos), os 3 primeiros baús comuns com 中吉 garantido e
 ##   gravados no save, chefe e bot sem gastar, 凶 com o item e o consolo em ryō, a mesma
 ##   sequência de sortes em 1x, 2x e 3x (e no hash da partida), e a tela: omikuji antes do baú,

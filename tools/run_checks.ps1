@@ -9,6 +9,10 @@
 #      - jornada pelos três níveis: o bot invencível passa pelos dois portais até o Tokoyo e vence
 #        o último chefe, com o mesmo estado em 1x, 2x e 3x
 #      - estresse com 500 inimigos (custo da simulação neste PC; com -StressAlone roda sozinho no fim)
+#      - com janela (sem --headless; -NoWindow pula): os traços do Stroke iguais aos do motor pixel a
+#        pixel (tests/stroke_pixel_tests.tscn), o mesmo quadro da partida pelos dois caminhos
+#        (tests/game_bench.tscn --compare-shots --strict) e a navegação entre os menus sem piscar
+#        (tests/nav_bench.tscn --strict-flicker, em NavShards processos; os ms só são impressos)
 #      - gdlint (regras em gdlintrc) dividido em partes
 #      - textos, licenças, ficha da loja e site irmão (netstart.github.io: app-ads.txt gerado do
 #        ID do AdMob, política de privacidade e página do jogo lá, sem cópias em docs/)
@@ -21,10 +25,23 @@
 # força (com os processos filhos) e rodada de novo uma vez; se travar de novo, é falha.
 # Qualquer falha, erro de script ou trava em qualquer tarefa reprova o todo.
 #
+# Fila, ordem e prioridade: no máximo -MaxParallel tarefas ao mesmo tempo (núcleos − 2 e o que a
+# memória comporta), da mais longa para a mais curta; a jornada (a mais longa, uma partida de 11 min
+# que não se divide) fica em Normal e todas as outras em BelowNormal (o Godot se põe em AboveNormal), para
+# ela ter um núcleo inteiro e o PC continuar usável enquanto as fatias dividem o resto da máquina.
+#
 # Uso:  powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 #       -Shards N        fatias da integração (padrão: pelo número de núcleos)
 #       -StallMinutes M  minutos sem saída para considerar a tarefa travada (padrão 8)
 #       -StressAlone     roda o estresse sozinho, depois das outras tarefas (números sem disputa de CPU)
+#       -NoWindow        pula as tarefas que abrem janela (pixels e navegação)
+#       -NavShards N     processos do benchmark de navegação (padrão 3)
+#       -SamePriority    todas as tarefas com a mesma prioridade (sem dar a vez à jornada)
+#       -MaxParallel N   teto de processos ao mesmo tempo (padrão: núcleos lógicos − 2, e o que a
+#                        memória livre comporta: (livre − ReserveMB) / GodotMemoryMB); o resto espera
+#                        na fila, a mais longa primeiro, e cada vaga liberada puxa a próxima
+#       -GodotMemoryMB M memória de um Godot de teste (padrão 600; fatia headless ~500, com janela ~800)
+#       -ReserveMB M     memória que fica livre para a máquina (padrão 4096): sem ela, a fila espera
 #       -Only a,b        só as tarefas cujo nome começa com um destes (ex.: -Only integracao,regras)
 #       -KeepTemp        mantém as pastas APPDATA temporárias
 #       -Godot "C:\caminho\Godot_v4.7.2-stable_win64_console.exe"
@@ -35,6 +52,12 @@ param(
     [int]$Shards = 0,
     [double]$StallMinutes = 8,
     [switch]$StressAlone,
+    [switch]$NoWindow,
+    [int]$NavShards = 3,
+    [switch]$SamePriority,
+    [int]$MaxParallel = 0,
+    [int]$GodotMemoryMB = 600,
+    [int]$ReserveMB = 4096,
     [string[]]$Only = @(),
     [switch]$KeepTemp
 )
@@ -53,10 +76,23 @@ $tempRoot = Join-Path ([IO.Path]::GetTempPath()) "hyakki-checks\$stamp"
 New-Item -ItemType Directory -Force $logDir, $tempRoot | Out-Null
 $utf8 = New-Object Text.UTF8Encoding $false
 
+# Memória disponível agora (MB): livre + cache que o Windows devolve na hora.
+Add-Type -AssemblyName Microsoft.VisualBasic
+function Get-AvailableMB { return [math]::Floor((New-Object Microsoft.VisualBasic.Devices.ComputerInfo).AvailablePhysicalMemory / 1MB) }
+
+# Teto de processos ao mesmo tempo: núcleos lógicos − 2 (a máquina continua usável) e o que a
+# memória comporta. Mais que isso disputa CPU sem andar mais rápido (as fatias, o lint e o Python
+# ficavam 2 a 7 vezes mais lentos com 38 processos em 16 linhas) e pode esgotar a memória.
+if ($MaxParallel -le 0) {
+    $byCpu = [math]::Max(2, [Environment]::ProcessorCount - 2)
+    $byMemory = [math]::Max(2, [math]::Floor(((Get-AvailableMB) - $ReserveMB) / $GodotMemoryMB))
+    $MaxParallel = [math]::Min($byCpu, $byMemory)
+}
 if ($Shards -le 0) {
-    # Cada fatia é um processo de uma linha de execução; as outras tarefas (regras, 4 partidas do
-    # determinismo, estresse, gdlint) ocupam ~8 núcleos no começo e terminam antes da integração.
-    $Shards = [math]::Max(2, [math]::Min(12, [Environment]::ProcessorCount - 4))
+    # Cada fatia é um processo de uma linha de execução. A jornada ocupa 3 vagas o tempo todo e
+    # sobra 1 para a fila das tarefas curtas (bot, regras, navegação, lint, Python) desde o começo;
+    # as outras entram nas vagas da jornada 3x e 2x e das fatias, antes da jornada 1x acabar.
+    $Shards = [math]::Max(2, [math]::Min(12, $MaxParallel - 4))
 }
 
 # Perfil real do jogador (user:// sem isolamento): os arquivos e seus hashes antes de tudo.
@@ -92,9 +128,11 @@ $checkGdTests = {
     return @{ Ok = [bool]$ok; Summary = $summary; Details = @($fails + $errors) }
 }
 
-function Add-GodotTask([string]$Name, [string[]]$GodotArgs, [scriptblock]$Check) {
+# -Window: sem --headless (a tarefa desenha de verdade: comparação de pixels, navegação).
+function Add-GodotTask([string]$Name, [string[]]$GodotArgs, [scriptblock]$Check, [switch]$Window) {
+    [string[]]$head = @(if (-not $Window) { '--headless' })
     $tasks.Add([pscustomobject]@{ Name = $Name; Exe = $Godot; Godot = $true; Check = $Check
-        Args = @('--headless', '--path', $project, '--log-file', (Join-Path $logDir "godot_$Name.log")) + $GodotArgs })
+        Args = $head + @('--path', $project, '--log-file', (Join-Path $logDir "godot_$Name.log")) + $GodotArgs })
 }
 
 function Add-ToolTask([string]$Name, [string]$Exe, [string[]]$ToolArgs) {
@@ -148,6 +186,35 @@ $checkStress = {
 }
 Add-GodotTask 'estresse' @('--fixed-fps', '60', '--', '--bot', '--seed=7', '--stress=500', '--log-every=10', '--quit-at=30') $checkStress
 
+# Com janela: o que precisa desenhar de verdade (não roda com --headless).
+if (-not $NoWindow) {
+    Add-GodotTask 'pixels_stroke' @('res://tests/stroke_pixel_tests.tscn') $checkGdTests -Window
+    $checkCompare = {
+        param($Lines, $Code)
+        $errors = Test-ScriptErrors $Lines
+        $fails = @($Lines | Where-Object { $_ -match 'FALHOU' })
+        $line = $Lines | Where-Object { $_ -match '^COMPARA ' } | Select-Object -Last 1
+        $ok = $Code -eq 0 -and $line -and -not $errors -and -not $fails
+        return @{ Ok = [bool]$ok; Summary = $(if ($line) { $line } else { 'sem a linha COMPARA' }); Details = @($fails + $errors) }
+    }
+    Add-GodotTask 'pixels_partida' @('res://tests/game_bench.tscn', '--', '--bot', '--seed=7', '--stress=500', '--bench-seconds=4',
+        '--strict', "--compare-shots=$(Join-Path $logDir 'pixels_partida')") $checkCompare -Window
+    # Navegação entre os menus: nenhuma piscada e o título parado na volta de um submenu (os ms da
+    # troca dependem da disputa de CPU: só impressos; o critério de ms é o --strict, rodado sozinho).
+    $checkNav = {
+        param($Lines, $Code)
+        $errors = Test-ScriptErrors $Lines
+        $fails = @($Lines | Where-Object { $_ -match 'FALHOU' })
+        $line = $Lines | Where-Object { $_ -match '^\d+ casos medidos, \d+ acima dos limites' } | Select-Object -Last 1
+        $ok = $Code -eq 0 -and $line -and -not $errors -and -not $fails
+        return @{ Ok = [bool]$ok; Summary = $(if ($line) { $line } else { 'não chegou ao fim (veja o log)' }); Details = @($fails + $errors) }
+    }
+    $NavShards = [math]::Max(1, $NavShards)
+    for ($k = 1; $k -le $NavShards; $k++) {
+        Add-GodotTask "navegacao_$k" @('res://tests/nav_bench.tscn', '--', '--strict-flicker', '--cycles=1', "--shard=$k/$NavShards") $checkNav -Window
+    }
+}
+
 $gdlint = Get-Command gdlint -ErrorAction SilentlyContinue
 if ($gdlint) {
     # gdlint é lento (~0,13 s por arquivo); os arquivos vão em partes de tamanho parecido.
@@ -199,7 +266,10 @@ function Start-Task($task) {
         $psi.EnvironmentVariables['HYAKKI_CHECKS_APPDATA'] = $appdata
     }
     $psi.EnvironmentVariables['PYTHONIOENCODING'] = 'utf-8'
-    $proc = [Diagnostics.Process]::Start($psi)
+    $self = [Diagnostics.Process]::GetCurrentProcess()
+    $low = -not $SamePriority -and -not (Test-LongPole $task)
+    if ($low) { $self.PriorityClass = 'BelowNormal' }
+    try { $proc = [Diagnostics.Process]::Start($psi) } finally { if ($low) { $self.PriorityClass = 'Normal' } }
     $task | Add-Member -Force NoteProperty Process $proc
     $task | Add-Member -Force NoteProperty Log $log
     $task | Add-Member -Force NoteProperty Watch ([Diagnostics.Stopwatch]::StartNew())
@@ -211,7 +281,9 @@ function Start-Task($task) {
 
 # Encerra o cmd.exe e tudo o que ele abriu (Godot_*_console.exe e o Godot_*.exe filho).
 function Stop-Tree($proc) {
-    if ($proc -and -not $proc.HasExited) { & taskkill.exe /PID $proc.Id /T /F 2>&1 | Out-Null }
+    # Pelo cmd (saída descartada lá): com $ErrorActionPreference = 'Stop', o stderr do taskkill
+    # ("não pôde ser finalizado", filho que já saiu) viraria erro e derrubaria o run_checks.
+    if ($proc -and -not $proc.HasExited) { & $env:ComSpec /d /c "taskkill /PID $($proc.Id) /T /F >nul 2>&1" | Out-Null }
 }
 
 function Read-Lines([string]$path) {
@@ -234,13 +306,63 @@ function Complete-Task($task, [bool]$stalled) {
     Write-Host ('  {0,-24} {1,6:N1}s  {2}  {3}' -f $task.Name, $seconds, $(if ($verdict.Ok) { 'ok    ' } else { 'FALHOU' }), $verdict.Summary) -ForegroundColor $color
 }
 
-# Roda as tarefas em paralelo e espera todas, vigiando as travadas.
+# Ordem de início: as mais longas primeiro (a jornada, as fatias, as partidas do bot...).
+$StartOrder = @('jornada_1x', 'jornada_2x', 'jornada_3x', 'integracao_', 'determinismo_1x', 'estresse', 'determinismo_', 'regras',
+    'navegacao_', 'pixels_', 'lint_', 'py_')
+function Get-StartRank($task) {
+    for ($i = 0; $i -lt $StartOrder.Count; $i++) { if ($task.Name.StartsWith($StartOrder[$i])) { return $i } }
+    return $StartOrder.Count
+}
+# Prioridade: o Godot sobe a própria prioridade para AboveNormal ao abrir; o run_checks baixa cada
+# Godot para BelowNormal (a máquina continua usável) e deixa só a jornada, a mais longa e que não se
+# divide (3 processos), em Normal: ela é quem marca o tempo total. O cmd.exe, o gdlint e o Python já nascem em BelowNormal (o filho herda a
+# prioridade abaixo do normal: este processo baixa a própria enquanto abre a tarefa).
+function Test-LongPole($task) { return $task.Name -like 'jornada_*' }
+function Set-GodotPriorities($running) {
+    $pending = @($running | Where-Object { $_.Godot -and -not $_.PriorityDone })
+    if (-not $pending -or $SamePriority) { return }
+    $procs = @(Get-CimInstance Win32_Process -Filter "Name like 'Godot%'" -ErrorAction SilentlyContinue)
+    foreach ($t in $pending) {
+        $mark = "godot_$($t.Name).log"
+        $mine = @($procs | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($mark) })
+        $class = if (Test-LongPole $t) { 'Normal' } else { 'BelowNormal' }
+        foreach ($p in $mine) {
+            try { (Get-Process -Id $p.ProcessId -ErrorAction Stop).PriorityClass = $class } catch { }
+        }
+        # Pronto quando o Godot de verdade (não o _console, que só repassa a saída) já foi achado.
+        if (@($mine | Where-Object { $_.Name -notlike '*console*' }).Count -gt 0) { $t.PriorityDone = $true }
+    }
+}
+
+# Picos (relatório no fim): processos de tarefa ao mesmo tempo e a menor memória disponível.
+$script:peakRunning = 0
+$script:minAvailableMB = [int]::MaxValue
+
+# Roda as tarefas com no máximo $MaxParallel ao mesmo tempo (fila, a mais longa primeiro; cada vaga
+# liberada puxa a próxima, se a memória disponível comportar mais um Godot) e espera todas,
+# vigiando as travadas.
 function Invoke-Parallel($list) {
+    $queue = New-Object System.Collections.Generic.Queue[object]
+    foreach ($t in @($list | Sort-Object { Get-StartRank $_ })) { $t | Add-Member -Force NoteProperty PriorityDone $false; $queue.Enqueue($t) }
     $running = New-Object System.Collections.Generic.List[object]
-    foreach ($t in $list) { Start-Task $t; $running.Add($t) }
+    $tick = 0
     try {
-        while ($running.Count -gt 0) {
+        while ($running.Count -gt 0 -or $queue.Count -gt 0) {
+            while ($queue.Count -gt 0 -and $running.Count -lt $MaxParallel) {
+                $available = Get-AvailableMB
+                $script:minAvailableMB = [math]::Min($script:minAvailableMB, $available)
+                # Sem memória para mais um Godot: espera uma vaga (nunca para com nada rodando).
+                if ($running.Count -gt 0 -and $queue.Peek().Godot -and $available - $GodotMemoryMB -lt $ReserveMB) { break }
+                $t = $queue.Dequeue()
+                Start-Task $t
+                $running.Add($t)
+            }
+            $script:peakRunning = [math]::Max($script:peakRunning, $running.Count)
             Start-Sleep -Milliseconds 500
+            if ($tick++ % 4 -eq 0) {
+                Set-GodotPriorities $running
+                $script:minAvailableMB = [math]::Min($script:minAvailableMB, (Get-AvailableMB))
+            }
             foreach ($t in $running.ToArray()) {
                 if ($t.Process.HasExited) {
                     $t.Process.WaitForExit()
@@ -256,6 +378,7 @@ function Invoke-Parallel($list) {
                 if ($t.Attempts -lt 2) {
                     Write-Host "  $($t.Name): $StallMinutes min sem saída; encerrada à força e rodada de novo" -ForegroundColor Yellow
                     Copy-Item $t.Log "$($t.Log -replace '\.log$', '')_travou.log" -Force
+                    $t.PriorityDone = $false
                     Start-Task $t
                 } else {
                     $running.Remove($t) | Out-Null
@@ -270,7 +393,7 @@ function Invoke-Parallel($list) {
 }
 
 # --- Execução --------------------------------------------------------------------------
-Write-Host "== Verificações do Hyakki ($Shards fatias de integração, logs em $logDir)" -ForegroundColor Cyan
+Write-Host "== Verificações do Hyakki ($Shards fatias de integração, até $MaxParallel processos ao mesmo tempo, $(Get-AvailableMB) MB disponíveis, logs em $logDir)" -ForegroundColor Cyan
 
 $failed = $false
 if ($Only.Count -eq 0 -or @($Only | Where-Object { 'importacao'.StartsWith($_) }).Count -gt 0) {
@@ -290,7 +413,7 @@ if ($tasks.Count -eq 0 -and $Only.Count -gt 0 -and @($Only | Where-Object { 'imp
 }
 $alone = @($tasks | Where-Object { $StressAlone -and $_.Name -eq 'estresse' })
 $batch = @($tasks | Where-Object { $alone -notcontains $_ })
-Write-Host "== 2. $($batch.Count) tarefas em paralelo" -ForegroundColor Cyan
+Write-Host "== 2. $($batch.Count) tarefas, até $MaxParallel ao mesmo tempo" -ForegroundColor Cyan
 Invoke-Parallel $batch
 if ($alone) {
     Write-Host '== 3. Estresse sozinho' -ForegroundColor Cyan
@@ -390,6 +513,12 @@ foreach ($name in $profileBefore.Keys) {
     }
 }
 
+if ($script:peakRunning -gt 0) {
+    Write-Host ("Pico: {0} tarefas ao mesmo tempo (teto {1}); menor memória disponível {2} MB (reserva {3} MB)" -f $script:peakRunning,
+        $MaxParallel, $script:minAvailableMB, $ReserveMB)
+}
+$slow = @($results | Sort-Object Seconds -Descending | Select-Object -First 5)
+if ($slow) { Write-Host ('Mais lentas: ' + (($slow | ForEach-Object { '{0} {1:N1}s' -f $_.Name, $_.Seconds }) -join ', ')) }
 $retried = @($results | Where-Object { $_.Attempts -gt 1 })
 if ($retried) { Write-Host "Rodadas de novo depois de travar: $(($retried | ForEach-Object Name) -join ', ')" -ForegroundColor Yellow }
 if (-not $KeepTemp -and -not $failed) { Remove-Item -Recurse -Force $tempRoot -ErrorAction SilentlyContinue }

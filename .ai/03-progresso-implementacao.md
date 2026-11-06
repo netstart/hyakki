@@ -7,7 +7,7 @@ só pare quando terminar e validar tudo." Em 21/10: "termine tudo, quando termin
 - Godot 4.7.2 em `C:\src\tools\godot` · Android SDK `C:\android-sdk` · emulador `Redmi_Note_14_Pro_Plus_5G`
   (1220×2712, x86_64, google_apis, **sem Play Store**) em `emulator-5554`, hoje só para teste manual.
 - **Política atual (29/10/2026):** testes automatizados no emulador Android são proibidos; os testes por resolução
-  rodam só no Godot (`tests/device_profiles.gd`, testes de layout, `tests/scroll_bench.tscn`). O E2E no emulador
+  rodam só no Godot (`tests/device_profiles.gd`, testes de layout, `tests/nav_bench.tscn`). O E2E no emulador
   (`tools/run_e2e.ps1`, `tools/create_test_avds.ps1`, `scripts/app/e2e_driver.gd`) foi removido. Veja o `AGENTS.md`.
 - Pacote base: `C:\src\assets\ninja-adventure\NinjaAdventure-AssetPack.zip` (SHA-256 `95a06f4f…7b15`, CC0),
   fora do repositório; só os 752 arquivos usados são copiados para `assets/` por `tools/sync_assets.py`.
@@ -181,7 +181,7 @@ fortes, sons e grito. Especificação e números: [04-habilidades-dos-guardioes.
   `HABILIDADES` no fim da partida do bot (nível e usos por habilidade).
 - ✅ Correção junto: meia-lua do Onikiri (Yuki) desenhada com `Stroke.band` (quadriláteros) no lugar de
   `draw_colored_polygon`, que falhava com "Invalid polygon data, triangulation failed".
-- ✅ Testes: `tests/ability_tests.tscn` (unitários das energias, sistema, primitivas, cada herói em cenário
+- ✅ Testes: `AbilityTests` (hoje `-- --suites=ability` na integração; unitários das energias, sistema, primitivas, cada herói em cenário
   montado, estados, save e bot), HUD das habilidades em todas as resoluções × 11 idiomas × furo dos dois
   lados, Guia e fichas.
 
@@ -201,6 +201,16 @@ Pedido: um terceiro nível em cada fase, depois do Kakuriyo. Design: [06-tokoyo-
   resoluções × 11 idiomas × furo dos dois lados; tarefas `jornada_1x/2x/3x` do `run_checks` (bot `--god`
   pelos dois portais até vencer o último chefe, mesmo hash nas três). O bot imprime `PROGRESSO` a cada
   60 s da noite para o `run_checks` não tomar a jornada longa por travada.
+
+### Balanceamento do Normal e da economia (06/11/2026)
+Medido com o bot (`--meta=none|max`, linhas ECONOMIA/VIDA): Santuário vazio vencia 16%, Santuário no máximo
+88% com 86% da vida no fim; ~58% do ryō vinha das moedas de abate.
+- ✅ Santuário 20% mais caro (`price` base ×1,2 em `data/powerups.json`); moeda de abate
+  `PickupManager.COIN_CHANCE` 1,2% → 1,0%; inimigos por minuto `Progression.enemy_hp_mult` 1 + 0,10·min
+  (era 0,08) e `enemy_damage_mult` 1 + 0,05·min (era 0,04).
+- ✅ Correção: a Noite Sem Fim multiplicava todo o ryō da partida por `MetaProgress.ENDLESS_GOLD`; agora só o
+  ganho depois do amanhecer (`RunTracker.endless_ryo_start`, guardado na partida suspensa;
+  `MetaProgress.run_ryo`), como diz a dica; texto do Guia ajustado nos 11 idiomas. Teste em `tests/economy_tests.gd`.
 
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.

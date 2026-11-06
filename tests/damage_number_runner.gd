@@ -1,6 +1,7 @@
 extends Node
-## Roda tests/damage_number_tests.gd sozinho, com os arquivos de save e opções próprios dos testes:
-##   godot --headless --path . res://tests/damage_number_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=damage_number`).
+##   godot --path . res://tests/damage_number_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava, em 678x305, todos os tipos de número na fase
 ## do bambu e no outro mundo claro (Kakuriyo), na paleta normal e na de daltonismo, no meio do
 ## soco de escala e já assentados, mais um recorte ampliado 3x em volta da guardiã.
@@ -25,14 +26,12 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			shots = arg.trim_prefix("--shots=")
-	if shots != "":
-		await _screenshots(shots)
-	else:
-		DamageNumberTests.new().run_unit(_check)
-		DamageNumberDensityTests.new().run_unit(_check)
-		await DamageNumberTests.new().run(self, _check)
-		await DamageNumberFlowTests.new().run(self, _check)
-		await DamageNumberDensityTests.new().run(self, _check)
+	if shots == "":
+		printerr("damage_number_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=damage_number")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots)
 	GameClock.paused = false
 	Settings.set_value("colorblind", false)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:

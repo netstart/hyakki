@@ -1,14 +1,12 @@
 extends Node
-## Roda os testes da Loja sozinhos (tests/shop_layout_tests.gd: layout e rolagem; e a Loja
-## sem anúncios de tests/ads_off_tests.gd), com os autoloads e arquivos de save e opções
-## próprios dos testes (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/shop_layout_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=shop_layout,shop_scroll,ads_off`).
+##   godot --path . res://tests/shop_layout_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas da Loja de verdade (App.tscn) em
 ## cada resolução de tests/device_profiles.gd, sem recorte e com o furo da câmera de cada lado
 ## (a faixa do recorte aparece escurecida), com e sem anúncios, em pt_BR, de e ru.
 
 const ShopLayoutTests := preload("res://tests/shop_layout_tests.gd")
-const AdsOffTests := preload("res://tests/ads_off_tests.gd")
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const SHOT_LANGS: Array[String] = ["pt_BR", "de", "ru"]
 
@@ -28,12 +26,12 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			shots = arg.trim_prefix("--shots=")
-	if shots != "":
-		await _screenshots(shots)
-	else:
-		await ShopLayoutTests.new().run_layout(self, _check)
-		await ShopLayoutTests.new().run_scroll(self, _check)
-		await _ads_off()
+	if shots == "":
+		printerr("shop_layout_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=shop_layout,shop_scroll,ads_off")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
@@ -42,24 +40,6 @@ func _ready() -> void:
 		_check(now == _real_files[path], "testes não mexeram em %s do jogador", path)
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
-
-
-## Só a parte da Loja do modo sem anúncios (o resto roda na suíte de integração).
-func _ads_off() -> void:
-	var was_enabled := AdsManager.ads_enabled
-	var was_fill := AdsManager.mock_fill
-	var was_auto := AdsManager.auto_answer
-	AdsManager.ads_enabled = false
-	AdsManager.auto_answer = false
-	AdsManager.mock_fill = false
-	var tests := AdsOffTests.new()
-	tests.set("_host", self)
-	tests.set("_check", _check)
-	await tests.call("_test_shop_screen")
-	AdsManager.ads_enabled = was_enabled
-	AdsManager.mock_fill = was_fill
-	AdsManager.auto_answer = was_auto
-	SaveManager.data = SaveManager.default_profile()
 
 
 ## `args` (opcional): valores do rótulo, que só é formatado (`label % args`) na falha ou com --verbose.

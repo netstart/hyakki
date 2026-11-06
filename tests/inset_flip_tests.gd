@@ -6,7 +6,7 @@ extends RefCounted
 ## "voltar" e todo elemento de toque visível ficam fora do furo novo. A troca chega só pelo sinal
 ## único PixelScaler.safe_insets_changed (MenuKit.on_insets_change): sem tique de tela, sem
 ## resized. Também confere o próprio sinal (emite só quando muda; desliga com o nó).
-## Chamado por tests/integration_tests.gd ou sozinho por tests/inset_flip_tests.tscn.
+## Chamado por tests/integration_tests.gd (sozinho: `-- --suites=inset_flip`).
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 ## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).

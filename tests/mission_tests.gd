@@ -12,7 +12,7 @@ extends RefCounted
 ##   - Próximas metas: determinísticas, abertas, liberadas, variadas e as mais perto primeiro;
 ##     "+N" do apply_run;
 ##   - partida de verdade guiada pelo bot (sem --bot: com save) que conclui missões no amanhecer.
-## Chamado por tests/integration_tests.gd e por tests/mission_runner.gd (já nos arquivos de teste
+## Chamado por tests/integration_tests.gd (sozinho: `-- --suites=mission`; já nos arquivos de teste
 ## do SaveManager).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"

@@ -8,8 +8,14 @@ extends Node
 ## Opções: --native-strokes desenha arcos e polilinhas pelo caminho antigo do motor (Stroke.native),
 ## para comparar o custo; --compare-shots=<pasta> no fim pausa a partida e desenha o mesmo quadro
 ## pelos dois caminhos, grava as capturas e conta os pixels diferentes.
+## Com --strict (tools/run_checks) sai com erro se o motor × Stroke tiver um pixel com diferença de cor
+## acima de MAX_COLOR_DIFF (traço visivelmente diferente, como um arco no lugar errado); diferenças de
+## poucos níveis (até 6 vistos, em dezenas de pixels nas bordas) são arredondamento da interpolação, e
+## quantos pixels mudam depende do quadro, que varia com o relógio.
 
 const WARMUP := 4.0
+## Maior diferença de cor aceita no motor × Stroke com --strict.
+const MAX_COLOR_DIFF := 16
 
 var _stats := FrameStats.new()
 var _measuring := false
@@ -18,6 +24,7 @@ var _draw_calls := 0
 var _primitives := 0
 var _frames := 0
 var _strokes := 0
+var _failed := false
 
 
 func _ready() -> void:
@@ -55,7 +62,7 @@ func _ready() -> void:
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
-	get_tree().quit()
+	get_tree().quit(1 if _failed else 0)
 
 
 func _process(_delta: float) -> void:
@@ -90,12 +97,20 @@ func _compare(game: Node, dir: String) -> void:
 		img.convert(Image.FORMAT_RGBA8)
 		img.save_png(dir.path_join("partida_%d_%s.png" % [shots.size(), "motor" if native else "stroke"]))
 		shots.append(img)
-	print("COMPARA partida: motor × motor %s; motor × Stroke %s" % [_diff(shots[0], shots[1]), _diff(shots[1], shots[2])])
+	var noise := _diff(shots[0], shots[1])
+	var stroke := _diff(shots[1], shots[2])
+	print("COMPARA partida: motor × motor %d pixels com diferença > 2 (maior %d); motor × Stroke %d pixels"
+			% [noise.x, noise.y, stroke.x] + " com diferença > 2 (maior %d)" % stroke.y)
+	if "--strict" in OS.get_cmdline_user_args() and stroke.y > MAX_COLOR_DIFF:
+		printerr("FALHOU: o Stroke desenha a partida diferente do motor (%d pixels, ruído %d, maior %d)"
+				% [stroke.x, noise.x, stroke.y])
+		_failed = true
 	Engine.time_scale = 1.0
 	Stroke.native = false
 
 
-static func _diff(x: Image, y: Image) -> String:
+## Pixels com diferença > 2 (x) e a maior diferença (y).
+static func _diff(x: Image, y: Image) -> Vector2i:
 	var a := x.get_data()
 	var b := y.get_data()
 	var off := 0
@@ -105,4 +120,4 @@ static func _diff(x: Image, y: Image) -> String:
 		worst = maxi(worst, d)
 		if d > 2:
 			off += 1
-	return "%d pixels com diferença > 2 (maior %d)" % [off, worst]
+	return Vector2i(off, worst)

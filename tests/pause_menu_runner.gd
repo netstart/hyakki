@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/pause_menu_tests.gd sozinho, com os autoloads e arquivos de save e opções
-## próprios dos testes (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/pause_menu_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=pause_menu`).
+##   godot --path . res://tests/pause_menu_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas em PNG: a pausa sobre uma partida
 ## de verdade (pt_BR, de, ru e ja em 20:9, pt_BR em 16:9), a confirmação de desistir e o canto
 ## da HUD (pausa + velocidade em 1x e 3x, ampliado 4x).
@@ -26,10 +26,12 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			shots = arg.trim_prefix("--shots=")
-	if shots != "":
-		await _screenshots(shots)
-	else:
-		await PauseMenuTests.new().run(self, _check)
+	if shots == "":
+		printerr("pause_menu_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=pause_menu")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)

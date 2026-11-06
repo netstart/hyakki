@@ -67,7 +67,10 @@ func open(from_boss: bool) -> Array[Dictionary]:
 	var ryo := RYO_PER_ITEM * count * (BOSS_RYO_MULT if from_boss else 1)
 	if last_fortune == Omikuji.KYO:
 		ryo += Omikuji.KYO_RYO
-	game.add_run_ryo(ryo)
+	var gained := game.add_run_ryo(ryo, &"chests")
+	if last_fortune == Omikuji.KYO:
+		# Só o registro por fonte: a parte do consolo (proporcional) vai para "kyo".
+		game.tracker.move_ryo(&"chests", &"kyo", mini(gained, roundi(gained * Omikuji.KYO_RYO / float(ryo))))
 	rewards.append({"kind": "ryo", "title": tr("chest.ryo") % ryo, "icon": "res://assets/art/items/object/MoneyBag.png"})
 	Events.chest_opened.emit(count)
 	game.tracker.chests += 1

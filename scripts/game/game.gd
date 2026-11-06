@@ -7,7 +7,7 @@ extends Node2D
 ## Argumentos de linha de comando (depois de `--`), para testes automáticos:
 ##   --bot  --seed=N  --speed=1|2|3  --hero=ID  --stage=ID  --moon=0..5  --mode=normal|brisa
 ##   --endless  --hash-at=S  --quit-at=S  --log-every=S  --stress=N
-##   --screenshot-at=S  --screenshot-frame=N  --screenshot=arquivo.png  --god
+##   --screenshot-at=S  --screenshot-frame=N  --screenshot=arquivo.png  --god  --meta=none|half|max (Santuário do bot)
 
 signal finished(result: Dictionary)
 
@@ -76,6 +76,7 @@ var running: bool = false
 var show_hitboxes: bool = false
 ## Teste de estresse: quantidade fixa de inimigos (0 = desligado).
 var stress_count: int = 0
+var bot_meta: String = "none"  # Santuário do bot (--meta, MetaProgress.META_PRESETS)
 # Efeitos especiais dos Kami.
 var no_revive: bool = false
 var chest_min: int = 1
@@ -136,6 +137,8 @@ func _parse_args() -> void:
 			_bot = true
 		elif arg == "--god":
 			_cli_god = true
+		elif arg.begins_with("--meta="):
+			bot_meta = value
 		elif arg.begins_with("--seed="):
 			_seed = value.to_int()
 		elif arg.begins_with("--quit-at="):
@@ -383,7 +386,7 @@ func start_run(cfg: Dictionary) -> void:
 	var hero_id := StringName(cfg.get("hero", "aki"))
 	var hero: Dictionary = DB.heroes.get(hero_id, DB.heroes[&"aki"])
 	player.setup(hero)
-	player.stats.set_source("powerups", {} if _bot else MetaProgress.powerup_modifiers())
+	player.stats.set_source("powerups", MetaProgress.bot_modifiers(bot_meta) if _bot else MetaProgress.powerup_modifiers())
 	player.stats.set_source("shop", cfg.get("shop_modifiers", {}))
 	if mode == "brisa":
 		player.stats.set_source("mode", BRISA_STATS)
@@ -751,10 +754,11 @@ func add_xp(amount: int) -> void:
 		Events.player_leveled.emit(level)
 
 
-func add_run_ryo(amount: int) -> void:
+func add_run_ryo(amount: int, source: StringName = &"other") -> int:  # × ganância × lua; fonte: RunTracker
 	var gained := roundi(amount * player.stats.get_stat("greed") * reward_mult())
-	tracker.ryo += gained
+	tracker.add_ryo(gained, source)
 	AudioManager.play("gold", 1.0, 0.05, -6.0)
+	return gained
 
 
 func collect_item(item: Dictionary) -> void:
@@ -767,7 +771,7 @@ func collect_item(item: Dictionary) -> void:
 			AudioManager.play("heal")
 			fx.play_anim("aura", player.sim_pos, 1.2, 0.0, Color(0.7, 1.0, 0.7))
 		"ryo":
-			add_run_ryo(int(item["value"]))
+			add_run_ryo(int(item["value"]), tracker.ryo_item_source(item))
 		"magnet":
 			pickups.magnet_all()
 			AudioManager.play("magic1", 1.3)
@@ -818,7 +822,7 @@ func on_boss_defeated(id: StringName, at: Vector2) -> void:
 		rift.on_midboss_defeated(at, RiftPortal.tier_of(id))  # dois baús e o portal do próximo nível
 	else:
 		pickups.spawn_item(&"chest", at, {"boss": true})
-	add_run_ryo(BossDirector.BOSS_RYO)
+	add_run_ryo(BossDirector.BOSS_RYO, &"bosses")
 	fx.play_anim("explosion", at, 3.0)
 	fx.add_ring(at, 160.0, Color(1.0, 0.9, 0.6))
 	shake(5.0)
@@ -1062,6 +1066,7 @@ func _on_dawn() -> void:
 	AudioManager.play("j_temple_bell")
 	if endless_enabled:
 		endless_phase = true
+		tracker.endless_ryo_start = tracker.ryo
 		_record_dawn_victory()
 		hud.toast(tr("endless.started"), 4.0)
 		AudioManager.play_music("endless")
@@ -1072,11 +1077,8 @@ func _on_dawn() -> void:
 ## Na Noite Sem Fim, a vitória da fase conta ao amanhecer, mesmo que a partida continue.
 func _record_dawn_victory() -> void:
 	var best := SaveManager.stage_best(StringName(stage["id"]))
-	if mode == "brisa":
-		best["won_brisa"] = true
-	else:
-		best["won"] = true
-		best["max_moon"] = maxi(int(best["max_moon"]), moon)
+	best["won_brisa" if mode == "brisa" else "won"] = true
+	best["max_moon"] = maxi(int(best["max_moon"]), moon)  # a Brisa é sempre Lua 0
 
 
 func _end_run(victory: bool, gave_up: bool = false) -> void:
@@ -1090,8 +1092,7 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 	if _bot:
 		if _quit_at <= 0.0:
 			print(state_summary("FIM"))
-			print(player.damage.report_line())
-			print("%s\n%s" % [abilities.uses_line(), rift.journey_line()])
+			print(BotPilot.report(self))
 			# Reinicia no próximo quadro, fora do passo que matou a guardiã.
 			start_run.call_deferred(config)
 		return
@@ -1126,8 +1127,7 @@ func _finish_headless() -> void:
 		return
 	_finished = true
 	print(state_summary("FIM"))
-	print(player.damage.report_line())
-	print("%s\n%s" % [abilities.uses_line(), rift.journey_line()])
+	print(BotPilot.report(self))
 	running = false
 	GameClock.paused = true
 	get_tree().quit()

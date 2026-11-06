@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/realm_tests.gd sozinho (dados, travessia, outro mundo, retomada e cenários), com os
-## arquivos de save e opções próprios dos testes (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/realm_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=realm`).
+##   godot --path . res://tests/realm_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava, em 678x305 e para cada fase, o Guardião do
 ## Limiar (entrada com o painel e em campo, de perto), o portal com os dois baús, a seta do portal
 ## fora da tela, o redemoinho, o título da travessia e o outro mundo; depois, no Kakuriyo, o torii
@@ -28,11 +28,12 @@ func _ready() -> void:
 			shots = arg.trim_prefix("--shots=")
 		elif arg.begins_with("--stages="):
 			stages = arg.trim_prefix("--stages=").split(",")
-	if shots != "":
-		await _screenshots(shots, stages)
-	else:
-		RealmTests.new().run_unit(_check)
-		await RealmTests.new().run(self, _check)
+	if shots == "":
+		printerr("realm_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=realm")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots, stages)
 	GameClock.paused = false
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):

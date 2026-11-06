@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/stage_map_layout_tests.gd sozinho, com os autoloads e arquivos de save e
-## opções próprios dos testes (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/stage_map_layout_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=stage_map`).
+##   godot --path . res://tests/stage_map_layout_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava capturas da Jornada do Guardião em PNG
 ## (perfil novo; três fases vencidas com Lua II na primeira; idioma ja; fase bloqueada
 ## escolhida; fase vencida escolhida, com o selo e a crônica), em 2x, em cada resolução de tests/device_profiles.gd.
@@ -25,10 +25,12 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--shots="):
 			shots = arg.trim_prefix("--shots=")
-	if shots != "":
-		await _screenshots(shots)
-	else:
-		await StageMapLayoutTests.new().run(self, _check)
+	if shots == "":
+		printerr("stage_map_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=stage_map")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots)
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)

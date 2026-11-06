@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/altar_tests.gd e tests/elite_affix_tests.gd sozinhos (regras, ritual, Elite, poderes,
-## emboscada, retomada e o bot), com os arquivos de save e opções próprios dos testes:
-##   godot --headless --path . res://tests/altar_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=altar,elite_affix`).
+##   godot --path . res://tests/altar_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) grava, em 678x305, o ritual, o estouro, o Elite
 ## surgindo, o rugido com o letreiro, os poderes e a morte; `--affixes=raijin,kongo` escolhe os
 ## afixos e `--gfx=low` confere a qualidade Baixa.
@@ -29,13 +29,12 @@ func _ready() -> void:
 			list.clear()
 			for id: String in arg.trim_prefix("--affixes=").split(",", false):
 				list.append(StringName(id))
-	if shots != "":
-		await _screenshots(shots, list)
-	else:
-		AltarTests.new().run_unit(_check)
-		EliteAffixTests.new().run_unit(_check)
-		await AltarTests.new().run(self, _check)
-		await EliteAffixTests.new().run(self, _check)
+	if shots == "":
+		printerr("altar_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=altar,elite_affix")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots, list)
 	GameClock.paused = false
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):

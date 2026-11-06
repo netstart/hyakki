@@ -16,7 +16,7 @@ extends RefCounted
 ##     com Tora); o Dragão de Cinzas aos 5:00 do Santuário Secreto entra calado; o Guardião chamado
 ##     de novo ao retomar a partida não repete o diálogo.
 ## run_unit() roda sem autoloads (tests/run_tests.gd); run() precisa da árvore
-## (tests/integration_tests.gd ou tests/dialogue_tests.tscn).
+## (tests/integration_tests.gd; sozinho: `-- --suites=dialogue`).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const STEP := 1.0 / 60.0

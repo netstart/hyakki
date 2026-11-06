@@ -17,10 +17,13 @@ extends Node
 ##   godot --path . res://tests/nav_bench.tscn -- --res=585x270 --screens=shop,heroes --out=nav.json
 ## Opções depois de "--":
 ##   --res=<rótulos>      só estas resoluções (padrão: todas da tabela)
+##   --shard=k/N          só a parte k de N das resoluções (blocos contíguos)
 ##   --screens=<nomes>    só estas telas (padrão: SCREENS)
 ##   --cycles=<n>         idas e voltas por tela (padrão 3; a 1ª abertura de cada tela fica à parte)
 ##   --out=<arquivo.json> grava todos os resultados
 ##   --strict             sai com erro se alguma troca passar de DESKTOP_LIMITS ou piscar
+##   --strict-flicker     só as piscadas e o título refazendo a entrada reprovam (os ms são impressos,
+##                        sem limite): o tools/run_checks usa este, em paralelo com as outras tarefas
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
@@ -85,7 +88,8 @@ func _run() -> void:
 	var cycles := maxi(1, int(_arg("cycles", "3")))
 	var native := get_window().size
 	var first := true
-	for res: Dictionary in DeviceProfiles.shot_resolutions():
+	# --shard=k/N: só a parte k das resoluções (tools/run_checks reparte o benchmark em N processos).
+	for res: Dictionary in DeviceProfiles.shard_items(DeviceProfiles.shot_resolutions()):
 		await DeviceProfiles.set_window_view(self, res["view"])
 		var label := String(res["label"])
 		if first:
@@ -104,7 +108,7 @@ func _run() -> void:
 	DisplayServer.window_set_size(native)
 
 
-## Perfil cheio (todos os heróis, ryō, bestiário visto), como no benchmark de rolagem.
+## Perfil cheio (todos os heróis, ryō, bestiário visto), como nas telas de verdade.
 func _fill_profile() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	SaveManager.unlock_all_heroes()
@@ -190,10 +194,12 @@ func _report(res: String, screen_name: StringName, kind: String, runs: Array, wa
 		entry["unsettled_frames"] = unsettled
 		entry["flicker_nodes"] = names
 	var over := ""
-	if "--strict" in OS.get_cmdline_user_args():
+	var strict := "--strict" in OS.get_cmdline_user_args()
+	if strict or "--strict-flicker" in OS.get_cmdline_user_args():
 		for key: String in DESKTOP_LIMITS:
-			# Custo: só a volta ao título (aberturas medidas e impressas, sem limite por enquanto).
-			if kind != "voltar" and key != "flickers":
+			# Custo: só a volta ao título (aberturas medidas e impressas, sem limite por enquanto); com
+			# --strict-flicker, nenhum limite de ms (a disputa de CPU do run_checks muda os tempos).
+			if key != "flickers" and (kind != "voltar" or not strict):
 				continue
 			if entry.has(key) and float(entry[key]) > float(DESKTOP_LIMITS[key]):
 				over += " %s>%s" % [key, DESKTOP_LIMITS[key]]

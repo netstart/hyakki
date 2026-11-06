@@ -12,7 +12,7 @@ extends RefCounted
 ## - layout em cada resolução de tests/device_profiles.gd, sem e com o furo da câmera de cada
 ##   lado, nos idiomas, com as cartas e os cartões mais longos.
 ## - e, por tests/reward_flight_tests.gd, o voo das recompensas até a guardiã e o pacto com um Kami.
-## Chamado por tests/integration_tests.gd ou sozinho por tests/level_chest_tests.tscn.
+## Chamado por tests/integration_tests.gd (sozinho: `-- --suites=level_chest`).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "moon": 2, "mode": "normal", "seed": 5, "speed": 1}

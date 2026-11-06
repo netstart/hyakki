@@ -18,6 +18,7 @@ const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
 const OnikiriTests := preload("res://tests/onikiri_tests.gd")
 ## Habilidades dos guardiões: dados, AbilitySystem, primitivas, Aki, save e o bot (tests/ability_tests.gd).
 const AbilityTests := preload("res://tests/ability_tests.gd")
+const EconomyTests := preload("res://tests/economy_tests.gd")
 ## Mão, tamanho e pose de ataque dos heróis "side" (Yuki).
 const HeroHandTests := preload("res://tests/hero_hand_tests.gd")
 ## Santuário sem rolagem: cartões, painel de detalhes e estados, em todos os idiomas.
@@ -99,59 +100,67 @@ const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const TestShards := preload("res://tests/test_shards.gd")
 const SimClock := preload("res://tests/sim_clock.gd")
 ## Custo medido de cada suíte sem layout e da parte sem layout ("<nome>.resto") das de layout (ms,
-## com --fixed-fps 60 e 12 fatias em paralelo), para repartir as fatias por igual; abaixo de 100 ms
-## ficam de fora (contam TestShards.DEFAULT_MS, como uma suíte nova sem medida).
+## com --fixed-fps 60 no tools/run_checks, na fila com teto de 14 tarefas), para repartir as fatias por
+## igual; abaixo de 100 ms ficam de fora (contam TestShards.DEFAULT_MS, como uma suíte nova sem medida).
+## Para medir de novo: a linha "SUÍTE <nome>: <ms>" de cada fatia em build/checks/<data_hora>/.
 const SUITE_MS := {
-	&"AbilityTests": 84990,
-	&"RealmTests": 49503,
-	&"LevelChestTests.resto": 27000,
-	&"OmikujiTests": 16141,
-	&"ResultsLayoutTests.resto": 10000,
-	&"_test_revive_by_ad": 9974,
-	&"DamageNumberFlowTests": 9758,
-	&"MissionTests": 9624,
-	&"DeathSequenceTests": 9470,
-	&"AltarTests": 8571,
-	&"MenusLayoutTests.resto": 8000,
-	&"DialogueTests": 7478,
-	&"WeaponFxTests": 6505,
-	&"ReviveAdTests": 5150,
-	&"EliteAffixTests": 4963,
-	&"EnemyFxTests": 4624,
-	&"PauseMenuTests.resto": 3500,
-	&"DamageNumberDensityTests": 3263,
-	&"SurfaceTests": 3186,
-	&"WeaponAudioTests": 2947,
-	&"terrain_tests": 2453,
-	&"SpeedUnlockTests": 2366,
-	&"RedMoonTests": 2291,
-	&"ChestBurstTests": 1723,
-	&"GuideTests": 1706,
-	&"perf_tests": 1545,
-	&"SupportPackTests": 1520,
-	&"_test_raijin_bolts": 1504,
-	&"HudLayoutTests.resto": 1500,
-	&"AdsOffTests.resto": 1500,
-	&"InsetFlipTests.resto": 1500,
-	&"GuideTests.run_data": 1292,
-	&"_test_suspended_run": 1171,
-	&"_test_glyphs": 936,
-	&"_test_hero_hand": 839,
-	&"TipTests": 778,
-	&"WeatherTests": 765,
-	&"_test_sound_options.resto": 700,
-	&"_test_i18n": 666,
-	&"OnikiriTests": 662,
-	&"CreditsScreenTests.resto": 500,
-	&"_test_thunder_weapons": 486,
-	&"SkillIconTests": 403,
-	&"_test_assets_exist": 322,
-	&"DamageNumberTests": 282,
-	&"PlayBillingTests": 178,
-	&"GfxQualityTests": 173,
-	&"MenuBackdropTests": 125,
-	&"_test_shop_scroll": 106,
+	&"AbilityTests": 150649,
+	&"RealmTests": 105669,
+	&"LevelChestTests.resto": 39347,
+	&"MenusLayoutTests.resto": 25924,
+	&"OmikujiTests": 22247,
+	&"ResultsLayoutTests.resto": 17244,
+	&"DeathSequenceTests": 16935,
+	&"MissionTests": 16876,
+	&"AltarTests": 16114,
+	&"_test_revive_by_ad": 14756,
+	&"DamageNumberFlowTests": 13918,
+	&"WeaponFxTests": 9957,
+	&"ReviveAdTests": 8768,
+	&"EliteAffixTests": 8336,
+	&"DialogueTests": 7730,
+	&"WeaponAudioTests": 7536,
+	&"EnemyFxTests": 6664,
+	&"SpeedUnlockTests": 6113,
+	&"PauseMenuTests.resto": 4854,
+	&"SurfaceTests": 4579,
+	&"DamageNumberDensityTests": 4302,
+	&"terrain_tests": 4102,
+	&"RedMoonTests": 3840,
+	&"StageMapLayoutTests.resto": 3785,
+	&"_test_suspended_run": 3709,
+	&"GuideTests": 2904,
+	&"perf_tests": 2813,
+	&"_test_raijin_bolts": 2748,
+	&"_test_hero_hand": 2578,
+	&"SupportPackTests": 2320,
+	&"ChestBurstTests": 2313,
+	&"InsetFlipTests.resto": 2020,
+	&"TitleLayoutTests.resto": 1972,
+	&"_test_shop_layout.resto": 1608,
+	&"GuideTests.run_data": 1462,
+	&"OnikiriTests": 1387,
+	&"HudLayoutTests.resto": 1230,
+	&"_test_thunder_weapons": 1080,
+	&"_test_i18n": 927,
+	&"SkillIconTests": 915,
+	&"WeatherTests": 884,
+	&"TipTests": 825,
+	&"PlayBillingTests": 531,
+	&"_test_assets_exist": 455,
+	&"DamageNumberTests": 452,
+	&"_test_glyphs": 289,
+	&"GfxQualityTests": 273,
+	&"MenuBackdropTests": 143,
+	&"_test_shop_scroll": 137,
 }
+## Custo de todos os casos de layout (resolução × idioma × furo) de todas as suítes de layout juntos,
+## sem as partes ".resto" (mesma medida de SUITE_MS: a soma das linhas SUÍTE das suítes de layout em
+## todas as fatias, menos as partes ".resto"). TestShards.plan_layout dá menos casos às fatias com
+## suítes sem layout caras, para todas terminarem juntas.
+const LAYOUT_MS := 5740793
+## Intervalo das linhas de PROGRESSO (_heartbeat), em ms de relógio.
+const HEARTBEAT_MS := 60000
 
 var _count: int = 0
 ## Relógio e contagem da última suíte (_lap imprime ms e verificações de cada uma).
@@ -164,6 +173,8 @@ var _failures: int = 0
 var _verbose: bool = "--verbose" in OS.get_cmdline_user_args()
 ## md5 do save e das opções do jogador antes dos testes ("" = não existia).
 var _real_files: Dictionary = {}
+## Última linha de PROGRESSO (_heartbeat).
+var _beat_ms: int = 0
 
 
 func _ready() -> void:
@@ -172,15 +183,17 @@ func _ready() -> void:
 	_test_isolation()
 	var names := _suite_names()
 	var flags := _layout_flags()
+	TestShards.plan_layout(names, flags, SUITE_MS, LAYOUT_MS)
 	TestShards.check_partition(names, flags, SUITE_MS, DeviceProfiles.layout_units(), _check)
 	var shard := DeviceProfiles.resolve_shard(Vector2i.ZERO)
 	var mine := TestShards.assign(names, flags, SUITE_MS, shard)
-	# Depuração: "-- --suites=A,B" roda só essas suítes (inteiras); o run_checks nunca usa.
+	# Uma suíte só: "-- --suites=A,B" (ou --suite=A) roda só essas suítes, inteiras (com a parte sem
+	# layout e todos os casos de layout, sem --shard). O nome pode ser o da tabela ou o do arquivo
+	# (red_moon, menus_layout, shop_scroll), e vale como começo: red_moon roda RedMoonTests e
+	# RedMoonTests.run_unit; damage_number roda as três suítes dos números de dano.
 	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--suites="):
-			mine.clear()
-			for name: String in arg.trim_prefix("--suites=").split(",", false):
-				mine[StringName(name)] = true
+		if arg.begins_with("--suites=") or arg.begins_with("--suite="):
+			mine = _filter_suites(names, arg.get_slice("=", 1).split(",", false))
 	TestShards.set_rest(mine, names)
 	print(TestShards.coverage_line(shard, mine, names, DeviceProfiles.layout_units()))
 	_lap_ms = Time.get_ticks_msec()
@@ -212,6 +225,7 @@ func _suites() -> Array[Array]:
 		[&"AchievementRewardTests", false, func() -> void: AchievementRewardTests.new().run(_check)],
 		[&"MissionTests", false, func() -> void: await MissionTests.new().run(self, _check)],
 		[&"_test_sanctuary", false, func() -> void: _test_sanctuary()],
+		[&"EconomyTests", false, func() -> void: await EconomyTests.new().run(self, _check)],
 		[&"_test_shop_clock", false, func() -> void: _test_shop_clock()],
 		[&"_test_shop_coin_items", false, func() -> void: _test_shop_coin_items()],
 		[&"_test_unscathed_achievement", false, func() -> void: _test_unscathed_achievement()],
@@ -281,6 +295,30 @@ func _suite_names() -> Array[StringName]:
 	return names
 
 
+## Suítes de `names` que começam por algum dos `wanted` (sem diferença de maiúsculas, "_", o
+## prefixo "_test_" e o sufixo "_tests"); nome que não acha nenhuma é falha.
+func _filter_suites(names: Array[StringName], wanted: PackedStringArray) -> Dictionary:
+	var mine := {}
+	for want: String in wanted:
+		var key := _suite_key(want)
+		var found := false
+		for name: StringName in names:
+			if _suite_key(String(name)).begins_with(key):
+				mine[name] = true
+				found = true
+		_check(found, "--suites: nenhuma suíte com o nome %s", want)
+	var listed := PackedStringArray()
+	for name: StringName in mine:
+		listed.append(String(name))
+	print("SUÍTES pedidas: " + ", ".join(listed))
+	return mine
+
+
+static func _suite_key(name: String) -> String:
+	var key := name.to_lower().trim_prefix("_test_").trim_suffix("_tests").trim_suffix(".gd")
+	return key.replace("_", "")
+
+
 ## Suíte num arquivo carregado só na hora (load, não preload).
 func _run_file(path: String) -> void:
 	await (load(path) as GDScript).new().run(self, _check)
@@ -333,11 +371,23 @@ func _test_isolation() -> void:
 ## `args` (opcional): valores do rótulo, que só é formatado (`label % args`) na falha ou com --verbose.
 func _check(condition: bool, label: String, args: Variant = null) -> void:
 	_count += 1
+	if _count & 4095 == 0:
+		_heartbeat()
 	if not condition:
 		_failures += 1
 		printerr("FALHOU: " + (label if args == null else label % args))
 	elif _verbose:
 		print("ok: " + (label if args == null else label % args))
+
+
+## Sinal de vida para o vigia do tools/run_checks (tarefa sem saída nova por 8 min é encerrada): uma
+## linha a cada HEARTBEAT_MS de relógio no meio de uma suíte longa (a fatia de MenusLayoutTests passa
+## de 8 min sem terminar quando a máquina está cheia). Só aviso: não mede nem decide nada do teste.
+func _heartbeat() -> void:
+	var now := Time.get_ticks_msec()
+	if now - _beat_ms >= HEARTBEAT_MS:
+		_beat_ms = now
+		print("PROGRESSO %d verificações (%d s)" % [_count, now / 1000])
 
 
 func _use_test_files() -> void:

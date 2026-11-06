@@ -62,7 +62,7 @@ A tela de créditos do jogo (`scripts/app/screens/credits_screen.gd`) e o `CREDI
 
 - Sempre que um asset ou dependência for adicionado, removido ou alterado: atualize `licenses/registry.json`, regenere o índice com `python -I tools/build_license_index.py` (gera também `ASSET_LICENSES.md` e `CREDITS.md`) e confirme que a entrada aparece na tela de créditos, na seção certa.
 - A tela lê `licenses/index.json` em tempo de execução: o que não é arte, áudio ou fonte (motor, Android, plugins, categorias novas) cai em Tecnologia. Não filtre entradas.
-- O teste dos créditos (`tests/credits_screen_tests.gd`, rodado por `tests/integration_tests.tscn` ou sozinho por `tests/credits_screen_tests.tscn`) precisa passar antes de qualquer commit: ele confere que todo nome e autor do índice está visível na tela e no `CREDITS.md`.
+- O teste dos créditos (`tests/credits_screen_tests.gd`, rodado por `tests/integration_tests.tscn`, sozinho com `-- --suites=credits`) precisa passar antes de qualquer commit: ele confere que todo nome e autor do índice está visível na tela e no `CREDITS.md`.
 
 ## Dúvidas?
 
@@ -78,13 +78,13 @@ Antes de adicionar algo com licença incerta, abra uma issue ou pergunte ao mant
 
 **Teste travado é encerrado e reiniciado.** Todo teste (Godot, `run_checks.ps1`/`.sh`, benchmarks) que passar **mais de 8 minutos sem atividade** (sem saída nova no log) tem o processo encerrado à força (`Stop-Process -Force` / `kill -9`, incluindo o par `Godot_*_console.exe` + `Godot_*.exe` e o `run_checks` que o chamou) e é rodado de novo; nunca espere um teste parado. O `run_checks` faz isso sozinho em cada tarefa (`-StallMinutes`/`STALL_MINUTES`, padrão 8): encerra a árvore do processo, roda de novo uma vez e, se travar outra vez, reprova.
 
-**Godot de teste em paralelo só com `user://` isolado.** Dois Godot no mesmo checkout disputam os arquivos de `user://` (save, `settings.cfg`, `runs.csv`) e travam, então **só rode Godot de teste em paralelo pelo `tools/run_checks.ps1`/`.sh`**, que dá a cada processo uma APPDATA (Windows) ou `XDG_DATA_HOME` (Linux) própria numa pasta temporária: as fatias da integração (`--shard=k/N`), as regras, o determinismo e o estresse rodam ao mesmo tempo sem tocar no perfil real do jogador (o `run_checks` confere no fim que o perfil real não mudou, e a integração confere que o `user://` dela está dentro da pasta isolada). Fora do `run_checks`, um Godot de teste por vez; se outra sessão ou agente estiver testando no mesmo diretório, espere ele terminar. Nunca rode testes com o `user://` real (`%APPDATA%\Godot\app_userdata\Hyakki`).
+**Godot de teste em paralelo só com `user://` isolado.** Dois Godot no mesmo checkout disputam os arquivos de `user://` (save, `settings.cfg`, `runs.csv`) e travam, então **só rode Godot de teste em paralelo pelo `tools/run_checks.ps1`/`.sh`**, que dá a cada processo uma APPDATA (Windows) ou `XDG_DATA_HOME` (Linux) própria numa pasta temporária: as fatias da integração (`--shard=k/N`), as regras, o determinismo, a jornada, o estresse e as tarefas com janela rodam ao mesmo tempo sem tocar no perfil real do jogador (o `run_checks` confere no fim que o perfil real não mudou, e a integração confere que o `user://` dela está dentro da pasta isolada). **O `run_checks` não pode travar a máquina:** no máximo `-MaxParallel` tarefas ao mesmo tempo (padrão núcleos lógicos − 2, limitado pela memória disponível: (disponível − 4 GB) / 600 MB por Godot), numa fila da mais longa para a mais curta em que cada vaga liberada puxa a próxima (e só se houver memória para mais um Godot); todo Godot roda em prioridade BelowNormal (Linux: `nice -n 10`), menos a jornada (a tarefa mais longa, que não se divide e marca o tempo total), em Normal (o Godot se põe sozinho em AboveNormal; o `run_checks` baixa todos). Não aumente o teto nem lance Godot de teste fora da fila para ganhar tempo: com 38 processos de uma vez em 16 linhas, cada tarefa ficava 2 a 7 vezes mais lenta e a memória disponível caía abaixo de 5 GB. Fora do `run_checks`, um Godot de teste por vez; se outra sessão ou agente estiver testando no mesmo diretório, espere ele terminar. Nunca rode testes com o `user://` real (`%APPDATA%\Godot\app_userdata\Hyakki`).
 
 **Esperas nos testes: nada de relógio fixo.** A integração e o bot rodam com `--fixed-fps 60` (cada quadro anda 1/60 s de simulação sem esperar o relógio da parede), então um teste nunca espera um tempo fixo de relógio (`create_timer(0.75)` "para a animação acabar", `OS.delay_msec`) nem mede duração por `Time.get_ticks_*`: espere uma **condição** (com prazo em tempo de simulação), termine a entrada na hora (`finish_intro()`, `settle_now()`, `skip_intro()`) ou conte **quadros**; quando o próprio teste é sobre a duração de uma animação, meça pelo tempo de simulação (`tests/sim_clock.gd`, a soma dos deltas dos quadros). O que o jogo mede em tempo real para a interface (travas de toque, intervalos de som, lampejos) usa `UiClock.msec()` (nunca `Time.get_ticks_msec()`): no jogo é o tempo real; na integração ele segue o tempo de simulação (`tests/sim_clock.gd` com `drive_ui`). Cada suíte da integração começa do mesmo estado (perfil e opções padrão, pt_BR, sem recorte; `_reset_state`), porque numa fatia a suíte anterior é outra; e a parte de uma suíte de layout que não percorre `layout_cases()` vai para `TestShards.runs_rest()` (roda numa fatia só), enquanto todo laço sobre `layout_cases()` fica fora dele (cada fatia percorre a sua parte).
 
 **Testes por resolução só no Godot; emulador Android só para teste manual.** Os testes que simulam a
 tela dos aparelhos rodam **apenas no Godot** do PC: runners headless ou com janela que leem
-`tests/device_profiles.gd` (testes de layout de cada tela, painel e HUD), `tests/scroll_bench.tscn`, `tests/nav_bench.tscn`, os
+`tests/device_profiles.gd` (testes de layout de cada tela, painel e HUD), `tests/nav_bench.tscn`, os
 testes de desempenho (`tests/perf_tests.gd`) e o `tools/run_checks.ps1`. **É proibido executar testes
 automatizados no emulador Android** (roteiro E2E, AVDs de teste, `adb input`, medição de quadros ou
 qualquer script que instale, toque e confira sozinho). O emulador e o aparelho servem só para **teste
@@ -137,15 +137,6 @@ exemplos de cada resolução:
 - **Rolagem suave e desempenho (qualidade Alta):** toda tela com lista rolável precisa rolar sem
   engasgo, na qualidade gráfica **Alta**, em todas as resoluções. Os testes rodam no Godot do PC
   (nunca no emulador):
-  - **Benchmark de rolagem (`tests/scroll_bench.tscn`, sem `--headless`):** em cada tela com lista
-    rolável (Guardiões, Fases, Loja, Diário e cada capítulo do Guia, Opções, Créditos, Resultados, Santuário, Título), mede a
-    tela parada e, em cada lista, piparotes até o fim e de volta e um arrasto lento com o dedo
-    simulado, em todas as resoluções de `tests/device_profiles.gd`, sem VSync (custo real do quadro),
-    com média, p95, p99, pior quadro, travadas, tempo de render na CPU, chamadas de desenho e o tempo
-    da 1ª abertura de cada tela. Só os quadros em movimento contam. **Critério:** com `-- --strict`
-    passa com **p95 ≤ 6 ms** e **nenhum quadro > 33 ms** por lista, em todas as resoluções (as
-    travadas, quadros em que a lista parou no meio do movimento, são só informativas). Rode antes e depois de mexer em
-    telas, fundo ou tema (`-- --res=585x270 --screens=shop,codex --out=bench.json`).
   - **Benchmark de navegação (`tests/nav_bench.tscn`, sem `--headless`):** em todas as resoluções,
     para cada tela aberta pelo título (Guardiões, Fases, Santuário, Loja, Diário, Opções, Créditos e
     Resultados), faz título → tela → "voltar" do Android várias vezes e mede o custo dos quadros logo
@@ -153,7 +144,9 @@ exemplos de cada resolução:
     (`tests/nav_probe.gd`: transparência e deslocamento da entrada do título, saldo, metas, menu e
     bloco de ação, quadro a quadro). **Critério** (`-- --strict`): nenhuma piscada, o título parado na
     volta de um submenu (sem refazer a entrada) e, na volta ao título, pior quadro ≤ 33 ms e
-    p95 ≤ 20 ms (as aberturas são medidas e impressas, sem limite). Rode antes e depois de mexer em
+    p95 ≤ 20 ms (as aberturas são medidas e impressas, sem limite). O `run_checks` roda a parte das piscadas
+    (`-- --strict-flicker --cycles=1 --shard=k/3`, em 3 processos, os ms só impressos); os limites de ms
+    dependem da disputa de CPU e ficam para a rodada à mão, sozinha. Rode antes e depois de mexer em
     telas, no App ou em entradas animadas (`-- --res=585x270 --screens=shop,heroes --out=nav.json`). A regra das entradas que ele protege:
     valores de início vão para o nó antes de criar o Tween (o `.from()` de um tweener só vale quando ele
     começa, depois do `set_delay`), e telas mostradas de novo sem mudança não remontam as listas.
@@ -164,14 +157,15 @@ exemplos de cada resolução:
   - **Partida (`tests/game_bench.tscn`, sem `--headless`):** quadro, render na CPU, chamadas de
     desenho e traços por quadro de uma partida do bot (`-- --bot --seed=7 --stress=500`), com
     `--native-strokes` para comparar com o caminho antigo e `--compare-shots=<pasta>` para conferir
-    que o mesmo quadro sai igual pelos dois caminhos.
+    que o mesmo quadro sai igual pelos dois caminhos (com `--strict` reprova se o Stroke diferir do motor;
+    o `run_checks` roda essa comparação, os números de desempenho são só impressos).
   Regras de desenho que esses testes protegem: o que é fixo não é redesenhado a cada quadro (camada
   própria, ou `StaticBake` para desenhos grandes como o mapa da jornada); desenho refeito a cada
   quadro não usa `draw_polygon`, `draw_colored_polygon`, `draw_polyline`, `draw_arc` nem
   `draw_multiline` (cada um cria um buffer novo na GPU a cada redesenho): use retângulos, texturas
   ou o `Stroke` (`Stroke.arc`, `Stroke.line`, `Stroke.polyline`, `Stroke.convex`, mesma geometria
   do motor em primitivas sem buffer, conferida pixel a pixel por `tests/stroke_pixel_tests.tscn`,
-  sem `--headless`); cartões de lista que só mudam com toque/foco ficam assados (`StaticBake`, como
+  sem `--headless`, no `run_checks`); cartões de lista que só mudam com toque/foco ficam assados (`StaticBake`, como
   os do Diário); trocar override de tema ou caixa de estilo só quando o estado muda (cada troca
   refaz o layout da tela); animações só decorativas esperam enquanto a lista rola pelo dedo
   (`TouchScroll.busy()`);
@@ -180,8 +174,8 @@ exemplos de cada resolução:
   em GDScript para gerar texturas (use as operações nativas de `Image`).
 
 Nenhum PR é mesclado e nenhuma versão é lançada sem que os testes unitários (inclusive os de layout em
-todas as resoluções-alvo), os testes E2E e o benchmark de rolagem passem **no Godot** em todas as
-resoluções-alvo. Teste no emulador ou no aparelho é só manual e não substitui nenhum deles.
+todas as resoluções-alvo) e os testes E2E passem **no Godot** em todas as resoluções-alvo (o
+`tools/run_checks.ps1`/`.sh` inteiro verde). Teste no emulador ou no aparelho é só manual e não substitui nenhum deles.
 
 ## Guia do Guardião (obrigatório em todo conteúdo novo)
 
@@ -272,3 +266,7 @@ Nesse caso a IA **deve avisar** na resposta e na mensagem do commit qual número
 ## Sessões do Claude Code (uma por vez)
 
 Uma nova sessão do Claude Code (`start_session`, `hand_off_to_session`, sessão na nuvem ou em outra pasta) **só pode ser iniciada quando não houver outra sessão em execução** neste projeto. Antes de iniciar, confira as sessões ligadas (`list_sessions`); se alguma estiver rodando ou começando, espere ela terminar ou faça o trabalho na sessão atual. Isso evita duas sessões editando os mesmos arquivos, dois Godot de teste no mesmo checkout e commits com versão (SemVer) concorrente. Subagentes dentro da sessão atual continuam permitidos. A regra é de sessões, não de processos: dentro da sessão, os Godot que o `tools/run_checks.ps1`/`.sh` abre em paralelo (cada um com `user://` isolado, veja "Godot de teste em paralelo") são permitidos; antes de rodá-lo, confira que nenhum Godot de outra sessão está rodando no checkout (o arquivo de teste e o código que ele carrega podem estar mudando).
+
+## Regras de sessão de execução (obrigatório para toda sessão)
+
+

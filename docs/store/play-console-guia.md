@@ -11,7 +11,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 |---|---|
 | Nome do app | Hyakki: Até o Amanhecer |
 | ID do aplicativo (pacote) | `io.github.netstart.hyakki` (**não muda nunca mais** depois do primeiro envio) |
-| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.21.0`, versionCode 46) |
+| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.22.0`, versionCode 47) |
 | Desenvolvedor | conta pessoal, GitHub `netstart` |
 | E-mail público | netstart@gmail.com |
 | Site | https://netstart.github.io/ |
@@ -96,7 +96,7 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
   `build\release\hyakki-release.apk` (para conferir no emulador ou aparelho).
 - Cada envio à Play Console precisa de um **versionCode maior** que o anterior. O versionCode e o
   versionName seguem o SemVer do `AGENTS.md` (sobem a cada commit); o script também aceita
-  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.21.0`,
+  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.22.0`,
   versionCode 46).
 - Os IDs reais do AdMob **já estão no projeto** (`admob/general/android/app_id` no `project.godot` e
   `RELEASE_UNITS` em `scripts/ads/admob_provider.gd`), então o build de release sai com anúncios e
@@ -601,6 +601,18 @@ Novidades: cada fase agora tem três níveis. Vença o Guardião do Limiar e ent
 </pt-BR>
 <en-US>
 New: every stage now has three levels. Beat the Threshold Guardian and enter the Kakuriyo, the hidden world. There, the Guardian's Shadow guards the last threshold: defeat it and pass through the golden torii into Tokoyo, the Everlasting Land, a sanctuary of light with its own map where the stage's final boss awaits the last battle. Six new bosses, "reach Tokoyo" missions and an updated Journal Guide.
+</en-US>
+```
+
+### 9.5.7 Notas da versão 1.22.0 (versionCode 47)
+Para o envio do rebalanceamento da economia e da dificuldade (1.22.0):
+
+```
+<pt-BR>
+Equilíbrio: a noite ficou mais perigosa. Os yōkai ganham vida e força mais depressa com o passar dos minutos, o Santuário ficou 20% mais caro e caem menos moedas dos inimigos. Na Noite Sem Fim, o bônus de ×1,5 vale para o ryō ganho depois do amanhecer, como diz a dica.
+</pt-BR>
+<en-US>
+Balance: the night got more dangerous. Yōkai gain health and strength faster as the minutes pass, the Sanctuary is 20% more expensive and enemies drop fewer coins. In the Endless Night, the ×1.5 bonus applies to ryō earned after dawn, as the tip says.
 </en-US>
 ```
 

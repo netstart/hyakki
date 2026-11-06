@@ -66,6 +66,11 @@ const SCALER_EXTRA: Array = [
 const INSET_LANGS: Array[String] = ["pt_BR", "de", "ru"]
 
 
+## Cortes de cada número de fatias N (TestShards.plan_layout): N + 1 frações crescentes de 0 a 1; a
+## fatia k fica com [cortes[k - 1], cortes[k]) das unidades. Sem cortes para N, partes iguais.
+static var _cuts: Dictionary = {}
+
+
 ## Fator inteiro do PixelScaler para uma tela física (a mesma regra, escrita à parte para o
 ## teste conferir o PixelScaler de verdade contra ela).
 static func scale_for(physical: Vector2i) -> int:
@@ -191,10 +196,21 @@ static func resolve_shard(which: Vector2i) -> Vector2i:
 	return Vector2i(1, 1) if s.x < 1 or s.y < 1 or s.x > s.y else s
 
 
-## Parte da fatia `which` numa lista de `count` unidades: [início, fim) em blocos contíguos do mesmo
-## tamanho (diferença de no máximo 1). As N partes cobrem 0..count-1, cada unidade uma vez só.
+## Guarda os cortes das N fatias (N + 1 frações crescentes, a primeira 0 e a última 1).
+static func set_shard_cuts(n: int, cuts: PackedFloat64Array) -> void:
+	if cuts.size() == n + 1 and cuts[0] == 0.0 and cuts[n] == 1.0:
+		_cuts[n] = cuts
+	else:
+		_cuts.erase(n)
+
+
+## Parte da fatia `which` numa lista de `count` unidades: [início, fim) em blocos contíguos (do mesmo
+## tamanho, ou pelos cortes de set_shard_cuts). As N partes cobrem 0..count-1, cada unidade uma vez só.
 static func shard_range(count: int, which := Vector2i.ZERO) -> Vector2i:
 	var s := resolve_shard(which)
+	var cuts: PackedFloat64Array = _cuts.get(s.y, PackedFloat64Array())
+	if cuts.size() == s.y + 1:
+		return Vector2i(floori(count * cuts[s.x - 1]), floori(count * cuts[s.x]))
 	return Vector2i(floori(float(count) * (s.x - 1) / s.y), floori(float(count) * s.x / s.y))
 
 

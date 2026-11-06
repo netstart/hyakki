@@ -31,11 +31,11 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   na 1ª rolagem paga e +10 a cada outra, com cartas novas sempre que o sorteio tiver outras) e, com tudo no
   máximo, a mão comida/moedas com "Não perguntar mais": a escolha vira automática, sem pausar a luta, só com
   o som (com a vida cheia, "Comida" pega as moedas); muda em Opções e no menu de pausa.
-- Santuário (18 power-ups, reembolso total), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
+- Santuário (18 power-ups, reembolso total; preços base de 240 a 12.000 ryō em `data/powerups.json`), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
   e mais 147 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
   Próximas 3 metas no título e nos Resultados), Diário do Guardião
   (com o **Guia**: 9 capítulos de manual montados dos dados do jogo, sem revelar o que não foi descoberto),
-  história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V (regras cumulativas em
+  história completa, Noite Sem Fim (o ryō ganho depois do amanhecer vale ×1,5), Desafio Diário, Brisa / Normal / Lua Vermelha I–V (regras cumulativas em
   `scripts/systems/red_moon.gd`: I +50% de elites, II o Eclipse dos chefes, III Sombras também na luz, IV sem
   onigiri, V só 2 pactos dos Kami).
 - Velocidade **1x / 2x / 3x** com passo fixo: a mesma semente gera a mesma partida em qualquer velocidade.
@@ -83,32 +83,78 @@ Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espa�
 powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 ```
 
-Primeiro a importação (sintaxe de todos os scripts), sozinha; depois, **ao mesmo tempo**, cada tarefa num
+Primeiro a importação (sintaxe de todos os scripts), sozinha; depois, numa **fila com teto**, cada tarefa num
 processo próprio: os testes de integração em N fatias (dados, idiomas, cobertura de glifos, Loja, Santuário,
-save, regras de anúncio e o layout de toda tela em todas as resoluções × 11 idiomas × furo dos dois lados), os
-testes de regras, o determinismo (bot em 1x, 2x, 3x e 3x na Baixa, mesmo hash), o estresse com 500 inimigos,
-o `gdlint` em partes e os checks em Python (textos, 1389 chaves × 11 idiomas e marcadores `%s/%d`; licenças;
-ficha da loja; site irmão). No fim, um resumo por tarefa; qualquer falha, erro de script ou trava reprova o todo.
+save, regras de anúncio, as suítes de cada sistema e o layout de toda tela em todas as resoluções × 11 idiomas ×
+furo dos dois lados), os testes de regras, o determinismo (bot em 1x, 2x, 3x e 3x na Baixa, mesmo hash), a
+jornada pelos três níveis (1x, 2x e 3x, mesmo hash), o estresse com 500 inimigos, o `gdlint` em partes, os
+checks em Python (textos, chaves × 11 idiomas e marcadores `%s/%d`; licenças; ficha da loja; site irmão) e, com
+janela (sem `--headless`), os traços do `Stroke` iguais aos do motor pixel a pixel
+(`tests/stroke_pixel_tests.tscn`), o mesmo quadro de uma partida pelos dois caminhos (`tests/game_bench.tscn
+--compare-shots --strict`) e a navegação entre os menus sem piscar (`tests/nav_bench.tscn --strict-flicker`, em 3
+processos). No fim, um resumo por tarefa, as 5 mais lentas e o pico de processos e de memória; qualquer falha,
+erro de script ou trava reprova o todo.
 
+- **Teto e fila (a máquina não trava):** no máximo `-MaxParallel` tarefas ao mesmo tempo (padrão: núcleos
+  lógicos − 2, e nunca mais do que a memória disponível comporta: (disponível − `-ReserveMB` 4096) /
+  `-GodotMemoryMB` 600; uma fatia headless fica em ~500 MB, um Godot com janela em ~800 MB). As tarefas
+  esperam numa fila, da mais longa para a mais curta (jornada, fatias, partidas do bot, regras, navegação,
+  pixels, lint, Python), e cada vaga liberada puxa a próxima, se ainda houver memória para mais um Godot.
+- **Prioridade:** o Godot sobe a própria prioridade ao abrir; o `run_checks` baixa cada um para
+  **BelowNormal** (o PC continua usável durante os testes) e deixa só a jornada, a tarefa mais longa (uma
+  partida de 11 min que não se divide, 3 processos), em Normal. No
+  Linux, as outras rodam com `nice -n 10`. `-SamePriority` desliga.
 - **Fatias (`--shard=k/N`):** cada processo da integração roda a sua parte das unidades (caso de layout,
   idioma) de `DeviceProfiles.layout_cases()` (em blocos contíguos) e das suítes sem layout (repartidas pelo
-  custo medido em `SUITE_MS`, em `tests/integration_tests.gd`). A união das fatias é o conjunto completo:
+  custo medido em `SUITE_MS`, em `tests/integration_tests.gd`). Os casos de layout são repartidos pelo custo
+  (`TestShards.plan_layout` com `LAYOUT_MS`): a fatia que recebe uma suíte sem layout cara (AbilityTests,
+  RealmTests) fica com menos casos, para todas terminarem juntas. Padrão: `MaxParallel − 4` fatias (a jornada
+  ocupa 3 vagas e sobra 1 para a fila das tarefas curtas, que depois entram nas vagas que se liberam). A união das fatias é o conjunto completo:
   `tests/test_shards.gd` confere a partição para N = 1..16 e cada fatia imprime a linha `COBERTURA`, que o
   `run_checks` confere (casos de 0 ao total sem buraco e toda suíte rodada em alguma fatia). Também imprime
-  `SUÍTE <nome>: <ms>, <verificações>` por suíte. Para depurar: `-- --suites=A,B` roda só essas suítes.
+  `SUÍTE <nome>: <ms>, <verificações>` por suíte (é de onde saem os números de `SUITE_MS` e `LAYOUT_MS`), e `PROGRESSO` a cada 60 s no meio
+  de uma suíte longa, para o vigia de 8 min não confundir uma fatia ocupada com uma travada.
+- **Uma suíte só:** a integração aceita `-- --suites=A,B` (ou `--suite=A`): roda só essas suítes inteiras (a
+  parte sem layout e todos os casos de layout). Vale o nome da tabela ou o do arquivo, como começo:
+  `red_moon` roda `RedMoonTests` e `RedMoonTests.run_unit`, `damage_number` as três suítes dos números de
+  dano, `menus_layout`, `shop_layout`, `ability`, `mission`... Nome que não acha nenhuma suíte reprova.
+  ```powershell
+  Godot_v4.7.2-stable_win64_console.exe --headless --path . --fixed-fps 60 res://tests/integration_tests.tscn -- --suites=red_moon
+  ```
+  Os unitários sem árvore (`run_unit` de cada suíte) ficam nos testes de regras:
+  `Godot_v4.7.2-stable_win64_console.exe --headless --path . --script res://tests/run_tests.gd`. As cenas
+  `tests/*_tests.tscn` que restam (Altar, Créditos, números de dano, HUD, baú de nível, pausa, outro mundo,
+  Resultados, Santuário, Loja, Jornada e título) só gravam capturas para conferir o visual
+  (`-- --shots=<pasta>`, sem `--headless`); sem `--shots` elas dizem qual `--suites=` usar.
 - **Isolamento:** cada Godot roda com uma APPDATA própria (Linux: `XDG_DATA_HOME`) numa pasta temporária, então
   `user://` (save, `settings.cfg`, `runs.csv`, logs) nunca é o perfil real do jogador; a integração confere
   `OS.get_user_data_dir()` contra a pasta isolada e o `run_checks` confere no fim que o perfil real não mudou.
+  Fora do `run_checks`, um Godot de teste por vez.
 - **Tempo de simulação:** a integração roda com `--fixed-fps 60`; as esperas dos testes contam quadros e
   tempo de simulação (`tests/sim_clock.gd`, `UiClock`), nunca o relógio da parede.
-- **Opções:** `-Shards N` (padrão: núcleos − 4, entre 2 e 12), `-StallMinutes M` (padrão 8: tarefa sem saída
-  nova por M minutos é encerrada à força e rodada de novo uma vez; travou de novo = falha), `-StressAlone` (o
-  estresse sozinho no fim, com os números sem disputa de CPU), `-Only integracao,regras` (só essas tarefas),
-  `-KeepTemp`. Saída de cada tarefa em `build\checks\<data_hora>\<tarefa>.log`.
-- **Linux/CI:** `GODOT=/caminho/godot tools/run_checks.sh` (o mesmo, com `SHARDS`, `STALL_MINUTES` e `ONLY`).
+- **Opções:** `-MaxParallel N`, `-GodotMemoryMB M`, `-ReserveMB M`, `-Shards N` (padrão: `MaxParallel − 4`,
+  entre 2 e 12), `-StallMinutes M` (padrão 8: tarefa sem saída nova por M minutos é encerrada à força e rodada
+  de novo uma vez; travou de novo = falha), `-StressAlone` (o estresse sozinho no fim, com os números sem
+  disputa de CPU), `-NoWindow` (pula as tarefas com janela), `-NavShards N` (padrão 3), `-SamePriority`,
+  `-Only integracao,regras` (só essas tarefas), `-KeepTemp`. Saída de cada tarefa em
+  `build\checks\<data_hora>\<tarefa>.log`.
+- **Linux/CI:** `GODOT=/caminho/godot tools/run_checks.sh` (o mesmo, com `MAX_PARALLEL`, `GODOT_MEMORY_MB`,
+  `RESERVE_MB`, `SHARDS`, `STALL_MINUTES`, `NO_WINDOW`, `NAV_SHARDS`, `SAME_PRIORITY` e `ONLY`; sem tela, as
+  tarefas com janela são puladas; a prioridade baixa é `nice -n 10`).
+- **Fora do `run_checks` (de propósito):** os limites de ms do `tests/nav_bench.tscn -- --strict` e os números do
+  `tests/game_bench.tscn` mudam com a disputa de CPU (sozinho no PC, o `--strict` já passa de 20 ms em p95 de
+  vez em quando): rode-os à mão, sozinhos, antes e depois de mexer em telas ou no desenho. As capturas
+  (`tests/surface_shots.tscn` e os `--shots` das cenas acima) são para olhar, não têm critério.
 
-Tempos neste PC (16 núcleos lógicos), do `run_checks.ps1` inteiro: **3322 s (≈ 55 min)** antes (tudo em série, integração
-num processo só, sem `--fixed-fps`) e **320–330 s (≈ 5,5 min)** agora (12 fatias; a integração sozinha de 3149 s para ~310 s). Detalhes por etapa no commit 1.20.3.
+Tempos neste PC (16 núcleos lógicos, 30 GB, com outro agente rodando 4 bots ao mesmo tempo), do
+`run_checks.ps1` inteiro: **806 s** antes (33 tarefas abertas de uma vez, 12 fatias; a jornada 1x, 788 s, era a
+mais lenta) e **~960 s** agora (36 tarefas, 5 delas novas: navegação em 3 processos e as duas comparações de
+pixels; no máximo 14 ao mesmo tempo, 10 fatias). O tempo total é o da jornada 1x (uma partida de 11 min que
+não se divide, ~940 s); as fatias terminam antes dela (~730–900 s). Em troca, a máquina não engasga: no
+máximo 14 Godot de teste em vez de 24 (sem teto, as tarefas curtas ficavam 2 a 7 vezes mais lentas: o
+`gdlint` de 25 s para 180 s), o pico de memória dos Godot cai de ~12,3 GB para ~7,0 GB e a memória livre
+mínima sobe de ~4,2 GB para ~9,5 GB (uma fatia chega a ~590 MB, a importação a ~790 MB, a navegação com
+janela a ~550 MB, a jornada a ~330 MB). Histórico: 3322 s (≈ 55 min) com tudo em série, antes da 1.20.4.
 
 Para um relatório completo (resumo por etapa, falhas com o texto inteiro, tempos e logs) em
 `build\test-report\<data_hora>\relatorio.html`:
@@ -120,26 +166,20 @@ powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1
 `-SkipStress` pula o estresse, `-NoOpen` não abre o navegador e `-ListPassed` lista também cada verificação
 que passou (`--verbose`, milhões de linhas). O relatório roda as etapas em sequência, com `user://` isolado.
 
-Habilidades dos guardiões sozinhas (energias, AbilitySystem, primitivas, as 21 habilidades em cenários
-montados, marcadores de estado, partida suspensa e o bot com o mesmo hash na Baixa e na Alta):
-`Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/ability_tests.tscn` (também rodam
-dentro de `tests/integration_tests.tscn`; a HUD das habilidades em todas as resoluções fica em
-`tests/ability_hud_tests.gd`, chamada pelos testes de layout do HUD). No fim de uma partida do bot com
-`--quit-at`, a linha `HABILIDADES` mostra o nível e quantas vezes cada habilidade saiu.
-
-Missões do Santuário sozinhas (dados, cada condição, recompensas, save, Próximas metas e uma partida pelo
-bot que conclui missões): `Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/mission_tests.tscn`
-(também rodam dentro de `tests/integration_tests.tscn`).
-
-Regras da Lua Vermelha sozinhas (cada regra na lua dela e logo abaixo, textos com os números das constantes):
-`Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/red_moon_tests.tscn` (também rodam
-dentro de `tests/integration_tests.tscn`).
+Suítes que se rodam sozinhas com frequência (todas também rodam dentro da integração do `run_checks`):
+habilidades dos guardiões (`--suites=ability`: energias, AbilitySystem, primitivas, as 21 habilidades em
+cenários montados, marcadores de estado, partida suspensa e o bot com o mesmo hash na Baixa e na Alta; a HUD das
+habilidades em todas as resoluções fica em `tests/ability_hud_tests.gd`, chamada pelos testes de layout do HUD),
+missões do Santuário (`--suites=mission`: dados, cada condição, recompensas, save, Próximas metas e uma partida
+pelo bot que conclui missões) e regras da Lua Vermelha (`--suites=red_moon`: cada regra na lua dela e logo
+abaixo, textos com os números das constantes). No fim de uma partida do bot com `--quit-at`, a linha
+`HABILIDADES` mostra o nível e quantas vezes cada habilidade saiu.
 
 ### Testes por resolução (só no Godot)
 
 Os testes que simulam a tela de cada aparelho rodam **só no Godot do PC**, com as resoluções de
 [tests/device_profiles.gd](tests/device_profiles.gd): testes de layout de todas as telas e do HUD em todas
-as resoluções-alvo (com furo de câmera dos dois lados), o benchmark de rolagem `tests/scroll_bench.tscn`, o
+as resoluções-alvo (com furo de câmera dos dois lados), o
 benchmark de navegação entre os menus `tests/nav_bench.tscn` e os testes de desempenho. Os comandos e critérios estão no `AGENTS.md`.
 
 **Testes automatizados no emulador Android são proibidos.** O emulador (e o aparelho) servem só para

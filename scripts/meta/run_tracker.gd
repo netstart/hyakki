@@ -3,6 +3,12 @@ extends RefCounted
 ## Estatísticas de uma partida: alimentam a tela de resultados, as conquistas e a
 ## telemetria local de balanceamento (plano 4.11, 4.12 e 14.3).
 
+## Fontes do ryō da partida (balanceamento e a linha ECONOMIA do bot): moeda de abate, bolsa do
+## chão (props e sorteio do chão), bolsa do altar, chefe, baú, consolo do 凶, carta de reserva
+## (mão de comida/moedas) e o resto.
+const RYO_SOURCES: Array[StringName] = [&"kills", &"bags", &"altars", &"bosses", &"chests", &"kyo",
+		&"card", &"other"]
+
 var kills: int = 0
 var kills_by_enemy: Dictionary = {}
 var damage_by_weapon: Dictionary = {}
@@ -21,6 +27,14 @@ var items: Dictionary = {}
 ## partida (Rerrolar pago): o gasto conta como ganho no total da vida (MetaProgress.apply_run).
 var ryo: int = 0
 var ryo_spent: int = 0
+## Saldo de ryō quando a Noite Sem Fim começou (o amanhecer): só o que veio depois vale
+## MetaProgress.ENDLESS_GOLD (MetaProgress.apply_run).
+var endless_ryo_start: int = 0
+## Ryō ganho por fonte (RYO_SOURCES), já com ganância e lua: a soma é `ryo + ryo_spent`. Só registro.
+var ryo_by_source: Dictionary = {}
+## Moedas de abate e bolsas de ryō coletadas (contagem).
+var coins: int = 0
+var ryo_bags: int = 0
 var max_level: int = 1
 var dark_seconds: float = 0.0
 var max_dark_streak: float = 0.0
@@ -82,6 +96,50 @@ func on_elite_slain(affixes: Array) -> void:
 		elite_affixes_slain[StringName(id)] = true
 
 
+## Ryō ganho na partida (`amount` já multiplicado), somado ao saldo e à fonte (RYO_SOURCES).
+func add_ryo(amount: int, source: StringName) -> void:
+	ryo += amount
+	ryo_by_source[source] = int(ryo_by_source.get(source, 0)) + amount
+
+
+## Fonte do ryō de um item do chão (e a contagem): moeda de abate, bolsa que saltou do altar
+## ("pop", AltarSystem) ou bolsa do chão.
+func ryo_item_source(item: Dictionary) -> StringName:
+	if StringName(item["id"]) == &"coin":
+		coins += 1
+		return &"kills"
+	ryo_bags += 1
+	return &"altars" if item.has("pop") else &"bags"
+
+
+## Passa `amount` do ryō já registrado de uma fonte para outra (o total não muda).
+func move_ryo(from: StringName, to: StringName, amount: int) -> void:
+	ryo_by_source[from] = int(ryo_by_source.get(from, 0)) - amount
+	ryo_by_source[to] = int(ryo_by_source.get(to, 0)) + amount
+
+
+func ryo_from(source: StringName) -> int:
+	return int(ryo_by_source.get(source, 0))
+
+
+## Todo o ryō ganho na partida (soma das fontes = saldo + gasto no Rerrolar pago).
+func ryo_earned() -> int:
+	var total := 0
+	for source: StringName in ryo_by_source:
+		total += int(ryo_by_source[source])
+	return total
+
+
+## Linha do fim da partida do bot (fora do hash): ryō ganho, cada fonte, gasto, saldo e contagens.
+func economy_line() -> String:
+	return ("ECONOMIA ryo=%d abates=%d bolsas=%d altares=%d chefes=%d baus=%d kyo=%d reserva=%d outros=%d"
+			+ " gasto=%d saldo=%d baus_n=%d moedas_n=%d bolsas_n=%d chefes_n=%d") % [
+		ryo_earned(), ryo_from(&"kills"), ryo_from(&"bags"), ryo_from(&"altars"), ryo_from(&"bosses"),
+		ryo_from(&"chests"), ryo_from(&"kyo"), ryo_from(&"card"), ryo_from(&"other"), ryo_spent, ryo,
+		chests, coins, ryo_bags, bosses.size(),
+	]
+
+
 ## Gasta ryō da partida (o HUD lê `ryo` a cada quadro).
 func spend_ryo(amount: int) -> void:
 	ryo -= amount
@@ -126,6 +184,8 @@ func snapshot() -> Dictionary:
 			"boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
 			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
 			"abilities": abilities, "ability_uses": uses_out, "ryo_spent": ryo_spent,
+			"endless_ryo_start": endless_ryo_start,
+			"ryo_by_source": _int_keys_to_str(ryo_by_source), "coins": coins, "ryo_bags": ryo_bags,
 			"kami": Array(kami).map(func(k: StringName) -> String: return String(k)),
 			"tokoyo_reached": tokoyo_reached, "altars_awakened": altars_awakened, "altar_ambushes": altar_ambushes,
 			"altar_elites_slain": altar_elites_slain, "elite_affix_max": elite_affix_max,
@@ -149,6 +209,13 @@ func restore(s: Dictionary) -> void:
 		ability_uses[StringName(id)] = int(s["ability_uses"][id])
 	chests = int(s.get("chests", 0))
 	ryo_spent = int(s.get("ryo_spent", 0))
+	endless_ryo_start = int(s.get("endless_ryo_start", 0))
+	for id: String in (s.get("ryo_by_source", {}) as Dictionary):
+		ryo_by_source[StringName(id)] = int(s["ryo_by_source"][id])
+	if not s.has("ryo_by_source") and ryo + ryo_spent > 0:
+		ryo_by_source[&"other"] = ryo + ryo_spent  # partida suspensa de antes das fontes
+	coins = int(s.get("coins", 0))
+	ryo_bags = int(s.get("ryo_bags", 0))
 	for k: Variant in s.get("kami", []):
 		kami.append(StringName(String(k)))
 	tokoyo_reached = tokoyo_reached or bool(s.get("tokoyo_reached", false))
@@ -160,6 +227,13 @@ func restore(s: Dictionary) -> void:
 		elite_affixes_slain[StringName(String(id))] = true
 	for id: Variant in s.get("elite_affixes_seen", []):
 		elite_affixes_seen[StringName(String(id))] = true
+
+
+static func _int_keys_to_str(table: Dictionary) -> Dictionary:
+	var out := {}
+	for id: StringName in table:
+		out[String(id)] = int(table[id])
+	return out
 
 
 static func _str_keys(table: Dictionary) -> Dictionary:

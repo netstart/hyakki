@@ -1,7 +1,7 @@
 extends Node
-## Roda tests/hud_layout_tests.gd sozinho, com os arquivos de save e opções próprios dos testes
-## (o perfil do jogador não é tocado):
-##   godot --headless --path . res://tests/hud_layout_tests.tscn
+## Só capturas, para conferir o visual (sem --headless): os testes rodam pela integração
+## (`res://tests/integration_tests.tscn -- --suites=hud_layout`).
+##   godot --path . res://tests/hud_layout_tests.tscn -- --shots=<pasta>
 ## Com `-- --shots=<pasta>` (sem --headless) abre uma partida de verdade (6 armas, 6 passivas,
 ## números grandes, joystick fixo) e grava capturas da HUD, do diálogo antes do chefe e do painel de Kami em cada
 ## resolução de tests/device_profiles.gd, sem recorte e com o furo da câmera de cada lado (a
@@ -39,10 +39,12 @@ func _ready() -> void:
 			langs = arg.trim_prefix("--langs=").split(",")
 		elif arg.begins_with("--views="):
 			views = arg.trim_prefix("--views=").split(",")
-	if shots != "":
-		await _screenshots(shots, langs, views)
-	else:
-		await HudLayoutTests.new().run(self, _check)
+	if shots == "":
+		printerr("hud_layout_runner: só grava capturas (-- --shots=<pasta>, sem --headless). Os testes rodam",
+				" pela integração: res://tests/integration_tests.tscn -- --suites=hud_layout")
+		get_tree().quit(2)
+		return
+	await _screenshots(shots, langs, views)
 	GameClock.paused = false
 	for path: String in SaveManager.TEST_PATHS + [Settings.TEST_PATH]:
 		if FileAccess.file_exists(path):
