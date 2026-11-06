@@ -19,3 +19,7 @@
 # Claude Code: só o .claude/settings.json (hooks) é versionado
 /.claude/worktrees/
 /.claude/settings.local.json
+
+# Cache do Python (gerado ao rodar as ferramentas)
+__pycache__/
+*.pyc
