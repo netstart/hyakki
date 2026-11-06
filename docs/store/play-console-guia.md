@@ -11,7 +11,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 |---|---|
 | Nome do app | Hyakki: Até o Amanhecer |
 | ID do aplicativo (pacote) | `io.github.netstart.hyakki` (**não muda nunca mais** depois do primeiro envio) |
-| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.18.0`, versionCode 36) |
+| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.21.0`, versionCode 46) |
 | Desenvolvedor | conta pessoal, GitHub `netstart` |
 | E-mail público | netstart@gmail.com |
 | Site | https://netstart.github.io/ |
@@ -96,8 +96,8 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
   `build\release\hyakki-release.apk` (para conferir no emulador ou aparelho).
 - Cada envio à Play Console precisa de um **versionCode maior** que o anterior. O versionCode e o
   versionName seguem o SemVer do `AGENTS.md` (sobem a cada commit); o script também aceita
-  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.18.0`,
-  versionCode 36).
+  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.21.0`,
+  versionCode 46).
 - Os IDs reais do AdMob **já estão no projeto** (`admob/general/android/app_id` no `project.godot` e
   `RELEASE_UNITS` em `scripts/ads/admob_provider.gd`), então o build de release sai com anúncios e
   compra ligados.
@@ -588,6 +588,19 @@ Novidades: Altares do Selo pelos mapas. Fique no círculo até as runas acendere
 </pt-BR>
 <en-US>
 New: Sealed Altars across the maps. Stay in the circle until the runes light up and the seal breaks: out comes an ambush or an Elite, a stronger yōkai rising among lightning and a pillar of light, with up to 3 powers (thunder, fox fire, mirage, rock, mist, diamond shield, miasma, wind). Defeat it for chests and rare items. New Altar missions, a tip and a Guide chapter.
+</en-US>
+```
+
+### 9.5.6 Notas da versão 1.21.0 (versionCode 46)
+Para o envio com o Tokoyo, o terceiro nível de cada fase (1.21.0), e as correções da 1.20.x (compras
+pela Google Play que esperam a Play e regra das missões sem onigiri na Lua IV+):
+
+```
+<pt-BR>
+Novidades: cada fase agora tem três níveis. Vença o Guardião do Limiar e entre no Kakuriyo, o mundo oculto. Lá, a Sombra do Guardião guarda o último limiar: derrote-a e atravesse o torii dourado até o Tokoyo, a Terra Eterna, um santuário de luz com mapa próprio onde o último chefe da fase espera pela batalha final. Seis chefes novos, missões "chegar ao Tokoyo" e o Guia do Diário atualizado.
+</pt-BR>
+<en-US>
+New: every stage now has three levels. Beat the Threshold Guardian and enter the Kakuriyo, the hidden world. There, the Guardian's Shadow guards the last threshold: defeat it and pass through the golden torii into Tokoyo, the Everlasting Land, a sanctuary of light with its own map where the stage's final boss awaits the last battle. Six new bosses, "reach Tokoyo" missions and an updated Journal Guide.
 </en-US>
 ```
 

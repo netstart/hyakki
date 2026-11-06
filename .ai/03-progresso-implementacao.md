@@ -185,6 +185,23 @@ fortes, sons e grito. Especificação e números: [04-habilidades-dos-guardioes.
   montado, estados, save e bot), HUD das habilidades em todas as resoluções × 11 idiomas × furo dos dois
   lados, Guia e fichas.
 
+### Tokoyo, o terceiro nível de cada fase (06/11/2026, 1.21.0)
+Pedido: um terceiro nível em cada fase, depois do Kakuriyo. Design: [06-tokoyo-terceiro-nivel.md](06-tokoyo-terceiro-nivel.md).
+- ✅ Regras: `RiftPortal.depth` (0 fase, 1 Kakuriyo, 2 Tokoyo; snapshot antigo com `in_realm` vira 1); a
+  **Sombra do Guardião** (`midboss2` em `data/stages.json`, 6 chefes `<midboss>_kage` de tier 2 em
+  `data/bosses.json`) só nasce no Kakuriyo, em `max(t, chegada + after)`, e deixa dois baús e o **torii
+  dourado**; o **último chefe** da fase só aparece no Tokoyo (`Spawner.FINAL_AFTER` depois da chegada, com
+  respiro e aviso). Quem não atravessa vence ao amanhecer sem a luta final.
+- ✅ Mapa: biomas `<fase>_toko` (`"tokoyo": true`) com o layout próprio `tokoyo` em `terrain_layout.gd`
+  (praça com tōrō e quatro torii, caminhos sagrados, espelhos d'água), paleta clara e dourada, RealmCard
+  `常世` e nomes `realm3.*` em 11 idiomas.
+- ✅ Conteúdo: Guia (capítulos de chefes e de fases lidos dos dados), Diário (6 chefes, descoberta),
+  7 missões "chegar ao Tokoyo" (por fase e todas), Resultados (`tokoyo` no resultado e no `RunTracker`).
+- ✅ Testes: `tests/realm_tests.gd`/`realm_runner.gd`, terreno, missões, Guia, diálogo e layouts em todas as
+  resoluções × 11 idiomas × furo dos dois lados; tarefas `jornada_1x/2x/3x` do `run_checks` (bot `--god`
+  pelos dois portais até vencer o último chefe, mesmo hash nas três). O bot imprime `PROGRESSO` a cada
+  60 s da noite para o `run_checks` não tomar a jornada longa por travada.
+
 ## Registro
 - 20/10 19:25 — pipeline APK → emulador validado com o protótipo.
 - 21/10 — 629 textos em 11 idiomas; registro e verificação de licenças; testes de integração.

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Verificações do Hyakki para Linux/CI (mesmo conteúdo de tools/run_checks.ps1), em paralelo:
 # importação primeiro; depois, ao mesmo tempo, a integração em N fatias (--shard=k/N), testes de
-# regras, determinismo 1x/2x/3x e 3x Baixa, estresse, gdlint em partes e os checks em Python
+# regras, determinismo 1x/2x/3x e 3x Baixa, a jornada do bot pelos três níveis (Kakuriyo, Tokoyo e
+# o último chefe, mesmo estado em 1x/2x/3x), estresse, gdlint em partes e os checks em Python
 # (textos, licenças, ficha da loja, site irmão netstart.github.io: app-ads.txt gerado do ID do
 # AdMob, política e página do jogo lá, sem cópias em docs/).
 #
@@ -118,6 +119,9 @@ report() {
       grep -q "FALHOU" "$log" && ok=0 ;;
     determinismo_*)
       summary=$(grep "^FIM " "$log" | tail -1); [ -n "$summary" ] || { ok=0; summary="a partida não chegou ao FIM"; } ;;
+    jornada_*)
+      summary=$(grep "^FIM " "$log" | tail -1); [ -n "$summary" ] || { ok=0; summary="a partida não chegou ao FIM"; }
+      grep -qE "^CHEFES reino=2 tokoyo=true vencidos=.*kappa_elder" "$log" || { ok=0; summary="$summary (sem o Tokoyo e o último chefe: $(grep '^CHEFES ' "$log" | tail -1))"; } ;;
     estresse)
       summary=$(grep -E "^DESEMPENHO|pior por sistema" "$log" | tail -1); [ -n "$summary" ] || { ok=0; summary="sem linha de DESEMPENHO"; } ;;
     importacao) summary="sem erros de script" ;;
@@ -143,6 +147,11 @@ for speed in 1 2 3; do
   add_task "determinismo_${speed}x" 1 "$GODOT" $(godot_args "determinismo_${speed}x") --fixed-fps 60 -- --bot --seed=7 "--speed=$speed" --quit-at=90
 done
 add_task determinismo_3x_baixa 1 "$GODOT" $(godot_args determinismo_3x_baixa) --fixed-fps 60 -- --bot --seed=7 --speed=3 --gfx=low --quit-at=90
+# Jornada pelos três níveis (RiftPortal): o bot invencível chega ao Tokoyo e vence o último chefe.
+JOURNEY_END=660
+for speed in 1 2 3; do
+  add_task "jornada_${speed}x" 1 "$GODOT" $(godot_args "jornada_${speed}x") --fixed-fps 60 -- --bot --seed=7 --god "--speed=$speed" "--quit-at=$JOURNEY_END"
+done
 add_task estresse 1 "$GODOT" $(godot_args estresse) --fixed-fps 60 -- --bot --seed=7 --stress=500 --log-every=10 --quit-at=30
 if command -v gdlint >/dev/null 2>&1; then
   mapfile -t GD < <(find scripts tests -name '*.gd' | sort)
@@ -182,6 +191,16 @@ if [ -n "$hashes" ]; then
   if [ "$(tr ' ' '\n' <<<"$hashes" | grep -v '^$' | sort -u | wc -l)" -ne 1 ] || [ "$(wc -w <<<"$hashes")" -ne 4 ]; then
     echo "FALHOU: o estado mudou com a velocidade ou com a qualidade gráfica"; failed=1
   else echo "Determinismo: mesmo estado em 1x, 2x, 3x e 3x Baixa"; fi
+fi
+hashes=""
+for t in jornada_1x jornada_2x jornada_3x; do
+  [ -f "$LOGS/$t.log" ] || continue
+  line=$(grep "^FIM " "$LOGS/$t.log" | tail -1); hashes="$hashes ${line##*hash=}"
+done
+if [ -n "$hashes" ]; then
+  if [ "$(tr ' ' '\n' <<<"$hashes" | grep -v '^$' | sort -u | wc -l)" -ne 1 ] || [ "$(wc -w <<<"$hashes")" -ne 3 ]; then
+    echo "FALHOU: jornada: o estado mudou com a velocidade"; failed=1
+  else echo "Jornada: Kakuriyo, Tokoyo e o último chefe com o mesmo estado em 1x, 2x e 3x"; fi
 fi
 [ $failed -ne 0 ] || rm -rf "$TMPROOT"
 echo "Tempo total: $(( $(date +%s) - START ))s · logs em $LOGS"

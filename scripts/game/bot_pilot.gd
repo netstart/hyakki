@@ -2,7 +2,9 @@ class_name BotPilot
 extends RefCounted
 ## Piloto automático (plano 14.4), imitando um jogador simples: fica ao lado do inimigo
 ## mais próximo (a katana corta na horizontal), recua se algo encosta, pega o santuário e
-## entra no portal do Guardião do Limiar (scripts/systems/rift_portal.gd) assim que ele abre.
+## entra em qualquer portal aberto (scripts/systems/rift_portal.gd) assim que ele abre: o do
+## Guardião do Limiar leva ao Kakuriyo e o torii dourado da Sombra ao Tokoyo, onde ele enfrenta
+## o último chefe.
 ## Habilidades dos guardiões (ability_slot): solta a primeira pronta e paga, da mais forte para a
 ## mais fraca, cuja regra fixa aceita (HeroAbilities.bot_should_cast: N inimigos perto), guardando
 ## energia para a mais forte liberada (as mais fracas só saem se sobrar o custo dela).
@@ -21,6 +23,8 @@ const ALTAR_HEALTH := 0.6
 const ALTAR_STAY := 0.5
 ## O bot decide as habilidades a cada ABILITY_EVERY passos (0,1 s), como um jogador.
 const ABILITY_EVERY := 6
+## Linha PROGRESSO a cada 60 s da noite (3600 passos de 1/60 s).
+const PROGRESS_STEPS := 3600
 
 
 ## Slot da habilidade que o bot solta neste passo (-1 = nenhuma). Chamado no passo fixo.
@@ -42,6 +46,9 @@ static func ability_slot(game: HyakkiGame) -> int:
 
 
 static func input(game: HyakkiGame) -> Vector2:
+	if game.step_index > 0 and game.step_index % PROGRESS_STEPS == 0 and game.rift != null:
+		# Só imprime (nada da simulação muda, o hash fica igual): o run_checks vê atividade na jornada longa.
+		print("PROGRESSO t=%d reino=%d abates=%d" % [roundi(GameClock.game_time), game.rift.depth, game.tracker.kills])
 	var t := GameClock.game_time
 	var wander := Vector2(cos(t * 0.45), sin(t * 0.31)).normalized()
 	var me := game.player.sim_pos

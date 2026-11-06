@@ -255,26 +255,35 @@ func _check_portal_arrows(hud: Hud, view: Vector2, safe: Rect2, state: String) -
 				[state, rad_to_deg(dir.angle()), r])
 
 
-## Título da travessia de cada reino: legenda, kanji e nome inteiros na área segura (com a folga
-## RealmCard.MARGIN dos lados), um embaixo do outro, sem se sobrepor.
+## Título da travessia de cada reino (Kakuriyo e Tokoyo, RiftPortal.realm_title): legenda, kanji
+## e nome inteiros na área segura (com a folga RealmCard.MARGIN dos lados), um embaixo do outro,
+## sem se sobrepor.
 func _check_realm_card(hud: Hud, view: Vector2, insets: Vector2, safe: Rect2, state: String) -> void:
 	var card := hud.realm_card()
 	var room := safe.grow_individual(-RealmCard.MARGIN, 0.0, -RealmCard.MARGIN, 0.0)
 	for id: StringName in DB.ids("stages"):
-		var ow: Dictionary = DB.stage(id).get("otherworld", {})
-		card.kanji = String(ow.get("kanji", ""))
-		card.title = TranslationServer.translate("realm.%s.name" % id)
-		card.caption = TranslationServer.translate("realm.caption")
-		var layout: Dictionary = card.title_layout(view, insets)
-		var tag := "%s: título do reino %s" % [state, id]
-		var rects: Array[Rect2] = []
-		for key: String in ["caption", "kanji", "name"]:
-			var r: Rect2 = layout[key]
-			_check.call(r.size.x > 0.0 and room.encloses(r), "%s, %s inteiro na área segura (%s em %s)", [tag, key, r, room])
-			for o: Rect2 in rects:
-				_check.call(not o.intersects(r) and o.end.y <= r.position.y + 0.5, "%s, %s abaixo e sem sobrepor", [tag, key])
-			rects.append(r)
-		_check.call(int(layout["name_size"]) >= 12, "%s, nome legível", tag)
+		for level: int in [RiftPortal.DEPTH_KAKURIYO, RiftPortal.DEPTH_TOKOYO]:
+			var toko := level == RiftPortal.DEPTH_TOKOYO
+			_check_realm_title(card, RiftPortal.realm_title(DB.stage(id), level), toko, view, insets, room,
+					"%s: título do %s %s" % [state, "Tokoyo" if toko else "reino", id])
+	card.gold = false
+
+
+func _check_realm_title(card: RealmCard, title: Array[String], gold: bool, view: Vector2, insets: Vector2, room: Rect2,
+		tag: String) -> void:
+	card.kanji = title[0]
+	card.title = title[1]
+	card.caption = title[2]
+	card.gold = gold
+	var layout: Dictionary = card.title_layout(view, insets)
+	var rects: Array[Rect2] = []
+	for key: String in ["caption", "kanji", "name"]:
+		var r: Rect2 = layout[key]
+		_check.call(r.size.x > 0.0 and room.encloses(r), "%s, %s inteiro na área segura (%s em %s)", [tag, key, r, room])
+		for o: Rect2 in rects:
+			_check.call(not o.intersects(r) and o.end.y <= r.position.y + 0.5, "%s, %s abaixo e sem sobrepor", [tag, key])
+		rects.append(r)
+	_check.call(int(layout["name_size"]) >= 12, "%s, nome legível", tag)
 
 
 # --- Kami -------------------------------------------------------------------------

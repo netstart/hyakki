@@ -4,7 +4,8 @@ extends Screen
 ## Três colunas proporcionais à tela (678x305 é a referência), fora do recorte da câmera e sem
 ## nada cortado:
 ## - esquerda: retrato do herói (apagado e riscado de tinta vermelha na derrota, aceso com
-##   brilho no amanhecer), título, fase/modo/lua, selo de recorde e o golpe final;
+##   brilho no amanhecer), título, fase/modo/lua, selo de recorde, o selo do nível mais fundo a
+##   que a partida chegou (隠世 Kakuriyo em violeta, 常世 Tokoyo em ouro) e o golpe final;
 ## - centro: 4 blocos de números (tempo, nível, abates, ryō) que contam do zero e o painel de
 ##   dano por arma (barras proporcionais à melhor arma, que ganha o selo MVP; rola se precisar);
 ## - direita: conquistas e missões novas, as Próximas metas (MissionGoals: 3 missões com barra e
@@ -37,6 +38,8 @@ const INPUT_GUARD := 0.4
 const PORTRAIT := 76
 ## Largura mínima da coluna da esquerda (retrato e textos quebrados) ao dividir telas estreitas.
 const LEFT_MIN := 112.0
+## Largura do selo do nível além do kanji e do texto: margens (6 + 6), separação (4) e bordas.
+const REALM_PAD := 18.0
 const TILE_ICON := 24
 const ROW_HEIGHT := 33
 const PIP := Vector2(4, 4)
@@ -51,6 +54,11 @@ const GOLD := Color("d9a441")
 const VERMILION := Color("b23a26")
 const DIM := Color(0.8, 0.76, 0.72)
 const INK := Color("c21a2c")
+## Selo do nível alcançado (RiftPortal.palette dá a borda e o kanji): fundo e texto de cada reino.
+const KAKURIYO_PILL := Color("2a1a44")
+const KAKURIYO_INK := Color("ddd0ff")
+const TOKOYO_PILL := Color("4a3608")
+const TOKOYO_INK := Color("ffe9a8")
 ## Cores de cada clima: céu (de cima para baixo), painéis, bordas, título e barras.
 const MOODS := {
 	"defeat": {
@@ -84,6 +92,10 @@ var _pulse_step := -1
 var _title: Label
 var _subtitle: Label
 var _record: PanelContainer
+## Selo do nível mais fundo (Kakuriyo ou Tokoyo): kanji do reino e o texto, que quebra na coluna.
+var _realm: PanelContainer
+var _realm_glyph: Label
+var _realm_text: Label
 var _cause_row: HBoxContainer
 var _cause_icon: TextureRect
 var _cause: Label
@@ -307,10 +319,12 @@ func _fit_left(width: float, height: float) -> void:
 		_set_portrait(PORTRAIT if step < 2 else PORTRAIT / 2)
 		var cause_w := minf(_text_width(_cause.text, 12), width - (23.0 if _cause_icon.visible else 0.0))
 		_cause.custom_minimum_size.x = cause_w
+		var glyph_w := _realm_glyph.get_combined_minimum_size().x + REALM_PAD
+		_realm_text.custom_minimum_size.x = minf(_text_width(_realm_text.text, 12), maxf(width - glyph_w, 24.0))
 		# A altura dos textos quebrados vale para a largura atual: mede já na largura da coluna
 		# (e invalida o mínimo guardado, que o rótulo não refaz sozinho ao mudar de tamanho).
-		for l: Label in [_title, _subtitle, _taken, _cause]:
-			if l != _cause:
+		for l: Label in [_title, _subtitle, _taken, _cause, _realm_text]:
+			if l != _cause and l != _realm_text:
 				l.custom_minimum_size.x = width
 			l.size = Vector2(l.custom_minimum_size.x, l.size.y)
 			l.update_minimum_size()
@@ -381,6 +395,21 @@ func _build_left() -> Control:
 	var record_text := label(tr("results.record"), 12, HORIZONTAL_ALIGNMENT_CENTER)
 	record_text.add_theme_color_override("font_color", ThemeFactory.ACCENT)
 	_record.add_child(record_text)
+	var realm_row := CenterContainer.new()
+	col.add_child(realm_row)
+	_realm = PanelContainer.new()
+	_realm.name = "Realm"
+	realm_row.add_child(_realm)
+	var realm_box := HBoxContainer.new()
+	realm_box.add_theme_constant_override("separation", 4)
+	_realm.add_child(realm_box)
+	_realm_glyph = label("", 12)
+	_realm_glyph.add_theme_font_override("font", UiPaint.ja_font())
+	_realm_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	realm_box.add_child(_realm_glyph)
+	_realm_text = label("", 12)
+	_realm_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	realm_box.add_child(_realm_text)
 	var cause_center := CenterContainer.new()
 	col.add_child(cause_center)
 	_cause_row = HBoxContainer.new()
@@ -416,6 +445,7 @@ func _fill_left(r: Dictionary) -> void:
 	_subtitle.text = subtitle_text(r)
 	var prev := float(r.get("prev_best_time", 0.0))
 	_record.visible = prev > 0.0 and float(r.get("time", 0.0)) > prev + 0.5
+	_fill_realm(realm_level(r))
 	var d: Dictionary = r.get("damage_taken", {})
 	var source := ""
 	if not d.is_empty():
@@ -436,6 +466,29 @@ func _fill_left(r: Dictionary) -> void:
 	# O texto do golpe quebra dentro da coluna, descontando o ícone (largura no _layout).
 	_taken.visible = not d.is_empty()
 	_taken.text = tr("results.taken") % Locale.format_number(roundi(float(d.get("total", 0.0))))
+
+
+## Nível mais fundo a que a partida chegou (RiftPortal.DEPTH_*): "tokoyo" e "realm" do resultado.
+static func realm_level(r: Dictionary) -> int:
+	if bool(r.get("tokoyo", false)):
+		return RiftPortal.DEPTH_TOKOYO
+	if bool(r.get("realm", false)):
+		return RiftPortal.DEPTH_KAKURIYO
+	return RiftPortal.DEPTH_STAGE
+
+
+## Selo do nível: escondido na própria fase; violeta no Kakuriyo e dourado no Tokoyo, com o kanji do reino.
+func _fill_realm(level: int) -> void:
+	_realm.visible = level > RiftPortal.DEPTH_STAGE
+	if not _realm.visible:
+		return
+	var gold := level >= RiftPortal.DEPTH_TOKOYO
+	var edge: Color = RiftPortal.palette(gold)["swirl"]
+	_realm.add_theme_stylebox_override("panel", _pill(TOKOYO_PILL if gold else KAKURIYO_PILL, edge, 6))
+	_realm_glyph.text = RiftPortal.REALM_GLYPHS[level]
+	_realm_glyph.add_theme_color_override("font_color", edge)
+	_realm_text.text = tr("results.tokoyo") if gold else tr("results.realm")
+	_realm_text.add_theme_color_override("font_color", TOKOYO_INK if gold else KAKURIYO_INK)
 
 
 ## "Fase · modo · Lua" (e Desafio Diário / Noite Sem Fim quando valem).

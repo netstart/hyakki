@@ -5,6 +5,8 @@
    "kami": [300, 600],
    "midboss": {"t": 450, "id": "onikuma"},
    "otherworld": {"biome": "village_ura", "kanji": "裏村", "tint": "#f2c6d2", "light_mult": 0.85, "music": "kakuriyo", "weather": "secret", "bounds": [1400, 1400], "hazard": {}},
+   "midboss2": {"t": 540, "id": "onikuma_kage", "after": 45},
+   "tokoyo": {"biome": "village_toko", "kanji": "常世里", "tint": "#fff1d2", "light_mult": 1.15, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"slime_rice": 1}},
      {"from": 60, "to": 120, "mix": {"slime_rice": 4, "bat_lantern": 1}},
@@ -38,6 +40,8 @@
    "kami": [300, 600],
    "midboss": {"t": 450, "id": "nuppeppo"},
    "otherworld": {"biome": "bamboo_ura", "kanji": "月雪原", "tint": "#c8d8ff", "light_mult": 1.0, "music": "kakuriyo", "weather": "temple", "bounds": [], "hazard": {"type": "fog"}},
+   "midboss2": {"t": 540, "id": "nuppeppo_kage", "after": 45},
+   "tokoyo": {"biome": "bamboo_toko", "kanji": "常世林", "tint": "#eef8e2", "light_mult": 1.12, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"bamboo_spirit": 1}},
      {"from": 60, "to": 180, "mix": {"bamboo_spirit": 3, "butterfly_swarm": 1, "mushroom": 1}},
@@ -65,6 +69,8 @@
    "kami": [300, 600],
    "midboss": {"t": 450, "id": "onmoraki"},
    "otherworld": {"biome": "temple_ura", "kanji": "逆寺", "tint": "#dccaff", "light_mult": 0.85, "music": "kakuriyo", "weather": "yomi", "bounds": [700, 0], "hazard": {"type": "statues", "interval": 4.0, "per_chunk": 1.4}},
+   "midboss2": {"t": 540, "id": "onmoraki_kage", "after": 45},
+   "tokoyo": {"biome": "temple_toko", "kanji": "常世殿", "tint": "#ffeedd", "light_mult": 1.15, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"lantern_obake": 1}},
      {"from": 60, "to": 180, "mix": {"lantern_obake": 3, "skull": 1, "owl": 1}},
@@ -92,6 +98,8 @@
    "kami": [300, 600],
    "midboss": {"t": 450, "id": "onibi"},
    "otherworld": {"biome": "dunes_ura", "kanji": "灰海", "tint": "#c4e6dc", "light_mult": 0.9, "music": "kakuriyo", "weather": "secret", "bounds": [], "hazard": {}},
+   "midboss2": {"t": 540, "id": "onibi_kage", "after": 45},
+   "tokoyo": {"biome": "dunes_toko", "kanji": "常世砂", "tint": "#f2f3fa", "light_mult": 1.18, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"dune_snake": 1}},
      {"from": 60, "to": 180, "mix": {"dune_snake": 3, "ash_larva": 1, "sand_lizard": 1}},
@@ -119,6 +127,8 @@
    "kami": [300, 600],
    "midboss": {"t": 450, "id": "yomi_hebi"},
    "otherworld": {"biome": "yomi_ura", "kanji": "根の国", "tint": "#c0c2ff", "light_mult": 0.9, "music": "kakuriyo", "weather": "bamboo", "bounds": [1100, 1100], "hazard": {}},
+   "midboss2": {"t": 540, "id": "yomi_hebi_kage", "after": 45},
+   "tokoyo": {"biome": "yomi_toko", "kanji": "常世泉", "tint": "#f5eaff", "light_mult": 1.12, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
    "waves": [
      {"from": 0, "to": 60, "mix": {"skull_blue": 1}},
      {"from": 60, "to": 180, "mix": {"skull_blue": 3, "yurei": 1, "oni_small": 1}},
@@ -145,7 +155,9 @@
    "bosses": [{"t": 300, "id": "ash_dragon"}, {"t": 600, "id": "izanami"}],
    "kami": [300, 600],
    "midboss": {"t": 450, "id": "kincho"},
-   "otherworld": {"biome": "secret_ura", "kanji": "常世", "tint": "#fff0e2", "light_mult": 1.05, "music": "kakuriyo", "weather": "temple", "bounds": [], "hazard": {"type": "statues", "interval": 5.0, "per_chunk": 0.8}},
+   "otherworld": {"biome": "secret_ura", "kanji": "浮橋", "tint": "#fff0e2", "light_mult": 1.05, "music": "kakuriyo", "weather": "temple", "bounds": [], "hazard": {"type": "statues", "interval": 5.0, "per_chunk": 0.8}},
+   "midboss2": {"t": 540, "id": "kincho_kage", "after": 45},
+   "tokoyo": {"biome": "secret_toko", "kanji": "常世宮", "tint": "#fff6ea", "light_mult": 1.2, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
    "waves": [
      {"from": 0, "to": 120, "mix": {"skull_blue": 3, "yurei": 1}},
      {"from": 120, "to": 300, "mix": {"yurei": 3, "yomi_eye": 1, "yomi_beast_dark": 1}},

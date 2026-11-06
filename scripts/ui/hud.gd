@@ -377,8 +377,9 @@ func _draw_icon(at: Vector2, path: String, lvl: int, evolved: bool, key: String,
 	_skill_icons.draw(_top, at, _icon(path), key, lvl, max_level, evolved, now)
 
 
-## Seta na borda para santuários e baús fora da tela (plano 7.2) e a do portal do Kakuriyo
-## (RiftPortal.draw_arrow: chevron violeta com um vórtice atrás).
+## Seta na borda para santuários e baús fora da tela (plano 7.2) e a do portal aberto
+## (RiftPortal.draw_arrow: chevron com um vórtice atrás, violeta para o Kakuriyo e dourado para
+## o Tokoyo).
 func _draw_offscreen_arrows() -> void:
 	var targets: Array[Array] = []
 	if game.kami.has_shrine():
@@ -400,7 +401,8 @@ func _draw_offscreen_arrows() -> void:
 	if game.rift != null and game.rift.is_open():
 		var to: Vector2 = game.rift.portal_pos - game.player.position
 		if absf(to.x) >= view.x * 0.5 - 10.0 or absf(to.y) >= view.y * 0.5 - 10.0:
-			RiftPortal.draw_arrow(_top, arrow_point(to.normalized(), view), to.normalized(), UiClock.msec() / 1000.0)
+			RiftPortal.draw_arrow(_top, arrow_point(to.normalized(), view), to.normalized(), UiClock.msec() / 1000.0,
+					game.rift.golden())
 	# Altar do Selo dormente mais perto (AltarSystem.ARROW_RANGE), fora da tela.
 	if game.altars != null:
 		var altar := game.altars.arrow_target()

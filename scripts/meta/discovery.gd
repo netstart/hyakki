@@ -7,9 +7,12 @@ extends RefCounted
 ## - chefes: depois de vencidos (stats "bosses_defeated");
 ## - guardiãs e fases: liberadas no save;
 ## - Kami: sempre (o Diário mostra todos).
+## - Kakuriyo de uma fase: depois de vencer o Guardião do Limiar dela; Tokoyo de uma fase: depois de
+##   chegar lá (recorde "stage_tokoyo" das Missões, gravado no fim da partida);
 ## - afixos dos Elites dos altares: depois de ver um Elite com ele (stats "affixes_seen");
 ## - Shinigami da Noite Sem Fim (fora do Diário): depois de chegar à hora dele (Spawner.SHINIGAMI_TIME).
 ## Item desconhecido aparece como "???" (nome) e chip em silhueta com "?".
+## A ordem dos chefes no Diário (boss_order) também mora aqui: cada Sombra ao lado do seu Guardião.
 
 const UNKNOWN := "???"
 
@@ -37,6 +40,44 @@ static func hero_known(h: StringName) -> bool:
 
 static func stage_known(s: StringName) -> bool:
 	return MetaProgress.is_stage_unlocked(s)
+
+
+## Chefes na ordem do Diário (data/bosses.json), com cada Sombra do Guardião ("midboss2" de uma
+## fase) logo depois do Guardião do Limiar dela ("midboss" da mesma fase).
+static func boss_order() -> Array[StringName]:
+	var shadow_of := {}
+	var shadows := {}
+	for s: StringName in DB.ids("stages"):
+		var row: Dictionary = DB.stages[s]
+		var mid := StringName(String(RiftPortal.midboss_of(row).get("id", "")))
+		var mid2 := StringName(String(RiftPortal.midboss2_of(row).get("id", "")))
+		if mid != &"" and mid2 != &"" and DB.bosses.has(mid2):
+			shadow_of[mid] = mid2
+			shadows[mid2] = true
+	var out: Array[StringName] = []
+	for b: StringName in DB.ids("bosses"):
+		if shadows.has(b):
+			continue
+		out.append(b)
+		if shadow_of.has(b):
+			out.append(shadow_of[b])
+	# Sombra sem Guardião conhecido (dados incompletos) entra no fim, sem sumir do Diário.
+	for b: StringName in DB.ids("bosses"):
+		if not out.has(b):
+			out.append(b)
+	return out
+
+
+## Kakuriyo da fase conhecido: o Guardião do Limiar dela (que abre o portal) já foi vencido.
+static func realm_known(s: StringName) -> bool:
+	return boss_known(StringName(String(RiftPortal.midboss_of(DB.stage(s)).get("id", ""))))
+
+
+## Tokoyo da fase conhecido: alguma partida chegou lá (MissionBook.record_run grava a fase em
+## records["stage_tokoyo"]; o resultado leva "tokoyo" e o RunTracker, tokoyo_reached).
+static func tokoyo_known(s: StringName) -> bool:
+	var rec: Dictionary = SaveManager.data.get("records", {})
+	return (rec.get("stage_tokoyo", {}) as Dictionary).has(String(s))
 
 
 ## Kami: o Diário mostra todos desde o início.

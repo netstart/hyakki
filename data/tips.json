@@ -56,6 +56,7 @@
     {"id": "relight", "cat": "bosses", "tier": 2, "after": ["boss"]},
     {"id": "midboss", "cat": "bosses", "tier": 1, "after": ["midboss"], "args": ["midboss.title"]},
     {"id": "portal_walk", "cat": "bosses", "tier": 1, "after": ["midboss"]},
+    {"id": "tokoyo", "cat": "bosses", "tier": 2, "after": ["midboss"], "args": ["midboss2.title"]},
     {"id": "portal_loot", "cat": "bosses", "tier": 2, "when": {"min_runs": 3}},
     {"id": "endless", "cat": "bosses", "tier": 2, "when": {"min_wins": 1}, "after": ["shinigami"], "args": ["stages.endless", "boss.shinigami.name"]},
 

@@ -25,7 +25,12 @@ const TILESETS := {
 }
 ## Sprites desenhados aqui (não estão no catálogo de data/biomes.json).
 const GENERATED := ["gen_tuft_a", "gen_tuft_b", "gen_tuft_c", "shadow_soft", "shadow_hard", "gen_step",
-		"gen_bamboo_a", "gen_bamboo_b", "gen_bamboo_c"]
+		"gen_bamboo_a", "gen_bamboo_b", "gen_bamboo_c", "gen_torii_side"]
+## Torii visto de lado (caminhos leste-oeste do Tokoyo): largura, altura do pilar e deslocamento
+## do pilar de trás (px); a altura total soma a distância entre os pés (TerrainLayout.TORII_SIDE_SPAN).
+const TORII_SIDE_W := 26
+const TORII_SIDE_TALL := 34
+const TORII_SIDE_SHIFT := 12
 
 static var _data: Dictionary = {}
 static var _images: Dictionary = {}
@@ -36,6 +41,9 @@ var materials_texture: ImageTexture
 var mat_info: PackedVector4Array = []
 var mat_tint: PackedVector4Array = []
 var lava_slot: int = -1
+## Material de água espelhada (material com "water": true; -1 = nenhum) e a cor do brilho dela.
+var water_slot: int = -1
+var water_glint := Color.WHITE
 ## Atlas da decoração e o retângulo (px) de cada sprite.
 var decor_texture: ImageTexture
 var regions: Dictionary = {}
@@ -64,7 +72,13 @@ static func sprite_size(sprite_name: String) -> Vector2:
 		return Vector2(15, 60)
 	if sprite_name == "gen_step":
 		return Vector2(48, 6)
+	if sprite_name == "gen_torii_side":
+		return Vector2(TORII_SIDE_W, torii_side_height())
 	return Vector2(10, 8)
+
+
+static func torii_side_height() -> int:
+	return int(TerrainLayout.TORII_SIDE_SPAN) + TORII_SIDE_TALL + 10
 
 
 ## Gradiente radial (64x64) usado pelos halos das luzes.
@@ -108,12 +122,16 @@ func _build_materials(mats: Array) -> void:
 	mat_info.clear()
 	mat_tint.clear()
 	lava_slot = -1
+	water_slot = -1
 	for k: int in range(MATERIALS):
 		var m: Dictionary = mats[k] if k < mats.size() else (mats[0] if not mats.is_empty() else {})
 		var y := k * SLOT_H
 		var tint := Color(String(m.get("tint", "#ffffff")))
 		var flags := (1.0 if bool(m.get("flip", false)) else 0.0) + (2.0 if bool(m.get("mono", false)) else 0.0)
 		mat_tint.append(Vector4(tint.r, tint.g, tint.b, flags))
+		if bool(m.get("water", false)):
+			water_slot = k
+			water_glint = Color(String(m.get("glint", "#ffffff")))
 		if bool(m.get("lava", false)):
 			lava_slot = k
 			mat_info.append(Vector4(y, 1, 1, 1))
@@ -176,6 +194,7 @@ func _build_decor(biome_data: Dictionary) -> void:
 	images["gen_bamboo_b"] = _bamboo(62, 7)
 	images["gen_bamboo_c"] = _bamboo(88, 13)
 	images["gen_step"] = _step(Color(String(biome_data.get("step", "#a8a49a"))))
+	images["gen_torii_side"] = _torii_side()
 	# Empacota em prateleiras, do mais alto para o mais baixo.
 	var names: Array = images.keys()
 	names.sort_custom(func(a: String, b: String) -> bool:
@@ -308,3 +327,61 @@ static func _bamboo(h: int, salt: int) -> Image:
 			if y + 1 < h:
 				img.set_pixel(x, y + 1, leaf_dark)
 	return img
+
+
+## Torii visto de lado em 3/4 (pixel art só com fill_rect): o pilar de trás mais alto e à direita,
+## as duas vigas (kasagi escura com as pontas viradas e nuki vermelha) descendo em diagonal até o
+## pilar da frente. A base do pilar da frente fica no meio de baixo do sprite.
+static func _torii_side() -> Image:
+	var w := TORII_SIDE_W
+	var h := torii_side_height()
+	var span := int(TerrainLayout.TORII_SIDE_SPAN)
+	var tall := TORII_SIDE_TALL
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var outline := Color("#2a1214")
+	var red := Color("#d8402c")
+	var lit := Color("#f67a4e")
+	var dark_red := Color("#962618")
+	var beam := Color("#3c2624")
+	var beam_lit := Color("#6a4640")
+	var stone := Color("#8a8078")
+	var front_x := w / 2 - TORII_SIDE_SHIFT / 2
+	var back_x := front_x + TORII_SIDE_SHIFT
+	var front_base := h - 1
+	var back_base := h - 1 - span
+	# Pilar de trás (um tom mais escuro: está mais longe da luz).
+	_torii_pillar(img, back_x, back_base, tall, outline, red.darkened(0.14), lit.darkened(0.18), dark_red, stone)
+	# Nuki: travessa vermelha a 10 px do topo, em diagonal entre os pilares, passando um pouco deles.
+	_torii_beam(img, back_x + 3, back_base - tall + 9, front_x - 3, front_base - tall + 9, 4, outline, red, lit)
+	_torii_pillar(img, front_x, front_base, tall, outline, red, lit, dark_red, stone)
+	# Kasagi: viga por cima (face vermelha e topo escuro), com as pontas viradas para cima.
+	_torii_beam(img, back_x + 5, back_base - tall - 4, front_x - 5, front_base - tall - 2, 5, outline, red, lit)
+	_torii_beam(img, back_x + 5, back_base - tall - 6, front_x - 5, front_base - tall - 4, 2, outline, beam, beam_lit)
+	for tip: Vector2i in [Vector2i(back_x + 6, back_base - tall - 8), Vector2i(front_x - 6, front_base - tall - 6)]:
+		img.fill_rect(Rect2i(tip.x - 2, tip.y, 5, 3), outline)
+		img.fill_rect(Rect2i(tip.x - 1, tip.y + 1, 3, 1), beam_lit)
+	return img
+
+
+## Pilar do torii: contorno, face vermelha com luz à esquerda e sombra à direita, pé de pedra.
+static func _torii_pillar(img: Image, cx: int, base: int, tall: int, outline: Color, red: Color, lit: Color,
+		dark: Color, stone: Color) -> void:
+	img.fill_rect(Rect2i(cx - 3, base - tall, 6, tall + 1), outline)
+	img.fill_rect(Rect2i(cx - 2, base - tall + 1, 4, tall - 1), red)
+	img.fill_rect(Rect2i(cx - 2, base - tall + 1, 1, tall - 1), lit)
+	img.fill_rect(Rect2i(cx + 1, base - tall + 1, 1, tall - 1), dark)
+	img.fill_rect(Rect2i(cx - 3, base - 3, 6, 4), outline)
+	img.fill_rect(Rect2i(cx - 2, base - 2, 4, 2), stone)
+
+
+## Viga em diagonal de (x0, y0) a (x1, y1): uma linha de `thick` px por fileira, com contorno.
+static func _torii_beam(img: Image, x0: int, y0: int, x1: int, y1: int, thick: int, outline: Color, face: Color,
+		lit: Color) -> void:
+	var rows := maxi(1, y1 - y0)
+	for y: int in range(y0 - 1, y1 + thick + 1):
+		var t := clampf(float(y - y0 - thick * 0.5) / float(rows), 0.0, 1.0)
+		var cx := roundi(lerpf(float(x0), float(x1), t))
+		img.fill_rect(Rect2i(cx - 3, y, 7, 1), outline)
+		if y >= y0 and y < y1 + thick:
+			img.fill_rect(Rect2i(cx - 2, y, 5, 1), face)
+			img.set_pixel(clampi(cx - 2, 0, img.get_width() - 1), y, lit)

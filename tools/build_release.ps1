@@ -5,9 +5,13 @@
 #
 # Opções:
 #   -SkipChecks        não roda tools\run_checks.ps1 antes
-#   -VersionCode N     versionCode do Android (cada envio à Play Store precisa de um maior)
-#   -VersionName X     versão visível (ex.: 1.0.1)
+#   -VersionCode N     versionCode do Android (sobrescreve o auto-incremento)
+#   -VersionName X     versão visível (sobrescreve o auto-incremento, ex.: 1.0.1)
 #   -KeystoreEnv path  arquivo com as variáveis da chave (padrão C:\src\keys\hyakki-release.env)
+#
+# Por padrão (sem -VersionCode/-VersionName) o script faz o bump SemVer automático:
+# soma +1 ao CORREÇÃO (patch) e +1 ao versionCode, conforme o AGENTS.md, e grava
+# o mesmo valor em export_presets.cfg (todos os presets) e project.godot.
 #
 # Não instala nem testa no emulador: testes automatizados no emulador Android são proibidos
 # (AGENTS.md). Para conferir a build à mão: "Testar release no emulador.bat" -NoBuild.
@@ -41,22 +45,43 @@ foreach ($line in Get-Content $KeystoreEnv) {
 if (-not (Test-Path $env:GODOT_ANDROID_KEYSTORE_RELEASE_PATH)) { Fail 'keystore indicado no .env não existe' }
 Write-Host "keystore: $env:GODOT_ANDROID_KEYSTORE_RELEASE_PATH (alias $env:GODOT_ANDROID_KEYSTORE_RELEASE_USER)"
 
-# --- 2. Versão -----------------------------------------------------------------------
+# --- 2. Versão (SemVer automático) ---------------------------------------------------
+# Por padrão, soma +1 ao CORREÇÃO (patch) e +1 ao versionCode (regra do AGENTS.md).
+# Use -VersionCode N -VersionName X.Y.Z para forçar valores específicos.
 $presets = Join-Path $project 'export_presets.cfg'
+$godotCfg = Join-Path $project 'project.godot'
+
+$text = Get-Content $presets -Raw -Encoding UTF8
+$currentName = ([regex]::Match($text, 'version/name="([^"]*)"')).Groups[1].Value
+$currentCode = [int]([regex]::Match($text, 'version/code=(\d+)')).Groups[1].Value
+
 if ($VersionCode -gt 0 -or $VersionName) {
-    Step 'Versão'
-    $text = Get-Content $presets -Raw
-    if ($VersionCode -gt 0) { $text = $text -replace 'version/code=\d+', "version/code=$VersionCode" }
-    if ($VersionName) { $text = $text -replace 'version/name="[^"]*"', "version/name=`"$VersionName`"" }
-    [IO.File]::WriteAllText($presets, $text)
-    if ($VersionName) {
-        $godotCfg = Join-Path $project 'project.godot'
-        $p = (Get-Content $godotCfg -Raw) -replace 'config/version="[^"]*"', "config/version=`"$VersionName`""
-        [IO.File]::WriteAllText($godotCfg, $p)
+    # Valores explícitos sobrescrevem; o que não for informado sobe automaticamente
+    if ($VersionName) { $newName = $VersionName }
+    else {
+        $parts = $currentName -split '\.'
+        if ($parts.Length -eq 3) { $parts[2] = ([int]$parts[2] + 1).ToString(); $newName = $parts -join '.' }
+        else { $newName = $currentName }
     }
+    if ($VersionCode -gt 0) { $newCode = $VersionCode } else { $newCode = $currentCode + 1 }
+} else {
+    # Default: bump de correção (patch) e versionCode
+    $parts = $currentName -split '\.'
+    if ($parts.Length -eq 3) { $parts[2] = ([int]$parts[2] + 1).ToString(); $newName = $parts -join '.' }
+    else { $newName = $currentName }
+    $newCode = $currentCode + 1
 }
-$code = ([regex]::Match((Get-Content $presets -Raw), 'version/code=(\d+)')).Groups[1].Value
-$name = ([regex]::Match((Get-Content $presets -Raw), 'version/name="([^"]*)"')).Groups[1].Value
+
+Step "Versão: $currentName (code $currentCode) -> $newName (code $newCode)"
+$text = $text -replace 'version/code=\d+', "version/code=$newCode"
+$text = $text -replace 'version/name="[^"]*"', "version/name=`"$newName`""
+[IO.File]::WriteAllText($presets, $text)
+
+$p = (Get-Content $godotCfg -Raw -Encoding UTF8) -replace 'config/version="[^"]*"', "config/version=`"$newName`""
+[IO.File]::WriteAllText($godotCfg, $p)
+
+$code = $newCode
+$name = $newName
 Write-Host "versão $name (code $code)"
 
 # --- 3. Verificações -----------------------------------------------------------------

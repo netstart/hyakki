@@ -253,6 +253,14 @@ func _run_until(game: HyakkiGame, from: float, seconds: float, cond: Callable) -
 	return false
 
 
+## Leva a partida ao Tokoyo pelo torii dourado (cenário "tokoyo"), onde mora o chefe das 10:00.
+func _to_tokoyo(game: HyakkiGame) -> void:
+	game.apply_scenario("tokoyo")
+	game.rift.begin_crossing()
+	game.rift.finish_crossing_now()
+	GameClock.paused = true
+
+
 func _toast(game: HyakkiGame) -> String:
 	return String((game.hud.get("_toast") as Label).text)
 
@@ -309,10 +317,12 @@ func _test_midboss_flow() -> void:
 	Settings.set_value("dialogues_always", false)
 
 
-## Chefe das 10:00 (Velho Kappa na Vila), com Aki e com Tora (sem o aparte dele mesmo).
+## Chefe das 10:00 (Velho Kappa na Vila), que só nasce no Tokoyo (RiftPortal), com Aki e com Tora
+## (sem o aparte dele mesmo).
 func _test_boss_flow() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	var game := await _new_game()
+	_to_tokoyo(game)
 	var tag := "diálogo do Velho Kappa"
 	var opened := _run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open())
 	_check.call(opened and GameClock.game_time >= 600.0 and GameClock.paused and game.bosses.has_boss(&"kappa_elder"),
@@ -326,11 +336,13 @@ func _test_boss_flow() -> void:
 			"%s: depois do diálogo, painel e música", tag)
 	await _free(game)
 	game = await _new_game()
+	_to_tokoyo(game)
 	_check.call(not _run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open())
 			and game.hud.boss_panel().visible, "%s: segunda partida entra direto", tag)
 	await _free(game)
 	SaveManager.data = SaveManager.default_profile()
 	game = await _new_game("tora")
+	_to_tokoyo(game)
 	_check.call(_run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open()), "%s com Tora: abre", tag)
 	var lines := game.hud.dialogue_panel().lines()
 	var whos: Array = lines.map(func(l: Dictionary) -> String: return String(l["who"]))

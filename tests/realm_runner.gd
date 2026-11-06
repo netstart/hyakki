@@ -4,7 +4,8 @@ extends Node
 ##   godot --headless --path . res://tests/realm_tests.tscn
 ## Com `-- --shots=<pasta>` (sem --headless) grava, em 678x305 e para cada fase, o Guardião do
 ## Limiar (entrada com o painel e em campo, de perto), o portal com os dois baús, a seta do portal
-## fora da tela, o redemoinho, o título da travessia e o outro mundo;
+## fora da tela, o redemoinho, o título da travessia e o outro mundo; depois, no Kakuriyo, o torii
+## dourado da Sombra com os baús, a seta dourada, o redemoinho e o título do Tokoyo e o Tokoyo;
 ## `--stages=village,yomi` escolhe as fases.
 
 const RealmTests := preload("res://tests/realm_tests.gd")
@@ -87,8 +88,38 @@ func _screenshots(dir: String, stages: PackedStringArray) -> void:
 		GameClock.paused = true
 		await get_tree().create_timer(0.6).timeout
 		await _shot(dir.path_join("%s_5_kakuriyo.png" % id))
+		await _tokoyo_shots(game, dir, String(id))
 		game.queue_free()
 		await get_tree().process_frame
+
+
+## No Kakuriyo: o torii dourado com os dois baús, a seta dourada fora da tela, a travessia para o
+## Tokoyo (redemoinho e título) e o Tokoyo.
+func _tokoyo_shots(game: HyakkiGame, dir: String, id: String) -> void:
+	GameClock.paused = false
+	game.apply_scenario("portal2")
+	game.rift.portal_age = 2.0
+	game.enemies.reset()
+	GameClock.paused = true
+	await get_tree().create_timer(0.8).timeout
+	await _shot(dir.path_join("%s_6_torii_dourado.png" % id))
+	game.player.sim_pos += Vector2(-420.0, 160.0)
+	game.player.prev_pos = game.player.sim_pos
+	await get_tree().create_timer(0.4).timeout
+	await _shot(dir.path_join("%s_7_seta_dourada.png" % id))
+	game.pickups.items.clear()
+	game.rift.portal_pos = game.player.sim_pos
+	GameClock.paused = false
+	await get_tree().process_frame
+	await get_tree().create_timer(RiftPortal.CROSS_IN * 0.6).timeout
+	await _shot(dir.path_join("%s_8_redemoinho_tokoyo.png" % id))
+	await get_tree().create_timer(RiftPortal.CROSS_IN * 0.4 + 0.35).timeout
+	await _shot(dir.path_join("%s_9_titulo_tokoyo.png" % id))
+	await get_tree().create_timer(RiftPortal.CROSS_HOLD + RiftPortal.CROSS_OUT).timeout
+	game.enemies.reset()
+	GameClock.paused = true
+	await get_tree().create_timer(0.6).timeout
+	await _shot(dir.path_join("%s_10_tokoyo.png" % id))
 
 
 ## O Guardião da fase entra perto da guardiã (painel de entrada) e, depois, parado em campo.

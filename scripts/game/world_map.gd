@@ -3,8 +3,9 @@ extends Node2D
 ## Mapa infinito por chunks (plano 5.1) com os biomas de data/biomes.json: chão procedural com
 ## os tiles do Ninja Adventure (shaders/terrain_ground.gdshader), decoração em MultiMesh com
 ## vento, copas que deixam ver o herói e sombras (chunk_view.gd), estruturas coerentes por fase
-## (terrain_layout.gd: ruas e quarteirões, bambuzal, templo, ruínas, Yomi, ladeira), lanternas
-## destrutíveis, perigos por fase (5.3) e limites (corredor do Templo, arena do Yomi).
+## (terrain_layout.gd: ruas e quarteirões, bambuzal, templo, ruínas, Yomi, ladeira, santuário do
+## Tokoyo), lanternas destrutíveis, perigos por fase (5.3) e limites (corredor do Templo, arena do
+## Yomi, arena do Tokoyo, que some numa névoa clara).
 ##
 ## Determinismo (plano 15.1): obstáculos, lanternas, estátuas e lava são função pura da semente
 ## e do chunk, calculados no passo fixo, iguais em qualquer nível gráfico. Só a montagem visual
@@ -28,6 +29,8 @@ const MAX_DENSITY := 1.25
 const LAVA_LIGHT := Color(1.0, 0.45, 0.15)
 const LANTERN_LIGHT := Color(1.0, 0.7, 0.36)
 const STATUE_SPRITE := "buddha_orb"
+## Cor de fora dos limites quando o bioma não dá "edge_shade".
+const EDGE_SHADE := Color(0.02, 0.01, 0.05)
 ## Chunks preparados em paralelo no máximo.
 const MAX_JOBS := 3
 
@@ -151,6 +154,8 @@ func _ensure_art() -> void:
 	ground.set_shader_parameter("cracks", float(biome.get("cracks", 0.0)))
 	ground.set_shader_parameter("crack_color", Color(String(biome.get("crack_color", "#ff5a1e"))))
 	ground.set_shader_parameter("lava_slot", float(art.lava_slot))
+	ground.set_shader_parameter("water_slot", float(art.water_slot))
+	ground.set_shader_parameter("water_glint", art.water_glint)
 	var decor_shader := load("res://shaders/terrain_decor.gdshader") as Shader
 	_materials = {"ground": ground}
 	for key: String in ["flat", "decor", "canopy"]:
@@ -496,6 +501,8 @@ func _altar_candidate(c: Vector2i) -> Vector3:
 	var at := (origin + Vector2(rng.randf_range(margin, CHUNK - margin), rng.randf_range(margin, CHUNK - margin))).round()
 	if at.length() < AltarSystem.MIN_START_DIST or not _inside_bounds(at, AltarSystem.RESERVE_RADIUS + 8.0):
 		return Vector3(0, 0, -1)
+	if layout.structure_blocks(at, AltarSystem.RESERVE_RADIUS):
+		return Vector3(0, 0, -1)
 	return Vector3(at.x, at.y, rng.randf())
 
 
@@ -753,25 +760,33 @@ func collect_lights(center: Vector2, half: Vector2) -> Array:
 	return out
 
 
-## Fora dos limites: escurece em degradê (Templo e Yomi).
+## Fora dos limites: escurece em degradê (Templo e Yomi); no Tokoyo, a borda some numa névoa clara
+## (data/biomes.json "edge_shade": [cor, força]).
 func _draw_bounds() -> void:
 	if game == null or game.player == null:
 		return
 	var cam := game.player.position
 	var view := game.view_size() + Vector2(64, 64)
-	var rect := Rect2(cam - view * 0.5, view)
+	draw_bounds_rect(_overlay, Rect2(cam - view * 0.5, view))
+
+
+## Degradê de fora dos limites na área `rect` (mundo), desenhado em `canvas`.
+func draw_bounds_rect(canvas: CanvasItem, rect: Rect2) -> void:
+	var edge: Array = biome.get("edge_shade", [EDGE_SHADE.to_html(false), 1.0])
+	var tone := Color(String(edge[0]))
+	var strength := float(edge[1])
 	for step: int in range(4):
 		var inset := float(step) * 10.0
-		var shade := Color(0.02, 0.01, 0.05, 0.3 + 0.18 * step)
+		var shade := Color(tone, (0.3 + 0.18 * step) * strength)
 		var bx := bounds.x + inset
 		var by := bounds.y + inset
 		if bounds.y > 0.0:
 			if rect.position.y < -by:
-				_overlay.draw_rect(Rect2(rect.position, Vector2(rect.size.x, -by - rect.position.y)), shade)
+				canvas.draw_rect(Rect2(rect.position, Vector2(rect.size.x, -by - rect.position.y)), shade)
 			if rect.end.y > by:
-				_overlay.draw_rect(Rect2(Vector2(rect.position.x, by), Vector2(rect.size.x, rect.end.y - by)), shade)
+				canvas.draw_rect(Rect2(Vector2(rect.position.x, by), Vector2(rect.size.x, rect.end.y - by)), shade)
 		if bounds.x > 0.0:
 			if rect.position.x < -bx:
-				_overlay.draw_rect(Rect2(rect.position, Vector2(-bx - rect.position.x, rect.size.y)), shade)
+				canvas.draw_rect(Rect2(rect.position, Vector2(-bx - rect.position.x, rect.size.y)), shade)
 			if rect.end.x > bx:
-				_overlay.draw_rect(Rect2(Vector2(bx, rect.position.y), Vector2(rect.end.x - bx, rect.size.y)), shade)
+				canvas.draw_rect(Rect2(Vector2(bx, rect.position.y), Vector2(rect.end.x - bx, rect.size.y)), shade)

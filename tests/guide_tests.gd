@@ -52,6 +52,9 @@ static func full_profile() -> void:
 	for s: StringName in DB.ids("stages"):
 		if not (d["unlocked"]["stages"] as Array).has(String(s)):
 			(d["unlocked"]["stages"] as Array).append(String(s))
+	# Tokoyo de todas as fases visto (Discovery.tokoyo_known: recorde "stage_tokoyo" das Missões).
+	for s: StringName in DB.ids("stages"):
+		(d["records"]["stage_tokoyo"] as Dictionary)[String(s)] = true
 	d["stats"]["affixes_seen"] = Array(EliteAffixes.IDS).map(func(a: StringName) -> String: return String(a))
 	SaveManager.stage_best(&"village")["endless_best"] = Spawner.SHINIGAMI_TIME
 	SaveManager.unlock_all_heroes()
@@ -193,6 +196,44 @@ func _test_numbers() -> void:
 	_ok(bosses.contains(TranslationServer.translate("guide.bosses.mid") % [Screen.format_time(450.0), "4",
 			RiftPortal.MIDBOSS_CHESTS]) and is_equal_approx(RiftPortal.WARN_LEAD, 4.0),
 			"Guia números: aviso do Guardião do Limiar (RiftPortal.WARN_LEAD)")
+	# Três níveis: a Sombra do Guardião no Kakuriyo (selo 隠世) e o último chefe só no Tokoyo (selo
+	# 常世) no relógio de cada fase; os parágrafos com os números dos dados e das constantes.
+	var kakuriyo := RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_KAKURIYO]
+	var tokoyo := RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_TOKOYO]
+	var levels_ok := true
+	for s: Dictionary in stages:
+		var mid2: Dictionary = s.get("midboss2", {})
+		if not mid2.is_empty():
+			levels_ok = levels_ok and bosses.contains("%s %s · %s %s" % [Screen.format_time(float(mid2["t"])),
+					_t("boss.%s.name" % mid2["id"]), _t("midboss2.title"), kakuriyo])
+		var last: Dictionary = (s["bosses"] as Array).back()
+		levels_ok = levels_ok and bosses.contains("%s %s · %s" % [Screen.format_time(float(last["t"])),
+				_t("boss.%s.name" % last["id"]), tokoyo])
+	_ok(levels_ok, "Guia números: Sombra do Guardião (隠世) e último chefe (常世) no relógio de cada fase")
+	_ok(bosses.contains(_t("guide.bosses.levels") % [kakuriyo, tokoyo]), "Guia: os três níveis com os selos 隠世 e 常世")
+	var first: Dictionary = stages[0]
+	var m2: Dictionary = first["midboss2"]
+	var shadow: Dictionary = DB.bosses[StringName(String(m2["id"]))]
+	var fury := float(((shadow["phases"] as Array).back() as Dictionary)["below"])
+	_ok(String(shadow["seal"]) == "影" and fury > 0.0 and fury < 0.5
+			and is_equal_approx(GuideBook.fury_below(StringName(String(m2["id"]))), fury)
+			and bosses.contains(_t("guide.bosses.mid2") % [String(shadow["seal"]), Screen.format_time(float(m2["t"])),
+			GuideBook._num(float(m2["after"])), GuideBook.pct(fury), RiftPortal.MIDBOSS_CHESTS]),
+			"Guia números: Sombra do Guardião (midboss2.t, after, fúria e baús dos dados)")
+	var last0: Dictionary = (first["bosses"] as Array).back()
+	_ok(bosses.contains(_t("guide.bosses.final") % [tokoyo, Screen.format_time(float(last0["t"])),
+			GuideBook._num(Spawner.FINAL_AFTER), GuideBook._num(Spawner.FINAL_WARN),
+			Screen.format_time(HyakkiGame.RUN_LENGTH)]),
+			"Guia números: luta final no Tokoyo (Spawner.FINAL_AFTER/FINAL_WARN e o amanhecer)")
+	# Nenhum texto diz mais que o chefe das 10:00 aparece em qualquer mapa (só no Tokoyo).
+	var final_at := Screen.format_time(float(last0["t"]))
+	var stale: Array[String] = []
+	for lang: String in LANGS:
+		Locale.set_language(lang, false)
+		if _t("tip.boss_times").contains(final_at.trim_prefix("0")) or _t("tip.boss_times").contains(final_at):
+			stale.append(lang)
+	Locale.set_language("pt_BR", false)
+	_ok(stale.is_empty(), "Guia: a dica dos horários não marca mais o último chefe em qualquer mapa %s", [stale])
 	var stronger := chapter_text(book.chapter(&"stronger"))
 	var pmax := 0
 	for pu: Dictionary in powerups:
@@ -552,6 +593,29 @@ func _test_realm() -> void:
 		if precip != "" and not terrain.contains(sky_prefix):
 			bad.append("%s clima" % s["id"])
 	_ok(bad.is_empty(), "Guia Kakuriyo: nome, clima e perigo do otherworld de cada fase %s", [bad])
+	# Tokoyo de cada fase (bloco "tokoyo"): nome, clima e quem reina lá, e a Sombra no Kakuriyo.
+	var toko_bad: Array[String] = []
+	for s: Dictionary in stages:
+		var toko: Dictionary = s.get("tokoyo", {})
+		var mid2: Dictionary = s.get("midboss2", {})
+		if toko.is_empty() or mid2.is_empty():
+			continue
+		if not terrain.contains(_t("guide.stages.tokoyo") % _t("realm3.%s.name" % s["id"])):
+			toko_bad.append("%s nome" % s["id"])
+		var last: Dictionary = (s["bosses"] as Array).back()
+		if not terrain.contains("· " + _t("guide.stages.tokoyo_lord") % _t("boss.%s.name" % last["id"])):
+			toko_bad.append("%s senhor" % s["id"])
+		if not terrain.contains("· " + _t("guide.stages.shadow_line") % _t("boss.%s.name" % mid2["id"])):
+			toko_bad.append("%s sombra" % s["id"])
+		var hz: Dictionary = toko.get("hazard", {})
+		if not hz.is_empty() and not terrain.contains("· " + book.hazard_text(hz)):
+			toko_bad.append("%s perigo" % s["id"])
+		var lines_toko := book.tokoyo_lines(StringName(String(s["id"])))
+		var precip := String(WeatherModel.profile_for(String(toko.get("weather", s["id"]))).get("precip", ""))
+		if precip != "" and not lines_toko.any(func(l: Array) -> bool:
+				return GuideBook.plain(l).begins_with("· " + _t("guide.stages.weather_line").split("%s")[0])):
+			toko_bad.append("%s clima" % s["id"])
+	_ok(toko_bad.is_empty(), "Guia Tokoyo: nome, clima, perigo, Sombra e o último chefe de cada fase %s", [toko_bad])
 	var temple: Dictionary = (stages.filter(func(s: Dictionary) -> bool: return s["id"] == "temple")[0] as Dictionary)
 	_ok(not is_equal_approx(float(temple["hazard"]["interval"]), float(temple["otherworld"]["hazard"]["interval"]))
 			and terrain.contains(book.hazard_text(temple["otherworld"]["hazard"])),
@@ -564,6 +628,31 @@ func _test_realm() -> void:
 	_ok(plain.contains(_t("guide.stages.realm") % Discovery.UNKNOWN)
 			and not plain.contains(_t("realm.village.name")),
 			"Guia Kakuriyo descoberta: antes de vencer o Guardião do Limiar, só ???")
+	_ok(plain.contains(_t("guide.stages.tokoyo") % Discovery.UNKNOWN)
+			and not plain.contains(_t("realm3.village.name")),
+			"Guia Tokoyo descoberta: antes de chegar ao Tokoyo, só ???")
+	# Kakuriyo conhecido (Guardião vencido), Tokoyo ainda não: a Sombra aparece em silhueta até ser
+	# vencida, e o Tokoyo segue ??? até a partida chegar lá (recorde "stage_tokoyo").
+	(SaveManager.data["stats"]["bosses_defeated"] as Dictionary)["onikuma"] = 1
+	plain = ""
+	for l: Array in book.stage_lines(&"village"):
+		plain += GuideBook.plain(l) + "\n"
+	_ok(plain.contains(_t("guide.stages.realm") % _t("realm.village.name"))
+			and plain.contains(_t("guide.stages.shadow_line") % Discovery.UNKNOWN)
+			and plain.contains(_t("guide.stages.tokoyo") % Discovery.UNKNOWN),
+			"Guia Tokoyo descoberta: Kakuriyo visto, Sombra não vencida e Tokoyo ainda ???")
+	(SaveManager.data["records"]["stage_tokoyo"] as Dictionary)["village"] = true
+	plain = ""
+	for l: Array in book.stage_lines(&"village"):
+		plain += GuideBook.plain(l) + "\n"
+	_ok(plain.contains(_t("guide.stages.tokoyo") % _t("realm3.village.name"))
+			and plain.contains(_t("guide.stages.tokoyo_lord") % Discovery.UNKNOWN)
+			and not plain.contains(_t("boss.kappa_elder.name")),
+			"Guia Tokoyo descoberta: Tokoyo visto mostra o nome; o último chefe só depois de vencido")
+	# Chip "Ver no Diário" das Sombras: o mesmo ref dos outros chefes, que abre o chefe no Diário.
+	var ref := book.boss_ref(&"onikuma_kage")
+	_ok(ref["category"] == &"bosses" and String(ref["id"]) == "onikuma_kage" and bool(ref["face"])
+			and ResourceLoader.exists(String(ref["icon"])), "Guia: chip da Sombra do Guardião com retrato e link do Diário")
 
 
 static func _t(key: String) -> String:
@@ -684,6 +773,34 @@ func run(host: Node, check: Callable) -> void:
 	await host.get_tree().create_timer(0.5).timeout
 	_ok(screen.call("category") == &"weapons" and int(screen.call("selected")) == int(screen.call("index_of", &"katana")),
 			"Guia: tocar num chip abre o item no Diário")
+	# Sombras do Guardião no Diário: logo depois do Guardião da fase, escondidas até serem vencidas, e o
+	# chip do Guia abre a entrada certa.
+	var boss_rows: Array = screen.call("entries_for", &"bosses")
+	var boss_ids: Array[String] = []
+	for e: Dictionary in boss_rows:
+		boss_ids.append(String(e.get("id", "")))
+	var beside := true
+	for s: StringName in DB.ids("stages"):
+		var mid := String(RiftPortal.midboss_of(DB.stage(s)).get("id", ""))
+		var mid2 := String(RiftPortal.midboss2_of(DB.stage(s)).get("id", ""))
+		if mid2 != "":
+			beside = beside and boss_ids.find(mid) >= 0 and boss_ids.find(mid2) == boss_ids.find(mid) + 1
+	_ok(beside and boss_ids.size() == DB.ids("bosses").size() - 1 and not boss_ids.has("shinigami"),
+			"Diário: cada Sombra do Guardião logo depois do Guardião da fase %s", [boss_ids])
+	var shadow_at := boss_ids.find("onikuma_kage")
+	_ok(shadow_at >= 0 and not bool((boss_rows[shadow_at] as Dictionary)["known"])
+			and String((boss_rows[shadow_at] as Dictionary)["text"]) == TranslationServer.translate("codex.boss_locked"),
+			"Diário: Sombra do Guardião não vencida fica escondida")
+	screen.call("open_category", &"guide", false)
+	screen.call("open_entry", GuideBook.CHAPTERS.find(&"bosses"))
+	await host.get_tree().process_frame
+	page.ref_pressed.emit(&"bosses", "onikuma_kage")
+	for _f: int in 90:
+		if screen.call("category") == &"bosses" and int(screen.call("selected")) == shadow_at:
+			break
+		await host.get_tree().process_frame
+	_ok(screen.call("category") == &"bosses" and int(screen.call("selected")) == shadow_at,
+			"Guia: chip da Sombra do Guardião abre a entrada dela no Diário")
 	var total: Array = screen.call("discovered_total")
 	var expected := 0
 	for id: StringName in cats:

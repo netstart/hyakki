@@ -6,6 +6,8 @@
 #        fatias é o conjunto completo, conferido por um teste)
 #      - testes de regras (tests/run_tests.gd)
 #      - determinismo: o bot em 1x, 2x, 3x e 3x na qualidade Baixa (o estado tem de ser idêntico)
+#      - jornada pelos três níveis: o bot invencível passa pelos dois portais até o Tokoyo e vence
+#        o último chefe, com o mesmo estado em 1x, 2x e 3x
 #      - estresse com 500 inimigos (custo da simulação neste PC; com -StressAlone roda sozinho no fim)
 #      - gdlint (regras em gdlintrc) dividido em partes
 #      - textos, licenças, ficha da loja e site irmão (netstart.github.io: app-ads.txt gerado do
@@ -38,6 +40,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Fim da jornada do bot pelos três níveis (segundos da noite): depois do último chefe no Tokoyo.
+$JourneyEnd = 660
 # -Only a,b chega como um texto só quando o script é chamado com -File: separa nas vírgulas.
 $Only = @($Only | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -117,6 +121,20 @@ $checkBot = {
 }
 foreach ($speed in 1, 2, 3) {
     Add-GodotTask "determinismo_${speed}x" @('--fixed-fps', '60', '--', '--bot', '--seed=7', "--speed=$speed", '--quit-at=90') $checkBot
+}
+# Jornada pelos três níveis (RiftPortal): o bot invencível (--god) vence o Guardião do Limiar,
+# atravessa o portal, vence a Sombra no Kakuriyo, atravessa o torii dourado e vence o último chefe
+# no Tokoyo (linha CHEFES); o estado no fim é o mesmo em 1x, 2x e 3x.
+$checkJourney = {
+    param($Lines, $Code)
+    $verdict = & $checkBot $Lines $Code
+    $journey = $Lines | Where-Object { $_ -match '^CHEFES ' } | Select-Object -Last 1
+    $ok = $verdict.Ok -and $journey -match 'reino=2 tokoyo=true vencidos=.*kappa_elder'
+    if (-not $ok -and $journey) { $verdict.Details = @($verdict.Details) + @("$journey") }
+    return @{ Ok = [bool]$ok; Summary = $verdict.Summary; Details = $verdict.Details }
+}
+foreach ($speed in 1, 2, 3) {
+    Add-GodotTask "jornada_${speed}x" @('--fixed-fps', '60', '--', '--bot', '--seed=7', '--god', "--speed=$speed", "--quit-at=$JourneyEnd") $checkJourney
 }
 # Qualidade gráfica não pode mudar a simulação (clima e superfícies lentas incluídos no hash).
 Add-GodotTask 'determinismo_3x_baixa' @('--fixed-fps', '60', '--', '--bot', '--seed=7', '--speed=3', '--gfx=low', '--quit-at=90') $checkBot
@@ -348,6 +366,15 @@ if ($det) {
         foreach ($r in $det) { Write-Host "    $($r.Name): $($r.Summary)" -ForegroundColor Red }
         $failed = $true
     } else { Write-Host "Determinismo: mesmo estado em 1x, 2x, 3x e 3x Baixa (hash=$($hashes[0]))" }
+}
+$trip = @($results | Where-Object { $_.Name -like 'jornada_*' })
+if ($trip) {
+    $hashes = @($trip | ForEach-Object { $_.Summary -replace '^.*hash=', '' })
+    if ($trip.Count -ne 3 -or @($hashes | Select-Object -Unique).Count -ne 1 -or @($trip | Where-Object { -not $_.Ok })) {
+        Write-Host 'FALHOU: jornada: o bot não chegou ao Tokoyo e venceu o último chefe, ou o estado mudou com a velocidade' -ForegroundColor Red
+        foreach ($r in $trip) { Write-Host "    $($r.Name): $($r.Summary) $($r.Details -join ' ')" -ForegroundColor Red }
+        $failed = $true
+    } else { Write-Host "Jornada: Kakuriyo, Tokoyo e o último chefe com o mesmo estado em 1x, 2x e 3x (hash=$($hashes[0]))" }
 }
 foreach ($r in $results | Where-Object { $_.Name -eq 'estresse' }) {
     $r.Details | Where-Object { $_ -match '^DESEMPENHO|pior por sistema' } | Select-Object -Last 2 | Write-Host

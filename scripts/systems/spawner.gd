@@ -3,8 +3,12 @@ extends RefCounted
 ## Diretor de ondas (plano 5.2): mistura de inimigos por faixa de tempo, eventos marcados
 ## (enxame, cerco, elite, procissão, tambores), chefes e santuários Kami nos minutos
 ## definidos em data/stages.json, amanhecer aos 15:00 e Shinigami aos 20:00 (Noite Sem Fim).
-## O Guardião do Limiar ("midboss") vem com um aviso antes (RiftPortal.WARN_LEAD) e, na entrada
-## dele e na chegada ao Kakuriyo, hush() segura os comuns por alguns segundos.
+## Os três níveis da fase (RiftPortal): na fase, o Guardião do Limiar ("midboss", hora fixa); no
+## Kakuriyo, a Sombra do Guardião ("midboss2") em shadow_time, relativo à chegada; no Tokoyo, o
+## último chefe da lista "bosses" em final_time, relativo à chegada (quem não chega ao Tokoyo
+## não o vê). Os Guardiões vêm com um aviso RiftPortal.WARN_LEAD s antes, o último chefe com o
+## "final.awakens" FINAL_WARN s antes; na entrada deles e em cada chegada, hush() segura os comuns
+## por alguns segundos. O chefe dos 5:00, o Kami, os eventos e as ondas valem em todo nível.
 ##
 ## Nasce quem falta para o alvo, logo além da borda da tela e dentro de um orçamento
 ## por segundo (Progression.spawn_rate), para não virar uma torneira infinita de XP.
@@ -18,6 +22,10 @@ const BUDGET_MAX_SECONDS := 2.0
 const SHINIGAMI_TIME := 1200.0
 ## No teste de estresse a horda não pode morrer, para medir sempre a horda cheia.
 const STRESS_HP_MULT := 100000.0
+## O último chefe nasce no Tokoyo pelo menos FINAL_AFTER s depois da chegada; o aviso dele vem
+## FINAL_WARN s antes da entrada.
+const FINAL_AFTER := 8.0
+const FINAL_WARN := 4.0
 
 var game: HyakkiGame
 var cap: int = 500
@@ -54,20 +62,63 @@ func reset() -> void:
 			event["elites"] = RedMoon.elite_count(elites, game.moon)
 			elites += 1
 		_events.append(event)
-	# Só o chefe das 10:00 (o último da lista) tem diálogo: o Dragão de Cinzas aos 5:00 do Santuário
-	# Secreto entra calado.
+	# O último chefe da lista (o das 10:00) só nasce no Tokoyo (on_arrival); os outros entram
+	# calados na hora marcada (o Dragão de Cinzas aos 5:00 do Santuário Secreto também).
 	var boss_list: Array = stage.get("bosses", [])
-	for i: int in boss_list.size():
+	for i: int in boss_list.size() - 1:
 		var b: Dictionary = boss_list[i]
-		_events.append({"t": float(b["t"]), "type": "boss", "boss": b["id"], "done": false,
-				"dialogue": i == boss_list.size() - 1})
+		_events.append({"t": float(b["t"]), "type": "boss", "boss": b["id"], "done": false, "dialogue": false})
 	for t: Variant in stage.get("kami", []):
 		_events.append({"t": float(t), "type": "kami", "done": false})
 	var mid := RiftPortal.midboss_of(stage)
 	if not mid.is_empty():
 		_events.append({"t": float(mid["t"]) - RiftPortal.WARN_LEAD, "type": "midboss_warn", "done": false})
 		_events.append({"t": float(mid["t"]), "type": "midboss", "boss": mid["id"], "done": false})
+	_sort_events()
+
+
+func _sort_events() -> void:
 	_events.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["t"]) < float(b["t"]))
+
+
+## Hora em que a Sombra do Guardião nasce no Kakuriyo para quem chegou em `arrived`:
+## max(midboss2.t, chegada + midboss2.after).
+static func shadow_time(stage: Dictionary, arrived: float) -> float:
+	var mid2 := RiftPortal.midboss2_of(stage)
+	return maxf(float(mid2.get("t", 0.0)), arrived + float(mid2.get("after", 0.0)))
+
+
+## Hora em que o último chefe nasce no Tokoyo para quem chegou em `arrived`:
+## max(t do chefe, chegada + FINAL_AFTER).
+static func final_time(stage: Dictionary, arrived: float) -> float:
+	return maxf(float(RiftPortal.final_boss_of(stage).get("t", 0.0)), arrived + FINAL_AFTER)
+
+
+## Chegada a um nível (RiftPortal.enter_realm, também na retomada): agenda o chefe do nível
+## relativo à chegada (a Sombra no Kakuriyo, o último chefe no Tokoyo) com o aviso antes. O que
+## a agenda de um nível anterior deixou pendente sai; o que já passou (retomada) conta como feito.
+func on_arrival(depth: int, arrived: float) -> void:
+	var stage := game.rift.base_stage if not game.rift.base_stage.is_empty() else game.stage
+	_events.assign(_events.filter(func(e: Dictionary) -> bool: return not e.has("depth") or bool(e["done"])))
+	var added: Array[Dictionary] = []
+	if depth == RiftPortal.DEPTH_KAKURIYO:
+		var mid2 := RiftPortal.midboss2_of(stage)
+		if not mid2.is_empty():
+			var t := shadow_time(stage, arrived)
+			added.append({"t": t - RiftPortal.WARN_LEAD, "type": "midboss_warn", "tier": 2})
+			added.append({"t": t, "type": "midboss", "boss": mid2["id"]})
+	elif depth >= RiftPortal.DEPTH_TOKOYO:
+		var last := RiftPortal.final_boss_of(stage)
+		if not last.is_empty():
+			var t := final_time(stage, arrived)
+			added.append({"t": t - FINAL_WARN, "type": "final_warn"})
+			added.append({"t": t, "type": "final", "boss": last["id"]})
+	var now := GameClock.game_time
+	for event: Dictionary in added:
+		event["depth"] = depth
+		event["done"] = float(event["t"]) < now
+		_events.append(event)
+	_sort_events()
 
 
 func step(dt: float) -> void:
@@ -132,9 +183,13 @@ func _run_event(event: Dictionary) -> void:
 		"kami":
 			game.kami.spawn_shrine()
 		"midboss_warn":
-			game.rift.warn_midboss()
+			game.rift.warn_midboss(int(event.get("tier", 1)))
 		"midboss":
 			game.rift.spawn_midboss(StringName(event["boss"]))
+		"final_warn":
+			game.rift.warn_final()
+		"final":
+			game.rift.spawn_final(StringName(event["boss"]))
 
 
 ## Segura os comuns por `seconds` (eventos e chefes seguem): um respiro para uma entrada.

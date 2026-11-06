@@ -1,6 +1,7 @@
 // Chão procedural dos biomas (scripts/game/chunk_view.gd). Um quadrado por chunk; o TEXTURE é a
 // máscara de estruturas do chunk (8 px por texel, borda de 1 texel): R = caminhos de terra,
-// G = calçamento, B = especial (lava/água). Os materiais vêm de um atlas montado com os tiles do
+// G = calçamento, B = especial (lava/água). A água espelhada (water_slot, Tokoyo) ganha o reflexo
+// do céu em faixas largas e brilhos que correm devagar (parados na Baixa). Os materiais vêm de um atlas montado com os tiles do
 // Ninja Adventure (terrain_art.gd): 6 linhas de 8 variações (ou um bloco de até 5x5 tiles).
 // Manchas orgânicas (grama alta, folhas, terra batida) saem de dois campos de ruído em
 // coordenadas do mundo, iguais aos de terrain_noise.gd. Bordas com contorno de pixel, como os
@@ -28,6 +29,8 @@ uniform float ripple = 0.0;
 uniform float cracks = 0.0;
 uniform vec4 crack_color : source_color = vec4(1.0, 0.35, 0.1, 1.0);
 uniform float lava_slot = -1.0;
+uniform float water_slot = -1.0;
+uniform vec4 water_glint : source_color = vec4(1.0);
 // 0 = Baixa, 1 = Média, 2 = Alta.
 uniform float detail = 2.0;
 
@@ -73,6 +76,23 @@ vec3 tile(int k, vec2 cell, vec2 inpx) {
 		c = vec3(dot(c, vec3(0.3, 0.59, 0.11))) * 1.5;
 	}
 	return c * mat_tint[k].rgb;
+}
+
+// Espelho d'água: o tile do material com o reflexo do céu (faixas largas de luz, em degraus de
+// pixel art), a margem mais clara e brilhos curtos que deslizam com o tempo.
+vec3 water(vec3 base, vec2 p, float w) {
+	float t = detail > 0.5 ? weather_time : 0.0;
+	float sky = vnoise(vec2(p.x * 0.006 + t * 0.02, p.y * 0.018));
+	vec3 col = base * (0.9 + floor(sky * 4.0) / 4.0 * 0.22);
+	vec2 q = floor(p / 2.0);
+	float wave = sin(q.x * 0.21 + t * 1.1 + sin(q.y * 0.37 + t * 0.6) * 1.8) * sin(q.y * 0.53 - t * 0.8);
+	if (wave > 0.9 && hash2(floor(q / vec2(6.0, 1.0))) > 0.55) {
+		col = mix(col, water_glint.rgb, 0.65);
+	}
+	if (w < 0.02) {
+		col = mix(col, water_glint.rgb, 0.3);
+	}
+	return col;
 }
 
 vec3 lava(vec2 p, float w) {
@@ -121,6 +141,9 @@ void fragment() {
 			} else {
 				hot = false;
 				col = tile(k, cell, inpx);
+				if (float(k) == water_slot) {
+					col = water(col, p, w);
+				}
 				// Borda interna um pouco mais clara: dá volume ao material.
 				if (w < 0.012 && detail > 0.5) {
 					col *= 1.06;

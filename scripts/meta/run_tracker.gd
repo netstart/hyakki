@@ -30,6 +30,8 @@ var revived_by_ad: bool = false
 var doubled_ryo: bool = false
 ## Atravessou o portal do Guardião do Limiar e jogou no Kakuriyo.
 var realm_reached: bool = false
+## Atravessou o torii dourado da Sombra do Guardião e jogou no Tokoyo (onde mora o último chefe).
+var tokoyo_reached: bool = false
 ## Abates fora da luz da lanterna (Missões do Santuário).
 var dark_kills: int = 0
 ## Altares do Selo (AltarSystem, Missões e Diário): selos quebrados, emboscadas, Elites com afixos
@@ -125,7 +127,7 @@ func snapshot() -> Dictionary:
 			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
 			"abilities": abilities, "ability_uses": uses_out, "ryo_spent": ryo_spent,
 			"kami": Array(kami).map(func(k: StringName) -> String: return String(k)),
-			"altars_awakened": altars_awakened, "altar_ambushes": altar_ambushes,
+			"tokoyo_reached": tokoyo_reached, "altars_awakened": altars_awakened, "altar_ambushes": altar_ambushes,
 			"altar_elites_slain": altar_elites_slain, "elite_affix_max": elite_affix_max,
 			"elite_affixes_slain": elite_affixes_slain.keys().map(func(k: StringName) -> String: return String(k)),
 			"elite_affixes_seen": elite_affixes_seen.keys().map(func(k: StringName) -> String: return String(k))}
@@ -149,6 +151,7 @@ func restore(s: Dictionary) -> void:
 	ryo_spent = int(s.get("ryo_spent", 0))
 	for k: Variant in s.get("kami", []):
 		kami.append(StringName(String(k)))
+	tokoyo_reached = tokoyo_reached or bool(s.get("tokoyo_reached", false))
 	altars_awakened = int(s.get("altars_awakened", 0))
 	altar_ambushes = int(s.get("altar_ambushes", 0))
 	altar_elites_slain = int(s.get("altar_elites_slain", 0))

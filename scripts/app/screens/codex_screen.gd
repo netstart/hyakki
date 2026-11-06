@@ -389,13 +389,13 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 								int(data.get("hp", 0)), tr("codex.stat_damage"), int(data.get("damage", 0)),
 								tr("heroes.attr_speed"), int(data.get("speed", 0))]]})
 		&"bosses":
-			for b: StringName in DB.ids("bosses"):
+			for b: StringName in Discovery.boss_order():
 				if b == &"shinigami":
 					continue
 				var data: Dictionary = DB.bosses[b]
 				var won := Discovery.boss_known(b)
 				var sprite: Dictionary = data["sprite"]
-				out.append({"title": tr("boss.%s.name" % b), "known": won,
+				out.append({"title": tr("boss.%s.name" % b), "known": won, "id": String(b),
 						"icon": String(data.get("faceset", String(sprite["path"]).get_base_dir().path_join("Faceset.png"))),
 						"face": true,
 						"sprite": sprite, "text": tr("boss.%s.lore" % b) if won else tr("codex.boss_locked"),

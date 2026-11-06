@@ -68,8 +68,12 @@ def data_keys() -> set:
         keys.add(f"shop.{s['id']}.name")
     for s in data("stages"):
         keys |= {f"stage.{s['id']}.{x}" for x in ("name", "desc", "opening", "dawn", "region", "journey")}
+        # Níveis da fase (RiftPortal.realm_title): "<chave>.<fase>.name" e "<chave>.caption", com a
+        # chave de REALM_KEYS ("realm" no Kakuriyo, "realm3" no Tokoyo).
         if "otherworld" in s:
-            keys.add(f"realm.{s['id']}.name")
+            keys |= {f"realm.{s['id']}.name", "realm.caption"}
+        if "tokoyo" in s:
+            keys |= {f"realm3.{s['id']}.name", "realm3.caption"}
     for story in data("story"):
         keys |= {p["text"] for p in story["panels"]}
     hero_ids = [h["id"] for h in data("heroes")]

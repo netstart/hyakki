@@ -191,5 +191,139 @@
        {"type": "charge", "windup": 0.6, "speed": 280, "duration": 1.0},
        {"type": "rain", "count": 12, "windup": 0.8, "radius": 18, "damage": 12, "area": 130}
      ]}
+   ]},
+  {"id": "onikuma_kage", "midboss": true, "tier": 2, "kanji": "鬼熊", "seal": "影", "aura": "#b48cff", "roar_pitch": 0.68, "hp": 3400, "speed": 44, "damage": 10, "radius": 16, "music": "midboss", "scale": 3.45, "faceset": "res://assets/art/midbosses/village/Faceset.png", "tint": "#d6b0dc",
+   "sprite": {"path": "res://assets/art/midbosses/village/SpriteSheet.png", "layout": "dir4", "frame": [16, 16]}, "enrage": {"below": 0.25, "speed": 1.5},
+   "phases": [
+     {"below": 1.0, "patterns": [
+       {"type": "charge", "windup": 0.8, "speed": 230, "duration": 1.0},
+       {"type": "slam", "windup": 0.9, "radius": 62, "damage": 13},
+       {"type": "fan", "count": 5, "spread": 0.9, "speed": 100, "damage": 8, "projectile": "energy_ball"}
+     ]},
+     {"below": 0.5, "patterns": [
+       {"type": "charge", "windup": 0.6, "speed": 260, "duration": 1.1},
+       {"type": "spikes_line", "count": 8, "spacing": 22, "windup": 0.7, "radius": 13, "damage": 12},
+       {"type": "summon", "enemy": "skeleton_peasant", "count": 5},
+       {"type": "slam", "windup": 0.8, "radius": 70, "damage": 14}
+     ]},
+     {"below": 0.333, "patterns": [
+       {"type": "charge", "windup": 0.6, "speed": 260, "duration": 1.1},
+       {"type": "spikes_line", "count": 8, "spacing": 22, "windup": 0.6, "radius": 13, "damage": 12},
+       {"type": "summon", "enemy": "skeleton_peasant", "count": 5},
+       {"type": "slam", "windup": 0.68, "radius": 70, "damage": 14},
+       {"type": "fan", "count": 5, "spread": 0.9, "speed": 100, "damage": 8, "projectile": "energy_ball"}
+     ]}
+   ]},
+  {"id": "nuppeppo_kage", "midboss": true, "tier": 2, "kanji": "肉人", "seal": "影", "aura": "#7ef0ff", "roar_pitch": 0.54, "hp": 5500, "speed": 33, "damage": 12, "radius": 21, "music": "midboss", "breathe": 0.06, "faceset": "res://assets/art/midbosses/bamboo/Faceset.png", "tint": "#b4c8f4", "scale": 1.15,
+   "sprite": {"path": "res://assets/art/midbosses/bamboo/Idle.png", "layout": "strip", "frame": [62, 52]}, "attack_sprite": {"path": "res://assets/art/midbosses/bamboo/Jump.png", "layout": "strip", "frame": [62, 52]},
+   "phases": [
+     {"below": 1.0, "patterns": [
+       {"type": "slam", "windup": 1.0, "radius": 72, "damage": 14},
+       {"type": "pools", "count": 4, "windup": 0.8, "radius": 28, "duration": 5.0, "damage": 3, "slow": 0.55},
+       {"type": "summon", "enemy": "slime_red", "count": 6}
+     ]},
+     {"below": 0.5, "patterns": [
+       {"type": "dive", "windup": 1.0, "radius": 40, "damage": 15},
+       {"type": "radial", "count": 14, "speed": 80, "damage": 9, "projectile": "water"},
+       {"type": "summon", "enemy": "slime_red", "count": 8},
+       {"type": "pools", "count": 5, "windup": 0.7, "radius": 30, "duration": 5.0, "damage": 5, "slow": 0.5}
+     ]},
+     {"below": 0.333, "patterns": [
+       {"type": "dive", "windup": 0.85, "radius": 40, "damage": 15},
+       {"type": "radial", "count": 14, "speed": 80, "damage": 9, "projectile": "water"},
+       {"type": "summon", "enemy": "slime_red", "count": 8},
+       {"type": "pools", "count": 5, "windup": 0.6, "radius": 30, "duration": 5.0, "damage": 5, "slow": 0.5},
+       {"type": "slam", "windup": 0.85, "radius": 72, "damage": 14}
+     ]}
+   ]},
+  {"id": "onmoraki_kage", "midboss": true, "tier": 2, "kanji": "陰摩羅鬼", "seal": "影", "aura": "#a87cff", "roar_pitch": 1.17, "hp": 8300, "speed": 48, "damage": 13, "radius": 15, "music": "midboss", "flying": true, "scale": 3.45, "faceset": "res://assets/art/midbosses/temple/Faceset.png", "tint": "#c8b4f8",
+   "sprite": {"path": "res://assets/art/midbosses/temple/Owl2.png", "layout": "dir4", "frame": [16, 16]},
+   "phases": [
+     {"below": 1.0, "patterns": [
+       {"type": "fan", "count": 9, "spread": 1.4, "speed": 120, "damage": 9, "projectile": "feather"},
+       {"type": "dive", "windup": 0.9, "radius": 36, "damage": 15},
+       {"type": "swarm", "enemy": "owl", "count": 14}
+     ]},
+     {"below": 0.5, "patterns": [
+       {"type": "darken", "duration": 4.0, "light": 0.45},
+       {"type": "spiral", "duration": 3.0, "rate": 0.09, "arms": 3, "speed": 85, "damage": 9, "projectile": "feather"},
+       {"type": "dive", "windup": 0.8, "radius": 40, "damage": 16},
+       {"type": "fan", "count": 11, "spread": 1.8, "speed": 130, "damage": 9, "projectile": "feather"}
+     ]},
+     {"below": 0.333, "patterns": [
+       {"type": "darken", "duration": 4.0, "light": 0.45},
+       {"type": "spiral", "duration": 3.0, "rate": 0.09, "arms": 3, "speed": 85, "damage": 9, "projectile": "feather"},
+       {"type": "dive", "windup": 0.68, "radius": 40, "damage": 16},
+       {"type": "fan", "count": 11, "spread": 1.8, "speed": 130, "damage": 9, "projectile": "feather"},
+       {"type": "swarm", "enemy": "owl", "count": 14}
+     ]}
+   ]},
+  {"id": "onibi_kage", "midboss": true, "tier": 2, "kanji": "鬼火", "seal": "影", "aura": "#5fe0c0", "roar_pitch": 0.99, "hp": 11400, "speed": 35, "damage": 14, "radius": 21, "music": "midboss", "breathe": 0.08, "faceset": "res://assets/art/midbosses/dunes/Sprite.png", "tint": "#b0e0d4", "scale": 1.15,
+   "sprite": {"path": "res://assets/art/midbosses/dunes/Idle.png", "layout": "strip", "frame": [80, 80]},
+   "phases": [
+     {"below": 1.0, "patterns": [
+       {"type": "rain", "count": 12, "windup": 0.9, "radius": 18, "damage": 13, "area": 130},
+       {"type": "homing", "count": 7, "speed": 70, "turn": 2.0, "damage": 9, "duration": 4.5, "projectile": "fox_fire"},
+       {"type": "radial", "count": 14, "speed": 90, "damage": 10, "projectile": "fireball"}
+     ]},
+     {"below": 0.5, "patterns": [
+       {"type": "pools", "count": 5, "windup": 0.7, "radius": 26, "duration": 4.5, "damage": 5, "slow": 0.7},
+       {"type": "spiral", "duration": 3.0, "rate": 0.08, "arms": 4, "speed": 85, "damage": 10, "projectile": "fireball"},
+       {"type": "homing", "count": 10, "speed": 75, "turn": 2.4, "damage": 9, "duration": 4.0, "projectile": "fox_fire"},
+       {"type": "rain", "count": 14, "windup": 0.8, "radius": 18, "damage": 14, "area": 140}
+     ]},
+     {"below": 0.333, "patterns": [
+       {"type": "pools", "count": 5, "windup": 0.6, "radius": 26, "duration": 4.5, "damage": 5, "slow": 0.7},
+       {"type": "spiral", "duration": 3.0, "rate": 0.08, "arms": 4, "speed": 85, "damage": 10, "projectile": "fireball"},
+       {"type": "homing", "count": 10, "speed": 75, "turn": 2.4, "damage": 9, "duration": 4.0, "projectile": "fox_fire"},
+       {"type": "rain", "count": 14, "windup": 0.68, "radius": 18, "damage": 14, "area": 140},
+       {"type": "radial", "count": 14, "speed": 90, "damage": 10, "projectile": "fireball"}
+     ]}
+   ]},
+  {"id": "yomi_hebi_kage", "midboss": true, "tier": 2, "kanji": "黄泉蛇", "seal": "影", "aura": "#8a8cff", "roar_pitch": 0.63, "hp": 18200, "speed": 33, "damage": 17, "radius": 23, "music": "midboss", "breathe": 0.05, "scale": 0.92, "faceset": "res://assets/art/midbosses/yomi/Sprite.png", "tint": "#b0b2f8",
+   "sprite": {"path": "res://assets/art/midbosses/yomi/Idle.png", "layout": "strip", "frame": [92, 110]},
+   "phases": [
+     {"below": 1.0, "patterns": [
+       {"type": "fan", "count": 3, "spread": 0.7, "speed": 120, "damage": 13, "projectile": "spirit_orb"},
+       {"type": "spiral", "duration": 3.0, "rate": 0.09, "arms": 3, "speed": 85, "damage": 10, "projectile": "spirit_orb"},
+       {"type": "homing", "count": 6, "speed": 70, "turn": 2.2, "damage": 10, "duration": 4.5, "projectile": "fox_fire"}
+     ]},
+     {"below": 0.5, "patterns": [
+       {"type": "fan", "count": 9, "spread": 1.6, "speed": 125, "damage": 13, "projectile": "spirit_orb"},
+       {"type": "procession", "enemy": "yurei", "count": 18},
+       {"type": "spiral", "duration": 3.5, "rate": 0.07, "arms": 6, "speed": 90, "damage": 10, "projectile": "spirit_orb"},
+       {"type": "darken", "duration": 4.5, "light": 0.4}
+     ]},
+     {"below": 0.333, "patterns": [
+       {"type": "fan", "count": 9, "spread": 1.6, "speed": 125, "damage": 13, "projectile": "spirit_orb"},
+       {"type": "procession", "enemy": "yurei", "count": 18},
+       {"type": "spiral", "duration": 3.5, "rate": 0.06, "arms": 6, "speed": 90, "damage": 10, "projectile": "spirit_orb"},
+       {"type": "darken", "duration": 4.5, "light": 0.4},
+       {"type": "homing", "count": 6, "speed": 70, "turn": 2.2, "damage": 10, "duration": 4.5, "projectile": "fox_fire"}
+     ]}
+   ]},
+  {"id": "kincho_kage", "midboss": true, "tier": 2, "kanji": "金長狸", "seal": "影", "aura": "#ffd8ec", "roar_pitch": 0.95, "hp": 26000, "speed": 44, "damage": 17, "radius": 21, "music": "midboss", "scale": 1.265, "faceset": "res://assets/art/midbosses/secret/Faceset.png", "tint": "#ecd6e6",
+   "walk_sprite": {"path": "res://assets/art/midbosses/secret/Jump.png", "layout": "strip", "frame": [60, 60], "faces_left": true}, "attack_sprite": {"path": "res://assets/art/midbosses/secret/Attack.png", "layout": "strip", "frame": [60, 60], "faces_left": true}, "sprite": {"path": "res://assets/art/midbosses/secret/Idle.png", "layout": "strip", "frame": [60, 60], "faces_left": true},
+   "phases": [
+     {"below": 1.0, "patterns": [
+       {"type": "charge", "windup": 0.8, "speed": 250, "duration": 1.1},
+       {"type": "illusions", "count": 2, "duration": 8.0},
+       {"type": "fan", "count": 7, "spread": 1.0, "speed": 110, "damage": 10, "projectile": "energy_ball"}
+     ]},
+     {"below": 0.5, "patterns": [
+       {"type": "illusions", "count": 3, "duration": 9.0},
+       {"type": "charge", "windup": 0.6, "speed": 280, "duration": 1.0},
+       {"type": "summon", "enemy": "yomi_beast_dark", "count": 3},
+       {"type": "charge", "windup": 0.6, "speed": 280, "duration": 1.0},
+       {"type": "rain", "count": 12, "windup": 0.8, "radius": 18, "damage": 14, "area": 130}
+     ]},
+     {"below": 0.333, "patterns": [
+       {"type": "illusions", "count": 3, "duration": 9.0},
+       {"type": "charge", "windup": 0.6, "speed": 280, "duration": 1.0},
+       {"type": "summon", "enemy": "yomi_beast_dark", "count": 3},
+       {"type": "charge", "windup": 0.6, "speed": 280, "duration": 1.0},
+       {"type": "rain", "count": 12, "windup": 0.68, "radius": 18, "damage": 14, "area": 130},
+       {"type": "fan", "count": 7, "spread": 1.0, "speed": 110, "damage": 10, "projectile": "energy_ball"}
+     ]}
    ]}
 ]

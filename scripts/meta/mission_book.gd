@@ -52,7 +52,7 @@ const UNLOCK_WEIGHT := 500
 ## Recordes das missões no perfil (SaveManager.default_profile()["records"]).
 const DEFAULT_RECORDS := {
 	"hero_wins": {}, "hero_level": {}, "hero_time": {}, "hero_evolve": {},
-	"stage_no_item": {}, "stage_realm": {}, "boss_clean": {}, "boss_time": {}, "kami": {},
+	"stage_no_item": {}, "stage_realm": {}, "stage_tokoyo": {}, "boss_clean": {}, "boss_time": {}, "kami": {},
 	"dark_kills": 0, "dark_kills_run": 0, "dark_streak": 0.0, "no_damage": 0.0, "kami_pacts": 0,
 	"kills_run": 0, "ultimates_run": 0, "daily_runs": 0, "no_kami_wins": 0, "synced": false,
 	# Altares do Selo (RunTracker): selos quebrados e Elites de altar vencidos no total, o recorde de
@@ -192,7 +192,7 @@ static func _num(c: Dictionary, key: String = "count") -> String:
 
 static func _name_args(c: Dictionary) -> Array:
 	match String(c["type"]):
-		"stage_no_item", "stage_realm":
+		"stage_no_item", "stage_realm", "stage_tokoyo":
 			return [_stage(c)]
 		"stage_moon":
 			return [_stage(c), roman(int(c["moon"]))]
@@ -218,7 +218,7 @@ static func _desc_args(c: Dictionary) -> Array:
 	match String(c["type"]):
 		"stage_no_item":
 			return [_stage(c), TranslationServer.translate("item.%s.name" % c["item"])]
-		"stage_realm":
+		"stage_realm", "stage_tokoyo":
 			return [_stage(c)]
 		"hero_evolve":
 			var base := String(DB.heroes.get(StringName(String(c["hero"])), {}).get("weapon", ""))
@@ -229,7 +229,7 @@ static func _desc_args(c: Dictionary) -> Array:
 			return [Screen.format_time(float(c["seconds"]))]
 		"endless_stages":
 			return [Screen.format_time(float(c["seconds"])), _num(c)]
-		"realm_count", "dark_kills_run", "kills_burst_best", "elite_affixes_max":
+		"realm_count", "tokoyo_count", "dark_kills_run", "kills_burst_best", "elite_affixes_max":
 			return [_num(c)]
 		"elite_affix_set":
 			return [Locale.format_number(EliteAffixes.IDS.size())]
@@ -384,6 +384,10 @@ static func _raw_new(c: Dictionary, stats: Dictionary, rec: Dictionary) -> Vecto
 			return _flag((rec["stage_realm"] as Dictionary).has(String(c["stage"])))
 		"realm_count":
 			return Vector2(float((rec["stage_realm"] as Dictionary).size()), float(c["count"]))
+		"stage_tokoyo":
+			return _flag((rec["stage_tokoyo"] as Dictionary).has(String(c["stage"])))
+		"tokoyo_count":
+			return Vector2(float((rec["stage_tokoyo"] as Dictionary).size()), float(c["count"]))
 		"hero_level":
 			return Vector2(float((rec["hero_level"] as Dictionary).get(c["hero"], 0)), float(c["level"]))
 		"hero_evolve":
@@ -500,6 +504,10 @@ static func record_run(result: Dictionary, tracker: RunTracker) -> void:
 		(rec["hero_evolve"] as Dictionary)[hero] = true
 	if bool(result.get("realm", false)) or tracker.realm_reached:
 		(rec["stage_realm"] as Dictionary)[stage] = true
+	# Tokoyo (常世): atravessou também o torii dourado da Sombra do Guardião (e, portanto, o Kakuriyo).
+	if bool(result.get("tokoyo", false)) or tracker.tokoyo_reached:
+		(rec["stage_realm"] as Dictionary)[stage] = true
+		(rec["stage_tokoyo"] as Dictionary)[stage] = true
 	for boss: StringName in tracker.boss_results:
 		var fight: Dictionary = tracker.boss_results[boss]
 		if bool(fight["clean"]):
@@ -625,6 +633,12 @@ static func achievability(id: StringName) -> float:
 			var mid := String(RiftPortal.midboss_of(DB.stage(stage)).get("id", ""))
 			return 0.5 if (SaveManager.data["stats"]["bosses_defeated"] as Dictionary).has(mid) \
 					else 0.4 * minf(1.0, _stage_time(stage) / 450.0)
+		"stage_tokoyo":
+			# Mais perto quem já venceu a Sombra do Guardião da fase; depois, quem já chegou ao Kakuriyo.
+			var shadow := String(RiftPortal.midboss2_of(DB.stage(stage)).get("id", ""))
+			if (SaveManager.data["stats"]["bosses_defeated"] as Dictionary).has(shadow):
+				return 0.45
+			return 0.3 if (records()["stage_realm"] as Dictionary).has(String(stage)) else 0.1
 		"win_hero", "hero_win":
 			return 0.6 * float((records()["hero_time"] as Dictionary).get(c["hero"], 0.0)) / RUN_LENGTH
 		"boss_defeat", "boss_kill":
@@ -685,12 +699,14 @@ static func _stage_time(stage: StringName) -> float:
 	return float((all.get(String(stage), {}) as Dictionary).get("best_time", 0.0))
 
 
-## Primeira fase em que o chefe aparece (chefe ou Guardião do Limiar) e o instante dele.
+## Primeira fase em que o chefe aparece (chefe, Guardião do Limiar ou Sombra do Guardião) e o
+## instante dele (o da Sombra é o mais cedo, "midboss2.t").
 static func _boss_stage(boss: StringName) -> StringName:
 	for s: StringName in DB.ids("stages"):
 		var row: Dictionary = DB.stages[s]
-		if String((row.get("midboss", {}) as Dictionary).get("id", "")) == String(boss):
-			return s
+		for key: String in ["midboss", "midboss2"]:
+			if String((row.get(key, {}) as Dictionary).get("id", "")) == String(boss):
+				return s
 		for b: Variant in row.get("bosses", []):
 			if String((b as Dictionary)["id"]) == String(boss):
 				return s
@@ -699,9 +715,10 @@ static func _boss_stage(boss: StringName) -> StringName:
 
 static func _boss_time(boss: StringName) -> float:
 	var row: Dictionary = DB.stages.get(_boss_stage(boss), {})
-	var mid: Dictionary = row.get("midboss", {})
-	if String(mid.get("id", "")) == String(boss):
-		return float(mid["t"])
+	for key: String in ["midboss", "midboss2"]:
+		var mid: Dictionary = row.get(key, {})
+		if String(mid.get("id", "")) == String(boss):
+			return float(mid["t"])
 	for b: Variant in row.get("bosses", []):
 		if String((b as Dictionary)["id"]) == String(boss):
 			return float((b as Dictionary)["t"])

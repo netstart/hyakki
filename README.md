@@ -14,6 +14,15 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   a Yuki pode pagar com vida), com recarga, efeitos, som em camadas, grito do guardião e o letreiro
   kanji + nome. Números em `data/abilities.json`; o bot usa as três por regras fixas (determinístico).
   No toque, 3 botões em arco ao lado do Golpe; ficha na tela do guardião, no Diário e um capítulo no Guia.
+- **Três níveis por fase** ([.ai/06-tokoyo-terceiro-nivel.md](.ai/06-tokoyo-terceiro-nivel.md)): a fase, o
+  **Kakuriyo (隠世)**, o mundo oculto aberto pelo portal violeta do Guardião do Limiar (7:30), e o **Tokoyo
+  (常世)**, a Terra Eterna. No Kakuriyo surge a **Sombra do Guardião** (影, 6 chefes novos, a partir das 9:00
+  ou 45 s depois da chegada), que deixa dois baús de chefe e um **torii dourado**; do outro lado fica um
+  santuário claro e dourado com mapa próprio (praça com tōrō e quatro torii, caminhos sagrados e espelhos
+  d'água), onde mora o **último chefe** da fase, que agora só aparece no Tokoyo (8 s depois da chegada, a
+  partir das 10:00). Quem não atravessa vence ao amanhecer sem a luta final. Os portais são convites (nunca
+  puxam); Noite Sem Fim, Desafio Diário, Lua Vermelha e partida suspensa valem nos três níveis. Missões
+  "chegar ao Tokoyo" por fase e no total; o bot atravessa os dois portais com o mesmo hash em 1x/2x/3x.
 - Omikuji do baú (おみくじ): antes de abrir, o tubo de madeira solta a sorte (吉 1 item, 中吉 3, 大吉 5,
   e às vezes 凶 com consolo em ryō, amarrado no galho) e uma roleta para em cada item. A sorte só mostra a
   contagem já sorteada; os 3 primeiros baús comuns do save saem com 中吉 garantido (o bot não usa nem gasta
@@ -23,7 +32,7 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   máximo, a mão comida/moedas com "Não perguntar mais": a escolha vira automática, sem pausar a luta, só com
   o som (com a vida cheia, "Comida" pega as moedas); muda em Opções e no menu de pausa.
 - Santuário (18 power-ups, reembolso total), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
-  e mais 140 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
+  e mais 147 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
   Próximas 3 metas no título e nos Resultados), Diário do Guardião
   (com o **Guia**: 9 capítulos de manual montados dos dados do jogo, sem revelar o que não foi descoberto),
   história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V (regras cumulativas em

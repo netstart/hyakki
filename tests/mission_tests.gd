@@ -78,6 +78,14 @@ func _done(id: String) -> bool:
 	return MissionBook.is_done(StringName(id))
 
 
+## Ryō da recompensa de uma missão (0 sem ryō).
+static func _ryo(id: StringName) -> int:
+	for part: String in String(MissionBook.data(id)["reward"]).split(",", false):
+		if part.begins_with("ryo:"):
+			return part.trim_prefix("ryo:").to_int()
+	return 0
+
+
 # --- Dados -------------------------------------------------------------------------------
 
 func _test_data() -> void:
@@ -141,7 +149,8 @@ static func _refs_exist(c: Dictionary) -> bool:
 
 ## O tipo tem progresso lido do perfil (não cai no 0/1 genérico do fim de raw_progress).
 static func _tracked(c: Dictionary) -> bool:
-	return String(c["type"]) in ["stage_no_item", "stage_moon", "stage_realm", "realm_count", "hero_win",
+	return String(c["type"]) in ["stage_no_item", "stage_moon", "stage_realm", "realm_count", "stage_tokoyo",
+			"tokoyo_count", "hero_win",
 			"hero_level", "hero_evolve", "weapon_evolve", "weapon_union", "boss_kill", "boss_clean", "boss_fast",
 			"dark_kills", "dark_kills_run", "dark_streak", "kami_accept", "kami_pacts", "endless_time",
 			"endless_stages", "kills_total", "kills_run", "kills_burst_best", "daily_runs", "codex_entries",
@@ -207,6 +216,46 @@ func _test_stage_trackers() -> void:
 	_check.call(_done("m_realm_temple") and _done("m_realm_dunes") and not _done("m_realm_village"),
 			"Kakuriyo: travessia (resultado ou rastreador) conclui a fase certa")
 	_check.call(MissionBook.progress(&"m_realm_all") == Vector2(2, 6), "Kakuriyo: 2 de 6 fases")
+	# Tokoyo (常世) por fase e a contagem: pelo resultado ("tokoyo") ou pelo rastreador
+	# (tokoyo_reached); chegar ao Tokoyo também conta o Kakuriyo da fase (atravessou os dois portais).
+	var toko_ids: Array[StringName] = []
+	for id: StringName in DB.ids("missions"):
+		if String(MissionBook.condition(id)["type"]) == "stage_tokoyo":
+			toko_ids.append(id)
+	_check.call(toko_ids.size() == DB.ids("stages").size(), "Tokoyo: uma missão por fase (%d)", toko_ids.size())
+	var realm_reward := {}
+	for id: StringName in DB.ids("missions"):
+		var cond := MissionBook.condition(id)
+		if String(cond["type"]) == "stage_realm":
+			realm_reward[String(cond["stage"])] = _ryo(id)
+	for id: StringName in toko_ids:
+		var stage := String(MissionBook.condition(id)["stage"])
+		_check.call(_ryo(id) > int(realm_reward.get(stage, 0)) and _ryo(id) <= int(realm_reward.get(stage, 0)) * 2,
+				"Tokoyo %s: recompensa um pouco acima da do Kakuriyo (%d > %d)", [stage, _ryo(id),
+				int(realm_reward.get(stage, 0))])
+	_check.call(_ryo(&"m_tokoyo_all") > _ryo(&"m_realm_all"), "Tokoyo: todas as fases paga mais que o Kakuriyo")
+	_check.call(not _done("m_tokoyo_temple") and not _done("m_tokoyo_dunes"),
+			"Tokoyo: chegar só ao Kakuriyo não conclui o Tokoyo")
+	_play(_result({"stage": "bamboo", "realm": true, "tokoyo": true, "victory": false}), RunTracker.new())
+	tracker = RunTracker.new()
+	tracker.realm_reached = true
+	tracker.tokoyo_reached = true
+	_play(_result({"stage": "village", "victory": true}), tracker)
+	_check.call(_done("m_tokoyo_bamboo") and _done("m_tokoyo_village") and not _done("m_tokoyo_temple"),
+			"Tokoyo: travessia (resultado ou rastreador) conclui a fase certa")
+	_check.call(_done("m_realm_bamboo") and _done("m_realm_village"), "Tokoyo: chegar ao Tokoyo conta o Kakuriyo da fase")
+	_check.call(MissionBook.progress(&"m_tokoyo_all") == Vector2(2, 6), "Tokoyo: 2 de 6 fases")
+	_check.call(Discovery.tokoyo_known(&"bamboo") and not Discovery.tokoyo_known(&"temple"),
+			"Tokoyo: o Guia vê o Tokoyo das fases a que já chegou (Discovery.tokoyo_known)")
+	for lang: String in ["pt_BR", "ja"]:
+		Locale.set_language(lang, false)
+		var name := TranslationServer.translate("stage.temple.name")
+		_check.call(MissionBook.title(&"m_tokoyo_temple").contains(name)
+				and MissionBook.description(&"m_tokoyo_temple").contains(name)
+				and not MissionBook.description(&"m_tokoyo_all").contains("%s")
+				and MissionBook.description(&"m_tokoyo_all").contains("6"),
+				"Tokoyo [%s]: nome e descrição com a fase e a contagem", lang)
+	Locale.set_language("pt_BR", false)
 
 
 func _test_hero_trackers() -> void:

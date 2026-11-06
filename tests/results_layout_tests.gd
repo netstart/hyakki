@@ -104,7 +104,10 @@ static func make_result(variant: String, weapons: int) -> Dictionary:
 		var damage := float(((i * 7) % 11 + 1) * 1375 + i)
 		rows.append({"id": String(id), "level": 1 + i % 8, "damage": damage, "dps": damage / 600.0})
 	var victory := variant == "victory"
+	# Nível alcançado: a derrota (o caso mais cheio, em todos os idiomas) caiu no Tokoyo, a vitória
+	# veio no Kakuriyo e a desistência ficou na fase (sem selo).
 	return {"victory": victory, "gave_up": variant == "gave_up", "hero": "aki", "stage": "village",
+			"realm": variant != "gave_up", "tokoyo": variant == "defeat",
 			"mode": "normal", "moon": 3, "time": 600.0 if victory else 431.5, "level": 27, "kills": 12345,
 			"ryo_earned": 1234, "weapons": rows,
 			"new_achievements": [&"ach_win_village", &"ach_unscathed", &"ach_win_moon3"] if victory else [&"ach_first_steps"],
@@ -201,6 +204,7 @@ func _check_variant(screen: Control, r: Dictionary, variant: String, state: Stri
 		_check.call((screen.get("_cause_icon") as TextureRect).texture != null, "%s: ícone do golpe final", state)
 	else:
 		_check.call(cause == tr("results.hurt_most") % tr("boss.tanuki.name"), "%s: quem mais feriu", state)
+	_check_realm(screen, r, state)
 	_check_goals(screen, r, state)
 	var cards := 0
 	for child: Node in (screen.get("_achievements") as Node).get_children():
@@ -214,6 +218,28 @@ func _check_variant(screen: Control, r: Dictionary, variant: String, state: Stri
 	_check.call(shown[0] == Screen.format_time(float(r["time"])) and shown[1] == str(int(r["level"]))
 			and shown[2] == Locale.format_number(int(r["kills"])) and shown[3] == Locale.format_number(int(r["ryo_earned"])),
 			"%s: números finais depois da contagem (%s)", [state, shown])
+
+
+## Selo do nível alcançado: dourado com 常世 no Tokoyo, violeta com 隠世 no Kakuriyo, nenhum na fase;
+## o texto quebra dentro da coluna da esquerda e nada sai do selo.
+func _check_realm(screen: Control, r: Dictionary, state: String) -> void:
+	var pill := screen.get("_realm") as Control
+	var glyph := screen.get("_realm_glyph") as Label
+	var text := screen.get("_realm_text") as Label
+	var level: int = screen.call("realm_level", r)
+	_check.call(pill.visible == (level > RiftPortal.DEPTH_STAGE), "%s: selo do nível só fora da fase (%d)", [state, level])
+	if not pill.visible:
+		return
+	var tokoyo := level >= RiftPortal.DEPTH_TOKOYO
+	_check.call(glyph.text == RiftPortal.REALM_GLYPHS[level]
+			and text.text == tr("results.tokoyo" if tokoyo else "results.realm")
+			and glyph.get_theme_color("font_color") == RiftPortal.palette(tokoyo)["swirl"],
+			"%s: selo %s com o kanji e o texto do reino", [state, glyph.text])
+	var box := pill.get_global_rect()
+	var left := (screen.get_node("Left") as Control).get_global_rect()
+	_check.call(left.encloses(box) and box.encloses(glyph.get_global_rect()) and box.encloses(text.get_global_rect())
+			and not glyph.get_global_rect().grow(-0.5).intersects(text.get_global_rect().grow(-0.5)),
+			"%s: selo do nível inteiro na coluna da esquerda (%s em %s)", [state, box, left])
 
 
 ## Próximas metas: uma linha por meta com nome, barra no valor de depois e o "+N" visível.

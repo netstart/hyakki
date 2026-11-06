@@ -2,6 +2,7 @@ class_name HyakkiGame
 extends Node2D
 ## Uma partida do Hyakki. Cria os sistemas e chama cada um, em ordem fixa, a cada passo
 ## do GameClock (plano 4.14 e 10). A mesma semente gera a mesma partida em 1x, 2x e 3x.
+## Três níveis por fase (RiftPortal, `rift`): a fase, o Kakuriyo e o Tokoyo do último chefe.
 ##
 ## Argumentos de linha de comando (depois de `--`), para testes automáticos:
 ##   --bot  --seed=N  --speed=1|2|3  --hero=ID  --stage=ID  --moon=0..5  --mode=normal|brisa
@@ -193,7 +194,7 @@ func apply_scenario(name: String) -> void:
 			GameClock.game_time = RUN_LENGTH - 3.0
 			spawner.skip_until(GameClock.game_time)
 			player.god_mode = true
-		"midboss", "portal", "realm":
+		"midboss", "portal", "realm", "midboss2", "portal2", "tokoyo":
 			player.god_mode = true
 			rift.scenario(name)
 
@@ -814,7 +815,7 @@ func on_boss_defeated(id: StringName, at: Vector2) -> void:
 	tracker.on_boss_defeated(id, GameClock.game_time, player.damage)
 	Events.boss_defeated.emit(id)
 	if RiftPortal.is_midboss(id):
-		rift.on_midboss_defeated(at)  # dois baús e o portal para o Kakuriyo
+		rift.on_midboss_defeated(at, RiftPortal.tier_of(id))  # dois baús e o portal do próximo nível
 	else:
 		pickups.spawn_item(&"chest", at, {"boss": true})
 	add_run_ryo(BossDirector.BOSS_RYO)
@@ -1090,7 +1091,7 @@ func _end_run(victory: bool, gave_up: bool = false) -> void:
 		if _quit_at <= 0.0:
 			print(state_summary("FIM"))
 			print(player.damage.report_line())
-			print(abilities.uses_line())
+			print("%s\n%s" % [abilities.uses_line(), rift.journey_line()])
 			# Reinicia no próximo quadro, fora do passo que matou a guardiã.
 			start_run.call_deferred(config)
 		return
@@ -1115,7 +1116,7 @@ func build_result(victory: bool, gave_up: bool) -> Dictionary:
 			"stage": String(stage["id"]), "mode": mode, "moon": moon, "time": GameClock.game_time,
 			"level": level, "kills": tracker.kills, "ryo_run": tracker.ryo, "weapons": weapon_rows,
 			"endless": endless_phase, "daily": bool(config.get("daily", false)),
-			"revived_by_ad": tracker.revived_by_ad, "realm": rift.reached,
+			"revived_by_ad": tracker.revived_by_ad, "realm": rift.reached, "tokoyo": rift.reached_tokoyo,
 			"daily_date": String(config.get("daily_date", "")), "speed_min": _speed_min,
 			"speed_max": _speed_max, "damage_taken": player.damage.summary()}
 
@@ -1126,18 +1127,18 @@ func _finish_headless() -> void:
 	_finished = true
 	print(state_summary("FIM"))
 	print(player.damage.report_line())
-	print(abilities.uses_line())
+	print("%s\n%s" % [abilities.uses_line(), rift.journey_line()])
 	running = false
 	GameClock.paused = true
 	get_tree().quit()
 
 
-## Resumo do estado da simulação; o hash permite comparar partidas (plano 15.1).
+## Resumo do estado da simulação (reino = RiftPortal.depth); o hash compara partidas (plano 15.1).
 func state_summary(tag: String) -> String:
 	var body := ("t=%.3f nivel=%d xp=%d abates=%d inimigos=%d brasas=%d vida=%.2f pos=(%.3f, %.3f) passos=%d armas=%s"
-			+ " sorte=%s") % [
+			+ " sorte=%s reino=%d") % [
 		GameClock.game_time, level, xp, tracker.kills, enemies.count_alive, pickups.count_alive,
-		player.hp, player.sim_pos.x, player.sim_pos.y, step_index, _weapon_summary(), chests.fortune_tag(),
+		player.hp, player.sim_pos.x, player.sim_pos.y, step_index, _weapon_summary(), chests.fortune_tag(), rift.depth,
 	]
 	return "%s %s hash=%d" % [tag, body, hash(body)]
 

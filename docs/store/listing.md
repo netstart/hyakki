@@ -8,7 +8,8 @@ Regras seguidas (política de metadados do Google Play): sem ranking ou superlat
 sem chamada para ação ("baixe já"), sem emoji, sem CAIXA ALTA, sem preço ou promoção, e só afirmações
 verdadeiras sobre o conteúdo. Números conferidos com o README em 25/10/2026: 7 guardiões, 6 fases
 (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos, 37 yōkai, 12 chefes, 15 Kami,
-181 missões (41 conquistas + 140 missões novas), 21 habilidades e 7 energias (1.18.0). Nomes de modos iguais aos do jogo (`i18n/strings.csv`).
+188 missões (41 conquistas + 147 missões), 21 habilidades e 7 energias (1.18.0), três níveis por fase com a
+Sombra do Guardião e o Tokoyo (1.21.0). Nomes de modos iguais aos do jogo (`i18n/strings.csv`).
 
 **Atenção:** o jogo tem só anúncios premiados opcionais (o anúncio na abertura saiu do
 jogo) e duas compras únicas: "Apoiar o jogo", que dá a Lanterna Dourada e entrega as
@@ -32,8 +33,9 @@ Hyakki é um roguelike no estilo survivors, em pixel art e inspirado no folclore
 • 26 armas: 12 básicas, 12 evoluções e 2 uniões secretas, além de 12 passivos. Cada nível traz uma escolha nova.
 • 7 guardiões com estilos próprios, 6 fases (uma delas secreta), 37 tipos de yokai e 12 chefes com padrões únicos.
 • 21 habilidades: cada guardião tem 3 poderes ligados à sua história, com recarga e uma energia própria, como a Chama da Ordem da Aki ou o Sangue Oni da Yuki.
+• Três níveis por fase: vença o Guardião do Limiar e cruze o portal até o Kakuriyo, o mundo oculto; lá, derrote a Sombra do Guardião e passe pelo torii dourado até o Tokoyo, a Terra Eterna, onde o último chefe espera.
 • Pactos com 15 Kami: bênçãos poderosas que cobram um preço.
-• Santuário com melhorias permanentes, 181 missões que desbloqueiam conteúdo e o Diário do Guardião, onde a história se revela aos poucos.
+• Santuário com melhorias permanentes, 188 missões que desbloqueiam conteúdo e o Diário do Guardião, onde a história se revela aos poucos.
 • Lua Vermelha (I a V), Noite Sem Fim e Desafio Diário para quem quer mais.
 • Modo Brisa para jogar a história com calma, e velocidade 2x e 3x com a Ampulheta de Fūjin, liberada com ryō do jogo ou por compra única.
 • Acessibilidade: modo daltônico, redução de flashes e tremor, números de dano opcionais.
@@ -56,8 +58,9 @@ Hyakki is a survivors-style roguelike in pixel art, inspired by Japanese folklor
 • 26 weapons: 12 base weapons, 12 evolutions and 2 secret unions, plus 12 passives. Every level-up is a new choice.
 • 7 guardians with their own playstyles, 6 stages (one of them secret), 37 kinds of yokai and 12 bosses with unique patterns.
 • 21 abilities: each guardian has 3 powers tied to their story, with cooldowns and an energy of their own, like Aki's Order's Flame or Yuki's Oni Blood.
+• Three levels per stage: beat the Threshold Guardian and cross the portal into the Kakuriyo, the hidden world; there, defeat the Guardian's Shadow and pass through the golden torii into Tokoyo, the Everlasting Land, where the final boss awaits.
 • Pacts with 15 Kami: powerful blessings that come at a price.
-• A Sanctuary of permanent upgrades, 181 missions that unlock content and the Guardian's Journal, where the story unfolds bit by bit.
+• A Sanctuary of permanent upgrades, 188 missions that unlock content and the Guardian's Journal, where the story unfolds bit by bit.
 • Red Moon (I to V), Endless Night and a Daily Challenge for those who want more.
 • Breeze mode to enjoy the story at your own pace, plus 2x and 3x speed with Fūjin's Hourglass, unlocked with in-game ryō or a one-time purchase.
 • Accessibility: colorblind mode, reduced flashes and shake, optional damage numbers.
@@ -80,8 +83,9 @@ Hyakki es un roguelike de estilo survivors en pixel art, inspirado en el folclor
 • 26 armas: 12 básicas, 12 evoluciones y 2 uniones secretas, además de 12 pasivas. Cada nivel es una nueva decisión.
 • 7 guardianes con estilos propios, 6 fases (una de ellas secreta), 37 tipos de yokai y 12 jefes con patrones únicos.
 • 21 habilidades: cada guardián tiene 3 poderes ligados a su historia, con recarga y una energía propia, como la Llama de la Orden de Aki o la Sangre Oni de Yuki.
+• Tres niveles por fase: vence al Guardián del Umbral y cruza el portal hasta el Kakuriyo, el mundo oculto; allí, derrota a la Sombra del Guardián y atraviesa el torii dorado hasta el Tokoyo, la Tierra Eterna, donde espera el último jefe.
 • Pactos con 15 kami: bendiciones poderosas que tienen un precio.
-• Santuario con mejoras permanentes, 181 misiones que desbloquean contenido y el Diario del guardián, donde la historia se revela poco a poco.
+• Santuario con mejoras permanentes, 188 misiones que desbloquean contenido y el Diario del guardián, donde la historia se revela poco a poco.
 • Luna Roja (I a V), Noche Sin Fin y Desafío diario para quien quiera más.
 • Modo Brisa para disfrutar la historia con calma, y velocidad 2x y 3x con el Reloj de arena de Fūjin, que se libera con ryō del juego o con una compra única.
 • Accesibilidad: modo daltónico, menos destellos y temblor, números de daño opcionales.
@@ -104,8 +108,9 @@ Hyakki ist ein Roguelike im Survivors-Stil, in Pixel-Art und inspiriert von japa
 • 26 Waffen: 12 Grundwaffen, 12 Entwicklungen und 2 geheime Vereinigungen, dazu 12 passive Gegenstände. Jeder Stufenaufstieg ist eine neue Wahl.
 • 7 Wächter mit eigenem Spielstil, 6 Gebiete (eines davon geheim), 37 Arten von Yokai und 12 Bosse mit eigenen Mustern.
 • 21 Fähigkeiten: Jeder Wächter hat 3 Kräfte aus seiner Geschichte, mit Abklingzeit und eigener Energie, etwa Akis Ordensflamme oder Yukis Oni-Blut.
+• Drei Ebenen pro Gebiet: Besiege den Hüter der Schwelle und durchschreite das Portal ins Kakuriyo, die verborgene Welt; dort bezwingst du den Schatten des Hüters und gehst durch das goldene Torii ins Tokoyo, das ewige Land, wo der letzte Boss wartet.
 • Pakte mit 15 Kami: mächtige Segen, die ihren Preis haben.
-• Ein Heiligtum mit dauerhaften Verbesserungen, 181 Missionen, die Inhalte freischalten, und das Wächtertagebuch, in dem sich die Geschichte Stück für Stück enthüllt.
+• Ein Heiligtum mit dauerhaften Verbesserungen, 188 Missionen, die Inhalte freischalten, und das Wächtertagebuch, in dem sich die Geschichte Stück für Stück enthüllt.
 • Blutmond (I bis V), Endlose Nacht und Tägliche Herausforderung für alle, die mehr wollen.
 • Brise-Modus, um die Geschichte entspannt zu erleben, und Tempo 2x und 3x mit Fūjins Sanduhr, freigeschaltet mit Ryō aus dem Spiel oder per Einmalkauf.
 • Barrierefreiheit: Farbenblind-Modus, weniger Blitze und Wackeln, optionale Schadenszahlen.
@@ -128,8 +133,9 @@ Hyakki est un roguelike de type survivors en pixel art, inspiré du folklore jap
 • 26 armes : 12 de base, 12 évolutions et 2 unions secrètes, plus 12 objets passifs. Chaque niveau est un nouveau choix.
 • 7 gardiens au style unique, 6 niveaux (dont un secret), 37 types de yokai et 12 boss aux attaques uniques.
 • 21 compétences : chaque gardien a 3 pouvoirs liés à son histoire, avec un temps de recharge et sa propre énergie, comme la Flamme de l'Ordre d'Aki ou le Sang oni de Yuki.
+• Trois mondes par niveau : bats le Gardien du Seuil et franchis le portail vers le Kakuriyo, le monde caché ; là-bas, vaincs l'Ombre du Gardien et passe le torii doré jusqu'au Tokoyo, la terre éternelle, où attend le dernier boss.
 • Pactes avec 15 kami : des bénédictions puissantes, mais qui ont un prix.
-• Un Sanctuaire d'améliorations permanentes, 181 missions qui débloquent du contenu et le Journal du gardien, où l'histoire se révèle peu à peu.
+• Un Sanctuaire d'améliorations permanentes, 188 missions qui débloquent du contenu et le Journal du gardien, où l'histoire se révèle peu à peu.
 • Lune rouge (I à V), Nuit sans fin et Défi du jour pour aller plus loin.
 • Le mode Brise pour profiter de l'histoire tranquillement, et la vitesse 2x et 3x avec le Sablier de Fūjin, débloqué avec les ryō du jeu ou par un achat unique.
 • Accessibilité : mode daltonien, flashs et secousses réduits, chiffres de dégâts optionnels.
@@ -152,8 +158,9 @@ Seules des annonces récompensées facultatives sont proposées, et aucune n'int
 • 26 видов оружия: 12 базовых, 12 эволюций и 2 тайных союза, а также 12 пассивных предметов. Каждый уровень — новый выбор.
 • 7 стражей со своим стилем игры, 6 уровней (один из них секретный), 37 видов ёкаев и 12 боссов с уникальными атаками.
 • 21 умение: у каждого стража 3 силы из его истории, с перезарядкой и собственной энергией, например Пламя Ордена у Аки или Кровь они у Юки.
+• Три мира на каждом уровне: победите Стража Порога и пройдите через портал в Какурё, скрытый мир; там одолейте Тень Стража и пройдите через золотые тории в Токоё, Вечную землю, где ждёт последний босс.
 • Договоры с 15 ками: сильные благословения, за которые придётся платить.
-• Святилище с постоянными улучшениями, 181 задания, открывающих контент, и Дневник стража, где история раскрывается постепенно.
+• Святилище с постоянными улучшениями, 188 заданий, открывающих контент, и Дневник стража, где история раскрывается постепенно.
 • Красная луна (I–V), Бесконечная ночь и Ежедневное испытание для тех, кому мало.
 • Режим «Бриз», чтобы спокойно пройти сюжет, и скорость 2x и 3x с Песочными часами Фудзина: их можно открыть за рё из игры или разовой покупкой.
 • Доступность: режим для дальтоников, меньше вспышек и тряски, отключаемые числа урона.
@@ -176,8 +183,9 @@ Hyakki adalah roguelike bergaya survivors dengan pixel art, terinspirasi cerita 
 • 26 senjata: 12 senjata dasar, 12 evolusi, dan 2 penyatuan rahasia, ditambah 12 item pasif. Setiap naik level adalah pilihan baru.
 • 7 penjaga dengan gaya bermain masing-masing, 6 tahap (satu di antaranya rahasia), 37 jenis yokai, dan 12 bos dengan pola unik.
 • 21 kemampuan: tiap penjaga punya 3 kekuatan dari kisahnya, dengan jeda pakai dan energi sendiri, seperti Api Ordo milik Aki atau Darah Oni milik Yuki.
+• Tiga tingkat di setiap tahap: kalahkan Penjaga Ambang dan lewati portal ke Kakuriyo, dunia tersembunyi; di sana, kalahkan Bayangan Penjaga dan lewati torii emas menuju Tokoyo, Negeri Abadi, tempat bos terakhir menunggu.
 • Perjanjian dengan 15 Kami: berkah kuat yang ada harganya.
-• Kuil dengan peningkatan permanen, 181 misi yang membuka konten, dan Jurnal Penjaga tempat cerita terungkap sedikit demi sedikit.
+• Kuil dengan peningkatan permanen, 188 misi yang membuka konten, dan Jurnal Penjaga tempat cerita terungkap sedikit demi sedikit.
 • Bulan Merah (I–V), Malam Tanpa Akhir, dan Tantangan Harian untuk yang ingin lebih.
 • Mode Semilir untuk menikmati cerita dengan santai, serta kecepatan 2x dan 3x lewat Jam Pasir Fūjin, yang terbuka dengan ryō dari game atau pembelian sekali.
 • Aksesibilitas: mode buta warna, kurangi kilatan dan guncangan, angka damage opsional.
@@ -200,8 +208,9 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 武器26種：基本武器12種、進化12種、隠された合体2種。さらにパッシブ12種。レベルアップのたびに新しい選択を。
 • 個性豊かな守り人7人、ステージ6つ（うち1つは隠しステージ）、妖怪37種、独自の攻撃を持つボス12体。
 • 技21種：守り人それぞれに物語にちなんだ3つの技があり、再使用時間と固有の気力（灯の「教団の灯火」、雪の「鬼血」など）で放ちます。
+• 各ステージは3層：境の守り手を倒して門をくぐれば隠世（かくりよ）へ。そこで守り手の影を討ち、金の鳥居を抜ければ常世（とこよ）。最後のボスが待つ光の地です。
 • 15柱の神との契り：強力な加護には代償がある。
-• 永続強化の神社、コンテンツを解放する181のミッション、物語が少しずつ明かされる「守り人の日記」。
+• 永続強化の神社、コンテンツを解放する188のミッション、物語が少しずつ明かされる「守り人の日記」。
 • 紅月（I〜V）、終わらぬ夜、デイリーチャレンジでさらなる挑戦を。
 • 物語をゆっくり楽しめる「そよ風」モード。2倍・3倍速は「風神の砂時計」で解放。ゲーム内の両でも、一度の購入でも手に入る。
 • アクセシビリティ：色覚サポート、点滅と揺れの軽減、ダメージ表示の切り替え。
@@ -224,8 +233,9 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 무기 26종: 기본 무기 12종, 진화 12종, 숨겨진 합체 2종, 그리고 패시브 12종. 레벨업마다 새로운 선택.
 • 저마다 플레이 스타일이 다른 수호자 7명, 스테이지 6개(그중 하나는 비밀), 요괴 37종, 고유한 패턴의 보스 12체.
 • 기술 21종: 수호자마다 자신의 이야기에서 나온 3가지 기술이 있으며, 재사용 대기시간과 고유한 기력(아키의 결사의 불꽃, 유키의 오니의 피 등)을 씁니다.
+• 스테이지마다 3개의 층: 경계의 수호자를 쓰러뜨리고 문을 지나 숨겨진 세계 카쿠리요로. 그곳에서 수호자의 그림자를 물리치고 황금 도리이를 지나면 마지막 보스가 기다리는 영원의 땅 도코요입니다.
 • 15신과의 계약: 강력한 축복에는 대가가 따릅니다.
-• 영구 강화를 위한 신사, 콘텐츠를 해금하는 미션 181개, 이야기가 조금씩 드러나는 수호자의 일지.
+• 영구 강화를 위한 신사, 콘텐츠를 해금하는 미션 188개, 이야기가 조금씩 드러나는 수호자의 일지.
 • 붉은 달(I~V), 끝없는 밤, 일일 도전으로 더 높은 난이도에 도전하세요.
 • 이야기를 편하게 즐기는 산들바람 모드, 그리고 후진의 모래시계로 여는 2배·3배속: 게임 속 료 또는 1회 구매로 해제됩니다.
 • 접근성: 색각 보조 모드, 번쩍임과 흔들림 줄이기, 피해 숫자 표시 선택.
@@ -248,8 +258,9 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 26種武器：12種基礎武器、12種進化與2種隱藏合體，另有12種被動道具。每次升級都是新的抉擇。
 • 7位風格各異的守護者、6個關卡（其中1個為隱藏關卡）、37種妖怪，以及12位各具攻擊模式的首領。
 • 21種技能：每位守護者都有3種源自自身故事的力量，具冷卻時間與專屬氣力，例如燈的「教團燈火」或雪的「鬼血」。
+• 每個關卡三層：擊敗結界守護者，穿過傳送門進入隱世；在那裡打倒守護者之影，穿過金色鳥居，前往最終頭目等待的永恆之地常世。
 • 與15位神明締結契約：強大的祝福也有代價。
-• 提供永久強化的神社、可解鎖內容的181項任務，以及逐步揭曉故事的「守護者日誌」。
+• 提供永久強化的神社、可解鎖內容的188項任務，以及逐步揭曉故事的「守護者日誌」。
 • 紅月（I～V）、無盡之夜與每日挑戰，滿足想要更多挑戰的玩家。
 • 讓你輕鬆享受劇情的「微風」模式；2倍、3倍速則由「風神沙漏」解鎖，可用遊戲內的兩或單次購買取得。
 • 無障礙設定：色盲模式、減少閃光與震動、可開關的傷害數字。
@@ -272,8 +283,9 @@ Hanya ada iklan berhadiah yang opsional, dan iklan tidak mengganggu permainan. D
 • 26种武器：12种基础武器、12种进化与2种隐藏合体，另有12种被动道具。每次升级都是新的抉择。
 • 7位风格各异的守护者、6个关卡（其中1个为隐藏关卡）、37种妖怪，以及12位各具攻击模式的首领。
 • 21种技能：每位守护者都有3种源自自身故事的力量，具冷却时间与专属气力，例如灯的“教团灯火”或雪的“鬼血”。
+• 每个关卡三层：击败结界守护者，穿过传送门进入隐世；在那里打倒守护者之影，穿过金色鸟居，前往最终头目等待的永恒之地常世。
 • 与15位神明缔结契约：强大的祝福也有代价。
-• 提供永久强化的神社、可解锁内容的181项任务，以及逐步揭晓故事的“守护者日志”。
+• 提供永久强化的神社、可解锁内容的188项任务，以及逐步揭晓故事的“守护者日志”。
 • 红月（I～V）、无尽之夜与每日挑战，满足想要更多挑战的玩家。
 • 让你轻松享受剧情的“微风”模式；2倍、3倍速则由“风神沙漏”解锁，可用游戏内的两或一次性购买获得。
 • 无障碍设置：色盲模式、减少闪光与震动、可开关的伤害数字。

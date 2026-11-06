@@ -5,9 +5,11 @@ extends RefCounted
 ## duração da noite (HyakkiGame.RUN_LENGTH), habilidades e energias (data/abilities.json, poder por
 ## nível de AbilitySystem), cartas por nível e espaços (LevelUpSystem), chances
 ## e ryō dos baús (ChestSystem), itens do chão (data/items.json), horários dos chefes e dos Kami
-## (data/stages.json), aviso do Guardião do Limiar (RiftPortal), Santuário (data/powerups.json,
+## (data/stages.json), os três níveis da fase (Guardião do Limiar, Sombra do Guardião e o último chefe
+## no Tokoyo: "midboss", "midboss2", RiftPortal.WARN_LEAD/MIDBOSS_CHESTS, Spawner.FINAL_AFTER/FINAL_WARN),
+## Santuário (data/powerups.json,
 ## MetaProgress.PRICE_STEP), Lua Vermelha (HyakkiGame), clima e terreno (data/weather.json,
-## data/surfaces.json, "hazard" das fases e do Kakuriyo), modo Brisa (HyakkiGame.BRISA_*,
+## data/surfaces.json, "hazard" das fases, do Kakuriyo e do Tokoyo), modo Brisa (HyakkiGame.BRISA_*,
 ## DamageControl.BRISA_MULT, LanternSystem.BRISA_DARKNESS), Desafio Diário (MetaProgress.DAILY_MIN_TIME,
 ## data/achievements.json), Noite Sem Fim (HyakkiGame.ENDLESS_HP_PER_MIN, MetaProgress.ENDLESS_GOLD,
 ## Spawner.SHINIGAMI_TIME), Altares do Selo e afixos dos Elites (AltarSystem, EliteAffixes) e as
@@ -15,7 +17,8 @@ extends RefCounted
 ##
 ## Descoberta: o que o Diário ainda esconde fica escondido aqui pelas mesmas regras (Discovery):
 ## receitas com "???" e chip "?", chefes não vencidos, guardiãs e fases bloqueadas sem nome,
-## o Kakuriyo de cada fase antes de vencer o Guardião do Limiar dela, afixos de Elite nunca vistos
+## o Kakuriyo de cada fase antes de vencer o Guardião do Limiar dela, o Tokoyo antes de chegar lá
+## (Discovery.tokoyo_known), afixos de Elite nunca vistos
 ## e o Shinigami antes de a Noite Sem Fim chegar à hora dele;
 ## dicas que citam arma ou relíquia desconhecida ficam guardadas (só a contagem aparece).
 ##
@@ -426,16 +429,29 @@ func _bosses() -> Array[Dictionary]:
 			var known := Discovery.boss_known(b)
 			hidden = hidden or not known
 			var line: Array = [{"n": Screen.format_time(float(event["t"]))}, {"t": " "}, {"ref": boss_ref(b)}]
-			if bool(event["midboss"]):
-				line.append({"t": " · " + tr("midboss.title")})
+			match String(event["kind"]):
+				"midboss":
+					line.append({"t": " · " + tr("midboss.title")})
+				"shadow":
+					line.append({"t": " · " + tr("midboss2.title") + " "})
+					line.append({"seal": RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_KAKURIYO]})
+				"final":
+					line.append({"t": " · "})
+					line.append({"seal": RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_TOKOYO]})
 			lines.append(line)
 		out.append(_rich(lines))
 	if hidden:
 		out.append(_p(tr("guide.bosses.unknown")))
 	var mid := _first_midboss_time()
 	out.append_array([
+		_h(tr("guide.bosses.levels_h")),
+		_p(tr("guide.bosses.levels"), [{"seal": RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_KAKURIYO]},
+				{"seal": RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_TOKOYO]}]),
 		_h(tr("midboss.title")),
 		_p(tr("guide.bosses.mid"), [Screen.format_time(mid), _num(RiftPortal.WARN_LEAD), str(RiftPortal.MIDBOSS_CHESTS)]),
+	])
+	out.append_array(_shadow_blocks())
+	out.append_array([
 		_h(tr("guide.bosses.boss_h")),
 		_p(tr("guide.bosses.boss"), [str(BossDirector.BOSS_RYO), str(ChestSystem.BOSS_MIN_ITEMS)]),
 		_link(&"bosses", tr("guide.link.bosses")),
@@ -443,17 +459,58 @@ func _bosses() -> Array[Dictionary]:
 	return out
 
 
-## Chefes de uma fase em ordem de horário: [{t, id, midboss}].
+## Chefes de uma fase em ordem de horário: [{t, id, midboss, kind}]. `kind`: "boss" (na hora
+## marcada, em qualquer nível), "midboss" (Guardião do Limiar, na fase), "shadow" (Sombra do
+## Guardião, no Kakuriyo, a partir de "midboss2.t") e "final" (o último chefe, só no Tokoyo, a
+## partir da hora dele). As horas do Kakuriyo e do Tokoyo são as mais cedo: quem atravessa tarde
+## vê a Sombra e o último chefe depois (Spawner.shadow_time, Spawner.final_time).
 func boss_schedule(s: StringName) -> Array[Dictionary]:
 	var stage: Dictionary = DB.stages[s]
 	var out: Array[Dictionary] = []
-	for b: Dictionary in stage.get("bosses", []):
-		out.append({"t": float(b["t"]), "id": String(b["id"]), "midboss": false})
-	var mid: Dictionary = stage.get("midboss", {})
+	var list: Array = stage.get("bosses", [])
+	for i: int in list.size():
+		var b: Dictionary = list[i]
+		out.append({"t": float(b["t"]), "id": String(b["id"]), "midboss": false,
+				"kind": "final" if i == list.size() - 1 else "boss"})
+	var mid := RiftPortal.midboss_of(stage)
 	if not mid.is_empty():
-		out.append({"t": float(mid["t"]), "id": String(mid["id"]), "midboss": true})
+		out.append({"t": float(mid["t"]), "id": String(mid["id"]), "midboss": true, "kind": "midboss"})
+	var mid2 := RiftPortal.midboss2_of(stage)
+	if not mid2.is_empty():
+		out.append({"t": float(mid2["t"]), "id": String(mid2["id"]), "midboss": true, "kind": "shadow"})
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["t"]) < float(b["t"]))
 	return out
+
+
+## A Sombra do Guardião e a luta final no Tokoyo, com os números da primeira fase que os tem
+## ("midboss2" e o último de "bosses") e das constantes do RiftPortal e do Spawner.
+func _shadow_blocks() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for s: StringName in stage_order():
+		var stage: Dictionary = DB.stages[s]
+		var mid2 := RiftPortal.midboss2_of(stage)
+		var last := RiftPortal.final_boss_of(stage)
+		if mid2.is_empty() or last.is_empty():
+			continue
+		var shadow: Dictionary = DB.bosses.get(StringName(String(mid2["id"])), {})
+		out.append_array([
+			_h(tr("midboss2.title")),
+			_p(tr("guide.bosses.mid2"), [{"seal": String(shadow.get("seal", "影"))},
+					Screen.format_time(float(mid2["t"])), _num(float(mid2.get("after", 0.0))),
+					pct(fury_below(StringName(String(mid2["id"])))), str(RiftPortal.MIDBOSS_CHESTS)]),
+			_h(tr("guide.bosses.final_h")),
+			_p(tr("guide.bosses.final"), [{"seal": RiftPortal.REALM_GLYPHS[RiftPortal.DEPTH_TOKOYO]},
+					Screen.format_time(float(last["t"])), _num(Spawner.FINAL_AFTER), _num(Spawner.FINAL_WARN),
+					Screen.format_time(HyakkiGame.RUN_LENGTH)]),
+		])
+		break
+	return out
+
+
+## Fração da vida abaixo da qual o chefe entra na última fase (data/bosses.json "phases"; 0 sem fase).
+static func fury_below(b: StringName) -> float:
+	var phases: Array = (DB.bosses.get(b, {}) as Dictionary).get("phases", [])
+	return float((phases.back() as Dictionary).get("below", 0.0)) if phases.size() > 1 else 0.0
 
 
 ## Chefe como chip de retrato (o ícone do Diário); desconhecido: "?" e "???".
@@ -691,8 +748,9 @@ func _stages() -> Array[Dictionary]:
 
 
 ## Clima, perigo e terrenos lentos de uma fase (cada um uma linha de trechos) e, depois, os do
-## Kakuriyo dela ("otherworld": clima de outra fase e perigo próprio), escondido até vencer o
-## Guardião do Limiar da fase.
+## Kakuriyo dela ("otherworld": clima de outra fase e perigo próprio, e a Sombra do Guardião que
+## guarda o torii dourado), escondido até vencer o Guardião do Limiar da fase, e os do Tokoyo
+## ("tokoyo": clima, perigo e quem reina lá), escondido até chegar lá (Discovery.tokoyo_known).
 func stage_lines(s: StringName) -> Array:
 	var stage: Dictionary = DB.stages[s]
 	var lines := world_lines(String(s), stage.get("hazard", {}))
@@ -700,12 +758,36 @@ func stage_lines(s: StringName) -> Array:
 	var mid := RiftPortal.midboss_of(stage)
 	if ow.is_empty() or mid.is_empty():
 		return lines
-	if not Discovery.boss_known(StringName(String(mid["id"]))):
+	if not Discovery.realm_known(s):
 		lines.append(_parts(tr("guide.stages.realm"), [Discovery.UNKNOWN]))
-		return lines
-	lines.append(_parts(tr("guide.stages.realm"), [tr("realm.%s.name" % s)]))
-	for line: Array in world_lines(String(ow.get("weather", s)), ow.get("hazard", {})):
+	else:
+		lines.append(_parts(tr("guide.stages.realm"), [tr("realm.%s.name" % s)]))
+		for line: Array in world_lines(String(ow.get("weather", s)), ow.get("hazard", {})):
+			lines.append([{"t": "· "}] + line)
+		var mid2 := RiftPortal.midboss2_of(stage)
+		if not mid2.is_empty():
+			lines.append([{"t": "· "}] + _parts(tr("guide.stages.shadow_line"),
+					[{"ref": boss_ref(StringName(String(mid2["id"])))}]))
+	lines.append_array(tokoyo_lines(s))
+	return lines
+
+
+## O Tokoyo da fase (bloco "tokoyo", só com a Sombra do Guardião que abre o caminho): o nome, o
+## clima e o perigo dele e o último chefe da fase, que reina lá; "???" até chegar lá.
+func tokoyo_lines(s: StringName) -> Array:
+	var stage: Dictionary = DB.stages[s]
+	var toko: Dictionary = stage.get("tokoyo", {})
+	if toko.is_empty() or RiftPortal.midboss2_of(stage).is_empty():
+		return []
+	if not Discovery.tokoyo_known(s):
+		return [_parts(tr("guide.stages.tokoyo"), [Discovery.UNKNOWN])]
+	var lines: Array = [_parts(tr("guide.stages.tokoyo"), [tr("realm3.%s.name" % s)])]
+	for line: Array in world_lines(String(toko.get("weather", s)), toko.get("hazard", {})):
 		lines.append([{"t": "· "}] + line)
+	var last := RiftPortal.final_boss_of(stage)
+	if not last.is_empty():
+		lines.append([{"t": "· "}] + _parts(tr("guide.stages.tokoyo_lord"),
+				[{"ref": boss_ref(StringName(String(last["id"])))}]))
 	return lines
 
 

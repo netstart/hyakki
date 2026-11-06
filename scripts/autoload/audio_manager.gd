@@ -11,6 +11,9 @@ extends Node
 ##   mais antigo ou, sem acertos, o som comum mais antigo (sem abaixar a música).
 
 const MUSIC_DIR := "res://assets/audio/music/"
+## Faixas que tocam o arquivo de outra (id → arquivo em MUSIC_DIR, sem extensão): o Tokoyo usa a
+## música do Santuário (甘茶の音楽工房, já no jogo) até ganhar uma própria.
+const MUSIC_FILES := {"tokoyo": "sanctuary"}
 const SFX_DIR := "res://assets/audio/sfx/"
 ## Vozes dos guardiões ao soltar uma habilidade (AbilitySystem): importantes, nunca sem canal.
 const VOICE_DIR := "res://assets/audio/voice/"
@@ -196,11 +199,7 @@ func play_music(id: String, fade: float = CROSSFADE) -> void:
 	if id == _music_id:
 		return
 	_music_id = id
-	# .ogg (Ninja Adventure) ou .mp3 (甘茶の音楽工房); toda música de fundo repete.
-	var path := MUSIC_DIR + id + ".ogg"
-	if not ResourceLoader.exists(path):
-		path = MUSIC_DIR + id + ".mp3"
-	var stream := _load(path)
+	var stream := _load(music_path(id))
 	if stream == null:
 		return
 	if stream is AudioStreamOggVorbis:
@@ -221,6 +220,13 @@ func play_music(id: String, fade: float = CROSSFADE) -> void:
 	_active_music = next
 	_crossfade = tween
 	_crossfade_old = old
+
+
+## Arquivo da música `id`: .ogg (Ninja Adventure) ou .mp3 (甘茶の音楽工房), seguindo MUSIC_FILES.
+static func music_path(id: String) -> String:
+	var file := String(MUSIC_FILES.get(id, id))
+	var path := MUSIC_DIR + file + ".ogg"
+	return path if ResourceLoader.exists(path) else MUSIC_DIR + file + ".mp3"
 
 
 func stop_music(fade: float = 1.0) -> void:

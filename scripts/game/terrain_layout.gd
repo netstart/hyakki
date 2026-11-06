@@ -2,7 +2,8 @@ class_name TerrainLayout
 extends RefCounted
 ## Composição dos chunks de cada bioma (data/biomes.json "layout"): vila com ruas e quarteirões,
 ## bambuzal com trilha, templo com avenida e santuários, dunas de cinza com ruínas, Yomi com
-## rochas e lava, Encosta dos Mortos com escadaria. Tudo é função pura da semente e do chunk.
+## rochas e lava, Encosta dos Mortos com escadaria, Tokoyo (常世) com o santuário de luz da
+## batalha final. Tudo é função pura da semente e do chunk.
 ##
 ## generate(c) devolve o que tem jogabilidade ou estrutura (obstáculos sólidos, casas, ruas) e é
 ## igual em qualquer nível gráfico. scatter(c) devolve a decoração orgânica SEM colisão (tufos,
@@ -27,6 +28,54 @@ const VILLAGE_TREES := ["tree_round", "tree_green", "big_green", "sakura", "tree
 		"round_cluster", "tree_yellow"]
 const YARD := ["barrel", "barrel_open", "barrel_b", "basket_fish", "basket_veg", "basket_fruit", "pot",
 		"bucket", "hay_bale", "hay_round", "pumpkin"]
+## Margem da borda da área jogável onde nada sólido nasce (px), nos layouts comuns.
+const EDGE_MARGIN := 12.0
+
+## Tokoyo (常世): arena limitada com o santuário na origem (veja _toko_plan). Metade da arena quando
+## a fase não dá limites (as fases dão bounds no bloco "tokoyo" de data/stages.json).
+const TOKO_HALF := 1200.0
+## Praça: calçamento (canal G) até TOKO_PLAZA_R, anel de pedra (canal R) até TOKO_PLAZA_RIM;
+## nenhum sólido a menos de TOKO_CLEAR_R da origem (luta do último chefe e nascimento da guardiã).
+const TOKO_PLAZA_R := 152.0
+const TOKO_PLAZA_RIM := 170.0
+## Desenho do calçamento: disco do meio até TOKO_PLAZA_CORE, um friso de pedra de TOKO_PLAZA_INLAY px
+## e a coroa até TOKO_PLAZA_R, feita de TOKO_PLAZA_PETALS círculos (borda em pétalas).
+const TOKO_PLAZA_CORE := 52.0
+const TOKO_PLAZA_INLAY := 18.0
+const TOKO_PLAZA_PETALS := 24
+const TOKO_CLEAR_R := 118.0
+## Anel de tōrō na borda da praça, fora dos eixos das entradas (ângulos de 15° + 30° k).
+const TOKO_TORO_R := 136.0
+const TOKO_TORO_COUNT := 12
+## Caminhos sagrados cardeais: meia largura, faixa central calçada e os portões (torii na entrada
+## e mais TOKO_TUNNEL em corredor, como o senbon torii), a cada TOKO_TUNNEL_STEP px.
+const TOKO_PATH_HALF := 22.0
+const TOKO_INLAY_HALF := 6.0
+const TOKO_GATE_R := 196.0
+const TOKO_TUNNEL := 3
+const TOKO_TUNNEL_STEP := 46.0
+## Lanternas dos dois lados dos caminhos, a cada TOKO_LAMP_STEP px depois do corredor.
+const TOKO_LAMP_STEP := 120.0
+const TOKO_LAMP_SIDE := 14.0
+## Caminhos diagonais (da praça ao anel) e o anel de pedra, em fração da metade da arena.
+const TOKO_DIAG_HALF := 10.0
+const TOKO_RING_K := 0.55
+const TOKO_RING_HALF := 12.0
+const TOKO_RING_SEGMENTS := 64
+## Espelhos d'água: um em cada setor entre os caminhos, por dentro e por fora do anel; os de
+## dentro com índice par têm uma ilha com a árvore sagrada (fosso de TOKO_MOAT círculos).
+const TOKO_POND_SECTORS := 8
+const TOKO_POND_GAP := 20.0
+const TOKO_MOAT := 10
+## Moldura: nada sólido a menos de TOKO_EDGE_CLEAR px do limite; meio-fio de pedra por dentro e
+## pilares e rochedos (só visuais) por fora.
+const TOKO_EDGE_CLEAR := 44.0
+const TOKO_CURB := 20.0
+## Luz das lanternas do Tokoyo quando o bioma não dá "toko.light".
+const TOKO_LIGHT := ["#ffe2a0", 58.0, 0.75, -20.0]
+## Torii de lado (gen_torii_side, terrain_art.gd) nos caminhos leste-oeste: distância entre os
+## pés dos dois pilares, no chão (px); como no torii de frente, os pilares ficam dentro do caminho.
+const TORII_SIDE_SPAN := 30.0
 
 var seed_value: int = 0
 var stage_id: String = ""
@@ -36,6 +85,8 @@ var kind: String = "village"
 var bounds := Vector2.ZERO
 var noise_offset := Vector2.ZERO
 var scales := Vector2(0.012, 0.018)
+## Margem da borda onde nada sólido nasce (EDGE_MARGIN ou TOKO_EDGE_CLEAR).
+var edge_margin := EDGE_MARGIN
 
 var _rng := RandomNumberGenerator.new()
 var _origin := Vector2.ZERO
@@ -46,6 +97,8 @@ var _paint: Array = []
 var _taken: Array = []
 ## Faixas onde nada sólido pode ficar (ruas, trilhas, praças).
 var _keepout: Array[Rect2] = []
+## Plano fixo do Tokoyo (cacheado por semente): {"paint", "items", "taken", "keepout"}.
+var _toko: Dictionary = {}
 
 
 func setup(p_seed: int, p_stage_id: String, p_biome: Dictionary, p_bounds: Vector2) -> void:
@@ -57,6 +110,8 @@ func setup(p_seed: int, p_stage_id: String, p_biome: Dictionary, p_bounds: Vecto
 	noise_offset = TerrainNoise.offset_for(p_seed)
 	var s: Array = biome.get("scales", [0.012, 0.018])
 	scales = Vector2(float(s[0]), float(s[1]))
+	edge_margin = TOKO_EDGE_CLEAR if kind == "tokoyo" else EDGE_MARGIN
+	_toko = {}
 
 
 ## Estrutura determinística do chunk. `reserved`: círculos [pos, raio] já usados pela
@@ -82,7 +137,12 @@ func generate(c: Vector2i, reserved: Array) -> Dictionary:
 			_yomi(c)
 		"secret":
 			_secret(c)
-	_edges()
+		"tokoyo":
+			_tokoyo(c)
+	if kind == "tokoyo":
+		_toko_frame()
+	else:
+		_edges()
 	return {"items": _items, "solids": _solids, "paint": _paint, "keepout": _keepout}
 
 
@@ -106,7 +166,7 @@ func _place(sprite: String, p: Vector2, solid: float, extra: Dictionary = {}, ga
 		return false
 	if solid > 0.0 and p.length() < SAFE_RADIUS + foot:
 		return false
-	if not _in_bounds(p, 12.0):
+	if not _in_bounds(p, edge_margin):
 		return false
 	var box := Rect2(p - Vector2(size.x * 0.5, minf(size.y, 20.0)), Vector2(size.x, minf(size.y, 20.0)))
 	for k: Rect2 in _keepout:
@@ -124,15 +184,22 @@ func _place(sprite: String, p: Vector2, solid: float, extra: Dictionary = {}, ga
 
 ## Obstáculo do item: um círculo, ou uma fileira deles para casas largas.
 func _add_solid(sprite: String, p: Vector2, solid: float) -> void:
+	_solids.append_array(solid_circles(sprite, p, solid))
+
+
+## Círculos [centro, raio] do obstáculo de um item com base em `p`.
+static func solid_circles(sprite: String, p: Vector2, solid: float) -> Array:
 	var w := TerrainArt.sprite_size(sprite).x
+	var out: Array = []
 	if w >= 48.0 and solid >= 14.0:
 		var n := int(ceil(w / 26.0))
 		var r := minf(solid, w / float(n) * 0.62)
 		for k: int in range(n):
 			var x := -w * 0.5 + (float(k) + 0.5) * w / float(n)
-			_solids.append([p + Vector2(x, -r * 0.7), r])
+			out.append([p + Vector2(x, -r * 0.7), r])
 	else:
-		_solids.append([p + Vector2(0, -solid * 0.3), solid])
+		out.append([p + Vector2(0, -solid * 0.3), solid])
+	return out
 
 
 ## Item sem colisão que ainda respeita o espaço (decoração estrutural: cercas, varais, escadas).
@@ -537,6 +604,266 @@ func _secret(c: Vector2i) -> void:
 				"rock_gray", "stump_big"]), _rand_in(24.0), 7.0, {"tone": 0.45})
 
 
+# --- Tokoyo ------------------------------------------------------------------------------
+
+## Metade da arena (o menor dos dois limites; TOKO_HALF sem limites).
+func toko_half() -> float:
+	var half := INF
+	for axis: int in range(2):
+		if bounds[axis] > 0.0:
+			half = minf(half, bounds[axis])
+	return TOKO_HALF if half == INF else half
+
+
+## Raio do anel de pedra.
+func toko_ring_radius() -> float:
+	return toko_half() * TOKO_RING_K
+
+
+## Se um círculo em `at` cai na estrutura fixa do layout (no Tokoyo: praça, caminhos, anel, espelhos
+## d'água e peças do santuário). O WorldMap não põe altar nesses lugares.
+func structure_blocks(at: Vector2, r: float) -> bool:
+	if kind != "tokoyo":
+		return false
+	var plan := _toko_plan()
+	for t: Array in plan["taken"]:
+		if (t[0] as Vector2).distance_to(at) < float(t[1]) + r:
+			return true
+	for k: Rect2 in plan["keepout"]:
+		if k.grow(r).has_point(at):
+			return true
+	return false
+
+
+## Santuário de luz (常世), a arena final: a composição fixa em volta da origem (praça, tōrō,
+## torii, caminhos, anel de pedra, espelhos d'água e ilhas) sai de _toko_plan e é recortada por
+## chunk; o resto (bosques sagrados, relíquias e, nas margens, ruínas) é sorteado no chunk.
+func _tokoyo(_c: Vector2i) -> void:
+	var plan := _toko_plan()
+	var rect := Rect2(_origin, Vector2(CHUNK, CHUNK))
+	var reserved := _taken.duplicate()
+	for op: Array in plan["paint"]:
+		if ChunkView._op_box(op).grow(ChunkView.MASK_TEXEL * 3.0).intersects(rect):
+			_paint.append(op)
+	for k: Rect2 in plan["keepout"]:
+		if k.intersects(rect.grow(32.0)):
+			_keepout.append(k)
+	for t: Array in plan["taken"]:
+		if rect.grow(float(t[1]) + 48.0).has_point(t[0]):
+			_taken.append(t)
+	# Peças fixas cuja base cai neste chunk; uma peça de enfeite que encostaria numa lanterna
+	# destrutível ou num altar (sorteio da jogabilidade, que vem antes) cede o lugar. As do santuário
+	# (anel de tōrō e torii) ficam sempre.
+	for e: Array in plan["items"]:
+		var it: Dictionary = e[0]
+		if not rect.has_point(it["p"]):
+			continue
+		var blocked := false
+		for s: Array in ([] if bool(e[2]) else e[1]):
+			for r: Array in reserved:
+				blocked = blocked or (s[0] as Vector2).distance_to(r[0]) < float(s[1]) + float(r[1])
+		if blocked:
+			continue
+		_items.append(it)
+		_solids.append_array(e[1])
+	_toko_local()
+
+
+## Composição fixa do Tokoyo, calculada uma vez por semente (só o tamanho e a forma dos espelhos
+## d'água variam com ela). Itens: [item, sólidos, fixo (nunca cede o lugar)]; taken: [centro, raio] que o sorteio evita.
+func _toko_plan() -> Dictionary:
+	if not _toko.is_empty():
+		return _toko
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([seed_value, stage_id, "tokoyo"])
+	var cfg: Dictionary = biome.get("toko", {})
+	var light: Array = cfg.get("light", TOKO_LIGHT)
+	var half := toko_half()
+	var reach := half + 64.0
+	var ring_r := toko_ring_radius()
+	var keepout: Array[Rect2] = []
+	var plan := {"paint": [], "items": [], "taken": [], "keepout": keepout}
+	var paint: Array = plan["paint"]
+	var taken: Array = plan["taken"]
+	# Praça: pedra (R) por baixo do calçamento (G) em disco e coroa; o meio fica livre.
+	paint.append(["circle", 0, Vector2.ZERO, TOKO_PLAZA_RIM])
+	paint.append(["circle", 1, Vector2.ZERO, TOKO_PLAZA_CORE])
+	var inner := TOKO_PLAZA_CORE + TOKO_PLAZA_INLAY
+	for k: int in range(TOKO_PLAZA_PETALS):
+		var q := Vector2.from_angle(TAU * float(k) / float(TOKO_PLAZA_PETALS)) * (inner + TOKO_PLAZA_R) * 0.5
+		paint.append(["circle", 1, q, (TOKO_PLAZA_R - inner) * 0.5])
+	taken.append([Vector2.ZERO, TOKO_PLAZA_RIM + 12.0])
+	for k: int in range(TOKO_TORO_COUNT):
+		var p := Vector2.from_angle(TAU * (float(k) + 0.5) / float(TOKO_TORO_COUNT)) * TOKO_TORO_R
+		_toko_put(plan, "toro", p, 5.0, {"light": light}, true)
+	# Caminhos sagrados cardeais: pedra (R) com a faixa do meio calçada (G), torii na entrada e em
+	# corredor, um torii no cruzamento com o anel e lanternas dos dois lados até a borda.
+	for d: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+		var side := d.orthogonal()
+		paint.append(["line", 0, d * TOKO_PLAZA_R, d * reach, TOKO_PATH_HALF])
+		paint.append(["line", 1, d * (TOKO_PLAZA_RIM + 6.0), d * reach, TOKO_INLAY_HALF])
+		keepout.append(Rect2(d * (TOKO_PLAZA_RIM + 4.0) + side * (TOKO_PATH_HALF + 4.0), Vector2.ZERO)
+				.expand(d * reach - side * (TOKO_PATH_HALF + 4.0)))
+		for g: int in range(TOKO_TUNNEL + 1):
+			_toko_gate(plan, d, TOKO_GATE_R + float(g) * TOKO_TUNNEL_STEP)
+		_toko_gate(plan, d, ring_r)
+		var r := TOKO_GATE_R + float(TOKO_TUNNEL + 1) * TOKO_TUNNEL_STEP + 40.0
+		while r < half - TOKO_EDGE_CLEAR - 30.0:
+			if absf(r - ring_r) > 56.0:
+				for s: float in [-1.0, 1.0]:
+					_toko_put(plan, "toro", d * r + side * s * (TOKO_PATH_HALF + TOKO_LAMP_SIDE), 5.0, {"light": light})
+			r += TOKO_LAMP_STEP
+	# Diagonais até o anel, com um par de guardiões de pedra (komainu) onde chegam nele.
+	var guardian := String(cfg.get("guardian", "fox_statue"))
+	for k: int in range(4):
+		var d := Vector2.from_angle(PI * 0.25 + float(k) * PI * 0.5)
+		paint.append(["line", 0, d * (TOKO_PLAZA_RIM - 4.0), d * ring_r, TOKO_DIAG_HALF])
+		var r := TOKO_PLAZA_RIM
+		while r < ring_r:
+			taken.append([d * r, TOKO_DIAG_HALF + 10.0])
+			r += 20.0
+		for s: float in [-1.0, 1.0]:
+			_toko_put(plan, guardian, d * (ring_r - 34.0) + d.orthogonal() * s * (TOKO_DIAG_HALF + 14.0), 6.0,
+					{"flip": s > 0.0})
+	# Anel de pedra.
+	for k: int in range(TOKO_RING_SEGMENTS):
+		var a := Vector2.from_angle(TAU * float(k) / float(TOKO_RING_SEGMENTS)) * ring_r
+		var b := Vector2.from_angle(TAU * float(k + 1) / float(TOKO_RING_SEGMENTS)) * ring_r
+		paint.append(["line", 0, a, b, TOKO_RING_HALF])
+		taken.append([a, TOKO_RING_HALF + 10.0])
+		taken.append([(a + b) * 0.5, TOKO_RING_HALF + 10.0])
+	# Meio-fio de pedra por dentro do limite.
+	for axis: int in range(2):
+		for s: float in [-1.0, 1.0]:
+			var lo := Vector2.ZERO
+			lo[axis] = s * (half - TOKO_CURB)
+			lo[1 - axis] = -reach
+			var hi := Vector2.ZERO
+			hi[axis] = s * (half + 80.0)
+			hi[1 - axis] = reach
+			paint.append(["rect", 0, Rect2(lo, Vector2.ZERO).expand(hi), 0])
+	_toko_ponds(plan, rng, cfg, light, half, ring_r)
+	_toko = plan
+	return plan
+
+
+## Espelhos d'água (canal B, sem colisão), um por setor entre os caminhos, por dentro e por fora do
+## anel; cada um do tamanho que cabe sem encostar em caminho, anel, praça ou borda.
+func _toko_ponds(plan: Dictionary, rng: RandomNumberGenerator, cfg: Dictionary, light: Array, half: float,
+		ring_r: float) -> void:
+	var paint: Array = plan["paint"]
+	var taken: Array = plan["taken"]
+	var scale := float(cfg.get("pond", 1.0))
+	var island_tree := String(cfg.get("island_tree", "big_sakura"))
+	var zones := [[(TOKO_PLAZA_RIM + ring_r) * 0.5, 84.0, 110.0], [(ring_r + half) * 0.5, 104.0, 150.0]]
+	for z: int in range(zones.size()):
+		var zone: Array = zones[z]
+		for k: int in range(TOKO_POND_SECTORS):
+			var a := PI / float(TOKO_POND_SECTORS) + float(k) * TAU / float(TOKO_POND_SECTORS) \
+					+ rng.randf_range(-0.05, 0.05)
+			var dist := float(zone[0]) + rng.randf_range(-16.0, 16.0)
+			var center := (Vector2.from_angle(a) * dist).round()
+			# Distância ao caminho mais perto: por dentro do anel há caminhos a cada 45°, por fora só
+			# os cardeais (a cada 90°).
+			var off := absf(wrapf(a, -PI / 4.0, PI / 4.0))
+			var to_path := dist * sin(minf(off, PI / 4.0 - off) if z == 0 else off) - TOKO_PATH_HALF
+			var lim := minf(to_path, absf(dist - ring_r) - TOKO_RING_HALF)
+			if z == 0:
+				lim = minf(lim, dist - TOKO_PLAZA_RIM)
+			else:
+				lim = minf(lim, half - maxf(absf(center.x), absf(center.y)) - TOKO_EDGE_CLEAR)
+			var radius := minf(lim - TOKO_POND_GAP, rng.randf_range(float(zone[1]), float(zone[2])) * scale)
+			if radius < 40.0:
+				continue
+			taken.append([center, radius + 6.0])
+			if z == 0 and k % 2 == 0:
+				# Ilha: fosso de círculos em volta e a árvore sagrada no meio.
+				for m: int in range(TOKO_MOAT):
+					var q := center + Vector2.from_angle(TAU * float(m) / float(TOKO_MOAT) + a) * radius * 0.6
+					paint.append(["circle", 2, q.round(), radius * 0.4])
+				_toko_put(plan, island_tree, center + Vector2(0, 10), 10.0, {"sway": 0.16, "tone": 0.56})
+				continue
+			paint.append(["circle", 2, center, radius * 0.72])
+			for m: int in range(3):
+				var lobe := radius * rng.randf_range(0.42, 0.56)
+				var q := center + Vector2.from_angle(rng.randf() * TAU) * (radius - lobe)
+				paint.append(["circle", 2, q.round(), lobe])
+			if z == 1:
+				# Lanterna na margem, do lado da praça (a luz se espelha na água).
+				_toko_put(plan, "toro", center - center.normalized() * (radius + 14.0), 5.0, {"light": light})
+
+
+## Torii no caminho da direção `d`, a `r` px da origem: de frente nos caminhos norte-sul (só os
+## pilares têm colisão), de lado (gen_torii_side) nos leste-oeste, um pilar de cada lado do meio.
+func _toko_gate(plan: Dictionary, d: Vector2, r: float) -> void:
+	var p := d * r
+	if absf(d.x) < 0.5:
+		var it := _item("torii", p, 0.0, {"shadow": 0.0})
+		(plan["items"] as Array).append([it, [[p + Vector2(-17, -3), 4.0], [p + Vector2(17, -3), 4.0]], true])
+	else:
+		var front := p + Vector2(0, TORII_SIDE_SPAN * 0.5)
+		var it := _item("gen_torii_side", front, 0.0, {"shadow": 10.0})
+		(plan["items"] as Array).append([it, [[front + Vector2(0, -2), 4.0],
+				[front + Vector2(0, -TORII_SIDE_SPAN - 2.0), 4.0]], true])
+	(plan["taken"] as Array).append([p, 30.0])
+
+
+## Peça fixa com obstáculo `solid` (fora do raio livre da praça e da moldura); `keep`: nunca cede o
+## lugar a uma lanterna destrutível ou a um altar.
+func _toko_put(plan: Dictionary, sprite: String, p: Vector2, solid: float, extra: Dictionary = {},
+		keep: bool = false) -> void:
+	if p.length() < TOKO_CLEAR_R + solid or not _in_bounds(p, TOKO_EDGE_CLEAR):
+		return
+	var it := _item(sprite, p, solid, extra)
+	(plan["items"] as Array).append([it, solid_circles(sprite, it["p"], solid), keep])
+	(plan["taken"] as Array).append([it["p"], maxf(solid, TerrainArt.sprite_size(sprite).x * 0.36) + 4.0])
+
+
+## Detalhe sorteado do chunk: bosques de árvores sagradas e relíquias de pedra; perto do limite,
+## ruínas (pilares e estátuas antigas).
+func _toko_local() -> void:
+	var cfg: Dictionary = biome.get("toko", {})
+	var trees: Array = cfg.get("trees", ["big_sakura", "sakura"])
+	var bushes: Array = cfg.get("bushes", ["bush_a", "bush_b"])
+	var relics: Array = cfg.get("relics", ["fox_statue", "rock_gray"])
+	var ruins: Array = cfg.get("ruins", ["ruin_pillar", "pillar"])
+	var center := _origin + Vector2(CHUNK, CHUNK) * 0.5
+	var to_edge := toko_half() - maxf(absf(center.x), absf(center.y))
+	for k: int in range(_rng.randi_range(1, 3)):
+		_grove(_rand_in(48.0), trees, _rng.randi_range(2, 4), _rng.randf_range(24.0, 40.0), bushes)
+	for k: int in range(_rng.randi_range(1, 2)):
+		_place(_pick(relics), _rand_in(24.0), 6.0, {"tone": _rng.randf_range(0.5, 0.62)})
+	if to_edge < 320.0:
+		for k: int in range(_rng.randi_range(2, 4)):
+			_place(_pick(ruins), _rand_in(20.0), 6.0, {"tone": _rng.randf_range(0.48, 0.6)})
+
+
+## Moldura da arena por fora do limite (só visual: o limite já prende a guardiã): uma fileira de
+## pilares e, atrás, rochedos.
+func _toko_frame() -> void:
+	var cfg: Dictionary = biome.get("toko", {})
+	var posts: Array = cfg.get("frame", ["pillar", "pillar", "rockpillar_gray"])
+	var half := toko_half()
+	for axis: int in range(2):
+		for side: float in [-1.0, 1.0]:
+			var lo := _origin[axis]
+			for row: int in range(2):
+				# Cada peça fica no chunk onde está a base dela (sem repetir no vizinho).
+				var at := half * side + side * (16.0 if row == 0 else 52.0)
+				if at < lo or at >= lo + CHUNK:
+					continue
+				var t := _origin[1 - axis] + (12.0 if row == 0 else 30.0)
+				while t < _origin[1 - axis] + CHUNK:
+					var p := Vector2.ZERO
+					p[axis] = at
+					p[1 - axis] = t
+					if absf(t) < half + 60.0:
+						var sprite := _pick(posts) if row == 0 else _pick(["rockwall_gray", "rocks_gray", "boulder_gray"])
+						_items.append(_item(sprite, p, 0.0, {"tone": 0.6 if row == 0 else 0.5, "shadow": 0.0,
+								"layer": "decor"}))
+					t += _rng.randf_range(30.0, 40.0) if row == 0 else _rng.randf_range(48.0, 64.0)
+
+
 # --- Limites ---------------------------------------------------------------------------
 
 ## Muros de rocha ao longo do limite da área jogável (só visual: o limite já prende o jogador).
@@ -634,6 +961,9 @@ func _zone_ok(zone: String, q: Vector2, bands: Array, mask: Image, grid: PackedV
 			clampi(int(q.y / ChunkView.MASK_TEXEL) + 1, 0, ChunkView.MASK_SIZE - 1))
 	if zone == "any":
 		return m.g < 0.4 and m.b < 0.3
+	if zone == "water":
+		# Espelhos d'água (canal B): lótus e folhas flutuando, longe da margem.
+		return m.b > 0.75 and m.g < 0.3
 	if m.r > 0.35 or m.g > 0.35 or m.b > 0.2:
 		return false
 	if blocked.has(Vector2i(floori(q.x / 16.0), floori(q.y / 16.0))):
