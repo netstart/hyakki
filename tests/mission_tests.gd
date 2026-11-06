@@ -185,6 +185,8 @@ func _test_stage_trackers() -> void:
 	_check.call(not _done("m_noheal_village"), "sem onigiri: vitória na Brisa não vale")
 	_play(_result({"victory": false}), RunTracker.new())
 	_check.call(not _done("m_noheal_village"), "sem onigiri: derrota não vale")
+	_play(_result({"moon": RedMoon.NO_FOOD}), RunTracker.new())
+	_check.call(not _done("m_noheal_village"), "sem onigiri: vitória na Lua IV (sem onigiri) não vale")
 	t = RunTracker.new()
 	t.items[&"sushi"] = 1
 	var got := _play(_result(), t)

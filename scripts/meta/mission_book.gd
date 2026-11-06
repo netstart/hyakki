@@ -490,7 +490,8 @@ static func record_run(result: Dictionary, tracker: RunTracker) -> void:
 		(rec["hero_wins"] as Dictionary)[hero] = int((rec["hero_wins"] as Dictionary).get(hero, 0)) + 1
 		if tracker.kami.is_empty():
 			rec["no_kami_wins"] = int(rec["no_kami_wins"]) + 1
-		if normal:
+		# Na Lua IV+ não cai onigiri (RedMoon.no_food): vencer sem comer não prova nada lá.
+		if normal and not RedMoon.no_food(int(result.get("moon", 0))):
 			for item: String in ["onigiri"]:
 				if int(tracker.items.get(StringName(item), 0)) == 0:
 					(rec["stage_no_item"] as Dictionary)["%s:%s" % [stage, item]] = true
