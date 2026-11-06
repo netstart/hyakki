@@ -18,6 +18,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **FreeMix - AssetsMix free demo (mid-boss monsters)** — pixel-boy & AAA (challengerAAA) (LicenseRef-PixelBoy-AssetsMix) — https://pixel-boy.itch.io/free-mix
 - **Hyakki - Kakuriyo portal art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_portal_fx.py
 - **Hyakki - guardian ability icons** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_ability_icons.py
+- **Hyakki - Seal Altar and Elite art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_altar_art.py
 
 ## Música
 
@@ -34,6 +35,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Cici Fyre - Female RPG Voice Starter Pack** — cicifyre (Cici Fyre) (CC0-1.0) — https://opengameart.org/content/female-rpg-voice-starter-pack
 - **HaelDB - Male grunt/yelling sounds** — HaelDB (CC0-1.0) — https://opengameart.org/content/male-gruntyelling-sounds
 - **Hyakki - procedural guardian ability sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_ability_sfx.py
+- **Hyakki - procedural Seal Altar and Elite sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_altar_sfx.py
 
 ## Fontes
 

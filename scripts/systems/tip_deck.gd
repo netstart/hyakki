@@ -60,6 +60,8 @@ static func context() -> Dictionary:
 	ctx["runs"] = int(stats.get("runs", 0))
 	ctx["wins"] = int(stats.get("wins", 0))
 	ctx["deaths"] = int(stats.get("deaths", 0))
+	# Altares do Selo já despertados (recorde das Missões): a dica dos altares vem depois do 1º.
+	ctx["altars"] = int((SaveManager.data.get("records", {}) as Dictionary).get("altars", 0))
 	ctx["evolved"] = (stats.get("evolved", []) as Array).size()
 	var hero := String((SaveManager.data.get("selected", {}) as Dictionary).get("hero", "aki"))
 	if not DB.heroes.has(StringName(hero)):

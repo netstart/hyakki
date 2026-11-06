@@ -73,6 +73,11 @@ const InsetFlipTests := preload("res://tests/inset_flip_tests.gd")
 const SpeedUnlockTests := preload("res://tests/speed_unlock_tests.gd")
 ## Guardião do Limiar, portal e Kakuriyo: dados, travessia, outro mundo, retomada e cenários.
 const RealmTests := preload("res://tests/realm_tests.gd")
+## Altares do Selo e os afixos dos Elites (tests/altar_tests.gd, tests/elite_affix_tests.gd).
+const AltarTests := preload("res://tests/altar_tests.gd")
+const EliteAffixTests := preload("res://tests/elite_affix_tests.gd")
+## Regras da Lua Vermelha (cumulativas): elites, Eclipse dos chefes, Sombras na luz, sem onigiri, pactos.
+const RedMoonTests := preload("res://tests/red_moon_tests.gd")
 ## Diálogo antes dos chefes: roteiros, regras de visto, opção "sempre" e a entrada adiada.
 const DialogueTests := preload("res://tests/dialogue_tests.gd")
 ## Dicas 心得: catálogo, regras, balão do título, cartão dos Resultados e a opção "Dicas".
@@ -143,6 +148,10 @@ func _ready() -> void:
 	await (load("res://tests/terrain_tests.gd") as GDScript).new().run(self, _check)
 	await (load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run(self, _check)
 	await RealmTests.new().run(self, _check)
+	await AltarTests.new().run(self, _check)
+	await EliteAffixTests.new().run(self, _check)
+	RedMoonTests.new().run_unit(_check)
+	await RedMoonTests.new().run(self, _check)
 	DialogueTests.new().run_unit(_check)
 	await DialogueTests.new().run(self, _check)
 	TipTests.new().run_unit(_check)

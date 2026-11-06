@@ -20,7 +20,7 @@ const SCREENS := {
 const SHOT_VARIANTS: Array[String] = ["heroes", "heroes:locked", "options", "options:display",
 		"codex", "codex:detail", "codex:bosses", "codex:kami", "codex:recipe", "codex:evolution", "codex:relic",
 		"heroes:abilities", "codex:hero_abilities", "codex:guide_play", "codex:guide_abilities", "codex:guide_chests",
-		"codex:guide_bosses", "codex:guide_stronger", "codex:guide_tips"]
+		"codex:guide_bosses", "codex:guide_altars", "codex:guide_stronger", "codex:guide_tips"]
 
 const OPTION_KEYS: Array[String] = ["language", "music_volume", "sfx_volume", "ui_volume", "damage_sounds",
 		"hurt_sounds", "joystick_mode", "joystick_side", "vibration", "fps", "graphics_quality", "colorblind",
@@ -560,7 +560,7 @@ func _test_codex_missions_layout(screen: Control, view: Vector2, sub: String) ->
 				"%s: cabeçalho %s na página" % [sub, h.name])
 	_ok((screen.call("cards") as Array).size() == MissionBook.ids().size(), "%s: um cartão por missão" % sub)
 	var right := (screen.get("_right") as Control).get_global_rect()
-	for id: StringName in [&"m_dark_500", &"ach_first_steps", &"m_pacts_60"]:
+	for id: StringName in [&"m_dark_500", &"ach_first_steps", &"m_pacts_60", &"m_elite_all_affixes"]:
 		screen.call("open_entry", screen.call("index_of", id))
 		await _host.get_tree().process_frame
 		var row := screen.get("_progress_row") as Control

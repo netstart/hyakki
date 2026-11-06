@@ -1,11 +1,13 @@
 extends RefCounted
 ## Guia do Diário (scripts/systems/guide_book.gd, scripts/ui/guide_page.gd, marcador "Guia" de
 ## scripts/app/screens/codex_screen.gd):
-##   - dados (run_data): os 10 capítulos montam dos dados nos 11 idiomas, sem chave crua nem %s
+##   - dados (run_data): os 11 capítulos montam dos dados nos 11 idiomas, sem chave crua nem %s
 ##     sobrando; os números batem com data/*.json e com as constantes do código (noite, cartas,
 ##     espaços, níveis máximos, chances e ryō dos baús, itens do chão, horários dos chefes, aviso
-##     do Guardião do Limiar, Santuário, Kami, Lua Vermelha, terrenos, perigos); a descoberta
-##     esconde receitas, chefes, guardiãs e fases como o Diário (Discovery); backup do Google só
+##     do Guardião do Limiar, Santuário, Kami, Lua Vermelha, Noite Sem Fim, modo Brisa, Desafio
+##     Diário, Altares do Selo e afixos, terrenos, perigos da fase e do Kakuriyo); a descoberta
+##     esconde receitas, chefes, guardiãs, fases, o Kakuriyo, afixos e o Shinigami como o Diário
+##     (Discovery); backup do Google só
 ##     no Android; toda dica do catálogo aparece, fica guardada (spoiler) ou é da outra
 ##     plataforma, e com tudo descoberto só as de "bloqueado" ficam de fora;
 ##   - tela (run): o Guia é o primeiro marcador e abre na primeira vez; um cartão por capítulo;
@@ -50,6 +52,8 @@ static func full_profile() -> void:
 	for s: StringName in DB.ids("stages"):
 		if not (d["unlocked"]["stages"] as Array).has(String(s)):
 			(d["unlocked"]["stages"] as Array).append(String(s))
+	d["stats"]["affixes_seen"] = Array(EliteAffixes.IDS).map(func(a: StringName) -> String: return String(a))
+	SaveManager.stage_best(&"village")["endless_best"] = Spawner.SHINIGAMI_TIME
 	SaveManager.unlock_all_heroes()
 
 
@@ -71,6 +75,9 @@ func run_data(check: Callable) -> void:
 	_test_numbers()
 	_test_discovery()
 	_test_abilities()
+	_test_modes()
+	_test_altars()
+	_test_realm()
 	_test_platform()
 	_test_tips()
 	SaveManager.data = original
@@ -83,8 +90,8 @@ func _test_all_languages() -> void:
 	var bad: Array[String] = []
 	for lang: String in LANGS:
 		Locale.set_language(lang, false)
-		_ok(book.entries().size() == GuideBook.CHAPTERS.size() and GuideBook.CHAPTERS.size() == 10,
-				"Guia [%s]: 10 capítulos" % lang)
+		_ok(book.entries().size() == GuideBook.CHAPTERS.size() and GuideBook.CHAPTERS.size() == 11,
+				"Guia [%s]: 11 capítulos" % lang)
 		for id: StringName in GuideBook.CHAPTERS:
 			var ch := book.chapter(id)
 			var blocks: Array = ch.get("blocks", [])
@@ -214,7 +221,17 @@ func _test_numbers() -> void:
 	_ok(stronger.contains(TranslationServer.translate("guide.stronger.kami") % [Screen.format_time(float(kami[0])),
 			Screen.format_time(float(kami[-1])), KamiSystem.OFFER_COUNT]), "Guia números: horários e pactos dos Kami")
 	_ok(stronger.contains(GuideBook.roman(HyakkiGame.MAX_MOON)) and stronger.contains(GuideBook.pct(HyakkiGame.MOON_HP))
-			and stronger.contains(TranslationServer.translate("moon.rule5")), "Guia números: Lua Vermelha do jogo")
+			and stronger.contains(RedMoon.rule_text(RedMoon.FEW_PACTS)), "Guia números: Lua Vermelha do jogo")
+	# Regras da Lua Vermelha: as 5, com os números das constantes, e o parágrafo de que elas se somam.
+	var rules_ok := RedMoon.RULES == HyakkiGame.MAX_MOON
+	for rule: int in range(1, RedMoon.RULES + 1):
+		rules_ok = rules_ok and stronger.contains(RedMoon.rule_text(rule))
+	_ok(rules_ok and stronger.contains("+%d%%" % roundi((RedMoon.ELITE_MULT - 1.0) * 100.0))
+			and stronger.contains(str(RedMoon.PACTS)) and stronger.contains(GuideBook.pct(RedMoon.SHADE_LIGHT_CHANCE)),
+			"Guia números: as %d regras da Lua Vermelha com os números das constantes" % RedMoon.RULES)
+	_ok(stronger.contains(TranslationServer.translate("guide.stronger.moon_rules") % [GuideBook.roman(HyakkiGame.MAX_MOON),
+			GuideBook._num(RedMoon.ECLIPSE_DELAY), RedMoon.ECLIPSE_RING_COUNT]),
+			"Guia números: as regras se somam e o Eclipse (atraso e círculos do anel)")
 	var surfaces: Dictionary = _json("surfaces")
 	var terrain := chapter_text(book.chapter(&"stages"))
 	var surf_ok := true
@@ -309,11 +326,30 @@ func _test_abilities() -> void:
 				missing.append(String(a["id"]))
 	_ok(missing.is_empty(), "Guia habilidades: energia e nível/custo/recarga de cada habilidade dos dados %s" % [missing])
 	_ok(text.contains(GuideBook.pct(AbilitySystem.POWER_PER_LEVEL)), "Guia habilidades: poder por nível do AbilitySystem")
-	var yuki: Dictionary = DB.hero_abilities(&"yuki")["energy"]
+	# A guardiã que paga com vida sai dos dados (a energia com "hp_price"), com o nome dela no texto.
+	var payer := &""
+	for h: StringName in DB.ids("heroes"):
+		if float((DB.hero_abilities(h).get("energy", {}) as Dictionary).get("hp_price", 0.0)) > 0.0:
+			payer = h
+	_ok(payer == &"yuki", "Guia habilidades: a energia paga com vida é a da Yuki nos dados")
+	var yuki: Dictionary = DB.hero_abilities(payer)["energy"]
 	var blood := TranslationServer.translate("guide.abilities.blood") % [
-			TranslationServer.translate("energy.oni_blood.name"), str(roundi(1.0 / float(yuki["hp_price"]))),
-			GuideBook.pct(float(yuki["hp_floor"]))]
+			TranslationServer.translate("energy.%s.name" % yuki["id"]), TranslationServer.translate("hero.%s.name" % payer),
+			str(roundi(1.0 / float(yuki["hp_price"]))), GuideBook.pct(float(yuki["hp_floor"]))]
 	_ok(text.contains(blood), "Guia habilidades: Yuki paga com vida (%s)" % blood.left(40))
+	var raw_ok := true
+	for lang: String in LANGS:
+		Locale.set_language(lang, false)
+		var t := TranslationServer.translate("guide.abilities.blood")
+		raw_ok = raw_ok and not t.contains(TranslationServer.translate("hero.yuki.name")) and t.count("%s") == 4
+		var para := chapter_text(book.chapter(&"abilities"))
+		raw_ok = raw_ok and para.contains(TranslationServer.translate("hero.yuki.name"))
+	Locale.set_language("pt_BR", false)
+	_ok(raw_ok, "Guia habilidades: o nome da guardiã chega por %s nos 11 idiomas (sem nome fixo no texto)")
+	var count := GuideBook.ability_count()
+	_ok(count == (DB.hero_abilities(&"aki")["abilities"] as Array).size()
+			and text.contains(TranslationServer.translate("guide.abilities.intro") % count),
+			"Guia habilidades: quantidade de habilidades lida dos dados (%d)" % count)
 	var blocks: Array = book.chapter(&"abilities")["blocks"]
 	_ok(blocks.any(func(b: Dictionary) -> bool: return String(b["type"]) == "link" and b["category"] == &"heroes"),
 			"Guia habilidades: Ver guardiões no Diário")
@@ -329,6 +365,209 @@ func _test_abilities() -> void:
 			and not text.contains(TranslationServer.translate("energy.shadow.name"))
 			and not text.contains(blood) and text.contains(TranslationServer.translate("guide.abilities.unknown")),
 			"Guia habilidades descoberta: só a guardiã liberada mostra energia e habilidades; Yuki bloqueada sem a regra")
+
+
+## Modo Brisa (Como jogar), Desafio Diário (Como jogar) e Noite Sem Fim com o Shinigami (Ficar
+## mais forte): números das constantes e dos dados, Shinigami "???" até a hora dele.
+func _test_modes() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	var book := GuideBook.new()
+	var play := chapter_text(book.chapter(&"play"))
+	var stats: Dictionary = HyakkiGame.BRISA_STATS
+	var brisa := _t("guide.play.brisa") % [_t("stages.title"),
+			GuideBook.pct(1.0 - DamageControl.BRISA_MULT), str(int(stats["revive"])), GuideBook.pct(float(stats["magnet"])),
+			GuideBook.pct(1.0 - LanternSystem.BRISA_DARKNESS), GuideBook.pct(1.0 - HyakkiGame.BRISA_SPAWN),
+			GuideBook.pct(1.0 - HyakkiGame.BRISA_BOSS_HP)]
+	_ok(play.contains(brisa) and play.contains(_t("mode.brisa")),
+			"Guia Brisa: dano, reviver, ímã, escuridão, inimigos e vida dos chefes das constantes")
+	_ok(is_equal_approx(HyakkiGame.BRISA_BOSS_HP, 0.7) and is_equal_approx(HyakkiGame.BRISA_SPAWN, 0.85)
+			and is_equal_approx(LanternSystem.BRISA_DARKNESS, 0.6) and int(stats["revive"]) == 1
+			and is_equal_approx(float(stats["magnet"]), 0.5),
+			"Guia Brisa: constantes com os mesmos valores de antes (simulação igual)")
+	_ok(play.contains(_t("guide.play.brisa_win") % _t("stages.endless")),
+			"Guia Brisa: vitória à parte (won_brisa)")
+	var ryo := 0
+	for a: Dictionary in _json("achievements"):
+		if String(a["id"]) == "ach_daily":
+			ryo = String(a["reward"]).trim_prefix("ryo:").to_int()
+	_ok(ryo > 0 and GuideBook.daily_ryo() == ryo and play.contains(_t("guide.play.daily_reward")
+			% [Screen.format_time(MetaProgress.DAILY_MIN_TIME), _t("achievement.ach_daily.name"), ryo])
+			and play.contains(_t("guide.play.daily") % _t("title.daily")),
+			"Guia Desafio Diário: tempo de MetaProgress.DAILY_MIN_TIME e ryō de data/achievements.json (%d)" % ryo)
+	_ok(is_equal_approx(MetaProgress.DAILY_MIN_TIME, 300.0), "Guia Desafio Diário: 5 minutos (mesmo valor de antes)")
+	var stronger := chapter_text(book.chapter(&"stronger"))
+	_ok(stronger.contains(_t("guide.stronger.endless") % [_t("stages.endless"),
+			_t("stages.title"), GuideBook.pct(HyakkiGame.ENDLESS_HP_PER_MIN), "1.5"])
+			and is_equal_approx(MetaProgress.ENDLESS_GOLD, 1.5) and is_equal_approx(HyakkiGame.ENDLESS_HP_PER_MIN, 0.15),
+			"Guia Noite Sem Fim: vida por minuto e ryō ×1.5 das constantes")
+	var reaper := _t("boss.shinigami.name")
+	_ok(not Discovery.reaper_known() and not stronger.contains(reaper)
+			and stronger.contains(_t("guide.stronger.reaper_unknown") % Screen.format_time(Spawner.SHINIGAMI_TIME))
+			and stronger.contains(Screen.format_time(Spawner.SHINIGAMI_TIME) + "  ???"),
+			"Guia Noite Sem Fim: Shinigami escondido (???) até a hora dele")
+	_ok(book.boss_schedule(&"village").all(func(e: Dictionary) -> bool: return String(e["id"]) != "shinigami")
+			and bool((DB.bosses[&"shinigami"] as Dictionary).get("invincible", false)),
+			"Guia Noite Sem Fim: Shinigami fora das escalas das fases e invencível nos dados")
+	SaveManager.stage_best(&"bamboo")["endless_best"] = Spawner.SHINIGAMI_TIME - 1.0
+	_ok(not Discovery.reaper_known(), "Guia Noite Sem Fim: antes da hora o Shinigami continua desconhecido")
+	SaveManager.stage_best(&"bamboo")["endless_best"] = Spawner.SHINIGAMI_TIME
+	stronger = chapter_text(book.chapter(&"stronger"))
+	_ok(stronger.contains(Screen.format_time(Spawner.SHINIGAMI_TIME) + "  " + reaper)
+			and stronger.contains(_t("guide.stronger.reaper") % Screen.format_time(Spawner.SHINIGAMI_TIME)),
+			"Guia Noite Sem Fim: Shinigami com nome e regra depois de chegar à hora dele")
+	var line: Array = book.reaper_line()
+	_ok(line.any(func(part: Dictionary) -> bool: return (part.has("chip") and bool(part["known"])
+			and ResourceLoader.exists(String(part["chip"])))), "Guia Noite Sem Fim: retrato do Shinigami")
+
+
+## Altares do Selo: números do AltarSystem/EliteAffixes, um afixo por EliteAffixes.IDS com o kanji,
+## "?" até ver um Elite com ele (registrado pelo RunTracker e gravado no fim da partida).
+func _test_altars() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	var book := GuideBook.new()
+	var ch := book.chapter(&"altars")
+	var text := chapter_text(ch)
+	_ok(text.contains(_t("guide.altars.ritual") % [GuideBook._num(AltarSystem.CHANNEL_TIME), AltarSystem.RUNES,
+			GuideBook.pct(AltarSystem.DECAY)]), "Guia altares: leitura (CHANNEL_TIME, RUNES, DECAY)")
+	_ok(text.contains(_t("guide.altars.outcome") % [GuideBook.pct(AltarSystem.ELITE_BASE),
+			GuideBook.pct(AltarSystem.ELITE_PITY),
+			Screen.format_time(AltarSystem.FIRST_ELITE_T)]), "Guia altares: chance de Elite com pena e 1º Elite")
+	_ok(text.contains(_t("guide.altars.ambush") % [AltarSystem.ambush_count(0.0), AltarSystem.AMBUSH_CAP,
+			_t("item.ryo_bag.name")]), "Guia altares: emboscada (AMBUSH_BASE, AMBUSH_CAP)")
+	_ok(text.contains(_t("guide.altars.elite") % [Screen.format_time(EliteAffixes.TWO_AFFIX_T),
+			GuideBook.roman(EliteAffixes.HIGH_MOON), EliteAffixes.MAX_AFFIXES, GuideBook.pct(EliteAffixes.HP_PER_AFFIX)]),
+			"Guia altares: afixos por tempo e Lua Vermelha (TWO_AFFIX_T, HIGH_MOON, MAX_AFFIXES)")
+	_ok(EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T - 1.0, 0) == 1
+			and EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T, 0) == 2
+			and EliteAffixes.affix_count(0.0, EliteAffixes.HIGH_MOON) == 2
+			and EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T, HyakkiGame.MAX_MOON) == EliteAffixes.MAX_AFFIXES,
+			"Guia altares: o texto bate com EliteAffixes.affix_count")
+	_ok(text.contains(_t("guide.altars.loot") % [AltarSystem.BOSS_CHEST_AFFIXES, GuideBook.pct(AltarSystem.CHEST_CHANCE),
+			_t("item.ryo_bag.name")]) and text.contains(_t("guide.altars.no_chest")),
+			"Guia altares: saque (BOSS_CHEST_AFFIXES, CHEST_CHANCE) e sem o baú comum")
+	var rng := RandomNumberGenerator.new()
+	var boss_loot: Array = AltarSystem.loot(AltarSystem.BOSS_CHEST_AFFIXES, rng)
+	_ok(boss_loot.size() == 1 and bool((boss_loot[0][2] as Dictionary).get("boss", false))
+			and not bool((AltarSystem.loot(AltarSystem.BOSS_CHEST_AFFIXES - 1, rng)[0][2] as Dictionary).get("boss", false)),
+			"Guia altares: baú de chefe a partir de BOSS_CHEST_AFFIXES afixos")
+	var rare_ok := true
+	for id: StringName in AltarSystem.RARE_ITEMS:
+		rare_ok = rare_ok and text.contains(_t("item.%s.name" % id))
+	_ok(rare_ok, "Guia altares: itens raros de AltarSystem.RARE_ITEMS")
+	_ok(chapter_text(book.chapter(&"chests")).contains("os Elites dos altares têm saque próprio"),
+			"Guia baús: a frase dos baús cita o saque próprio dos Elites dos altares")
+	# Descoberta: save novo, todos os afixos como ?.
+	var lines := _affix_lines(ch)
+	_ok(lines.size() == EliteAffixes.IDS.size(), "Guia altares: uma linha por afixo (%d)" % lines.size())
+	var all_hidden := lines.all(func(l: Array) -> bool: return (String((l[0] as Dictionary)["seal"]) == "?"
+			and GuideBook.plain(l).contains(Discovery.UNKNOWN)))
+	var leaked: Array[String] = []
+	for id: StringName in EliteAffixes.IDS:
+		var row := book.affix_text(id)
+		var full := String(row[0]) % row[1] if not (row[1] as Array).is_empty() else String(row[0])
+		if text.contains(full):
+			leaked.append(String(id))
+	_ok(all_hidden and leaked.is_empty() and text.contains(_t("guide.altars.unknown")),
+			"Guia altares descoberta: save novo mostra os afixos como ? %s" % [leaked])
+	# Registro: um Elite surgiu com Trovão e Diamante; o fim da partida grava os vistos.
+	var tracker := RunTracker.new()
+	tracker.on_elite_spawned([&"raijin", &"kongo"])
+	var restored := RunTracker.new()
+	restored.restore(tracker.snapshot())
+	_ok(restored.elite_affixes_seen.has(&"raijin") and restored.elite_affixes_seen.has(&"kongo"),
+			"Guia altares: afixos vistos sobrevivem à partida suspensa (RunTracker)")
+	MetaProgress.apply_run({"victory": false, "gave_up": false, "hero": "aki", "stage": "village", "mode": "normal",
+			"moon": 0, "time": 60.0, "level": 1, "kills": 0, "endless": false, "daily": false, "realm": false,
+			"revived_by_ad": false, "speed_min": 1, "speed_max": 1}, restored)
+	_ok(Discovery.affix_known(&"raijin") and Discovery.affix_known(&"kongo") and not Discovery.affix_known(&"yomi"),
+			"Guia altares: fim da partida grava os afixos vistos (stats affixes_seen)")
+	ch = book.chapter(&"altars")
+	text = chapter_text(ch)
+	var raijin := book.affix_text(&"raijin")
+	_ok(text.contains(String(raijin[0]) % raijin[1]) and text.contains(str(EliteAffixes.RAIJIN_MARKS))
+			and text.contains(GuideBook._num(EliteAffixes.RAIJIN_EVERY)),
+			"Guia altares: Trovão visto com os números do EliteAffixes")
+	var seals: Array[String] = []
+	for l: Array in _affix_lines(ch):
+		seals.append(String((l[0] as Dictionary)["seal"]))
+	_ok(seals.count("?") == EliteAffixes.IDS.size() - 2 and seals.has(EliteAffixes.kanji_of(&"raijin"))
+			and seals.has(EliteAffixes.kanji_of(&"kongo")), "Guia altares: só os afixos vistos com o kanji %s" % [seals])
+	# Tudo visto: cada afixo com o kanji e o poder; sem o aviso de "?".
+	SaveManager.data = SaveManager.default_profile()
+	full_profile()
+	ch = book.chapter(&"altars")
+	text = chapter_text(ch)
+	var missing: Array[String] = []
+	var i := 0
+	for l: Array in _affix_lines(ch):
+		var id: StringName = EliteAffixes.IDS[i]
+		var row := book.affix_text(id)
+		var full := String(row[0]) % row[1] if not (row[1] as Array).is_empty() else String(row[0])
+		if String((l[0] as Dictionary)["seal"]) != EliteAffixes.kanji_of(id) or not GuideBook.plain(l).contains(full):
+			missing.append(String(id))
+		i += 1
+	_ok(missing.is_empty() and not text.contains(_t("guide.altars.unknown")),
+			"Guia altares: os %d afixos com kanji e poder %s" % [EliteAffixes.IDS.size(), missing])
+	var nums_ok := text.contains(str(EliteAffixes.FOX_COUNT)) and text.contains(str(EliteAffixes.KASUMI_COUNT)) \
+			and text.contains(str(EliteAffixes.KASUMI_CAP)) and text.contains(GuideBook.pct(EliteAffixes.SHIELD_FRACTION)) \
+			and text.contains(GuideBook._num(EliteAffixes.KONGO_REGEN)) \
+			and text.contains(GuideBook._num(EliteAffixes.KAZE_EVERY))
+	_ok(nums_ok, "Guia altares: números dos poderes (Raposa, Névoa, Diamante, Vento) das constantes")
+
+
+static func _affix_lines(ch: Dictionary) -> Array:
+	for b: Dictionary in ch.get("blocks", []):
+		if String(b["type"]) != "rich":
+			continue
+		var lines: Array = b["lines"]
+		if not lines.is_empty() and (lines[0] as Array).size() > 0 and ((lines[0] as Array)[0] as Dictionary).has("seal"):
+			return lines
+	return []
+
+
+## Kakuriyo de cada fase: clima e perigo do "otherworld" (data/stages.json), escondido até vencer o
+## Guardião do Limiar da fase.
+func _test_realm() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	full_profile()
+	var book := GuideBook.new()
+	var terrain := chapter_text(book.chapter(&"stages"))
+	var stages: Array = _json("stages")
+	var bad: Array[String] = []
+	for s: Dictionary in stages:
+		var ow: Dictionary = s.get("otherworld", {})
+		if ow.is_empty() or (s.get("midboss", {}) as Dictionary).is_empty():
+			continue
+		if not terrain.contains(_t("guide.stages.realm") % _t("realm.%s.name" % s["id"])):
+			bad.append("%s nome" % s["id"])
+		var hz: Dictionary = ow.get("hazard", {})
+		if not hz.is_empty():
+			var t := book.hazard_text(hz)
+			if t == "" or not terrain.contains("· " + t):
+				bad.append("%s perigo" % s["id"])
+			if hz.has("interval") and not t.contains(GuideBook._num(float(hz["interval"]))):
+				bad.append("%s intervalo" % s["id"])
+		var precip := String(WeatherModel.profile_for(String(ow.get("weather", s["id"]))).get("precip", ""))
+		var sky_prefix := "· " + _t("guide.stages.weather_line").split("%s")[0]
+		if precip != "" and not terrain.contains(sky_prefix):
+			bad.append("%s clima" % s["id"])
+	_ok(bad.is_empty(), "Guia Kakuriyo: nome, clima e perigo do otherworld de cada fase %s" % [bad])
+	var temple: Dictionary = (stages.filter(func(s: Dictionary) -> bool: return s["id"] == "temple")[0] as Dictionary)
+	_ok(not is_equal_approx(float(temple["hazard"]["interval"]), float(temple["otherworld"]["hazard"]["interval"]))
+			and terrain.contains(book.hazard_text(temple["otherworld"]["hazard"])),
+			"Guia Kakuriyo: estátuas do Templo Invertido com o próprio intervalo")
+	SaveManager.data = SaveManager.default_profile()
+	var lines := book.stage_lines(&"village")
+	var plain := ""
+	for l: Array in lines:
+		plain += GuideBook.plain(l) + "\n"
+	_ok(plain.contains(_t("guide.stages.realm") % Discovery.UNKNOWN)
+			and not plain.contains(_t("realm.village.name")),
+			"Guia Kakuriyo descoberta: antes de vencer o Guardião do Limiar, só ???")
+
+
+static func _t(key: String) -> String:
+	return TranslationServer.translate(key)
 
 
 func _test_platform() -> void:

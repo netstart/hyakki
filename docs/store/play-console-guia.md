@@ -567,6 +567,18 @@ New: Reroll is now always available on the level-up screen. Free Sanctuary rerol
 </en-US>
 ```
 
+### 9.5.5 Notas da versão 1.20.0 (versionCode 39)
+Para o envio com os Altares do Selo e os Elites (1.20.0):
+
+```
+<pt-BR>
+Novidades: Altares do Selo pelos mapas. Fique no círculo até as runas acenderem e o selo quebrar: sai uma emboscada ou um Elite, um yōkai mais forte que surge entre raios e uma coluna de luz, com até 3 poderes (trovão, fogo de raposa, miragem, rocha, névoa, escudo de diamante, miasma, vento). Derrote-o para ganhar baús e itens raros. Novas missões de Altares, dica e capítulo no Guia.
+</pt-BR>
+<en-US>
+New: Sealed Altars across the maps. Stay in the circle until the runes light up and the seal breaks: out comes an ambush or an Elite, a stronger yōkai rising among lightning and a pillar of light, with up to 3 powers (thunder, fox fire, mirage, rock, mist, diamond shield, miasma, wind). Defeat it for chests and rare items. New Altar missions, a tip and a Guide chapter.
+</en-US>
+```
+
 ### 9.6 Relatório de pré-lançamento (*Pre-launch report*)
 Roda sozinho em aparelhos reais do Google sempre que um AAB entra num teste (interno, fechado ou
 aberto). Abra em **Testar e lançar › Relatório de pré-lançamento** e confira:

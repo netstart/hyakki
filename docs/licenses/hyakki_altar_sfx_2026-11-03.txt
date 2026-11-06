@@ -1,0 +1,11 @@
+Registro de origem - hyakki_altar_sfx (2026-11-03)
+
+Arquivos: assets/audio/sfx/alt_*.wav (16 arquivos: zumbido do altar em loop x 1, sinos das runas
+x 4, selo estourando x 1, raios x 3, Elite surgindo x 1, rugido do Elite x 1, morte do Elite x 1,
+golpe no escudo de cristal x 1, escudo estilhaçando x 1, emboscada x 1 e aviso de golpe x 1).
+Origem: gerados pelo próprio projeto com tools/gen_altar_sfx.py (síntese procedural, só
+biblioteca padrão do Python, sementes fixas; rodar de novo reproduz os mesmos bytes).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma gravação, sample de terceiros ou modelo de IA de áudio foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_altar_sfx.py

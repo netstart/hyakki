@@ -45,9 +45,14 @@ func reset() -> void:
 	_hush = 0.0
 	_events.clear()
 	var stage := game.stage
+	var elites := 0
 	for e: Variant in stage.get("events", []):
 		var event: Dictionary = (e as Dictionary).duplicate()
 		event["done"] = false
+		if String(event["type"]) == "elite":
+			# Lua Vermelha I+: mais elites por evento (RedMoon.elite_count, sem sorteio).
+			event["elites"] = RedMoon.elite_count(elites, game.moon)
+			elites += 1
 		_events.append(event)
 	# Só o chefe das 10:00 (o último da lista) tem diálogo: o Dragão de Cinzas aos 5:00 do Santuário
 	# Secreto entra calado.
@@ -99,7 +104,8 @@ func step(dt: float) -> void:
 	var hp_mult := STRESS_HP_MULT if stress else game.enemy_hp_mult()
 	var damage_mult := game.enemy_damage_mult()
 	for _k: int in range(count):
-		game.enemies.spawn(_pick_type(time), edge_point(), hp_mult, damage_mult)
+		var id := _pick_type(time)
+		game.enemies.spawn(id, RedMoon.spawn_point(game, id), hp_mult, damage_mult)
 
 
 func _run_event(event: Dictionary) -> void:
@@ -109,8 +115,9 @@ func _run_event(event: Dictionary) -> void:
 		"ring":
 			ring(StringName(event["enemy"]), int(event.get("count", 36)))
 		"elite":
-			game.enemies.spawn(StringName(event["enemy"]), edge_point(), game.enemy_hp_mult(),
-					game.enemy_damage_mult(), true)
+			for _k: int in range(int(event.get("elites", 1))):
+				game.enemies.spawn(StringName(event["enemy"]), edge_point(), game.enemy_hp_mult(),
+						game.enemy_damage_mult(), true)
 		"procession":
 			procession(StringName(event["enemy"]), int(event.get("count", 60)))
 			game.hud.toast(tr("event.procession"))
@@ -192,6 +199,11 @@ func procession(id: StringName, count: int) -> void:
 		if i >= 0:
 			game.enemies.ai_dir[i] = dir
 			game.enemies.marching[i] = 1
+
+
+## Inimigo comum da onda de `time` (sorteio com game.rng): emboscada dos altares.
+func pick_type(time: float) -> StringName:
+	return _pick_type(time)
 
 
 func _pick_type(time: float) -> StringName:

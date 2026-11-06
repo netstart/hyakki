@@ -33,6 +33,9 @@ var last_sim_ms: float = 0.0
 
 var _accumulator: float = 0.0
 var _cli_speed: bool = false
+## Congelamento curto (hit-stop) em tempo real: enquanto dura, o relógio não acumula tempo. Os
+## passos de simulação são os mesmos (só chegam um pouco depois), então a partida não muda.
+var _hold: float = 0.0
 
 
 func _ready() -> void:
@@ -49,6 +52,7 @@ func reset() -> void:
 	game_time = 0.0
 	_accumulator = 0.0
 	alpha = 0.0
+	_hold = 0.0
 	paused = false
 
 
@@ -84,9 +88,22 @@ func cycle_speed() -> int:
 	return speed
 
 
+## Hit-stop: segura o relógio por `seconds` de tempo real (o maior pedido vale), só visual.
+func hitstop(seconds: float) -> void:
+	_hold = clampf(maxf(_hold, seconds), 0.0, 0.2)
+
+
+## O relógio está segurado por um hit-stop agora (testes).
+func holding() -> bool:
+	return _hold > 0.0
+
+
 func _process(delta: float) -> void:
 	last_frame_steps = 0
 	if paused:
+		return
+	if _hold > 0.0:
+		_hold -= delta
 		return
 	_accumulator += minf(delta, 0.1) * speed
 	var max_steps := speed * MAX_STEPS_PER_SPEED

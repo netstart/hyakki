@@ -7,6 +7,8 @@ extends RefCounted
 ## - chefes: depois de vencidos (stats "bosses_defeated");
 ## - guardiãs e fases: liberadas no save;
 ## - Kami: sempre (o Diário mostra todos).
+## - afixos dos Elites dos altares: depois de ver um Elite com ele (stats "affixes_seen");
+## - Shinigami da Noite Sem Fim (fora do Diário): depois de chegar à hora dele (Spawner.SHINIGAMI_TIME).
 ## Item desconhecido aparece como "???" (nome) e chip em silhueta com "?".
 
 const UNKNOWN := "???"
@@ -40,6 +42,19 @@ static func stage_known(s: StringName) -> bool:
 ## Kami: o Diário mostra todos desde o início.
 static func kami_known(_k: StringName) -> bool:
 	return true
+
+
+## Afixo de Elite conhecido: um Elite com ele já surgiu num altar (registrado no fim da partida).
+static func affix_known(id: StringName) -> bool:
+	return ((SaveManager.data["stats"] as Dictionary).get("affixes_seen", []) as Array).has(String(id))
+
+
+## Shinigami conhecido: alguma Noite Sem Fim chegou à hora em que ele aparece.
+static func reaper_known() -> bool:
+	for s: Variant in (SaveManager.data.get("stage_best", {}) as Dictionary):
+		if float((SaveManager.data["stage_best"][s] as Dictionary).get("endless_best", 0.0)) >= Spawner.SHINIGAMI_TIME:
+			return true
+	return false
 
 
 ## Item citado numa receita: {category, id, known, icon, name}; desconhecido sai como "???".

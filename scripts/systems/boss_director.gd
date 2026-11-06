@@ -247,13 +247,19 @@ func _step_boss(boss: Dictionary, dt: float) -> void:
 
 func _start_pattern(boss: Dictionary) -> void:
 	var patterns := _patterns(boss)
-	var p: Dictionary = patterns[int(boss["pattern"]) % patterns.size()]
+	# Lua Vermelha II+: o Eclipse (RedMoon.eclipse) entra como mais um padrão no rodízio.
+	var slots := patterns.size() + (1 if RedMoon.boss_extra(game.moon) else 0)
+	var slot := int(boss["pattern"]) % slots
 	boss["pattern"] = int(boss["pattern"]) + 1
-	boss["current"] = p
 	var enemies := game.enemies
 	var i := int(boss["index"])
 	var me: Vector2 = enemies.pos[i]
 	var target := game.player.sim_pos
+	if slot >= patterns.size():
+		_eclipse(boss, me, target)
+		return
+	var p: Dictionary = patterns[slot]
+	boss["current"] = p
 	var dmg_mult := game.enemy_damage_mult()
 	var src := StringName(boss["id"])
 	match String(p["type"]):
@@ -369,6 +375,19 @@ func _start_pattern(boss: Dictionary) -> void:
 			_back_to_move(boss)
 		_:
 			_back_to_move(boss)
+
+
+## Eclipse da Lua Vermelha: o chefe para e prepara enquanto o disco e o anel avisam no chão (a
+## 1ª vez de cada chefe com o aviso na tela); no fim da preparação volta a andar.
+func _eclipse(boss: Dictionary, me: Vector2, target: Vector2) -> void:
+	boss["current"] = {"type": "eclipse"}
+	boss["state"] = "windup"
+	boss["timer"] = RedMoon.ECLIPSE_WINDUP
+	boss["line"] = []
+	RedMoon.eclipse(game, me, target, StringName(boss["id"]))
+	boss["eclipses"] = int(boss.get("eclipses", 0)) + 1
+	if int(boss["eclipses"]) == 1:
+		game.hud.toast(tr("moon.eclipse"))
 
 
 ## Fim do aviso: solta o golpe preparado (investida ou salto).

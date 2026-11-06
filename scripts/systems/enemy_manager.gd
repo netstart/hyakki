@@ -98,6 +98,13 @@ var decoy := PackedByteArray()
 var submerged := PackedByteArray()
 ## Marchando em linha reta (procissão e enxames), seja qual for o arquétipo.
 var marching := PackedByteArray()
+## Identidade de cada nascimento (sobe a cada spawn, na ordem da simulação): quem guarda um
+## índice por mais de um passo (EliteAffixes, AltarSystem) confere que a vaga não foi reusada.
+var uid := PackedInt32Array()
+## Selado pelo altar (surgimento do Elite): não leva dano nem fere por contato.
+var sealed := PackedByteArray()
+## Escudo que absorve dano antes da vida (afixo 剛 Diamante); ao zerar avisa o AltarSystem.
+var shield := PackedFloat32Array()
 ## Só de desenho (fora do hash): quando nasceu e quando levou o último golpe (tempo de jogo),
 ## e a pose do chefe que o BossDirector informa (0 = andar/parado, 1 = preparando o golpe).
 var born := PackedFloat32Array()
@@ -110,6 +117,7 @@ var look: EnemyLook
 var view_rect := Rect2(-1e6, -1e6, 2e6, 2e6)
 
 var _free: Array[int] = []
+var _next_uid: int = 1
 var _order: Array[int] = []
 var _order_keys := PackedInt64Array()
 var _order_dirty: bool = true
@@ -125,7 +133,8 @@ func _ready() -> void:
 			&"dmg", &"speed", &"radius", &"flash", &"phase", &"contact_cd", &"ai_timer", &"stun",
 			&"slow", &"slow_mult", &"root", &"fear", &"lure", &"goal", &"stuck", &"resist", &"kind",
 			&"xp_value", &"state", &"facing", &"alive",
-			&"elite", &"controlled", &"decoy", &"submerged", &"marching", &"born", &"hit_at", &"pose"]:
+			&"elite", &"controlled", &"decoy", &"submerged", &"marching", &"born", &"hit_at", &"pose",
+			&"uid", &"sealed", &"shield"]:
 		var array: Variant = get(packed)
 		array.resize(CAPACITY)
 		set(packed, array)
@@ -200,6 +209,7 @@ func reset() -> void:
 	for i: int in range(CAPACITY - 1, -1, -1):
 		_free.append(i)
 	alive.fill(0)
+	_next_uid = 1
 	count_alive = 0
 	count_common = 0
 	freeze_time = 0.0
@@ -258,6 +268,10 @@ func spawn(id: StringName, at: Vector2, hp_mult: float, damage_mult: float,
 	decoy[i] = 0
 	submerged[i] = 0
 	marching[i] = 0
+	uid[i] = _next_uid
+	_next_uid += 1
+	sealed[i] = 0
+	shield[i] = 0.0
 	born[i] = GameClock.game_time
 	hit_at[i] = -100.0
 	pose[i] = 0
@@ -290,7 +304,8 @@ func step(dt: float) -> void:
 	var parity := game.step_index % SEPARATION_EVERY
 	var far := game.view_half_diagonal() * 2.2
 	var time := GameClock.game_time
-	var light_r := game.lantern.radius
+	# Lua Vermelha III+: as Sombras agem também na luz (como no escuro em toda parte).
+	var light_r := -1.0 if RedMoon.shades_in_light(game.moon) else game.lantern.radius
 	var world := game.world
 	var bounds := world.bounds
 	var contact_reach := Player.RADIUS
@@ -385,7 +400,7 @@ func step(dt: float) -> void:
 
 
 func _contact(i: int, dist: float, player: Player) -> void:
-	if decoy[i] == 1 or submerged[i] == 1 or dmg[i] <= 0.0:
+	if decoy[i] == 1 or submerged[i] == 1 or sealed[i] == 1 or dmg[i] <= 0.0:
 		return
 	if dist < radius[i] * HURT_RADIUS_FACTOR + Player.RADIUS and contact_cd[i] <= 0.0 and player.is_alive:
 		contact_cd[i] = CONTACT_INTERVAL
@@ -529,6 +544,17 @@ func damage(i: int, amount: float, dir: Vector2, force: float) -> bool:
 	if is_boss(i) and bool(type_data[kind[i]].get("invincible", false)):
 		flash[i] = 0.05
 		return false
+	if sealed[i] == 1:
+		return false
+	if shield[i] > 0.0:
+		var absorbed := minf(shield[i], amount)
+		shield[i] -= absorbed
+		amount -= absorbed
+		flash[i] = 0.05
+		if game != null and game.altars != null:
+			game.altars.on_shield_hit(i, absorbed, shield[i] <= 0.0)
+		if amount <= 0.0:
+			return false
 	hp[i] -= amount
 	flash[i] = 0.08
 	hit_at[i] = GameClock.game_time
@@ -559,6 +585,9 @@ func _kill(i: int) -> void:
 		return
 	if fx and type_ai[t] != AI.BOSS and view_rect.has_point(at):
 		fx.death(at, look.death_styles[t], type_tint[t], type_scale[t], was_elite)
+	# Elite de altar ou campeão da emboscada: o AltarSystem cuida do saque (o baú comum não sai).
+	if was_elite and game != null and game.altars != null:
+		game.altars.on_enemy_killed(i, at)
 	if type_ai[t] == AI.SPLITTER:
 		var params: Dictionary = data.get("ai", {})
 		for k: int in range(int(params.get("count", 2))):

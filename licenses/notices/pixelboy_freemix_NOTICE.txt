@@ -1,4 +1,5 @@
-FreeMix - AssetsMix free demo (assets/art/midbosses/yomi/*, assets/art/midbosses/dunes/*)
+FreeMix - AssetsMix free demo (assets/art/midbosses/yomi/*, assets/art/midbosses/dunes/*,
+assets/art/fx/explosion_big/*, assets/art/fx/impact/*)
 
 Copyright (c) pixel-boy (https://pixel-boy.itch.io/) and AAA (challengerAAA).
 Source: https://pixel-boy.itch.io/free-mix

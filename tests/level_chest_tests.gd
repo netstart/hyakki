@@ -455,6 +455,13 @@ func _test_layouts() -> void:
 			_check.call(panel.auto_toggle().visible and not panel.action_buttons()[0].visible,
 					"%s: comida/moedas com a caixa e sem Rerrolar" % state)
 			check_level_layout(panel, view, state + " comida/moedas", 2)
+			# Lua Vermelha IV (sem bolinhos de arroz): a mesma mão só com as moedas.
+			panel.show_cards(LevelUpSystem.fallback_cards(true), 0, 1, 3, 27, null, 10, 100)
+			panel.settle_now()
+			await _host.get_tree().process_frame
+			_check.call(panel.auto_toggle().visible and not panel.action_buttons()[0].visible,
+					"%s: só moedas (Lua IV) com a caixa e sem Rerrolar" % state)
+			check_level_layout(panel, view, state + " só moedas", 1)
 			var chest := ChestPanel.new()
 			area.add_child(chest)
 			panel.close_now()
@@ -469,7 +476,7 @@ func _test_layouts() -> void:
 	Locale.set_language("pt_BR", false)
 
 
-## `expected`: 4 cartas de sample_cards() ou 2 da mão de comida/moedas.
+## `expected`: 4 cartas de sample_cards(), 2 da mão de comida/moedas ou 1 (só moedas, Lua IV).
 func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String, expected: int = 4) -> void:
 	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var cards := panel.level_cards()

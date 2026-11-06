@@ -7,10 +7,16 @@ extends RefCounted
 ## e ryō dos baús (ChestSystem), itens do chão (data/items.json), horários dos chefes e dos Kami
 ## (data/stages.json), aviso do Guardião do Limiar (RiftPortal), Santuário (data/powerups.json,
 ## MetaProgress.PRICE_STEP), Lua Vermelha (HyakkiGame), clima e terreno (data/weather.json,
-## data/surfaces.json, "hazard" das fases) e as dicas 心得 (TipDeck).
+## data/surfaces.json, "hazard" das fases e do Kakuriyo), modo Brisa (HyakkiGame.BRISA_*,
+## DamageControl.BRISA_MULT, LanternSystem.BRISA_DARKNESS), Desafio Diário (MetaProgress.DAILY_MIN_TIME,
+## data/achievements.json), Noite Sem Fim (HyakkiGame.ENDLESS_HP_PER_MIN, MetaProgress.ENDLESS_GOLD,
+## Spawner.SHINIGAMI_TIME), Altares do Selo e afixos dos Elites (AltarSystem, EliteAffixes) e as
+## dicas 心得 (TipDeck).
 ##
 ## Descoberta: o que o Diário ainda esconde fica escondido aqui pelas mesmas regras (Discovery):
-## receitas com "???" e chip "?", chefes não vencidos, guardiãs e fases bloqueadas sem nome;
+## receitas com "???" e chip "?", chefes não vencidos, guardiãs e fases bloqueadas sem nome,
+## o Kakuriyo de cada fase antes de vencer o Guardião do Limiar dela, afixos de Elite nunca vistos
+## e o Shinigami antes de a Noite Sem Fim chegar à hora dele;
 ## dicas que citam arma ou relíquia desconhecida ficam guardadas (só a contagem aparece).
 ##
 ## Capítulo: {id, title, icon, blocks}. Blocos:
@@ -26,7 +32,7 @@ extends RefCounted
 ## "plain")} (só o ícone).
 
 const CHAPTERS: Array[StringName] = [&"play", &"abilities", &"levels", &"chests", &"items", &"bosses",
-		&"stronger", &"stages", &"saving", &"tips"]
+		&"altars", &"stronger", &"stages", &"saving", &"tips"]
 const ICONS := {
 	&"play": "res://assets/art/ui/icons/items/Boot.png",
 	&"abilities": "res://assets/art/ui/icons/spell/MagicWeapon.png",
@@ -34,6 +40,7 @@ const ICONS := {
 	&"chests": "res://assets/art/ui/icons/items/Money.png",
 	&"items": "res://assets/art/ui/icons/job/Dish.png",
 	&"bosses": "res://assets/art/ui/icons/spell/Death.png",
+	&"altars": "res://assets/art/ui/icons/spell/BookThunder.png",
 	&"stronger": "res://assets/art/ui/icons/spell/AttackUpgrade.png",
 	&"stages": "res://assets/art/ui/icons/meteo/Rain.png",
 	&"saving": "res://assets/art/ui/icons/items/Guard.png",
@@ -54,7 +61,8 @@ func platform() -> String:
 ## Títulos dos capítulos, na ordem.
 func titles() -> Array[String]:
 	return [tr("guide.ch.play"), tr("guide.ch.abilities"), tr("guide.ch.levels"), tr("guide.ch.chests"),
-			tr("guide.ch.items"), tr("guide.ch.bosses"), tr("guide.ch.stronger"), tr("guide.ch.stages"), tr("guide.ch.saving"),
+			tr("guide.ch.items"), tr("guide.ch.bosses"), tr("guide.ch.altars"), tr("guide.ch.stronger"), tr("guide.ch.stages"),
+			tr("guide.ch.saving"),
 			tr("guide.ch.tips")]
 
 
@@ -86,6 +94,8 @@ func chapter(id: StringName) -> Dictionary:
 			blocks = _items()
 		&"bosses":
 			blocks = _bosses()
+		&"altars":
+			blocks = _altars()
 		&"stronger":
 			blocks = _stronger()
 		&"stages":
@@ -123,10 +133,54 @@ func _play() -> Array[Dictionary]:
 	]
 	var energy: Dictionary = DB.hero_abilities(hero).get("energy", {})
 	if not energy.is_empty():
-		out.append(_p(tr("guide.play.abilities"), [tr("hero.%s.name" % hero), tr("energy.%s.name" % energy["id"])]))
+		out.append(_p(tr("guide.play.abilities"), [tr("hero.%s.name" % hero), str(ability_count()),
+				tr("energy.%s.name" % energy["id"])]))
 	out.append(_h(tr("guide.play.pause_h")))
 	out.append(_p(tr("guide.play.pause")))
+	out.append_array(_brisa())
+	out.append_array(_daily())
 	return out
+
+
+## Modo Brisa (escolhido na Jornada): o que fica mais leve, com os números do jogo
+## (DamageControl, HyakkiGame, LanternSystem), e como a vitória nele conta.
+func _brisa() -> Array[Dictionary]:
+	var stats: Dictionary = HyakkiGame.BRISA_STATS
+	return [
+		_h(tr("mode.brisa")),
+		_p(tr("guide.play.brisa"), [tr("stages.title"), pct(1.0 - DamageControl.BRISA_MULT), str(int(stats["revive"])),
+				pct(float(stats["magnet"])), pct(1.0 - LanternSystem.BRISA_DARKNESS), pct(1.0 - HyakkiGame.BRISA_SPAWN),
+				pct(1.0 - HyakkiGame.BRISA_BOSS_HP)]),
+		_p(tr("guide.play.brisa_win"), [tr("stages.endless")]),
+	]
+
+
+## Desafio Diário (botão do título, App._apply_daily): sorteio pela data, regras fixas e a
+## conquista do dia (MetaProgress.DAILY_MIN_TIME, recompensa de data/achievements.json).
+func _daily() -> Array[Dictionary]:
+	return [
+		_h(tr("title.daily")),
+		_p(tr("guide.play.daily"), [tr("title.daily")]),
+		_p(tr("guide.play.daily_reward"), [Screen.format_time(MetaProgress.DAILY_MIN_TIME),
+				tr("achievement.ach_daily.name"), str(daily_ryo())]),
+	]
+
+
+## Ryō da conquista do Desafio Diário ("ryo:N" na recompensa de ach_daily).
+static func daily_ryo() -> int:
+	var reward := String((DB.achievements.get(&"ach_daily", {}) as Dictionary).get("reward", ""))
+	for part: String in reward.split(",", false):
+		if part.strip_edges().begins_with("ryo:"):
+			return part.strip_edges().trim_prefix("ryo:").to_int()
+	return 0
+
+
+## Habilidades por guardiã (data/abilities.json; a maior lista, hoje 3 para todas).
+static func ability_count() -> int:
+	var best := 0
+	for h: StringName in DB.ids("heroes"):
+		best = maxi(best, (DB.hero_abilities(h).get("abilities", []) as Array).size())
+	return best
 
 
 ## Habilidades e energias: desbloqueio pelo nível, custo, recarga e poder (AbilitySystem), a
@@ -138,7 +192,7 @@ func _abilities() -> Array[Dictionary]:
 	for row: Variant in first:
 		levels.append(str(int((row as Dictionary).get("level", 1))))
 	var out: Array[Dictionary] = [
-		_p(tr("guide.abilities.intro")),
+		_p(tr("guide.abilities.intro"), [str(ability_count())]),
 		_h(tr("guide.abilities.unlock_h")),
 		_p(tr("guide.abilities.unlock"), levels),
 		_h(tr("guide.abilities.energy_h")),
@@ -149,6 +203,7 @@ func _abilities() -> Array[Dictionary]:
 	]
 	var hidden := false
 	var blood: Dictionary = {}
+	var blood_hero := &""
 	for h: StringName in DB.ids("heroes"):
 		var data := DB.hero_abilities(h)
 		if data.is_empty():
@@ -159,8 +214,9 @@ func _abilities() -> Array[Dictionary]:
 		var energy: Dictionary = data["energy"]
 		if known and float(energy.get("hp_price", 0.0)) > 0.0:
 			blood = energy
+			blood_hero = h
 	if not blood.is_empty():
-		out.append(_p(tr("guide.abilities.blood"), [tr("energy.%s.name" % blood["id"]),
+		out.append(_p(tr("guide.abilities.blood"), [tr("energy.%s.name" % blood["id"]), tr("hero.%s.name" % blood_hero),
 				_num(1.0 / float(blood["hp_price"])), pct(float(blood.get("hp_floor", 0.0)))]))
 	if hidden:
 		out.append(_p(tr("guide.abilities.unknown")))
@@ -402,12 +458,16 @@ func boss_schedule(s: StringName) -> Array[Dictionary]:
 
 ## Chefe como chip de retrato (o ícone do Diário); desconhecido: "?" e "???".
 func boss_ref(b: StringName) -> Dictionary:
+	var known := Discovery.boss_known(b)
+	return {"category": &"bosses", "id": String(b), "known": known, "icon": boss_face(b), "face": true,
+			"name": tr("boss.%s.name" % b) if known else Discovery.UNKNOWN}
+
+
+## Retrato de um chefe (data/bosses.json "faceset", ou o Faceset.png ao lado do sprite).
+static func boss_face(b: StringName) -> String:
 	var data: Dictionary = DB.bosses.get(b, {})
 	var sprite: Dictionary = data.get("sprite", {})
-	var face := String(data.get("faceset", String(sprite.get("path", "")).get_base_dir().path_join("Faceset.png")))
-	var known := Discovery.boss_known(b)
-	return {"category": &"bosses", "id": String(b), "known": known, "icon": face, "face": true,
-			"name": tr("boss.%s.name" % b) if known else Discovery.UNKNOWN}
+	return String(data.get("faceset", String(sprite.get("path", "")).get_base_dir().path_join("Faceset.png")))
 
 
 func _first_midboss_time() -> float:
@@ -416,6 +476,79 @@ func _first_midboss_time() -> float:
 		if not mid.is_empty():
 			return float(mid["t"])
 	return 0.0
+
+
+## Altares do Selo (AltarSystem) e os afixos dos Elites (EliteAffixes): ritual, resultado,
+## emboscada, afixos (um por EliteAffixes.IDS, "?" até ver um Elite com ele) e o saque.
+func _altars() -> Array[Dictionary]:
+	var lines: Array = []
+	var hidden := false
+	for id: StringName in EliteAffixes.IDS:
+		var known := Discovery.affix_known(id)
+		hidden = hidden or not known
+		lines.append(affix_line(id, known))
+	var rare: Array = []
+	for id: StringName in AltarSystem.RARE_ITEMS:
+		var item: Dictionary = DB.items.get(id, {})
+		rare.append({"chip": String(item.get("icon", "")), "known": true, "kind": "plain"})
+		rare.append({"t": " " + tr("item.%s.name" % id) + "  "})
+	var out: Array[Dictionary] = [
+		_p(tr("guide.altars.intro")),
+		_h(tr("guide.altars.ritual_h")),
+		_p(tr("guide.altars.ritual"), [_num(AltarSystem.CHANNEL_TIME), str(AltarSystem.RUNES), pct(AltarSystem.DECAY)]),
+		_p(tr("guide.altars.blocked"), [tr("midboss.title")]),
+		_h(tr("guide.altars.outcome_h")),
+		_p(tr("guide.altars.outcome"), [pct(AltarSystem.ELITE_BASE), pct(AltarSystem.ELITE_PITY),
+				Screen.format_time(AltarSystem.FIRST_ELITE_T)]),
+		_p(tr("guide.altars.ambush"), [str(AltarSystem.ambush_count(0.0)), str(AltarSystem.AMBUSH_CAP),
+				tr("item.ryo_bag.name")]),
+		_h(tr("guide.altars.elite_h")),
+		_p(tr("guide.altars.elite"), [Screen.format_time(EliteAffixes.TWO_AFFIX_T), roman(EliteAffixes.HIGH_MOON),
+				str(EliteAffixes.MAX_AFFIXES), pct(EliteAffixes.HP_PER_AFFIX)]),
+		_rich(lines),
+	]
+	if hidden:
+		out.append(_p(tr("guide.altars.unknown")))
+	out.append_array([
+		_h(tr("guide.altars.loot_h")),
+		_p(tr("guide.altars.loot"), [str(AltarSystem.BOSS_CHEST_AFFIXES), pct(AltarSystem.CHEST_CHANCE),
+				tr("item.ryo_bag.name")]),
+		_rich([rare]),
+		_p(tr("guide.altars.no_chest")),
+	])
+	return out
+
+
+## Linha de um afixo: selo do kanji e o poder com os números de EliteAffixes; desconhecido:
+## selo "?" e "???".
+func affix_line(id: StringName, known: bool) -> Array:
+	if not known:
+		return [{"seal": "?"}, {"t": " " + Discovery.UNKNOWN}]
+	var row := affix_text(id)
+	return [{"seal": EliteAffixes.kanji_of(id)}, {"t": " "}] + _parts(String(row[0]), row[1])
+
+
+## [modelo traduzido, valores] do poder de um afixo (chaves literais para o i18n_keys).
+func affix_text(id: StringName) -> Array:
+	match id:
+		&"raijin":
+			return [tr("guide.altars.raijin"), [_num(EliteAffixes.RAIJIN_EVERY), str(EliteAffixes.RAIJIN_MARKS)]]
+		&"kitsunebi":
+			return [tr("guide.altars.kitsunebi"), [_num(EliteAffixes.FOX_EVERY), str(EliteAffixes.FOX_COUNT)]]
+		&"kagero":
+			return [tr("guide.altars.kagero"), [_num(EliteAffixes.KAGERO_EVERY)]]
+		&"iwa":
+			return [tr("guide.altars.iwa"), [_num(EliteAffixes.IWA_EVERY)]]
+		&"kasumi":
+			return [tr("guide.altars.kasumi"), [_num(EliteAffixes.KASUMI_EVERY), str(EliteAffixes.KASUMI_COUNT),
+					str(EliteAffixes.KASUMI_CAP)]]
+		&"kongo":
+			return [tr("guide.altars.kongo"), [pct(EliteAffixes.SHIELD_FRACTION), _num(EliteAffixes.KONGO_REGEN)]]
+		&"yomi":
+			return [tr("guide.altars.yomi"), []]
+		&"kaze":
+			return [tr("guide.altars.kaze"), [_num(EliteAffixes.KAZE_EVERY)]]
+	return [String(id), []]
 
 
 func _stronger() -> Array[Dictionary]:
@@ -444,8 +577,8 @@ func _stronger() -> Array[Dictionary]:
 		kami.append({"t": " "})
 	var times: Array = kami_times()
 	var moons: Array = []
-	for m: int in range(1, HyakkiGame.MAX_MOON + 1):
-		moons.append([{"t": "· " + tr("moon.rule%d" % m)}])
+	for line: String in RedMoon.rules_text(HyakkiGame.MAX_MOON):
+		moons.append([{"t": "· " + line}])
 	var sections := CodexMissions.sections(CodexMissions.entries())
 	var done := 0
 	var total := 0
@@ -482,6 +615,14 @@ func _stronger() -> Array[Dictionary]:
 		_h(tr("guide.stronger.moon_h")),
 		_p(tr("guide.stronger.moon"), [roman(HyakkiGame.MAX_MOON), pct(HyakkiGame.MOON_HP), pct(HyakkiGame.MOON_REWARD)]),
 		_rich(moons),
+		_p(tr("guide.stronger.moon_rules"), [roman(HyakkiGame.MAX_MOON), _num(RedMoon.ECLIPSE_DELAY),
+				str(RedMoon.ECLIPSE_RING_COUNT)]),
+		_h(tr("stages.endless")),
+		_p(tr("guide.stronger.endless"), [tr("stages.endless"), tr("stages.title"), pct(HyakkiGame.ENDLESS_HP_PER_MIN),
+				_num(MetaProgress.ENDLESS_GOLD)]),
+		_rich([reaper_line()]),
+		_p(tr("guide.stronger.reaper") if Discovery.reaper_known() else tr("guide.stronger.reaper_unknown"),
+				[Screen.format_time(Spawner.SHINIGAMI_TIME)]),
 		_h(tr("codex.achievements")),
 		_p(tr("guide.stronger.missions"), [str(total), str(sections.size()), str(done)]),
 		_rich(cats),
@@ -493,6 +634,15 @@ func _stronger() -> Array[Dictionary]:
 		_p(tr("shop.hint_free") if AdsManager.rewards_are_gifts() else tr("shop.hint")),
 		_p(tr("shop.support_hint")),
 	]
+
+
+## Shinigami da Noite Sem Fim (fora das escalas das fases e do Diário): hora, retrato e nome,
+## ou silhueta e "???" até a Noite Sem Fim chegar à hora dele.
+func reaper_line() -> Array:
+	var known := Discovery.reaper_known()
+	return [{"n": Screen.format_time(Spawner.SHINIGAMI_TIME)}, {"t": " "},
+			{"chip": boss_face(&"shinigami"), "known": known, "kind": "face"},
+			{"t": " " + (tr("boss.shinigami.name") if known else Discovery.UNKNOWN)}]
 
 
 ## Horários dos santuários Kami (data/stages.json "kami", da primeira fase que os tem).
@@ -540,24 +690,42 @@ func _stages() -> Array[Dictionary]:
 	return out
 
 
-## Clima, perigo e terrenos lentos de uma fase (cada um uma linha de trechos).
+## Clima, perigo e terrenos lentos de uma fase (cada um uma linha de trechos) e, depois, os do
+## Kakuriyo dela ("otherworld": clima de outra fase e perigo próprio), escondido até vencer o
+## Guardião do Limiar da fase.
 func stage_lines(s: StringName) -> Array:
+	var stage: Dictionary = DB.stages[s]
+	var lines := world_lines(String(s), stage.get("hazard", {}))
+	var ow: Dictionary = stage.get("otherworld", {})
+	var mid := RiftPortal.midboss_of(stage)
+	if ow.is_empty() or mid.is_empty():
+		return lines
+	if not Discovery.boss_known(StringName(String(mid["id"]))):
+		lines.append(_parts(tr("guide.stages.realm"), [Discovery.UNKNOWN]))
+		return lines
+	lines.append(_parts(tr("guide.stages.realm"), [tr("realm.%s.name" % s)]))
+	for line: Array in world_lines(String(ow.get("weather", s)), ow.get("hazard", {})):
+		lines.append([{"t": "· "}] + line)
+	return lines
+
+
+## Clima do perfil `weather_id` (data/weather.json), o perigo e os terrenos lentos do perfil.
+func world_lines(weather_id: String, hazard: Dictionary) -> Array:
 	var lines: Array = []
-	var weather: Dictionary = WeatherModel.profile_for(String(s))
+	var weather: Dictionary = WeatherModel.profile_for(weather_id)
 	var precip := String(weather.get("precip", ""))
 	if precip != "":
 		var sky := weather_name(precip)
 		if bool(weather.get("lightning", false)):
 			sky = tr("guide.weather.thunder") % sky
 		lines.append(_parts(tr("guide.stages.weather_line"), [sky]))
-	var hazard: Dictionary = (DB.stages[s] as Dictionary).get("hazard", {})
 	var text := hazard_text(hazard)
 	if text != "":
 		lines.append([{"t": text}])
 	var surfaces := SurfaceField.data()
 	var types: Dictionary = surfaces.get("types", {})
 	var seen: Array[String] = []
-	for spot: Dictionary in (surfaces.get("stages", {}) as Dictionary).get(String(s), []):
+	for spot: Dictionary in (surfaces.get("stages", {}) as Dictionary).get(weather_id, []):
 		var kind := String(spot.get("type", ""))
 		if seen.has(kind) or not types.has(kind):
 			continue

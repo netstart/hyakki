@@ -200,6 +200,12 @@
     "Audio/Sounds/Ambient/Rain2.wav": "audio/ambience/rain2.wav",
     "Audio/Sounds/Ambient/Rain3.wav": "audio/ambience/rain3.wav",
     "Audio/Sounds/Ambient/Wind2.wav": "audio/ambience/wind2.wav",
+    "Audio/Sounds/Elemental/Explosion2.wav": "audio/sfx/n_explosion_2.wav",
+    "Audio/Sounds/Elemental/Explosion4.wav": "audio/sfx/n_explosion_4.wav",
+    "Audio/Sounds/Elemental/Explosion5.wav": "audio/sfx/n_explosion_5.wav",
+    "Audio/Sounds/Magic & Skill/Magic3.wav": "audio/sfx/n_magic_3.wav",
+    "Audio/Sounds/Magic & Skill/Magic5.wav": "audio/sfx/n_magic_5.wav",
+    "Audio/Sounds/Alert/Alert2.wav": "audio/sfx/n_alert_2.wav",
     "LICENSE.txt": "licenses_src/ninja_adventure_LICENSE.txt",
     "README.md": "licenses_src/ninja_adventure_README.md"
   }

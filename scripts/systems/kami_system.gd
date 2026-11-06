@@ -54,14 +54,16 @@ func step(_dt: float) -> void:
 		game.open_kami(offer())
 
 
-## 3 Kami ainda não aceitos nesta partida, sorteados com a semente da partida.
+## OFFER_COUNT Kami ainda não aceitos nesta partida (só RedMoon.PACTS na Lua V), sorteados com a
+## semente da partida.
 func offer() -> Array[StringName]:
 	var pool: Array[StringName] = []
 	for id: StringName in DB.ids("kami"):
 		if not accepted.has(id):
 			pool.append(id)
 	var picks: Array[StringName] = []
-	while picks.size() < OFFER_COUNT and not pool.is_empty():
+	var wanted := RedMoon.kami_offers(game.moon, OFFER_COUNT)
+	while picks.size() < wanted and not pool.is_empty():
 		picks.append(pool.pop_at(game.rng.randi_range(0, pool.size() - 1)))
 	return picks
 

@@ -179,6 +179,25 @@ Nenhum PR é mesclado e nenhuma versão é lançada sem que os testes unitários
 todas as resoluções-alvo), os testes E2E e o benchmark de rolagem passem **no Godot** em todas as
 resoluções-alvo. Teste no emulador ou no aparelho é só manual e não substitui nenhum deles.
 
+## Guia do Guardião (obrigatório em todo conteúdo novo)
+
+Toda adição ou mudança de **itens, recursos, personagens, habilidades ou mapas** (armas, relíquias,
+evoluções, uniões, itens do chão, guardiões, habilidades e energias, chefes, inimigos e elites, fases,
+clima e terreno, altares, Kami, Loja, Santuário, missões, modos e opções de partida) **deve atualizar o
+Guia do Diário** (`scripts/systems/guide_book.gd`, textos `guide.*` em `tools/i18n/guide.py`) **no mesmo
+commit**:
+
+- O conteúdo novo aparece no capítulo certo (ou num capítulo novo em `GuideBook.CHAPTERS`, com ícone),
+  com os números **lidos dos dados ou de constantes do código** (nunca copiados à mão para o texto) e
+  respeitando a descoberta do Diário (`scripts/meta/discovery.gd`: o que ainda não foi visto aparece como "?").
+- Textos nos 11 idiomas; se o Diário ganhar uma entrada nova, o Guia ganha o chip/botão "Ver no Diário".
+- O teste de conteúdo do Guia passa a cobrir o item novo, e o layout do capítulo mexido passa nos
+  testes de todas as resoluções × 11 idiomas × furo dos dois lados.
+- Mecânica removida ou trocada sai do Guia no mesmo commit (o Guia nunca descreve o que o jogo não faz).
+
+Antes de commitar, confira o Guia contra os dados (`data/*.json`) e o código do que mudou; o Guia
+desatualizado conta como teste falhando.
+
 ## Site público e documentação publicada (netstart.github.io) — obrigatório
 
 O site público https://netstart.github.io é o repositório irmão `C:\src\netstart.github.io`
@@ -245,3 +264,7 @@ A versão do jogo segue o [Versionamento Semântico](https://semver.org/lang/pt-
 - Ao subir `MENOR`, a `CORREÇÃO` volta a 0. Ao subir `MAIOR`, `MENOR` e `CORREÇÃO` voltam a 0. O `version/code` continua subindo 1, sem zerar.
 
 Nesse caso a IA **deve avisar** na resposta e na mensagem do commit qual número mudou (de → para) e por quê.
+
+## Sessões do Claude Code (uma por vez)
+
+Uma nova sessão do Claude Code (`start_session`, `hand_off_to_session`, sessão na nuvem ou em outra pasta) **só pode ser iniciada quando não houver outra sessão em execução** neste projeto. Antes de iniciar, confira as sessões ligadas (`list_sessions`); se alguma estiver rodando ou começando, espere ela terminar ou faça o trabalho na sessão atual. Isso evita duas sessões editando os mesmos arquivos, dois Godot de teste no mesmo checkout e commits com versão (SemVer) concorrente. Subagentes dentro da sessão atual continuam permitidos.

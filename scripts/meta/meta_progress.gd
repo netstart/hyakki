@@ -5,6 +5,8 @@ extends RefCounted
 
 const CODEX_KILLS := 100
 const ENDLESS_GOLD := 1.5
+## Desafio Diário: sobreviver este tempo (s) num desafio cumpre a conquista do dia ("daily_complete").
+const DAILY_MIN_TIME := 300.0
 ## Santuário: cada compra (de qualquer melhoria) encarece todas em PRICE_STEP do preço base.
 const PRICE_STEP := 0.1
 const TELEMETRY_HEADER := "date,hero,stage,mode,moon,time,level,kills,ryo,result,weapons,damage_taken,cause"
@@ -114,6 +116,12 @@ static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 	for id: StringName in tracker.unions:
 		if not (stats["unions"] as Array).has(String(id)):
 			(stats["unions"] as Array).append(String(id))
+	# Afixos de Elite já vistos (Discovery.affix_known, Guia).
+	if not stats.has("affixes_seen"):
+		stats["affixes_seen"] = []
+	for id: StringName in tracker.elite_affixes_seen:
+		if not (stats["affixes_seen"] as Array).has(String(id)):
+			(stats["affixes_seen"] as Array).append(String(id))
 	var stage_id := StringName(result["stage"])
 	var best := SaveManager.stage_best(stage_id)
 	best["best_time"] = maxf(float(best["best_time"]), float(result["time"]))
@@ -217,7 +225,7 @@ static func _met(c: Dictionary, result: Dictionary, tracker: RunTracker) -> bool
 		"ultimates_run":
 			return tracker.ultimates >= int(c["count"])
 		"daily_complete":
-			return bool(result.get("daily", false)) and time >= 300.0
+			return bool(result.get("daily", false)) and time >= DAILY_MIN_TIME
 		"codex_entries":
 			return codex_count() >= int(c["count"])
 		"win_all_heroes":

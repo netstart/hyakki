@@ -6,6 +6,8 @@ extends RefCounted
 ## Habilidades dos guardiões (ability_slot): solta a primeira pronta e paga, da mais forte para a
 ## mais fraca, cuja regra fixa aceita (HeroAbilities.bot_should_cast: N inimigos perto), guardando
 ## energia para a mais forte liberada (as mais fracas só saem se sobrar o custo dela).
+## Altares do Selo (AltarSystem): com a vida acima de ALTAR_HEALTH e sem chefe vivo, vai até o
+## altar dormente a menos de ALTAR_REACH px e fica no círculo até o selo quebrar.
 ## Função pura do estado da partida: o bot é determinístico em 1x, 2x e 3x.
 
 const SEED := 7
@@ -13,6 +15,10 @@ const TOO_CLOSE := 9.0
 const STRIKE_OFFSET := 24.0
 const SIGHT_RADIUS := 400.0
 const SHRINE_REACH := 300.0
+const ALTAR_REACH := 600.0
+const ALTAR_HEALTH := 0.6
+## Fica parado quando já está a esta fração do raio do altar (o centro é sólido).
+const ALTAR_STAY := 0.5
 ## O bot decide as habilidades a cada ABILITY_EVERY passos (0,1 s), como um jogador.
 const ABILITY_EVERY := 6
 
@@ -43,6 +49,11 @@ static func input(game: HyakkiGame) -> Vector2:
 		return (game.rift.portal_pos - me).normalized()
 	if game.kami.has_shrine() and me.distance_to(game.kami.shrine_pos) < SHRINE_REACH:
 		return (game.kami.shrine_pos - me).normalized()
+	var altar := altar_goal(game)
+	if altar != Vector2.INF:
+		if me.distance_to(altar) > AltarSystem.RADIUS * ALTAR_STAY:
+			return (altar - me).normalized()
+		return Vector2.ZERO
 	var enemies := game.enemies
 	var nearest := enemies.nearest(me, SIGHT_RADIUS)
 	if nearest < 0:
@@ -59,3 +70,23 @@ static func input(game: HyakkiGame) -> Vector2:
 	if to_goal.length() < 3.0:
 		return Vector2(-side * 0.3, 0.0)
 	return to_goal.normalized()
+
+
+## Altar que o bot quer ler agora (Vector2.INF se nenhum): saudável, sem chefe, o mais perto
+## dormente ou em ritual a menos de ALTAR_REACH px.
+static func altar_goal(game: HyakkiGame) -> Vector2:
+	var altars := game.altars
+	if altars == null or altars.is_blocked() or game.player.hp < game.player.max_hp() * ALTAR_HEALTH:
+		return Vector2.INF
+	var me := game.player.sim_pos
+	var best := Vector2.INF
+	var best_d := ALTAR_REACH
+	for at: Vector2 in altars.altars_near():
+		var state := altars.state_at(at)
+		if state != AltarSystem.State.DORMANT and state != AltarSystem.State.CHANNELING:
+			continue
+		var d := me.distance_to(at)
+		if d < best_d:
+			best_d = d
+			best = at
+	return best

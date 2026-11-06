@@ -5,7 +5,8 @@ extends RefCounted
 ##   - cada tipo de condição pelo caminho real (RunTracker + MissionBook.record_run + check_missions):
 ##     sem onigiri, Lua Vermelha por fase, Kakuriyo, vitória/nível/evolução por herói, evolução e
 ##     união por arma, chefe vencido / sem golpe / rápido, abates fora da luz, breu, Kami, Noite Sem
-##     Fim, abates, Desafio Diário e coleção;
+##     Fim, abates, Altares do Selo (selos e Elites no total, selos numa partida, Elite com 3 afixos
+##     e coleção dos afixos), Desafio Diário e coleção;
 ##   - recompensas (ryō, lanterna, reforço da próxima partida) dadas uma vez;
 ##   - save 1 → 2 (recordes) e a conferência única das missões que o progresso antigo já cumpre;
 ##   - Próximas metas: determinísticas, abertas, liberadas, variadas e as mais perto primeiro;
@@ -40,6 +41,7 @@ func run(host: Node, check: Callable) -> void:
 	_test_lantern_trackers()
 	_test_kami_endless_daily()
 	_test_kills_collection()
+	_test_altars()
 	_test_rewards()
 	_test_tracker_snapshot()
 	_test_migration()
@@ -143,7 +145,8 @@ static func _tracked(c: Dictionary) -> bool:
 			"hero_level", "hero_evolve", "weapon_evolve", "weapon_union", "boss_kill", "boss_clean", "boss_fast",
 			"dark_kills", "dark_kills_run", "dark_streak", "kami_accept", "kami_pacts", "endless_time",
 			"endless_stages", "kills_total", "kills_run", "kills_burst_best", "daily_runs", "codex_entries",
-			"chests_total", "ryo_total"]
+			"chests_total", "ryo_total", "altars_total", "altars_run", "altar_elites_total", "elite_affixes_max",
+			"elite_affix_set"]
 
 
 ## Nome, descrição, categoria e recompensas montados (sem chave crua nem %s) em todos os idiomas.
@@ -347,6 +350,63 @@ func _test_kills_collection() -> void:
 	_check.call(MetaProgress.codex_count() >= 10 and _done("m_codex_10"), "coleção: 10 entradas no Diário")
 	_check.call(int(MissionBook.raw_progress(&"m_codex_all").y) == MetaProgress.codex_count() + _codex_missing(),
 			"coleção: o Diário completo é o total de entradas possíveis")
+
+
+## Altares do Selo: o RunTracker de cada partida vira recorde do perfil (somas, recordes por partida e
+## a coleção dos afixos vencidos), sem repetir afixo; o alvo da coleção é a lista de afixos do jogo.
+func _test_altars() -> void:
+	_fresh()
+	var t := RunTracker.new()
+	t.on_altar(&"ambush")
+	t.on_altar(&"elite")
+	t.on_elite_slain([&"raijin", &"kaze"])
+	_play(_result({"victory": false}), t)
+	var rec := MissionBook.records()
+	_check.call(int(rec["altars"]) == 2 and int(rec["altars_run"]) == 2 and int(rec["altar_elites"]) == 1
+			and int(rec["elite_affix_max"]) == 2 and (rec["elite_affixes"] as Array) == ["raijin", "kaze"],
+			"altares: partida gravada no perfil (%s)" % [rec])
+	_check.call(_done("m_altars_1") and _done("m_elites_1") and not _done("m_altars_10")
+			and not _done("m_altars_run_3") and not _done("m_elite_affix_3"),
+			"altares: 1º selo e 1º Elite concluídos, os outros abertos")
+	_check.call(MissionBook.progress(&"m_altars_10") == Vector2(2, 10)
+			and MissionBook.progress(&"m_elite_all_affixes") == Vector2(2, EliteAffixes.IDS.size()),
+			"altares: progresso 2/10 nos selos e 2/%d na coleção" % EliteAffixes.IDS.size())
+	# Três selos numa partida e um Elite com 3 afixos; afixo repetido não conta duas vezes.
+	t = RunTracker.new()
+	for i: int in 3:
+		t.on_altar(&"elite")
+	t.on_elite_slain([&"raijin", &"iwa", &"kongo"])
+	var got := _play(_result(), t)
+	_check.call(got.has(&"m_altars_run_3") and got.has(&"m_elite_affix_3") and int(rec["altars"]) == 5
+			and int(rec["altars_run"]) == 3 and (rec["elite_affixes"] as Array).size() == 4,
+			"altares: 3 selos numa partida e Elite com 3 afixos (sem afixo repetido)")
+	# Partida sem altar não baixa os recordes.
+	_play(_result(), RunTracker.new())
+	_check.call(int(rec["altars_run"]) == 3 and int(rec["elite_affix_max"]) == 3 and int(rec["altars"]) == 5,
+			"altares: partida sem altar mantém os recordes")
+	# Somas: 10 e 50 selos, 10 e 50 Elites, todos os afixos.
+	t = RunTracker.new()
+	for i: int in 45:
+		t.on_altar(&"ambush")
+	for i: int in 48:
+		t.on_elite_slain([EliteAffixes.IDS[i % EliteAffixes.IDS.size()]])
+	got = _play(_result(), t)
+	for id: StringName in [&"m_altars_10", &"m_altars_50", &"m_elites_10", &"m_elites_50", &"m_elite_all_affixes"]:
+		_check.call(got.has(id), "altares: %s concluída pelas somas" % id)
+	_check.call(int(rec["altar_elites"]) == 50 and (rec["elite_affixes"] as Array).size() == EliteAffixes.IDS.size(),
+			"altares: 50 Elites e a coleção completa")
+	# Categoria própria, com os 9 e os textos com números.
+	_check.call(MissionBook.in_category(&"altars").size() == 9, "altares: categoria com as 9 missões")
+	Locale.set_language("pt_BR", false)
+	_check.call(MissionBook.description(&"m_elite_all_affixes").contains(str(EliteAffixes.IDS.size()))
+			and MissionBook.title(&"m_altars_50").contains("50"), "altares: textos com os números dos dados")
+	# Save antigo (sem os campos dos altares): ganha os recordes zerados ao migrar.
+	var old := SaveManager.default_profile()
+	for key: String in ["altars", "altars_run", "altar_elites", "elite_affix_max", "elite_affixes"]:
+		(old["records"] as Dictionary).erase(key)
+	var migrated := SaveManager.migrate(old)
+	_check.call(int(migrated["records"]["altars"]) == 0 and (migrated["records"]["elite_affixes"] as Array).is_empty(),
+			"altares: save antigo ganha os recordes zerados")
 
 
 ## Entradas que faltam para o Diário completo.

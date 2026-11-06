@@ -228,7 +228,7 @@ func draw(canvas: CanvasItem) -> void:
 	var time := GameClock.game_time
 	_draw_shadows(canvas)
 	var reduce_flash := bool(Settings.get_value("reduce_flashes"))
-	var light_r := m.game.lantern.radius
+	var light_r := -1.0 if RedMoon.shades_in_light(m.game.moon) else m.game.lantern.radius
 	var player_pos := m.game.player.position
 	var frozen := m.freeze_time > 0.0
 	status_drawn = 0
@@ -264,6 +264,16 @@ func draw(canvas: CanvasItem) -> void:
 			bob = roundf(sin(time * 6.0 + m.phase[i]) * 1.5) - 4.0
 		var born := _born_progress(i, time)
 		color.a *= born
+		# Elite com afixos (EliteAffixes): surgindo do altar (escala com sobre-salto e silhueta na cor
+		# do afixo) ou sumindo na Miragem (transparente).
+		# Selados da emboscada (sem afixos) piscam claros e meio transparentes até serem soltos.
+		var rise := Vector3(1.0, 0.0, 1.0)
+		if (m.elite[i] == 1 or m.sealed[i] == 1) and m.game.altars != null:
+			rise = m.game.altars.affixes.body_look(i)
+			if m.sealed[i] == 1 and rise == Vector3(1.0, 0.0, 1.0):
+				rise = Vector3(1.0, 0.45 + 0.25 * sin(time * 30.0), 0.85)
+			s *= rise.x
+			color.a *= rise.z
 		# Atolado numa superfície lenta: desce 1–2 px (SurfaceSystem), volta ao recuperar.
 		var body := foot + Vector2(0.0, bob * s + _sink(i))
 		if status & STATUS_FEAR:
@@ -273,6 +283,9 @@ func draw(canvas: CanvasItem) -> void:
 		var rect := Rect2(Vector2(-size.x * 0.5, -size.y + 2.0), size)
 		var tex: Texture2D = sheet.outline_texture if m.elite[i] == 1 else sheet.texture
 		canvas.draw_texture_rect_region(tex, rect, src, color)
+		if rise.y > 0.0:
+			var tint := m.game.altars.affixes.silhouette_color(i)
+			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, Color(tint, rise.y * color.a))
 		if breathe[t] > 0.0 and m.pose[i] == 1 and not reduce_flash:
 			var glow := 0.25 + 0.25 * sin(time * 16.0)
 			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, Color(aura[t], glow * color.a))
@@ -301,7 +314,8 @@ func draw(canvas: CanvasItem) -> void:
 			shown += 1
 			if shown > MAX_STATUS_MARKS:
 				status = 0
-		if m.elite[i] == 1:
+		# Elites com afixos têm brasão e barra próprios (EliteAffixes.draw_over).
+		if m.elite[i] == 1 and (m.game.altars == null or not m.game.altars.affixes.has(i)):
 			_draw_crown(canvas, Vector2(0, top - 4.0 + sin(time * 4.0 + i) * 1.0))
 		if status & STATUS_STUN:
 			_draw_stars(canvas, Vector2(0, top - 2.0), time)

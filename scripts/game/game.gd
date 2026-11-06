@@ -24,6 +24,11 @@ const DEFAULT_LANTERN := Color(1.0, 0.8, 0.3)
 const MOON_HP := 0.25
 const MOON_REWARD := 0.15
 const MAX_MOON := 5  # Lua Vermelha máxima (V)
+## Brisa: vida dos chefes, inimigos comuns e o que a guardiã ganha (dano: DamageControl.BRISA_MULT).
+const BRISA_BOSS_HP := 0.7
+const BRISA_SPAWN := 0.85
+const BRISA_STATS := {"revive": 1, "magnet": 0.5}
+const ENDLESS_HP_PER_MIN := 0.15  # Noite Sem Fim: vida extra dos inimigos por minuto
 ## Comportamentos de arma ("behavior" em data/weapons.json): scripts/weapons/<behavior>.gd.
 const WEAPON_BEHAVIORS: Array[String] = ["katana", "shuriken", "kunai", "ofuda", "incense", "kusarigama",
 		"smoke_bomb", "raijin", "fujin_fan", "hurricane", "yumi", "taiko", "hitodama", "typhoon",
@@ -48,6 +53,7 @@ var pickups: PickupManager
 var spawner: Spawner
 var bosses: BossDirector
 var kami: KamiSystem
+var altars: AltarSystem  # Altares do Selo e Elites com afixos
 var lantern: LanternSystem
 ## Guardião do Limiar, portal e o Kakuriyo (outro mundo da fase).
 var rift: RiftPortal
@@ -214,6 +220,7 @@ func snapshot() -> Dictionary:
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
 		"dead": not player.is_alive, "speed": GameClock.speed,
 		"damage": player.damage.summary(), "realm": rift.snapshot(), "tracker": tracker.snapshot(),
+		"altars": altars.snapshot(),
 	}
 
 
@@ -259,6 +266,7 @@ func restore_snapshot(s: Dictionary) -> void:
 		tracker.unions.append(StringName(id))
 	endless_phase = bool(s.get("endless_phase", false))
 	rift.restore(s.get("realm", {}))
+	altars.restore(s.get("altars", {}))
 	tracker.restore(s.get("tracker", {}))
 	_ad_revive_used = bool(s.get("ad_revive_used", false))
 	hud.refresh_speed()
@@ -284,6 +292,9 @@ func _build() -> void:
 	kami = KamiSystem.new()
 	kami.game = self
 	add_child(kami)
+	altars = AltarSystem.new()
+	altars.game = self
+	add_child(altars)
 	areas = AreaEffects.new()
 	areas.game = self
 	areas.z_index = -4
@@ -374,7 +385,7 @@ func start_run(cfg: Dictionary) -> void:
 	player.stats.set_source("powerups", {} if _bot else MetaProgress.powerup_modifiers())
 	player.stats.set_source("shop", cfg.get("shop_modifiers", {}))
 	if mode == "brisa":
-		player.stats.set_source("mode", {"revive": 1, "magnet": 0.5})
+		player.stats.set_source("mode", BRISA_STATS)
 	player.reset()
 	player.god_mode = _cli_god or stress_count > 0
 	player.lantern_tint = LANTERN_TINTS.get(String(cfg.get("cosmetic", "")), DEFAULT_LANTERN)
@@ -388,6 +399,7 @@ func start_run(cfg: Dictionary) -> void:
 	bosses.reset()
 	kami.reset()
 	lantern.reset()
+	altars.reset()
 	ultimate.reset()
 	abilities.reset()
 	tracker = RunTracker.new()
@@ -454,6 +466,7 @@ func _on_tick(dt: float) -> void:
 	areas.step(dt)
 	pickups.step(dt)
 	kami.step(dt)
+	altars.step(dt)
 	rift.step(dt)
 	lantern.step(dt)
 	ultimate.step(dt)
@@ -568,7 +581,7 @@ func enemy_hp_mult() -> float:
 	var mult := Progression.enemy_hp_mult(minute()) * curse() * (1.0 + MOON_HP * moon) \
 			* stage_difficulty()
 	if endless_phase:
-		mult *= 1.0 + 0.15 * (minute() - 15.0)
+		mult *= 1.0 + ENDLESS_HP_PER_MIN * (minute() - 15.0)
 	return mult
 
 
@@ -586,11 +599,11 @@ func stage_difficulty() -> float:
 
 
 func boss_hp_mult() -> float:
-	return curse() * (1.0 + MOON_HP * moon) * (0.7 if mode == "brisa" else 1.0)
+	return curse() * (1.0 + MOON_HP * moon) * (BRISA_BOSS_HP if mode == "brisa" else 1.0)
 
 
 func spawn_mult() -> float:
-	return curse() * (0.85 if mode == "brisa" else 1.0) * (1.0 + 0.05 * moon)
+	return curse() * (BRISA_SPAWN if mode == "brisa" else 1.0) * (1.0 + 0.05 * moon)
 
 
 func reward_mult() -> float:
@@ -703,7 +716,7 @@ func _draw_weapons() -> void:
 ## `dot`: tique de dano contínuo (poças, furacões, aura do incenso); só muda o número de dano.
 func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2, force: float,
 		force_crit: bool = false, dot: bool = false) -> void:
-	if enemies.alive[enemy] == 0:
+	if enemies.alive[enemy] == 0 or enemies.sealed[enemy] == 1:
 		return
 	var crit_chance := player.stats.get_stat("crit")
 	var crit := force_crit or (crit_chance > 0.0 and rng.randf() < crit_chance)
@@ -758,7 +771,7 @@ func collect_item(item: Dictionary) -> void:
 			pickups.magnet_all()
 			AudioManager.play("magic1", 1.3)
 		"bell":
-			_purify_screen()
+			pickups.purify_screen()
 		"freeze":
 			enemies.freeze_time = float(item["value"])
 			AudioManager.play("strange", 1.4)
@@ -770,21 +783,6 @@ func collect_item(item: Dictionary) -> void:
 		"chest":
 			_pending_chests.append(bool(item.get("boss", false)))
 	AudioManager.play("bonus", 1.0, 0.05, -6.0)
-
-
-## Sino Purificador: elimina todos os inimigos comuns visíveis (recompensa normal).
-func _purify_screen() -> void:
-	var half := view_size() * 0.5 + Vector2(20, 20)
-	var me := player.sim_pos
-	for i: int in range(EnemyManager.CAPACITY):
-		if enemies.alive[i] == 0 or enemies.is_boss(i) or enemies.is_prop(i):
-			continue
-		var d := enemies.pos[i] - me
-		if absf(d.x) <= half.x and absf(d.y) <= half.y:
-			enemies.damage(i, 999999.0, Vector2.ZERO, 0.0)
-	fx.add_ring(me, half.x, Color(1.0, 1.0, 0.85))
-	hud.flash_screen(Color(1.0, 1.0, 0.9))
-	AudioManager.play("bell", 1.0, 0.0, -2.0)
 
 
 func on_prop_destroyed(index: int, at: Vector2) -> void:
@@ -802,7 +800,7 @@ func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: String
 	tracker.on_kill(enemy_id, GameClock.game_time, at.distance_squared_to(player.sim_pos) > lantern.radius ** 2)
 	pickups.spawn(at, xp_value)
 	fx.burst(at, color)
-	if was_elite:
+	if was_elite and not altars.consume_claim():  # Elite de altar: o AltarSystem fez o saque
 		pickups.spawn_item(&"chest", at)
 		fx.play_anim("explosion", at, 1.0)
 	elif rng.randf() < PickupManager.COIN_CHANCE * player.stats.get_stat("luck"):
@@ -1149,7 +1147,7 @@ func _weapon_summary() -> String:
 	for weapon: Weapon in weapons:
 		parts.append("%s%d" % [weapon.id, weapon.level])
 	# + lentidão das superfícies e as habilidades (determinismo).
-	return ",".join(parts) + SurfaceSystem.hash_tag_of(self) + abilities.hash_tag()
+	return ",".join(parts) + SurfaceSystem.hash_tag_of(self) + abilities.hash_tag() + altars.hash_tag()
 
 
 # --- Câmera, amanhecer, velocidade ------------------------------------------------

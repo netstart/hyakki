@@ -22,6 +22,7 @@ const MARGIN_TOP := 52.0
 const MARGIN_BOTTOM := 30.0
 ## Começo do título (depois do botão "voltar", que acompanha o mapa no recorte da câmera).
 const TITLE_LEFT := 96.0
+const TITLE_FONT_SIZES: Array[int] = [24, 22, 20]
 ## Passes de Chaikin na costa das quatro ilhas grandes.
 const COAST_SMOOTHING := 2
 const SEAL_FONT := "res://assets/fonts/fusion_pixel_12_ja.woff2"
@@ -358,10 +359,18 @@ func _layout() -> void:
 
 
 ## Título no topo, à direita do "voltar" (que fica a TITLE_LEFT da borda do mapa em qualquer
-## recorte); se não couber numa linha, quebra em duas.
+## recorte); se não couber numa linha, a fonte desce até TITLE_FONT_SIZES[-1] e, nem assim,
+## quebra em duas na fonte cheia (sem isso o japonês quebrava no meio da palavra: "旅 / 路").
 func _layout_title() -> void:
 	_title.position = Vector2(TITLE_LEFT, 6)
 	_title.size = Vector2(size.x - TITLE_LEFT - 8.0, 0)
+	var font := _title.get_theme_font("font")
+	var px: int = TITLE_FONT_SIZES[0]
+	for s: int in TITLE_FONT_SIZES:
+		if font.get_string_size(_title.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= _title.size.x:
+			px = s
+			break
+	_title.add_theme_font_size_override("font_size", px)
 	_title.size.y = maxf(30.0, _title.get_minimum_size().y)
 
 

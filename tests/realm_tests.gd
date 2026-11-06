@@ -190,6 +190,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_realm_continues(true)
 	await _test_snapshot()
 	await _test_scenarios()
+	await _test_midboss_kill_daily()
 	await _test_dir4_facing()
 	await _test_portal_art_and_hum()
 	GameClock.paused = false
@@ -540,4 +541,69 @@ func _test_scenarios() -> void:
 	game = await _new_game("secret")
 	game.apply_scenario("portal")
 	_check.call(game.rift.is_open() and _chests(game).size() == 2, "cenário portal: dois baús e o portal")
+	await _free(game)
+
+
+## Guardião morto pelo caminho real (a vida zera por dano e o BossDirector vê a morte): o portal
+## abre com os dois baús de chefe, na partida comum e na do Desafio Diário (cfg como a do
+## App._apply_daily: semente sorteada, herói variado, lua 0, sem bônus da Loja), em cada fase.
+## Dois jeitos de matar: dano de arma com o Guardião longe da guardiã (os baús ficam no chão) e o
+## bot jogando (armas e habilidades de verdade, com a vida do Guardião já baixa).
+func _test_midboss_kill_daily() -> void:
+	var heroes := DB.ids("heroes")
+	var k := 0
+	for stage_id: StringName in DB.ids("stages"):
+		for daily: bool in [false, true]:
+			for by_bot: bool in [false, true]:
+				var cfg := {"hero": "aki", "stage": String(stage_id), "moon": 0, "mode": "normal",
+						"seed": 909, "speed": 1, "endless": false, "cosmetic": ""}
+				if daily:
+					# A cfg do Desafio de hoje; fase e herói trocados para cobrir todos.
+					var app := App.new()
+					app._apply_daily(cfg)
+					app.free()
+					cfg["hero"] = heroes[k % heroes.size()]
+					cfg["stage"] = stage_id
+					cfg["seed"] = int(cfg["seed"]) + k
+				k += 1
+				await _midboss_kill(cfg, by_bot)
+
+
+func _midboss_kill(cfg: Dictionary, by_bot: bool) -> void:
+	var stage_id := StringName(cfg["stage"])
+	var game := (load(GAME_SCENE) as PackedScene).instantiate() as HyakkiGame
+	game.config = cfg
+	_host.add_child(game)
+	await _host.get_tree().process_frame
+	GameClock.paused = true
+	game.apply_scenario("midboss")
+	if by_bot:
+		game._bot = true
+	var mid := StringName(RiftPortal.midboss_of(DB.stage(stage_id))["id"])
+	var label := "limiar %s%s (%s, %s): " % [stage_id, " diário" if bool(cfg.get("daily", false)) else "",
+			cfg["hero"], "bot" if by_bot else "dano"]
+	_tick(game, roundi((RiftPortal.WARN_LEAD + 1.5) / STEP))
+	_check.call(game.bosses.has_boss(mid), label + "Guardião entra")
+	var weapon := game.weapons[0].id
+	var ticks := 0
+	while game.bosses.has_boss(mid) and ticks < 60 * 90:
+		for boss: Dictionary in game.bosses.bosses:
+			var i := int(boss["index"])
+			if StringName(boss["id"]) != mid:
+				continue
+			if by_bot:
+				game.enemies.hp[i] = minf(game.enemies.hp[i], 60.0)
+			else:
+				game.enemies.pos[i] = game.player.sim_pos + Vector2(220.0, 0.0)
+				game.enemies.prev[i] = game.enemies.pos[i]
+				game.deal_damage(weapon, i, 400.0, Vector2.RIGHT, 0.0)
+		_tick(game, 1)
+		ticks += 1
+	var rift := game.rift
+	_check.call(not game.bosses.has_boss(mid), label + "Guardião morre (%d passos)" % ticks)
+	_check.call(rift.midboss_done and (rift.is_open() or rift.crossing() or rift.in_realm),
+			label + "portal aberto (estado %d)" % rift.state)
+	if not by_bot:
+		var boss_chests := _chests(game).filter(func(c: Dictionary) -> bool: return bool(c.get("boss", false)))
+		_check.call(boss_chests.size() == 2, label + "dois baús de chefe (%d)" % boss_chests.size())
 	await _free(game)

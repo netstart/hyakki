@@ -16,8 +16,9 @@ extends RefCounted
 ## Cada dica: {id, cat, tier, weight, key, args (chaves traduzidas que entram nos %s), icons
 ## ("weapon:id", "passive:id", "item:id", "kami:id"), recipe (ícones com + e =), when, after,
 ## priority, gap, base}. Condições ("when", todas precisam valer): platform, min_runs, max_runs,
-## min_wins, max_wins, min_deaths, evolved, can_buy, hero, unlocked e locked ("weapons:id",
-## "passives:id"). Uma chave desconhecida reprova a dica (erro de digitação não passa calado).
+## min_wins, max_wins, min_deaths, min_altars (altares do selo já despertados), evolved, can_buy,
+## hero, unlocked e locked ("weapons:id", "passives:id"). Uma chave desconhecida reprova a dica
+## (erro de digitação não passa calado).
 ##
 ## Escolha (pick): só dicas que valem para o save (contexto do TipDeck), as de iniciante primeiro
 ## (tier 0, depois 1 a partir de TIER_RUNS[1] partidas e 2 a partir de TIER_RUNS[2]) e sem repetir
@@ -40,7 +41,7 @@ const HERO_WEAPON_WEIGHT := 3.0
 const EARLY_DEATH := 180.0
 const MID_RUN := 240.0
 const WHEN_KEYS: Array[String] = ["platform", "min_runs", "max_runs", "min_wins", "max_wins", "min_deaths",
-		"evolved", "can_buy", "hero", "unlocked", "locked"]
+		"min_altars", "evolved", "can_buy", "hero", "unlocked", "locked"]
 const AFTER_TAGS: Array[String] = ["early", "no_evolution", "few_weapons", "boss", "midboss", "shinigami", "dark"]
 const GEN_EVOLUTION := "tip.gen.evolution"
 const GEN_UNION := "tip.gen.union"
@@ -188,7 +189,7 @@ static func _achievement_for(achievements: Array, reward: String) -> String:
 
 ## Contexto vazio (padrões de um save novo, fora do Android). O TipDeck preenche do jogo.
 static func default_context() -> Dictionary:
-	return {"enabled": true, "platform": "desktop", "runs": 0, "wins": 0, "deaths": 0, "evolved": 0,
+	return {"enabled": true, "platform": "desktop", "runs": 0, "wins": 0, "deaths": 0, "altars": 0, "evolved": 0,
 			"can_buy": false, "hero": "aki", "hero_weapon": "katana", "available": {"weapons": [], "passives": []}}
 
 
@@ -211,6 +212,8 @@ static func eligible(tip: Dictionary, ctx: Dictionary) -> bool:
 				ok = int(ctx.get("wins", 0)) <= int(v)
 			"min_deaths":
 				ok = int(ctx.get("deaths", 0)) >= int(v)
+			"min_altars":
+				ok = int(ctx.get("altars", 0)) >= int(v)
 			"evolved":
 				ok = (int(ctx.get("evolved", 0)) > 0) == bool(v)
 			"can_buy":

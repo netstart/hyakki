@@ -16,6 +16,8 @@ const DECAY := 0.035
 const BOSS_EAT := 0.7
 const EXTINGUISHED_RADIUS := 34.0
 const BASE_DARKNESS := 0.72
+## Modo Brisa: a escuridão fica nesta fração (mais clara).
+const BRISA_DARKNESS := 0.6
 const SHADER_LIGHTS := 24
 
 var game: HyakkiGame
@@ -129,7 +131,7 @@ func _process(delta: float) -> void:
 		dawn = clampf(left / 30.0, 0.0, 1.0)
 	dark *= dawn
 	if game.mode == "brisa":
-		dark *= 0.6
+		dark *= BRISA_DARKNESS
 	_material.set_shader_parameter("darkness", dark)
 	_material.set_shader_parameter("warmth", 0.14 * dawn)
 	_update_lights(cam, zoom, view, calm, dawn)
@@ -140,6 +142,8 @@ func _update_lights(cam: Vector2, zoom: Vector2, view: Vector2, calm: bool, dawn
 	var found: Array = game.world.collect_lights(cam, view * 0.5 / zoom + Vector2(40, 40))
 	if game.rift != null:
 		found.append_array(game.rift.collect_lights(cam, view * 0.5 / zoom + Vector2(40, 40)))
+	if game.altars != null:
+		found.append_array(game.altars.collect_lights(cam, view * 0.5 / zoom + Vector2(40, 40)))
 	found.sort_custom(func(a: Array, b: Array) -> bool:
 			return cam.distance_squared_to(a[0]) < cam.distance_squared_to(b[0]))
 	var count := mini(found.size(), mini(_lights_max - 1, SHADER_LIGHTS))

@@ -103,21 +103,25 @@ func build_choices(rng: RandomNumberGenerator, exclude: Array[Dictionary] = []) 
 	_draw_into(picks, wanted, pool, weights, rng)
 	_draw_into(picks, wanted, reserve, reserve_weights, rng)
 	if picks.is_empty():
-		picks = fallback_cards()
+		picks = fallback_cards(RedMoon.no_food(game.moon))
 	return picks
 
 
-## Mão de quem já tem tudo no máximo: comida (cura) ou um saco de ryō.
-static func fallback_cards() -> Array[Dictionary]:
+## Mão de quem já tem tudo no máximo: comida (cura) ou um saco de ryō. `no_food` (Lua Vermelha IV,
+## sem bolinhos de arroz): só o saco de ryō.
+static func fallback_cards(no_food: bool = false) -> Array[Dictionary]:
+	var ryo := {"kind": "ryo", "id": &"ryo_bag", "level": 0, "tag": "",
+			"title": TranslationServer.translate("item.ryo_bag.name"),
+			"text": TranslationServer.translate("levelup.fallback_ryo"),
+			"icon": "res://assets/art/items/object/MoneyBag.png"}
+	if no_food:
+		return [ryo]
 	return [
 		{"kind": "heal", "id": &"onigiri", "level": 0, "tag": "",
 				"title": TranslationServer.translate("item.onigiri.name"),
 				"text": TranslationServer.translate("levelup.fallback_heal"),
 				"icon": "res://assets/art/items/food/Onigiri.png"},
-		{"kind": "ryo", "id": &"ryo_bag", "level": 0, "tag": "",
-				"title": TranslationServer.translate("item.ryo_bag.name"),
-				"text": TranslationServer.translate("levelup.fallback_ryo"),
-				"icon": "res://assets/art/items/object/MoneyBag.png"},
+		ryo,
 	]
 
 
@@ -172,19 +176,27 @@ static func is_fallback(cards: Array[Dictionary]) -> bool:
 
 ## Carta que a escolha automática pega nesta mão, ou {} para perguntar (mão normal, opção em
 ## "Perguntar" ou o bot, que ignora a opção para não mudar o determinismo). Toque esperto: com a
-## vida cheia a comida seria desperdiçada, então "Comida" pega o ryō.
+## vida cheia a comida seria desperdiçada, então "Comida" pega o ryō; sem a carta de comida (Lua
+## Vermelha IV), também.
 func auto_card(cards: Array[Dictionary]) -> Dictionary:
 	if game.is_bot() or not is_fallback(cards):
 		return {}
 	var kind := String(Settings.get_value(AUTO_SETTING))
 	if not FALLBACK_KINDS.has(kind):
 		return {}
-	if kind == "heal" and game.player.hp >= game.player.max_hp():
+	if kind == "heal" and (game.player.hp >= game.player.max_hp() or not _has_kind(cards, "heal")):
 		kind = "ryo"
 	for card: Dictionary in cards:
 		if String(card["kind"]) == kind:
 			return card
 	return {}
+
+
+static func _has_kind(cards: Array[Dictionary], kind: String) -> bool:
+	for card: Dictionary in cards:
+		if String(card.get("kind", "")) == kind:
+			return true
+	return false
 
 
 ## Escolha automática de níveis seguidos a partir de `hand` (`pending` pendentes, ao menos 1):

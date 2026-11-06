@@ -60,7 +60,7 @@ def data_keys() -> set:
         kind = m["condition"]["type"]
         keys |= {f"mission.{kind}.name", f"mission.{kind}.desc", f"mission.cat.{m['cat']}"}
     keys |= {f"mission.cat.{c}" for c in ("stages", "heroes", "weapons", "bosses", "lantern", "kami",
-                                          "endless", "kills", "daily", "collection")}
+                                          "endless", "kills", "altars", "daily", "collection")}
     keys |= ability_keys()
     for i in data("items"):
         keys.add(f"item.{i['id']}.name")

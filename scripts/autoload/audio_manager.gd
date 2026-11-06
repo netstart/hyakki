@@ -111,6 +111,9 @@ const VARIANTS := {
 	"a_oni_roar": ["a_oni_roar_0", "a_oni_roar_1"],
 	"a_whirl": ["a_whirl_0", "a_whirl_1"],
 	"a_denied": ["a_denied_0"],
+	# Altares do Selo (alt_*, CC0, tools/gen_altar_sfx.py) e explosões do Ninja Adventure (CC0).
+	"alt_thunder": ["alt_thunder_0", "alt_thunder_1", "alt_thunder_2"],
+	"alt_explosion": ["n_explosion_2", "n_explosion_4", "n_explosion_5"],
 	"a_ready": ["a_ready_0"],
 }
 

@@ -48,7 +48,7 @@ var _materials: Dictionary = {}
 var _art_ready: bool = false
 
 ## Dados determinísticos por chunk: {"items", "solids", "paint", "keepout", "lanterns",
-## "statues", "lava"}.
+## "statues", "lava", "altars"}.
 var _chunks: Dictionary = {}
 ## Obstáculos indexados por célula (Vector2i -> [[pos, r], ...]) e chunks já indexados com
 ## os vizinhos. resolve() roda para cada inimigo a cada passo: assim olha uma célula só.
@@ -60,6 +60,11 @@ var _build_queue: Array[Vector2i] = []
 ## Preparação em segundo plano (máscara e decoração espalhada): Vector2i -> job.
 var _jobs: Dictionary = {}
 var _destroyed_lanterns: Dictionary = {}
+## Lanternas e lava de cada chunk só pelo sorteio (sem montar o chunk): a folga dos altares olha os
+## vizinhos sem chamar chunk_data deles (que olharia os vizinhos de volta).
+var _sites: Dictionary = {}
+## Altares dos chunks da simulação (reaproveitado por altars_active, sem alocar por chamada).
+var _altar_buf: Array = []
 var _lantern_enemy: Dictionary = {}
 var _statue_timer: float = 0.0
 var _storm_timer: float = 0.0
@@ -89,6 +94,7 @@ func setup(stage_data: Dictionary, run_seed: int) -> void:
 	_sim_active.clear()
 	_clear_views()
 	_destroyed_lanterns.clear()
+	_sites.clear()
 	_lantern_enemy.clear()
 	storm_active = false
 	_storm_timer = 0.0
@@ -401,7 +407,7 @@ func chunk_data(c: Vector2i) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, c.x, c.y, String(stage.get("id", ""))])
 	var origin := Vector2(c.x * CHUNK, c.y * CHUNK)
-	var data := {"solids": [], "lanterns": [], "statues": [], "lava": []}
+	var data := {"solids": [], "lanterns": [], "statues": [], "lava": [], "altars": []}
 	var reserved: Array = []
 	var lanterns := float(stage.get("lanterns_per_chunk", 2)) * (CHUNK / 512.0) * (CHUNK / 512.0)
 	var lantern_count := int(lanterns) + (1 if rng.randf() < fmod(lanterns, 1.0) else 0)
@@ -430,6 +436,20 @@ func chunk_data(c: Vector2i) -> Dictionary:
 					var r := rng.randf_range(18.0, 30.0)
 					(data["lava"] as Array).append([at.round(), r])
 					reserved.append([at.round(), r + 8.0])
+	# Altar do Selo (AltarSystem): sorteio próprio do chunk (não muda o resto do chunk), longe do
+	# início, dos vizinhos e das lanternas; sólido no centro e o círculo do ritual livre de terreno.
+	var altar := altar_site(c)
+	var clear := AltarSystem.RESERVE_RADIUS + 12.0
+	var lantern_clear := (data["lanterns"] as Array).all(func(l: Vector2) -> bool: return l.distance_to(altar) > clear)
+	var statue_clear := (data["statues"] as Array).all(func(s: Vector2) -> bool: return s.distance_to(altar) > clear)
+	var lava_clear := (data["lava"] as Array).all(func(l: Array) -> bool:
+			return (l[0] as Vector2).distance_to(altar) > clear + float(l[1]))
+	if altar != Vector2.INF and lantern_clear and statue_clear and lava_clear:
+		lantern_clear = _neighbors_clear(c, altar, clear)
+	if altar != Vector2.INF and lantern_clear and statue_clear and lava_clear:
+		(data["altars"] as Array).append(altar)
+		(data["solids"] as Array).append([altar, AltarSystem.SOLID_RADIUS])
+		reserved.append([altar, AltarSystem.RESERVE_RADIUS])
 	var structure := layout.generate(c, reserved)
 	(data["solids"] as Array).append_array(structure["solids"])
 	var items: Array = structure["items"]
@@ -442,6 +462,88 @@ func chunk_data(c: Vector2i) -> Dictionary:
 	data["keepout"] = structure["keepout"]
 	_chunks[c] = data
 	return data
+
+
+## Candidato a altar do chunk `c` (Vector2.INF se não houver): sorteio próprio, função pura da
+## semente, da fase e do chunk (o mesmo em qualquer nível gráfico e velocidade). Fica só o de maior
+## prioridade entre vizinhos a menos de AltarSystem.MIN_GAP px, então dois altares nunca nascem
+## colados.
+func altar_site(c: Vector2i) -> Vector2:
+	var mine := _altar_candidate(c)
+	if mine.z < 0.0:
+		return Vector2.INF
+	var at := Vector2(mine.x, mine.y)
+	for dy: int in range(-2, 3):
+		for dx: int in range(-2, 3):
+			if dx == 0 and dy == 0:
+				continue
+			var other := _altar_candidate(c + Vector2i(dx, dy))
+			if other.z > mine.z and at.distance_to(Vector2(other.x, other.y)) < AltarSystem.MIN_GAP:
+				return Vector2.INF
+	return at
+
+
+## (x, y, prioridade) do sorteio do chunk; prioridade < 0 = sem altar.
+func _altar_candidate(c: Vector2i) -> Vector3:
+	if not AltarSystem.stage_has_altars(stage):
+		return Vector3(0, 0, -1)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([seed_value, c.x, c.y, String(stage.get("id", "")), "altar"])
+	if rng.randf() >= AltarSystem.ALTAR_CHANCE:
+		return Vector3(0, 0, -1)
+	var margin := AltarSystem.EDGE_MARGIN
+	var origin := Vector2(c.x * CHUNK, c.y * CHUNK)
+	var at := (origin + Vector2(rng.randf_range(margin, CHUNK - margin), rng.randf_range(margin, CHUNK - margin))).round()
+	if at.length() < AltarSystem.MIN_START_DIST or not _inside_bounds(at, AltarSystem.RESERVE_RADIUS + 8.0):
+		return Vector3(0, 0, -1)
+	return Vector3(at.x, at.y, rng.randf())
+
+
+## Posições dos altares dos chunks da simulação (os perto da guardiã).
+func altars_active() -> Array:
+	_altar_buf.clear()
+	for c: Vector2i in _sim_active:
+		_altar_buf.append_array(chunk_data(c)["altars"])
+	return _altar_buf
+
+
+## Nenhuma lanterna nem lava dos 8 chunks vizinhos encosta no círculo do altar em `at`.
+func _neighbors_clear(c: Vector2i, at: Vector2, clear: float) -> bool:
+	for dy: int in range(-1, 2):
+		for dx: int in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var sites := hazard_sites(c + Vector2i(dx, dy))
+			for l: Vector2 in sites["lanterns"]:
+				if l.distance_to(at) <= clear:
+					return false
+			for spot: Array in sites["lava"]:
+				if (spot[0] as Vector2).distance_to(at) <= clear + float(spot[1]):
+					return false
+	return true
+
+
+## Lanternas e lava do chunk `c` com o mesmo sorteio de chunk_data (mesma semente e ordem).
+func hazard_sites(c: Vector2i) -> Dictionary:
+	if _sites.has(c):
+		return _sites[c]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([seed_value, c.x, c.y, String(stage.get("id", ""))])
+	var origin := Vector2(c.x * CHUNK, c.y * CHUNK)
+	var out := {"lanterns": [], "lava": []}
+	var lanterns := float(stage.get("lanterns_per_chunk", 2)) * (CHUNK / 512.0) * (CHUNK / 512.0)
+	var lantern_count := int(lanterns) + (1 if rng.randf() < fmod(lanterns, 1.0) else 0)
+	for _k: int in range(lantern_count):
+		var at := origin + Vector2(rng.randf_range(16, CHUNK - 16), rng.randf_range(16, CHUNK - 16))
+		if at.length() > SAFE_RADIUS * 0.6 and _inside_bounds(at, 16.0):
+			(out["lanterns"] as Array).append(at.round())
+	var hazard: Dictionary = stage.get("hazard", {})
+	if String(hazard.get("type", "")) == "lava" and rng.randf() < 0.45:
+		var at := origin + Vector2(rng.randf_range(30, CHUNK - 30), rng.randf_range(30, CHUNK - 30))
+		if at.length() > 150.0:
+			(out["lava"] as Array).append([at.round(), rng.randf_range(18.0, 30.0)])
+	_sites[c] = out
+	return out
 
 
 func _inside_bounds(p: Vector2, margin: float) -> bool:

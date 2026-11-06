@@ -21,3 +21,10 @@ signal ability_failed(slot: int, reason: int)
 signal ability_ready(slot: int)
 ## O guardião chegou ao nível que libera a habilidade do slot (1, 5 e 10).
 signal ability_unlocked(slot: int, ability_id: StringName)
+## Altares do Selo (AltarSystem): o selo quebrou em `position`; `outcome` é &"elite" ou &"ambush".
+signal altar_awakened(position: Vector2, outcome: StringName)
+## Um Elite com afixos (EliteAffixes) entrou em campo: índice no EnemyManager, id do inimigo e
+## os afixos (Array[StringName], na ordem do nome).
+signal elite_spawned(index: int, enemy_id: StringName, affixes: Array)
+## O Elite com afixos morreu em `position`.
+signal elite_slain(position: Vector2, enemy_id: StringName, affixes: Array)

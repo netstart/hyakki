@@ -67,7 +67,7 @@
     "commercial_use": true,
     "redistribution_of_raw_pack": true,
     "ai_generated": false,
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png)",
     "files": [
       "assets/art/**",
       "assets/licenses_src/ninja_adventure_*",
@@ -636,16 +636,18 @@
     "commercial_use": true,
     "redistribution_of_raw_pack": false,
     "ai_generated": false,
-    "modifications": "two monster sprites (candlesnake_boss, mimic_campfire) renamed to Sprite.png; 4-frame breathing strip Idle.png derived by tools/make_midboss_idle.py",
+    "modifications": "two monster sprites (candlesnake_boss, mimic_campfire) renamed to Sprite.png; 4-frame breathing strip Idle.png derived by tools/make_midboss_idle.py; effect sheets fx/explosion and fx/impact_01..03 re-packed by tools/import_altar_fx.py into strips of square frames (pixels moved, not redrawn)",
     "files": [
       "assets/art/midbosses/yomi/*",
-      "assets/art/midbosses/dunes/*"
+      "assets/art/midbosses/dunes/*",
+      "assets/art/fx/explosion_big/*",
+      "assets/art/fx/impact/*"
     ],
     "verified_at": "2026-10-28",
     "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
     "sha256": {
-      "license_file": "ad01a9263856e5f891f32637baf6ab4e1440551ddbd68a02d1e2f0bf9027b06c",
-      "notice_file": "3fdc2cf776e4757bb988a93b4cbfe17ff83e8503c5f16de6ea4c2b3da45ab191",
+      "license_file": "921b6b8736f6e39d6e3e44900e362b1ca1413bd0e5c8dce37237eea1b15b1d18",
+      "notice_file": "48839092d99b7eb5547e2ffc274622e987bedd4e66d8b196df2a839aaa75c84e",
       "snapshot_file": "d926656743a4dcc7f877afdc6ed44aee426e67a183d6028906df7e62c16323b6"
     },
     "snapshot_file": "docs/licenses/pixelboy_freemix_2026-10-28.pdf",
@@ -858,5 +860,61 @@
     },
     "snapshot_file": "docs/licenses/hyakki_ability_icons_2026-11-01.txt",
     "downloaded_at": "2026-11-01"
+  },
+  {
+    "id": "hyakki_altar_art",
+    "name": "Hyakki - Seal Altar and Elite art",
+    "category": "art",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "version": "tools/gen_altar_art.py (2026-11-03)",
+    "source_url": "tools/gen_altar_art.py",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_file": "licenses/notices/hyakki_altar_art_NOTICE.txt",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "original pixel art drawn procedurally by tools/gen_altar_art.py (stone altar in 3 states, rune circle, runes, ofuda, elite affix icons and crest) with colors from the Ninja Adventure palette (CC0)",
+    "files": [
+      "assets/art/altar/*"
+    ],
+    "verified_at": "2026-11-03",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "5bc2274dd62ac8101845fb5e136a95cc6c0919578ad22419679c508406a3b3b2",
+      "snapshot_file": "16b65edf78a98415b14b74de3b167e957e4cd30f8cf574bf72804d1876685ae7"
+    },
+    "snapshot_file": "docs/licenses/hyakki_altar_art_2026-11-03.txt",
+    "downloaded_at": "2026-11-03"
+  },
+  {
+    "id": "hyakki_altar_sfx",
+    "name": "Hyakki - procedural Seal Altar and Elite sound effects",
+    "category": "audio",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "version": "tools/gen_altar_sfx.py (2026-11-03)",
+    "source_url": "tools/gen_altar_sfx.py",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_file": "licenses/notices/hyakki_altar_sfx_NOTICE.txt",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "original work, synthesized procedurally by tools/gen_altar_sfx.py (alt_*.wav)",
+    "files": [
+      "assets/audio/sfx/alt_*"
+    ],
+    "verified_at": "2026-11-03",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "15f6024ef00bcb2bec96660d09249c12326b88f7cede7010879a60eb608863a7",
+      "snapshot_file": "61d75b2a4d4a206ec3d579c3ad1a2235e199191da1f27e64f076dc5976d593f3"
+    },
+    "snapshot_file": "docs/licenses/hyakki_altar_sfx_2026-11-03.txt",
+    "downloaded_at": "2026-11-03"
   }
 ]

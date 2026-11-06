@@ -32,6 +32,15 @@ var doubled_ryo: bool = false
 var realm_reached: bool = false
 ## Abates fora da luz da lanterna (Missões do Santuário).
 var dark_kills: int = 0
+## Altares do Selo (AltarSystem, Missões e Diário): selos quebrados, emboscadas, Elites com afixos
+## vencidos, o maior número de afixos de um Elite vencido e os afixos já vencidos ({id: true}).
+var altars_awakened: int = 0
+var altar_ambushes: int = 0
+var altar_elites_slain: int = 0
+var elite_affix_max: int = 0
+var elite_affixes_slain: Dictionary = {}
+## Afixos dos Elites que surgiram nesta partida ({id: true}): o Guia os mostra (Discovery.affix_known).
+var elite_affixes_seen: Dictionary = {}
 ## Lutas com chefes em andamento: {id: {start, hits}} (golpes do chefe na guardiã na entrada).
 var boss_fights: Dictionary = {}
 ## Chefes vencidos nesta partida: {id: {time (s da entrada à derrota), clean (sem golpe dele)}}.
@@ -48,6 +57,27 @@ func on_kill(enemy_id: StringName, time: float, dark: bool = false) -> void:
 	while not _kill_times.is_empty() and time - _kill_times[0] > 10.0:
 		_kill_times.remove_at(0)
 	max_kills_10s = maxi(max_kills_10s, _kill_times.size())
+
+
+## Um altar quebrou o selo (`outcome` &"elite" ou &"ambush").
+func on_altar(outcome: StringName) -> void:
+	altars_awakened += 1
+	if outcome == &"ambush":
+		altar_ambushes += 1
+
+
+## Um Elite de altar surgiu com estes afixos (só registro).
+func on_elite_spawned(affixes: Array) -> void:
+	for id: Variant in affixes:
+		elite_affixes_seen[StringName(id)] = true
+
+
+## Um Elite de altar foi vencido com estes afixos.
+func on_elite_slain(affixes: Array) -> void:
+	altar_elites_slain += 1
+	elite_affix_max = maxi(elite_affix_max, affixes.size())
+	for id: Variant in affixes:
+		elite_affixes_slain[StringName(id)] = true
 
 
 ## Gasta ryō da partida (o HUD lê `ryo` a cada quadro).
@@ -94,7 +124,11 @@ func snapshot() -> Dictionary:
 			"boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
 			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
 			"abilities": abilities, "ability_uses": uses_out, "ryo_spent": ryo_spent,
-			"kami": Array(kami).map(func(k: StringName) -> String: return String(k))}
+			"kami": Array(kami).map(func(k: StringName) -> String: return String(k)),
+			"altars_awakened": altars_awakened, "altar_ambushes": altar_ambushes,
+			"altar_elites_slain": altar_elites_slain, "elite_affix_max": elite_affix_max,
+			"elite_affixes_slain": elite_affixes_slain.keys().map(func(k: StringName) -> String: return String(k)),
+			"elite_affixes_seen": elite_affixes_seen.keys().map(func(k: StringName) -> String: return String(k))}
 
 
 func restore(s: Dictionary) -> void:
@@ -115,6 +149,14 @@ func restore(s: Dictionary) -> void:
 	ryo_spent = int(s.get("ryo_spent", 0))
 	for k: Variant in s.get("kami", []):
 		kami.append(StringName(String(k)))
+	altars_awakened = int(s.get("altars_awakened", 0))
+	altar_ambushes = int(s.get("altar_ambushes", 0))
+	altar_elites_slain = int(s.get("altar_elites_slain", 0))
+	elite_affix_max = int(s.get("elite_affix_max", 0))
+	for id: Variant in s.get("elite_affixes_slain", []):
+		elite_affixes_slain[StringName(String(id))] = true
+	for id: Variant in s.get("elite_affixes_seen", []):
+		elite_affixes_seen[StringName(String(id))] = true
 
 
 static func _str_keys(table: Dictionary) -> Dictionary:

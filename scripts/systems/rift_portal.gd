@@ -150,7 +150,7 @@ func has_art() -> bool:
 
 ## O zumbido do portal está tocando (testes).
 func hum_playing() -> bool:
-	return _hum != null and _hum.playing
+	return _hum != null and (_hum.playing or _hum.stream_paused)
 
 
 func _exit_tree() -> void:
@@ -161,11 +161,13 @@ func _start_hum() -> void:
 	if _hum == null or _hum.stream == null:
 		return
 	_hum.position = portal_pos
+	_hum.stream_paused = false
 	_hum.play()
 
 
 func _stop_hum() -> void:
 	if _hum != null:
+		_hum.stream_paused = false
 		_hum.stop()
 
 
@@ -375,7 +377,8 @@ func finish_crossing_now() -> void:
 func _process(delta: float) -> void:
 	queue_redraw()
 	_glow.queue_redraw()
-	if _hum.playing:
+	# Pausado, `playing` fica falso: sem olhar stream_paused o zumbido nunca voltava da pausa.
+	if _hum.playing or _hum.stream_paused:
 		# Segue o portal que flutua no puxão; cala junto com o relógio (pausa, morte, travessia).
 		_hum.position = portal_pos
 		_hum.stream_paused = GameClock.paused

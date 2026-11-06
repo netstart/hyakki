@@ -1350,6 +1350,42 @@
   "sha256": "53861dc5e46592ce65533c221911a0b9f489d87d8bf794ebe1e161f61252a4b7"
  },
  {
+  "file": "assets/art/altar/affix_icons.png",
+  "source": "tools/gen_altar_art.py",
+  "license_id": "hyakki_altar_art",
+  "sha256": "30016b2832543171e09b2d8b2490f640c76bbe7b07d4a1b8f4dc785111a549a0"
+ },
+ {
+  "file": "assets/art/altar/altar.png",
+  "source": "tools/gen_altar_art.py",
+  "license_id": "hyakki_altar_art",
+  "sha256": "0eb3090595bad2106c3ba0abaf6d4d532e24834c5655d8557878a6c451f023a2"
+ },
+ {
+  "file": "assets/art/altar/elite_crest.png",
+  "source": "tools/gen_altar_art.py",
+  "license_id": "hyakki_altar_art",
+  "sha256": "2bc08abbae7b5c5de0458ea07ab4dc1c4093d1ef4b0cae95203e89e0fabd609b"
+ },
+ {
+  "file": "assets/art/altar/ofuda.png",
+  "source": "tools/gen_altar_art.py",
+  "license_id": "hyakki_altar_art",
+  "sha256": "e7f64f0acba7dc064b1c7bc7c77f33b37119fe496c902b38519f8ea1766dfba8"
+ },
+ {
+  "file": "assets/art/altar/rune_circle.png",
+  "source": "tools/gen_altar_art.py",
+  "license_id": "hyakki_altar_art",
+  "sha256": "ca71dce324c89a464d10aa84cd7a0ef0ca4314845ad298369df7037325b83ee9"
+ },
+ {
+  "file": "assets/art/altar/rune_marks.png",
+  "source": "tools/gen_altar_art.py",
+  "license_id": "hyakki_altar_art",
+  "sha256": "a213fbdf800b0106c4b309d7d1e74a025436c4600561e7427c78dce0f419a871"
+ },
+ {
   "file": "assets/art/bosses/bamboo_ancestral/Attack.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Attack.png",
   "license_id": "ninja_adventure",
@@ -1830,6 +1866,12 @@
   "sha256": "98f3dfc6cdcdfaf122d7cf70b7cbc8e14c96f4e76f1e8f430099575d6b942219"
  },
  {
+  "file": "assets/art/fx/explosion_big/explosion_big.png",
+  "source": "tools/import_altar_fx.py",
+  "license_id": "pixelboy_freemix",
+  "sha256": "9da3f9ed9fe6b17fd954eec63911c4922d855a41b3c7cb6b8b7fc55006b3bf9b"
+ },
+ {
   "file": "assets/art/fx/flame/SpriteSheet.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/FX/Elemental/Flam/SpriteSheet.png",
   "license_id": "ninja_adventure",
@@ -1852,6 +1894,24 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/FX/Elemental/Ice/SpriteSheetFlake.png",
   "license_id": "ninja_adventure",
   "sha256": "b1787c9c617563cd961d13463187b17f4a984c8ded0de10ed1f115b4007b38bc"
+ },
+ {
+  "file": "assets/art/fx/impact/impact_0.png",
+  "source": "tools/import_altar_fx.py",
+  "license_id": "pixelboy_freemix",
+  "sha256": "7414352beb5c10f155fc9a48bed77f85c9dd54f307d7d32ccaad864e5e188676"
+ },
+ {
+  "file": "assets/art/fx/impact/impact_1.png",
+  "source": "tools/import_altar_fx.py",
+  "license_id": "pixelboy_freemix",
+  "sha256": "213a8b6ac29e891003b50939237faadbff19a6e9b7476a720c39d257ecbb67cb"
+ },
+ {
+  "file": "assets/art/fx/impact/impact_2.png",
+  "source": "tools/import_altar_fx.py",
+  "license_id": "pixelboy_freemix",
+  "sha256": "ba66cd2229a12e73616566480b3b63da38d46f80085014d31c9804b82c84470d"
  },
  {
   "file": "assets/art/fx/lightning/lightning.png",
@@ -2064,6 +2124,12 @@
   "sha256": "43e84058fba365cfc2a6dd927a57833a2152a13b9f1e11c1cdc03bd528e90eff"
  },
  {
+  "file": "assets/art/fx/rock/rock_burst.png",
+  "source": "tools/import_altar_fx.py",
+  "license_id": "ninja_adventure",
+  "sha256": "92cdd3550728b152bc5fb0da417aad8b70269722b1fcf912981568227362da64"
+ },
+ {
   "file": "assets/art/fx/rock_spike/SpriteSheet.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/FX/Elemental/RockSpike/SpriteSheet.png",
   "license_id": "ninja_adventure",
@@ -2098,6 +2164,12 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/FX/Attack/SlashDoubleCurved/SpriteSheet.png",
   "license_id": "ninja_adventure",
   "sha256": "0528bca7c38a0bb1a95c5a130d29b6d1e3e36c7fad42988e35f306a78d7b525d"
+ },
+ {
+  "file": "assets/art/fx/slash_double/cut_double.png",
+  "source": "tools/import_altar_fx.py",
+  "license_id": "ninja_adventure",
+  "sha256": "d976dd7b96a84cefd7c4cb52da8421e325d35f65f454e0f9a104edc4e626ae44"
  },
  {
   "file": "assets/art/fx/smoke/SpriteSheet.png",
@@ -4896,6 +4968,102 @@
   "sha256": "515104ca95b567e7fafc7e31b8e10ed99a6b025271c692254a11b3441755c35f"
  },
  {
+  "file": "assets/audio/sfx/alt_ambush.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "f2caf34ec7f91a45887550b2bdb40a25f6f5f14d68b4615d703fef4a5aff2e75"
+ },
+ {
+  "file": "assets/audio/sfx/alt_break.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "5a0d7d99e9c80047f7272df1a4389f4b1934d669eeea2eea0f5eca7f5478c75f"
+ },
+ {
+  "file": "assets/audio/sfx/alt_elite_death.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "e1c22c3e69ca773af257bd2c3e5892bf9644b23783b15ea9a458fc2925616db6"
+ },
+ {
+  "file": "assets/audio/sfx/alt_elite_rise.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "7960d70a1d4ad60feb3dd6db57865702534ad0f61cccf15add2f7d411ea35663"
+ },
+ {
+  "file": "assets/audio/sfx/alt_elite_roar.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "d102a1c8f8e59089dcd02584d268910c2defee9e1e8d67b3d701d743a16fa7a5"
+ },
+ {
+  "file": "assets/audio/sfx/alt_hum.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "07fce9a4356725bd73138553f0c153e9e9eae8aeb5493585ec5f9e8602d7bcd0"
+ },
+ {
+  "file": "assets/audio/sfx/alt_rune_0.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "98bddea8cf31f3191498a518a529715f08c6266a33ca2c9f18e81dbfb8d79d03"
+ },
+ {
+  "file": "assets/audio/sfx/alt_rune_1.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "be1109b592921874f64e67e4f519c129295f95fe9d82d175b16ecc1552c41163"
+ },
+ {
+  "file": "assets/audio/sfx/alt_rune_2.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "9e254b6edf6bd1c804a40211dd874be213adfd85bedd6fe0d43b2d455e61c13c"
+ },
+ {
+  "file": "assets/audio/sfx/alt_rune_3.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "a37d700178694d9a96eb21bf645af3eb0acbd7c1dc6fff081a36dacebf999151"
+ },
+ {
+  "file": "assets/audio/sfx/alt_shield_break.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "0d3d6c200e1fbe4111609b8e72e097af38b51edc96e64352ec837d4ab2e63592"
+ },
+ {
+  "file": "assets/audio/sfx/alt_shield_hit.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "351cf81a73353d739041a48b5a4ddfffb73b7a5cba5f838e114a1a34dd858637"
+ },
+ {
+  "file": "assets/audio/sfx/alt_telegraph.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "9041b44c4ccc416118697929a8e03023c9632aea5ce43141767e0964b8059b6f"
+ },
+ {
+  "file": "assets/audio/sfx/alt_thunder_0.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "300bb2b756968314e55ee05ce3f591beaf0ba7ba5cf215a580e1788e7a638628"
+ },
+ {
+  "file": "assets/audio/sfx/alt_thunder_1.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "9d685969436edf1bc9fc17b4d479541b707b31f2445c922f8b8d001aace2b49c"
+ },
+ {
+  "file": "assets/audio/sfx/alt_thunder_2.wav",
+  "source": "tools/gen_altar_sfx.py",
+  "license_id": "hyakki_altar_sfx",
+  "sha256": "df1cd52e107b04ad1e56a10fd10f50203cfc5c1f952533180c6d72b532a853e4"
+ },
+ {
   "file": "assets/audio/sfx/bonus.wav",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Bonus/Bonus.wav",
   "license_id": "ninja_adventure",
@@ -6172,6 +6340,42 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Magic & Skill/Magic4.wav",
   "license_id": "ninja_adventure",
   "sha256": "47c67a62aeb5ebcd90db28ab8f13fb1d7894a6f39157afc363426ceddd98b12b"
+ },
+ {
+  "file": "assets/audio/sfx/n_alert_2.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Alert/Alert2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "070bb57d1929b773d9ab1a799cb7904a4bd8f3db2c79332149963e439c43c755"
+ },
+ {
+  "file": "assets/audio/sfx/n_explosion_2.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Explosion2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "6ee30b0cd88e83e302cbea4adb7d53322a414aef64cd0e03194d4465e31a9d60"
+ },
+ {
+  "file": "assets/audio/sfx/n_explosion_4.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Explosion4.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "71cc605443b19d2f3f80e3e5800ec0c144fb20b210b266c0d632acbda782cd05"
+ },
+ {
+  "file": "assets/audio/sfx/n_explosion_5.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Explosion5.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "3e23968cce244b0a280ae2206f0170c352d4751e9dea3f2d4e68a990428f13ca"
+ },
+ {
+  "file": "assets/audio/sfx/n_magic_3.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Magic & Skill/Magic3.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "6e6baa8aa530a1aa64e2cd5def8c0e6bb875c9a312fdfd765d1a62f3fa09d9bb"
+ },
+ {
+  "file": "assets/audio/sfx/n_magic_5.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Magic & Skill/Magic5.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "e6d4d18949e513255ed2363fb19133df40dfd38a088bef20f634157012fc2585"
  },
  {
   "file": "assets/audio/sfx/p_midboss_intro_0.wav",

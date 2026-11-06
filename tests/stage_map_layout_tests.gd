@@ -4,13 +4,16 @@ extends RefCounted
 ## dentro do mapa e da tela, tocáveis e sem se encostar; pergaminho com todos os textos
 ## (região, nome, chefes, narrativa, crônica, recordes) contidos; opções e Começar
 ## visíveis. Estados: perfil novo (só a vila liberada) e perfil com vila e bambuzal
-## vencidos (selo, estrada vermelha, luas e chefes derrotados coloridos).
+## vencidos (selo, estrada vermelha, luas e chefes derrotados coloridos) e a vila com a Lua V
+## escolhida (as cinco regras somadas no alto da narrativa).
 ## Chamado por tests/integration_tests.gd e tests/stage_map_runner.gd (que passam o _check).
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 ## Tamanho do pergaminho na resolução de referência (a primeira de tests/device_profiles.gd);
 ## nas outras ele só não pode mudar de um ponto para outro (não cresce com o texto).
-const CARD_SIZE := Vector2(266, 293)
+const CARD_SIZE := Vector2(278, 293)
+## Linhas da narrativa visíveis sem rolar nas telas de 270 de altura (as mais comuns).
+const STORY_LINES_270 := 5
 
 var _host: Node
 var _check: Callable
@@ -41,6 +44,10 @@ func run(host: Node, check: Callable) -> void:
 			await _check_layout(ctx[1], "%s, com progresso" % tag)
 			if lang == "pt_BR":
 				await _check_walk(ctx[1])
+			await close(ctx)
+			SaveManager.data = progress_profile(HyakkiGame.MAX_MOON - 1)
+			ctx = await open_screen("village")
+			await _check_moon_rules(ctx[1], "%s, Lua %s" % [tag, GuideBook.roman(HyakkiGame.MAX_MOON)])
 			await close(ctx)
 	DeviceProfiles.clear_insets()
 	SaveManager.data = original
@@ -137,7 +144,40 @@ func _check_layout(screen: Control, state: String) -> void:
 		map.select(id, false)
 		await _host.get_tree().process_frame
 		_check_card(screen, "%s, %s" % [state, id])
+		if _view.size.y >= 360.0 and id in [&"village", &"bamboo"]:
+			# Com progresso entram a crônica e os recordes: aí só a fonte não pode encolher.
+			await _check_story_fits(screen, "%s, %s" % [state, id], not bool(SaveManager.stage_best(&"village")["won"]))
 	map.select(start, false)
+	if Locale.current == "pt_BR":
+		await _check_fade(screen, state)
+
+
+## Telas de 360 ou mais de altura: a narrativa da vila e do bambuzal na fonte do texto ou maior e,
+## sem a crônica (`must_fit`), inteira sem rolar.
+func _check_story_fits(screen: Control, state: String, must_fit: bool) -> void:
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	var bar := (screen.get("_scroll") as ScrollContainer).get_v_scroll_bar()
+	var px := int(screen.call("story_font_size"))
+	_check.call(px >= ThemeFactory.FONT_SIZE and (not must_fit or bar.max_value - bar.page <= 0.5),
+			"Jornada %s: narrativa inteira sem rolar (fonte %d, sobra %.0f px)" % [state, px, bar.max_value - bar.page])
+
+
+## Esfumado da narrativa: embaixo enquanto há texto abaixo; em cima depois de rolar até o fim.
+func _check_fade(screen: Control, state: String) -> void:
+	var scroll := screen.get("_scroll") as ScrollContainer
+	await _host.get_tree().process_frame
+	var bar := scroll.get_v_scroll_bar()
+	var more := bar.max_value - bar.page > 0.5
+	_check.call(screen.call("fade_state") == Vector2i(0, int(more)),
+			"Jornada %s: esfumado só embaixo e só com texto abaixo (%s)" % [state, screen.call("fade_state")])
+	if not more:
+		return
+	scroll.scroll_vertical = int(bar.max_value)
+	await _host.get_tree().process_frame
+	_check.call(screen.call("fade_state") == Vector2i(1, 0),
+			"Jornada %s: esfumado em cima ao rolar até o fim (%s)" % [state, screen.call("fade_state")])
+	scroll.scroll_vertical = 0
 
 
 func _check_card(screen: Control, state: String) -> void:
@@ -149,10 +189,21 @@ func _check_card(screen: Control, state: String) -> void:
 			continue
 		_check.call(card_rect.encloses(l.get_global_rect()), "Jornada %s: %s dentro do cartão" % [state, key])
 		_check.call(l.get_visible_line_count() >= l.get_line_count(), "Jornada %s: %s aparece inteiro" % [state, key])
+	var headline := screen.get("_name") as Label
+	_check.call(headline.get_line_count() == 1,
+			"Jornada %s: nome da fase numa linha só (%d linhas)" % [state, headline.get_line_count()])
 	var scroll := screen.get("_scroll") as ScrollContainer
 	var scroll_rect := scroll.get_global_rect()
 	_check.call(card_rect.encloses(scroll_rect) and scroll_rect.size.y >= 40.0,
 			"Jornada %s: narrativa dentro do cartão com espaço (%.0f px)" % [state, scroll_rect.size.y])
+	if _view.size.y <= 270.0:
+		# Linha na fonte do texto (a narrativa só sobe de fonte quando cabe inteira).
+		var journey := screen.get("_journey") as Label
+		var line := journey.get_theme_font("font").get_height(ThemeFactory.FONT_SIZE) \
+				+ journey.get_theme_constant("line_spacing")
+		_check.call(scroll_rect.size.y >= line * STORY_LINES_270,
+				"Jornada %s: narrativa com %d linhas sem rolar (%.0f px, linha %.0f)"
+				% [state, STORY_LINES_270, scroll_rect.size.y, line])
 	for key: String in ["_journey", "_chronicle"]:
 		var l := screen.get(key) as Label
 		if l.visible:
@@ -170,6 +221,10 @@ func _check_card(screen: Control, state: String) -> void:
 	for key: String in ["_mode", "_moon", "_endless"]:
 		_check.call(not (screen.get(key) as Control).get_global_rect().intersects(go),
 				"Jornada %s: %s não encosta no Começar" % [state, key])
+	# Noite Sem Fim e Começar sempre na mesma linha (o Começar encolhe a fonte, não desce).
+	var endless := (screen.get("_endless") as Control).get_global_rect()
+	_check.call(endless.end.x <= go.position.x and endless.position.y < go.end.y and go.position.y < endless.end.y,
+			"Jornada %s: Noite Sem Fim e Começar na mesma linha (%s, %s)" % [state, endless, go])
 	for icon: TextureRect in screen.get("_boss_icons"):
 		if icon.visible:
 			_check.call(card_rect.encloses(icon.get_global_rect()) and icon.size.x >= 24.0 and icon.size.x <= 28.0,
@@ -236,6 +291,10 @@ func _check_progress(screen: Control, lang: String) -> void:
 	_check.call(screen.call("boss_icon_known", 0) and not screen.call("boss_icon_known", 1),
 			"Jornada %s: templo com o Tengu derrotado colorido e o chefe final em silhueta" % lang)
 	_check.call((screen.get("_suggest") as Label).visible, "Jornada %s: sugere Brisa após 5 derrotas" % lang)
+	map.select(&"bamboo", false)
+	var moon_line := TranslationServer.translate("stages.moon_best").replace("%s", "").strip_edges()
+	_check.call(not (screen.get("_stats") as Label).text.contains(moon_line),
+			"Jornada %s: vencida sem Lua Vermelha não mostra linha de lua vazia" % lang)
 	map.select(&"village", false)
 	var chronicle := screen.get("_chronicle") as Label
 	_check.call(chronicle.visible and chronicle.text.contains(TranslationServer.translate("stage.village.dawn")),
@@ -248,6 +307,41 @@ func _check_progress(screen: Control, lang: String) -> void:
 		_check.call(not node.get_focus_neighbor(SIDE_LEFT).is_empty() or not node.get_focus_neighbor(SIDE_RIGHT).is_empty(),
 				"Jornada %s: ponto %s navegável pelas setas" % [lang, id])
 	map.select(&"temple", false)
+
+
+## Lua V escolhida na vila (vencida até a IV): as regras se somam, então as cinco aparecem no alto
+## da narrativa, inteiras, dentro da largura da rolagem e com o pergaminho do mesmo tamanho; sem
+## lua, somem.
+func _check_moon_rules(screen: Control, state: String) -> void:
+	var moon := screen.get("_moon") as OptionButton
+	var top := HyakkiGame.MAX_MOON
+	_check.call(moon.item_count == top + 1 and not moon.disabled, "Jornada %s: Lua até a %s liberada" % [state, top])
+	moon.select(top)
+	moon.item_selected.emit(top)
+	await _host.get_tree().process_frame
+	await _host.get_tree().process_frame
+	var rules := screen.get("_rules") as Label
+	_check.call(rules.visible and rules.text == "\n".join(RedMoon.rules_text(top))
+			and RedMoon.rules_text(top).size() == RedMoon.RULES,
+			"Jornada %s: as %d regras da Lua escolhida, somadas" % [state, RedMoon.RULES])
+	_check_card(screen, state)
+	var scroll := screen.get("_scroll") as ScrollContainer
+	var scroll_rect := scroll.get_global_rect()
+	var r := rules.get_global_rect()
+	_check.call(r.size.x <= scroll_rect.size.x + 0.5 and r.position.x >= scroll_rect.position.x - 0.5
+			and r.position.y >= scroll_rect.position.y - 0.5 and r.position.y < scroll_rect.end.y,
+			"Jornada %s: regras no alto da narrativa, dentro da largura (%s em %s)" % [state, r, scroll_rect])
+	_check.call(rules.get_visible_line_count() >= rules.get_line_count() and rules.get_line_count() >= RedMoon.RULES,
+			"Jornada %s: regras inteiras (%d linhas)" % [state, rules.get_line_count()])
+	var journey := screen.get("_journey") as Label
+	_check.call(journey.visible and journey.get_global_rect().position.y >= r.end.y - 0.5,
+			"Jornada %s: narrativa logo abaixo das regras" % state)
+	if Locale.current == "pt_BR":
+		await _check_fade(screen, state)
+	moon.select(0)
+	moon.item_selected.emit(0)
+	await _host.get_tree().process_frame
+	_check.call(not rules.visible, "Jornada %s: sem Lua Vermelha, sem regras" % state)
 
 
 ## Trocar de ponto faz a guardiã andar até o novo ponto.

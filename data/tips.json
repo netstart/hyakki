@@ -19,6 +19,7 @@
     {"id": "banish_cards", "cat": "strategy", "tier": 1, "args": ["title.sanctuary"]},
     {"id": "slots_six", "cat": "strategy", "tier": 0, "after": ["few_weapons"]},
     {"id": "props_items", "cat": "strategy", "tier": 0, "after": ["early"]},
+    {"id": "altar_seal", "cat": "strategy", "tier": 0, "when": {"min_altars": 1}},
 
     {"id": "move_circles", "cat": "survival", "tier": 0, "after": ["early"]},
     {"id": "heal_food", "cat": "survival", "tier": 0, "after": ["early"], "args": ["item.onigiri.name", "item.sushi.name"], "icons": ["item:onigiri", "item:sushi"]},

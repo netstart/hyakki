@@ -3,7 +3,7 @@ extends RefCounted
 ## Missões do Santuário: as 40 conquistas de data/achievements.json (condições e recompensas de
 ## sempre, conferidas pelo fim da partida em MetaProgress) mais as missões de data/missions.json,
 ## agrupadas por categoria (fases, guardiões, armas, chefes, lanterna, Kami, Noite Sem Fim,
-## abates, Desafio Diário e coleção). Todas guardam a conclusão no mesmo
+## abates, Altares do Selo, Desafio Diário e coleção). Todas guardam a conclusão no mesmo
 ## SaveManager.data["achievements"] ({id: unix}), então saves antigos continuam valendo.
 ##
 ## As missões novas são conferidas só pelo perfil: cada partida grava recordes em
@@ -17,7 +17,7 @@ extends RefCounted
 ## next_goals() escolhe as 3 metas mais alcançáveis (determinístico, variando as categorias).
 
 const CATEGORIES: Array[StringName] = [&"stages", &"heroes", &"weapons", &"bosses", &"lantern", &"kami",
-		&"endless", &"kills", &"daily", &"collection"]
+		&"endless", &"kills", &"altars", &"daily", &"collection"]
 const CATEGORY_ICONS := {
 	&"stages": "res://assets/art/ui/icons/meteo/Sun.png",
 	&"heroes": "res://assets/art/ui/icons/items/Helmet.png",
@@ -27,6 +27,7 @@ const CATEGORY_ICONS := {
 	&"kami": "res://assets/art/ui/icons/spell/OrbLight.png",
 	&"endless": "res://assets/art/items/object/Hourglass.png",
 	&"kills": "res://assets/art/ui/icons/spell/Cut.png",
+	&"altars": "res://assets/art/altar/elite_crest.png",
 	&"daily": "res://assets/art/ui/icons/meteo/Rain.png",
 	&"collection": "res://assets/art/items/scroll/Scroll.png",
 }
@@ -54,6 +55,10 @@ const DEFAULT_RECORDS := {
 	"stage_no_item": {}, "stage_realm": {}, "boss_clean": {}, "boss_time": {}, "kami": {},
 	"dark_kills": 0, "dark_kills_run": 0, "dark_streak": 0.0, "no_damage": 0.0, "kami_pacts": 0,
 	"kills_run": 0, "ultimates_run": 0, "daily_runs": 0, "no_kami_wins": 0, "synced": false,
+	# Altares do Selo (RunTracker): selos quebrados e Elites de altar vencidos no total, o recorde de
+	# selos numa partida, o maior número de afixos de um Elite vencido e os afixos já vencidos.
+	# Saves antigos ganham os campos zerados pelo SaveManager._fill_missing (sem mudar a versão).
+	"altars": 0, "altars_run": 0, "altar_elites": 0, "elite_affix_max": 0, "elite_affixes": [],
 }
 
 
@@ -204,7 +209,7 @@ static func _name_args(c: Dictionary) -> Array:
 		"endless_time":
 			return [Screen.format_time(float(c["seconds"]))]
 		"dark_kills", "kami_pacts", "kills_total", "kills_run", "daily_runs", "codex_entries", "chests_total", \
-				"ryo_total":
+				"ryo_total", "altars_total", "altars_run", "altar_elites_total":
 			return [_num(c)]
 	return []
 
@@ -224,8 +229,10 @@ static func _desc_args(c: Dictionary) -> Array:
 			return [Screen.format_time(float(c["seconds"]))]
 		"endless_stages":
 			return [Screen.format_time(float(c["seconds"])), _num(c)]
-		"realm_count", "dark_kills_run", "kills_burst_best":
+		"realm_count", "dark_kills_run", "kills_burst_best", "elite_affixes_max":
 			return [_num(c)]
+		"elite_affix_set":
+			return [Locale.format_number(EliteAffixes.IDS.size())]
 	return _name_args(c)
 
 
@@ -407,6 +414,20 @@ static func _raw_new(c: Dictionary, stats: Dictionary, rec: Dictionary) -> Vecto
 			return Vector2(float(rec["kills_run"]), float(c["count"]))
 		"daily_runs":
 			return Vector2(float(rec["daily_runs"]), float(c["count"]))
+		"altars_total":
+			return Vector2(float(rec["altars"]), float(c["count"]))
+		"altars_run":
+			return Vector2(float(rec["altars_run"]), float(c["count"]))
+		"altar_elites_total":
+			return Vector2(float(rec["altar_elites"]), float(c["count"]))
+		"elite_affixes_max":
+			return Vector2(float(rec["elite_affix_max"]), float(c["count"]))
+		"elite_affix_set":
+			# Alvo lido da lista de afixos do jogo (afixo novo entra sozinho na coleção).
+			var slain := 0
+			for id: StringName in EliteAffixes.IDS:
+				slain += int((rec["elite_affixes"] as Array).has(String(id)))
+			return Vector2(float(slain), float(EliteAffixes.IDS.size()))
 	# Condições só da partida (sem recorde): 0 ou 1.
 	return Vector2(0.0, 1.0)
 
@@ -496,6 +517,14 @@ static func record_run(result: Dictionary, tracker: RunTracker) -> void:
 	rec["ultimates_run"] = maxi(int(rec["ultimates_run"]), tracker.ultimates)
 	if bool(result.get("daily", false)):
 		rec["daily_runs"] = int(rec["daily_runs"]) + 1
+	rec["altars"] = int(rec["altars"]) + tracker.altars_awakened
+	rec["altars_run"] = maxi(int(rec["altars_run"]), tracker.altars_awakened)
+	rec["altar_elites"] = int(rec["altar_elites"]) + tracker.altar_elites_slain
+	rec["elite_affix_max"] = maxi(int(rec["elite_affix_max"]), tracker.elite_affix_max)
+	var affixes: Array = rec["elite_affixes"]
+	for id: StringName in tracker.elite_affixes_slain:
+		if not affixes.has(String(id)):
+			affixes.append(String(id))
 
 
 ## Conclui as missões novas (data/missions.json) que chegaram ao alvo: marca, dá a recompensa e

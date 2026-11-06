@@ -111,6 +111,10 @@ func apply_quality() -> void:
 	for i: int in range(motes):
 		_mote_pos[i] = Vector2(_rng.randf() * _view.x, _rng.randf() * _view.y)
 		_mote_var[i] = _rng.randf()
+	# Troca ao vivo (qualidade Auto rebaixando no meio do quadro): o desenho deste quadro ainda
+	# usaria as contagens do tick com a cota antiga e leria além do fim dos arrays novos.
+	_active = mini(_active, drops)
+	_mote_active = mini(_mote_active, motes)
 
 
 func reset() -> void:

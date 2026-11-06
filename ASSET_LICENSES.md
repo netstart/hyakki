@@ -36,6 +36,8 @@ Licenças do jogo, lidos do motor exportado (`Engine.get_copyright_info()`).
 | HaelDB - Male grunt/yelling sounds | HaelDB | CC0-1.0 | yelling sounds.zip (OpenGameArt, 2012-04-12); 11 of 63 files used | sim | não | `licenses/texts/CC0-1.0.txt` | https://opengameart.org/content/male-gruntyelling-sounds |
 | Hyakki - procedural guardian ability sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_ability_sfx.py and tools/gen_ability_voices.py (2026-11-01) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_ability_sfx.py |
 | Hyakki - guardian ability icons | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_ability_icons.py (2026-11-01) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_ability_icons.py |
+| Hyakki - Seal Altar and Elite art | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_altar_art.py (2026-11-03) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_altar_art.py |
+| Hyakki - procedural Seal Altar and Elite sound effects | Hyakki project (Clayton K. N. Passos) | CC0-1.0 | tools/gen_altar_sfx.py (2026-11-03) | sim | não | `licenses/texts/CC0-1.0.txt` | tools/gen_altar_sfx.py |
 
 Verificação: `python -I tools/check_licenses.py` (cobertura de todos os arquivos de `assets/`,
 hash das cópias, licenças permitidas, data de verificação). Snapshots das páginas de origem em

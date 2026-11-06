@@ -101,17 +101,42 @@ func _place(at: Vector2) -> Vector2:
 	return game.world.free_point(at, SPAWN_CLEARANCE)
 
 
-## Sorteia um item de lanterna destrutível pelos pesos de items.json.
+## Sino Purificador: elimina todos os inimigos comuns visíveis (recompensa normal). Chefes não; um
+## Elite com afixos (Altares do Selo) leva só AltarSystem.PURIFY_ELITE da vida máxima.
+func purify_screen() -> void:
+	var enemies := game.enemies
+	var half := game.view_size() * 0.5 + Vector2(20, 20)
+	var me := game.player.sim_pos
+	for i: int in range(EnemyManager.CAPACITY):
+		if enemies.alive[i] == 0 or enemies.is_boss(i) or enemies.is_prop(i):
+			continue
+		var d := enemies.pos[i] - me
+		if absf(d.x) <= half.x and absf(d.y) <= half.y:
+			var elite := game.altars != null and game.altars.affixes.has(i)
+			enemies.damage(i, enemies.max_hp[i] * AltarSystem.PURIFY_ELITE if elite else 999999.0, Vector2.ZERO, 0.0)
+	game.fx.add_ring(me, half.x, Color(1.0, 1.0, 0.85))
+	game.hud.flash_screen(Color(1.0, 1.0, 0.9))
+	AudioManager.play("bell", 1.0, 0.0, -2.0)
+
+
+## Sorteia um item de lanterna destrutível pelos pesos de items.json (sem o onigiri na Lua
+## Vermelha IV, RedMoon.item_weight).
 func random_item_id() -> StringName:
+	var moon := game.moon
 	var total := 0.0
 	for id: StringName in DB.ids("items"):
-		total += float(DB.items[id].get("weight", 0))
+		total += RedMoon.item_weight(id, float(DB.items[id].get("weight", 0)), moon)
 	var roll := game.rng.randf() * total
+	var last := &""
 	for id: StringName in DB.ids("items"):
-		roll -= float(DB.items[id].get("weight", 0))
+		var w := RedMoon.item_weight(id, float(DB.items[id].get("weight", 0)), moon)
+		if w <= 0.0:
+			continue
+		last = id
+		roll -= w
 		if roll <= 0.0:
 			return id
-	return &"onigiri"
+	return last if RedMoon.no_food(moon) and last != &"" else &"onigiri"
 
 
 func step(dt: float) -> void:
@@ -238,7 +263,21 @@ func _draw() -> void:
 		var tex: Texture2D = _item_tex.get(item["id"])
 		if tex == null:
 			continue
-		_draw_item(tex, item["pos"], time + float(item["phase"]), calm)
+		_draw_item(tex, _pop_pos(item, time), time + float(item["phase"]), calm)
+
+
+## Onde desenhar o item: os que saem de um Elite (extra "pop": [x, y, tempo]) voam num arco
+## curto de onde ele morreu até o ponto no chão (só desenho; a coleta usa o ponto final).
+static func _pop_pos(item: Dictionary, time: float) -> Vector2:
+	var at: Vector2 = item["pos"]
+	if not item.has("pop"):
+		return at
+	var pop: Array = item["pop"]
+	var k := clampf((time - float(pop[2])) / AltarSystem.POP_TIME, 0.0, 1.0)
+	if k >= 1.0:
+		return at
+	var from := Vector2(float(pop[0]), float(pop[1]))
+	return from.lerp(at, k) - Vector2(0.0, sin(k * PI) * 18.0)
 
 
 ## Item no chão chamando atenção (pedido de 21/10): halo que pulsa, pulinho com sombra

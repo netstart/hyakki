@@ -72,6 +72,45 @@ const ANIMS := {
 	"water_pillar": ["res://assets/art/fx/water_pillar/SpriteSheet.png", 30],
 	"ice": ["res://assets/art/fx/ice/SpriteSheet.png", 32],
 }
+## Animações opcionais (quadros quadrados: a largura do quadro é a altura da imagem), carregadas só
+## se o arquivo existir: pedras do Rocha, corte duplo, explosão grande e impactos (Altares do Selo).
+const EXTRA_ANIMS := {
+	"rock_burst": "res://assets/art/fx/rock/rock_burst.png",
+	"cut_double": "res://assets/art/fx/slash_double/cut_double.png",
+	"explosion_big": "res://assets/art/fx/explosion_big/explosion_big.png",
+	"impact_0": "res://assets/art/fx/impact/impact_0.png",
+	"impact_1": "res://assets/art/fx/impact/impact_1.png",
+	"impact_2": "res://assets/art/fx/impact/impact_2.png",
+}
+## Raio ramificado procedural (lightning_bolt): vida, teto na tela e o tremor do traço.
+const BOLT_LIFE := 0.26
+const MAX_BOLTS := 16
+const BOLT_JAG := 0.11
+## Coluna de luz (light_pillar): a arte Raylight (3 raios inclinados lado a lado, branco sobre
+## transparente), endireitada com um cisalhamento; entra, fica e some.
+const RAY_TEXTURE := "res://assets/art/fx/environment/Raylight.png"
+const RAY_REGIONS: Array[Rect2] = [Rect2(0, 0, 72, 102), Rect2(72, 0, 72, 102), Rect2(144, 0, 72, 102)]
+const RAY_SKEW := 0.43
+const MAX_PILLARS := 6
+## Estilhaços de ofuda (paper_burst): papel que voa, gira e cai devagar (assets/art/altar/ofuda.png,
+## 4 quadros de 6x10).
+const PAPER_TEXTURE := "res://assets/art/altar/ofuda.png"
+const PAPER_FRAME := Vector2(6, 10)
+const MAX_PAPERS := 64
+const PAPER_LIFE := 1.1
+## Aberração cromática curta (chroma_pulse): só na Alta e sem "reduzir clarões".
+const CHROMA_SHADER := """
+shader_type canvas_item;
+uniform sampler2D screen_tex : hint_screen_texture, filter_nearest;
+void fragment() {
+	vec2 c = SCREEN_UV - vec2(0.5);
+	vec2 off = c * COLOR.a * 0.02;
+	float r = texture(screen_tex, SCREEN_UV + off).r;
+	float g = texture(screen_tex, SCREEN_UV).g;
+	float b = texture(screen_tex, SCREEN_UV - off).b;
+	COLOR = vec4(r, g, b, 1.0);
+}
+"""
 ## Distorção da onda de choque: desloca a tela numa faixa em anel (cor do vértice = parâmetros).
 const WAVE_SHADER := """
 shader_type canvas_item;
@@ -155,6 +194,24 @@ var _glow_layer: Node2D
 var _wave_layer: Node2D
 var _styles: Dictionary = {}
 var _showcase: WeaponShowcase
+## Raios ramificados: {"paths", "widths", "color", "width", "branches", "life", "max", "from", "to",
+## "rejit"}.
+var _bolts: Array[Dictionary] = []
+var _pillars: Array[Dictionary] = []
+var _ray_tex: Texture2D
+var _paper_tex: Texture2D
+var _paper_pos := PackedVector2Array()
+var _paper_vel := PackedVector2Array()
+var _paper_life := PackedFloat32Array()
+var _paper_spin := PackedFloat32Array()
+var _paper_rate := PackedFloat32Array()
+var _paper_frame := PackedInt32Array()
+var _paper_next: int = 0
+var _papers: int = 0
+var _chroma_layer: Node2D
+var _chroma_left: float = 0.0
+var _chroma_max: float = 0.0
+var _chroma_strength: float = 0.0
 
 
 func _ready() -> void:
@@ -163,6 +220,16 @@ func _ready() -> void:
 	for name: String in ANIMS:
 		var spec: Array = ANIMS[name]
 		_sheets[name] = SpriteSheet.load_sheet(spec[0], "strip", Vector2(float(spec[1]), 0.0))
+	for name: String in EXTRA_ANIMS:
+		if ResourceLoader.exists(EXTRA_ANIMS[name]):
+			_sheets[name] = SpriteSheet.load_sheet(EXTRA_ANIMS[name], "strip", Vector2.ZERO)
+	_ray_tex = load(RAY_TEXTURE) as Texture2D if ResourceLoader.exists(RAY_TEXTURE) else null
+	_paper_tex = load(PAPER_TEXTURE) as Texture2D if ResourceLoader.exists(PAPER_TEXTURE) else null
+	for packed: StringName in [&"_paper_pos", &"_paper_vel", &"_paper_life", &"_paper_spin", &"_paper_rate",
+			&"_paper_frame"]:
+		var list: Variant = get(packed)
+		list.resize(MAX_PAPERS)
+		set(packed, list)
 	for packed: StringName in [&"_p_pos", &"_p_vel", &"_p_life", &"_p_max", &"_p_size", &"_p_color",
 			&"_p_kind"]:
 		var array: Variant = get(packed)
@@ -193,6 +260,17 @@ func _ready() -> void:
 	_wave_layer.visible = false
 	_wave_layer.draw.connect(_draw_waves)
 	add_child(_wave_layer)
+	var chroma_material := ShaderMaterial.new()
+	var chroma_shader := Shader.new()
+	chroma_shader.code = CHROMA_SHADER
+	chroma_material.shader = chroma_shader
+	_chroma_layer = Node2D.new()
+	_chroma_layer.material = chroma_material
+	_chroma_layer.z_as_relative = false
+	_chroma_layer.z_index = 20
+	_chroma_layer.visible = false
+	_chroma_layer.draw.connect(_draw_chroma)
+	add_child(_chroma_layer)
 	_showcase = WeaponShowcase.new()
 	refresh_quality()
 	_apply_quality()
@@ -274,6 +352,11 @@ func reset() -> void:
 	_rings.clear()
 	_flashes.clear()
 	_waves.clear()
+	_bolts.clear()
+	_pillars.clear()
+	_paper_life.fill(0.0)
+	_papers = 0
+	_chroma_left = 0.0
 	_cine = {}
 	_slow_left = 0.0
 	time_scale = 1.0
@@ -605,6 +688,9 @@ func step(dt: float) -> void:
 	_age(_rings, fdt)
 	_age(_flashes, fdt)
 	_age(_waves, fdt)
+	_age(_pillars, fdt)
+	_step_bolts(fdt)
+	_step_papers(fdt)
 	if not _cine.is_empty():
 		_cine["t"] = float(_cine["t"]) + dt
 		if float(_cine["t"]) >= 1.2:
@@ -629,6 +715,12 @@ func _process(delta: float) -> void:
 		numbers.enemies = game.enemies.count_alive
 	numbers.step(delta)
 	_wave_layer.visible = glow and not _waves.is_empty()
+	if _chroma_left > 0.0:
+		_chroma_left -= delta
+		_chroma_layer.visible = _chroma_left > 0.0 and glow and not _calm
+		_chroma_layer.queue_redraw()
+	elif _chroma_layer.visible:
+		_chroma_layer.visible = false
 	queue_redraw()
 	if glow:
 		_glow_layer.queue_redraw()
@@ -685,6 +777,12 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for ring: Dictionary in _rings:
 		_draw_ring(ring)
+	_draw_papers()
+	for bolt: Dictionary in _bolts:
+		_draw_bolt(self, bolt, false)
+	if not glow:
+		for pillar: Dictionary in _pillars:
+			_draw_pillar(self, pillar, 0.55)
 	if not glow:
 		for f: Dictionary in _flashes:
 			var a := float(f["life"]) / float(f["max"]) * (0.35 if _calm else 0.6)
@@ -756,6 +854,10 @@ func _draw_glow() -> void:
 		if bool(anim["add"]):
 			_draw_anim(_glow_layer, anim)
 	_glow_layer.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	for pillar: Dictionary in _pillars:
+		_draw_pillar(_glow_layer, pillar, gain)
+	for bolt: Dictionary in _bolts:
+		_draw_bolt(_glow_layer, bolt, true)
 	if game:
 		for weapon: Weapon in game.weapons:
 			weapon.draw_glow(_glow_layer)
@@ -804,3 +906,226 @@ func _draw_cinematic() -> void:
 		var side := d.orthogonal() * (1.5 + (k % 2))
 		Stroke.convex(self, PackedVector2Array([p0, p1 + side, p1 - side]),
 				Color(color.lerp(Color.WHITE, 0.7), 0.55 * la))
+
+
+# --- Raio ramificado, coluna de luz, papel e aberração (Altares do Selo) ---------------------
+
+## Raio procedural de `from` a `to`: tronco em zigue-zague (deslocamento do ponto médio) com
+## `branches` galhos que saem dele, tudo em primitivas do Stroke (sem polígono por quadro). Na
+## metade da vida o traço "pisca" (refaz o zigue-zague uma vez). Baixa: sem galhos nem brilho.
+func lightning_bolt(from: Vector2, to: Vector2, color: Color = Color(0.75, 0.88, 1.0), width: float = 2.0,
+		branches: int = 2, life: float = BOLT_LIFE) -> void:
+	if _bolts.size() >= MAX_BOLTS:
+		_bolts.pop_front()
+	var bolt := {"from": from, "to": to, "color": color, "width": width, "life": life, "max": life,
+			"branches": branches if wfx > 0 else 0, "rejit": false}
+	_shape_bolt(bolt)
+	_bolts.append(bolt)
+
+
+## Raios ramificados na tela (testes).
+func bolts_alive() -> int:
+	return _bolts.size()
+
+
+func _shape_bolt(bolt: Dictionary) -> void:
+	var from: Vector2 = bolt["from"]
+	var to: Vector2 = bolt["to"]
+	var length := from.distance_to(to)
+	var main := _jagged(from, to, clampi(int(length / 9.0), 5, 18))
+	var paths: Array[PackedVector2Array] = [main]
+	var widths := PackedFloat32Array([float(bolt["width"])])
+	var dir := (to - from).normalized()
+	for _b: int in int(bolt["branches"]):
+		var k := randi_range(1, maxi(1, main.size() - 3))
+		var start := main[k]
+		var turn := randf_range(0.45, 0.95) * (1.0 if randf() < 0.5 else -1.0)
+		var reach := length * randf_range(0.16, 0.32)
+		paths.append(_jagged(start, start + dir.rotated(turn) * reach, randi_range(3, 5)))
+		widths.append(maxf(1.0, float(bolt["width"]) * 0.5))
+	bolt["paths"] = paths
+	bolt["widths"] = widths
+
+
+## Linha quebrada de `a` a `b` em `segments` trechos, com desvio lateral que some nas pontas.
+static func _jagged(a: Vector2, b: Vector2, segments: int) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var side := (b - a).orthogonal().normalized()
+	var amp := a.distance_to(b) * BOLT_JAG
+	for s: int in range(segments + 1):
+		var k := float(s) / segments
+		var p := a.lerp(b, k)
+		if s > 0 and s < segments:
+			p += side * randf_range(-amp, amp) * sin(k * PI)
+		out.append(p.round())
+	return out
+
+
+func _step_bolts(dt: float) -> void:
+	for k: int in range(_bolts.size() - 1, -1, -1):
+		var bolt := _bolts[k]
+		bolt["life"] = float(bolt["life"]) - dt
+		if float(bolt["life"]) <= 0.0:
+			_bolts.remove_at(k)
+		elif not bool(bolt["rejit"]) and float(bolt["life"]) < float(bolt["max"]) * 0.55:
+			bolt["rejit"] = true
+			_shape_bolt(bolt)
+
+
+## Normal: miolo branco (e, sem brilho, o traço na cor). Aditiva: halo largo e o traço na cor.
+func _draw_bolt(canvas: CanvasItem, bolt: Dictionary, additive: bool) -> void:
+	var k := clampf(float(bolt["life"]) / float(bolt["max"]), 0.0, 1.0)
+	var flicker := 0.75 + 0.25 * sin(float(bolt["life"]) * 90.0)
+	var a := k * flicker * (0.5 if _calm else 1.0)
+	var color: Color = bolt["color"]
+	var paths: Array[PackedVector2Array] = bolt["paths"]
+	var widths: PackedFloat32Array = bolt["widths"]
+	for p: int in paths.size():
+		var w := widths[p]
+		if additive:
+			Stroke.line(canvas, paths[p], Color(color, 0.3 * a), w * 3.0 + 1.0)
+			Stroke.line(canvas, paths[p], Color(color, 0.95 * a), w)
+		else:
+			if not glow:
+				Stroke.line(canvas, paths[p], Color(color, 0.8 * a), w + 1.0)
+			Stroke.line(canvas, paths[p], Color(1.0, 1.0, 1.0, a), maxf(1.0, w * 0.5))
+
+
+## Coluna de luz em `at` (base no chão), `height` px de altura: cresce em 15% da vida, fica e some.
+func light_pillar(at: Vector2, color: Color, height: float = 150.0, width: float = 28.0, life: float = 0.9) -> void:
+	if _pillars.size() >= MAX_PILLARS:
+		_pillars.pop_front()
+	_pillars.append({"pos": at, "color": color, "h": height, "w": width, "life": life, "max": life})
+
+
+func pillars_alive() -> int:
+	return _pillars.size()
+
+
+## Uma coluna: dois raios da arte Raylight endireitados (um largo e um miolo mais claro) e o brilho
+## na base. Sem a arte, um degradê suave esticado.
+func _draw_pillar(canvas: CanvasItem, pillar: Dictionary, gain: float) -> void:
+	var t := 1.0 - float(pillar["life"]) / float(pillar["max"])
+	var grow := clampf(t / 0.15, 0.0, 1.0)
+	var fade := clampf((1.0 - t) / 0.4, 0.0, 1.0)
+	var color: Color = pillar["color"]
+	var base: Vector2 = (pillar["pos"] as Vector2).round()
+	var h := float(pillar["h"])
+	var w := float(pillar["w"]) * (0.3 + 0.7 * grow) * (1.0 + 0.06 * sin(float(pillar["life"]) * 40.0))
+	var a := fade * gain
+	if _ray_tex != null:
+		for layer: int in 2:
+			var src := RAY_REGIONS[layer]
+			var lw := w * (1.0 if layer == 0 else 0.45)
+			var sx := lw / src.size.x
+			var sy := h / src.size.y
+			# Cisalhamento que deixa o raio inclinado na vertical, centrado na base.
+			var xf := Transform2D(Vector2(sx, 0.0), Vector2(RAY_SKEW * sx, sy), base - Vector2(0.0, h))
+			canvas.draw_set_transform_matrix(xf)
+			var off := -src.size.x * 0.5 - RAY_SKEW * src.size.y * 0.5
+			var tint := color.lerp(Color.WHITE, 0.35 * layer)
+			canvas.draw_texture_rect_region(_ray_tex, Rect2(Vector2(off, 0.0), src.size), src,
+					Color(tint, a * (0.8 - 0.1 * layer)))
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	else:
+		canvas.draw_texture_rect(soft_texture(), Rect2(base - Vector2(w * 0.5, h), Vector2(w, h * 1.1)), false,
+				Color(color, a))
+	draw_soft(canvas, base, w * 1.1, Color(color.lerp(Color.WHITE, 0.4), 0.7 * a))
+
+
+## Estilhaços de ofuda: `count` tiras de papel voando de `at` para cima e para os lados.
+func paper_burst(at: Vector2, count: int, speed: float = 90.0) -> void:
+	for _k: int in count:
+		var i := _paper_next
+		if _paper_life[i] <= 0.0:
+			_papers += 1
+		_paper_next = (_paper_next + 1) % MAX_PAPERS
+		var dir := Vector2.from_angle(randf_range(-PI * 0.95, -PI * 0.05))
+		_paper_pos[i] = at + dir * randf_range(0.0, 4.0)
+		_paper_vel[i] = dir * speed * randf_range(0.5, 1.2)
+		_paper_life[i] = PAPER_LIFE * randf_range(0.7, 1.15)
+		_paper_spin[i] = randf() * TAU
+		_paper_rate[i] = randf_range(-14.0, 14.0)
+		_paper_frame[i] = randi_range(0, 3)
+
+
+func papers_alive() -> int:
+	return _papers
+
+
+func _step_papers(dt: float) -> void:
+	if _papers <= 0:
+		return
+	for i: int in MAX_PAPERS:
+		if _paper_life[i] <= 0.0:
+			continue
+		_paper_life[i] -= dt
+		if _paper_life[i] <= 0.0:
+			_papers -= 1
+			continue
+		var v := _paper_vel[i] * maxf(0.0, 1.0 - 2.4 * dt)
+		v.y += 70.0 * dt
+		v.x += sin(_paper_life[i] * 9.0 + i) * 30.0 * dt
+		_paper_vel[i] = v
+		_paper_pos[i] += v * dt
+		_paper_spin[i] += _paper_rate[i] * dt
+
+
+func _draw_papers() -> void:
+	if _papers <= 0:
+		return
+	for i: int in MAX_PAPERS:
+		if _paper_life[i] <= 0.0:
+			continue
+		var a := clampf(_paper_life[i] / 0.3, 0.0, 1.0)
+		# Papel girando em 3D: a largura encolhe e cresce com o giro.
+		var flip := cos(_paper_spin[i])
+		draw_set_transform(_paper_pos[i].round(), _paper_spin[i] * 0.35, Vector2(maxf(0.15, absf(flip)), 1.0))
+		if _paper_tex != null:
+			var src := Rect2(Vector2(_paper_frame[i] * PAPER_FRAME.x, 0.0), PAPER_FRAME)
+			draw_texture_rect_region(_paper_tex, Rect2(-PAPER_FRAME * 0.5, PAPER_FRAME), src, Color(1, 1, 1, a))
+		else:
+			draw_rect(Rect2(-1.5, -2.5, 3.0, 5.0), Color(0.96, 0.92, 0.8, a))
+			draw_rect(Rect2(-0.5, -1.5, 1.0, 3.0), Color(0.8, 0.15, 0.1, a))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Vento que puxa: pontos de luz num anel de `radius` correndo para `at` (chegam juntos).
+func gather(at: Vector2, radius: float, color: Color, count: int, life: float = 0.4) -> void:
+	var kind := P.GLOW if glow else P.DOT
+	var drag := float(DRAG[kind])
+	var speed := radius * drag / maxf(0.001, 1.0 - exp(-drag * life))
+	for _k: int in count:
+		var dir := Vector2.from_angle(randf() * TAU)
+		_emit(kind, at + dir * radius * randf_range(0.85, 1.15), -dir * speed, life, color,
+				randf_range(1.5, 3.0) if glow else 1.0)
+
+
+## Aberração cromática da tela inteira por `life` s (Alta, sem "reduzir clarões").
+func chroma_pulse(strength: float = 1.0, life: float = 0.28) -> void:
+	if not glow:
+		return
+	_chroma_left = life
+	_chroma_max = life
+	_chroma_strength = clampf(strength, 0.0, 2.0)
+
+
+func chroma_active() -> bool:
+	return _chroma_left > 0.0
+
+
+func _draw_chroma() -> void:
+	var k := clampf(_chroma_left / maxf(_chroma_max, 0.001), 0.0, 1.0)
+	_chroma_layer.draw_rect(_view_rect().grow(4.0), Color(1, 1, 1, clampf(k * k * _chroma_strength * 0.5, 0.0, 1.0)))
+
+
+## Hit-stop curto (o relógio segura em tempo real; a simulação não muda). Não no bot.
+func hitstop(seconds: float) -> void:
+	if game != null and game.is_bot():
+		return
+	GameClock.hitstop(seconds)
+
+
+## A animação `name` foi carregada (as de EXTRA_ANIMS só existem com o arquivo).
+func has_anim(name: String) -> bool:
+	return _sheets.has(name)

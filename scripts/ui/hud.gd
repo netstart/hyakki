@@ -401,6 +401,14 @@ func _draw_offscreen_arrows() -> void:
 		var to: Vector2 = game.rift.portal_pos - game.player.position
 		if absf(to.x) >= view.x * 0.5 - 10.0 or absf(to.y) >= view.y * 0.5 - 10.0:
 			RiftPortal.draw_arrow(_top, arrow_point(to.normalized(), view), to.normalized(), Time.get_ticks_msec() / 1000.0)
+	# Altar do Selo dormente mais perto (AltarSystem.ARROW_RANGE), fora da tela.
+	if game.altars != null:
+		var altar := game.altars.arrow_target()
+		if altar != Vector2.INF:
+			var rel := altar - game.player.position
+			if absf(rel.x) >= view.x * 0.5 - 10.0 or absf(rel.y) >= view.y * 0.5 - 10.0:
+				AltarSystem.draw_arrow(_top, arrow_point(rel.normalized(), view), rel.normalized(),
+						Time.get_ticks_msec() / 1000.0)
 
 
 ## Base da seta que aponta na direção `dir`: na borda da tela, com 18 px de folga, e do lado

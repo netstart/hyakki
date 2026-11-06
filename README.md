@@ -23,10 +23,12 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   máximo, a mão comida/moedas com "Não perguntar mais": a escolha vira automática, sem pausar a luta, só com
   o som (com a vida cheia, "Comida" pega as moedas); muda em Opções e no menu de pausa.
 - Santuário (18 power-ups, reembolso total), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
-  e mais 131 missões em 10 categorias, cada uma com recompensa e barra de progresso no Diário, e as
+  e mais 140 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
   Próximas 3 metas no título e nos Resultados), Diário do Guardião
   (com o **Guia**: 9 capítulos de manual montados dos dados do jogo, sem revelar o que não foi descoberto),
-  história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V.
+  história completa, Noite Sem Fim, Desafio Diário, Brisa / Normal / Lua Vermelha I–V (regras cumulativas em
+  `scripts/systems/red_moon.gd`: I +50% de elites, II o Eclipse dos chefes, III Sombras também na luz, IV sem
+  onigiri, V só 2 pactos dos Kami).
 - Velocidade **1x / 2x / 3x** com passo fixo: a mesma semente gera a mesma partida em qualquer velocidade.
   2x e 3x são liberados pela **Ampulheta de Fūjin**, compra única e permanente na Loja: 3.000 ryō ou
   dinheiro (Google Play, produto `unlock_speed`, R$ 4,99 / US$ 1,99). O bot e o `--speed=N` dos testes
@@ -95,6 +97,10 @@ dentro de `tests/integration_tests.tscn`; a HUD das habilidades em todas as reso
 Missões do Santuário sozinhas (dados, cada condição, recompensas, save, Próximas metas e uma partida pelo
 bot que conclui missões): `Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/mission_tests.tscn`
 (também rodam dentro de `tests/integration_tests.tscn`).
+
+Regras da Lua Vermelha sozinhas (cada regra na lua dela e logo abaixo, textos com os números das constantes):
+`Godot_v4.7.2-stable_win64_console.exe --headless --path . res://tests/red_moon_tests.tscn` (também rodam
+dentro de `tests/integration_tests.tscn`).
 
 ### Testes por resolução (só no Godot)
 

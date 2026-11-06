@@ -27,10 +27,14 @@ extends RefCounted
 ## - habilidades (tests/ability_hud_tests.gd): os 3 botões em arco em volta do Golpe, a barra de
 ##   energia e o nome da habilidade liberada em cada estado, com o joystick fixo dos dois lados, e o
 ##   toque (multitoque com o joystick);
+## - letreiro do Elite dos altares (tests/elite_banner_layout_tests.gd): faixa, 強敵, chips dos afixos
+##   e o nome mais longo de cada idioma inteiros na área segura, sem cobrir o topo, os botões, as
+##   habilidades nem a barra do chefe; ícones dos afixos na barra sobre a cabeça;
 ## - a HUD refaz o layout quando a tela muda de tamanho e quando o recorte troca de lado.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const AbilityHudTests := preload("res://tests/ability_hud_tests.gd")
+const EliteBannerTests := preload("res://tests/elite_banner_layout_tests.gd")
 ## Pior caso dos números do topo (nível, tempo e contadores longos) e o começo da partida.
 const NUMBERS: Array[Array] = [[99, "59:59", 999999, 9999999], [1, "00:00", 0, 0]]
 const ICON_SLOTS := 6
@@ -58,6 +62,8 @@ func run(host: Node, check: Callable) -> void:
 			await _check_labels(hud, safe, state)
 			_check_arrows(hud, c["view"], safe, state)
 			_check_realm_card(hud, c["view"], c["insets"], safe, state)
+		await EliteBannerTests.new().check_layout(_host, hud, c["view"], c["insets"], safe, c["langs"],
+				String(c["label"]), _check)
 		await _check_kami(hud, safe.grow(-4.0), c["langs"], String(c["label"]))
 		await _check_dialogue(hud, safe.grow(-4.0), c["langs"], String(c["label"]))
 		await _close(hud)

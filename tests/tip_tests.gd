@@ -264,6 +264,9 @@ func _test_conditions(catalog: Array[Dictionary]) -> void:
 	var evo := _find(catalog, "evo.fujin_fan")
 	_check.call(not TipBook.eligible(evo, _ctx()), "dicas: evolução de arma bloqueada não aparece")
 	_check.call(not TipBook.eligible({"when": {"desconhecida": true}}, _ctx()), "dicas: condição desconhecida reprova")
+	var altar := _find(catalog, "altar_seal")
+	_check.call(not altar.is_empty() and not TipBook.eligible(altar, _ctx({"runs": 20}))
+			and TipBook.eligible(altar, _ctx({"altars": 1})), "dicas: altar do selo só depois do 1º altar despertado")
 	_check.call(TipBook.tier_of(_find(catalog, "evo.katana"), _ctx({"hero_weapon": "katana"})) == 0
 			and TipBook.tier_of(_find(catalog, "evo.kunai"), _ctx({"hero_weapon": "katana"})) == 1,
 			"dicas: evolução da arma da guardiã conta como de iniciante")
@@ -433,6 +436,10 @@ func _test_save() -> void:
 	SaveManager.data["stats"]["runs"] = 3
 	_check.call(TipDeck.next_tip(5)["id"] == "backup_enable", "dicas: no Android com 3 partidas, a 1ª é o backup")
 	TipDeck.platform_override = "desktop"
+	SaveManager.data = SaveManager.default_profile()
+	_check.call(int(TipDeck.context()["altars"]) == 0, "dicas: save novo sem altar despertado")
+	MissionBook.records()["altars"] = 1
+	_check.call(int(TipDeck.context()["altars"]) == 1, "dicas: altares despertados lidos do recorde das Missões")
 	SaveManager.data = SaveManager.default_profile()
 
 
