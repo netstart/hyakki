@@ -174,7 +174,7 @@ static func play(cue: String, pitch: float = 1.0, db: float = 0.0) -> bool:
 	if not CUES.has(cue):
 		push_warning("WeaponSfx: cue desconhecido '%s'" % cue)
 		return false
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	var gap := int((CUES[cue] as Dictionary).get("gap", DEFAULT_GAP_MS))
 	if now - int(_last_ms.get(cue, -100000)) < gap:
 		return false

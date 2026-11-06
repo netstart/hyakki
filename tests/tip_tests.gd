@@ -104,34 +104,34 @@ func _test_catalog(raw: Dictionary, catalog: Array[Dictionary]) -> void:
 	var cats: Array = raw.get("categories", [])
 	var written: Array = raw.get("tips", [])
 	_check.call(written.size() >= 40 and written.size() <= 64,
-			"dicas: %d dicas escritas (40 a 60 e poucas)" % written.size())
+			"dicas: %d dicas escritas (40 a 60 e poucas)", written.size())
 	var seen := {}
 	for tip: Dictionary in catalog:
 		var id := String(tip["id"])
-		_check.call(not seen.has(id), "dicas: id %s único" % id)
+		_check.call(not seen.has(id), "dicas: id %s único", id)
 		seen[id] = true
-		_check.call(cats.has(tip["cat"]), "dicas: %s com categoria conhecida (%s)" % [id, tip["cat"]])
+		_check.call(cats.has(tip["cat"]), "dicas: %s com categoria conhecida (%s)", [id, tip["cat"]])
 		for key: String in (tip["when"] as Dictionary):
-			_check.call(TipBook.WHEN_KEYS.has(key), "dicas: %s com condição conhecida (%s)" % [id, key])
+			_check.call(TipBook.WHEN_KEYS.has(key), "dicas: %s com condição conhecida (%s)", [id, key])
 		for tag: String in tip["after"]:
-			_check.call(TipBook.AFTER_TAGS.has(tag), "dicas: %s com motivo conhecido (%s)" % [id, tag])
-		_check.call(int(tip["tier"]) >= 0 and int(tip["tier"]) < TipBook.TIER_RUNS.size(), "dicas: %s com nível válido" % id)
+			_check.call(TipBook.AFTER_TAGS.has(tag), "dicas: %s com motivo conhecido (%s)", [id, tag])
+		_check.call(int(tip["tier"]) >= 0 and int(tip["tier"]) < TipBook.TIER_RUNS.size(), "dicas: %s com nível válido", id)
 		for ref: String in tip["icons"]:
-			_check.call(_icon_exists(ref), "dicas: %s com ícone %s existente" % [id, ref])
+			_check.call(_icon_exists(ref), "dicas: %s com ícone %s existente", [id, ref])
 	for cat: Variant in cats:
 		var used := catalog.any(func(t: Dictionary) -> bool: return t["cat"] == cat)
-		_check.call(used, "dicas: categoria %s tem dicas" % cat)
+		_check.call(used, "dicas: categoria %s tem dicas", cat)
 	var tags := {}
 	for tip: Dictionary in catalog:
 		for tag: String in tip["after"]:
 			tags[tag] = true
 	for tag: String in TipBook.AFTER_TAGS:
-		_check.call(tags.has(tag), "dicas: motivo da derrota %s tem dica" % tag)
+		_check.call(tags.has(tag), "dicas: motivo da derrota %s tem dica", tag)
 	var backups := catalog.filter(func(t: Dictionary) -> bool: return t["cat"] == "backup")
-	_check.call(backups.size() >= 2 and backups.size() <= 3, "dicas: 2 a 3 dicas de backup (%d)" % backups.size())
+	_check.call(backups.size() >= 2 and backups.size() <= 3, "dicas: 2 a 3 dicas de backup (%d)", backups.size())
 	for tip: Dictionary in backups:
 		_check.call(String((tip["when"] as Dictionary).get("platform", "")) == "android",
-				"dicas: %s só no Android" % tip["id"])
+				"dicas: %s só no Android", tip["id"])
 
 
 static func _icon_exists(ref: String) -> bool:
@@ -170,17 +170,17 @@ func _test_texts(catalog: Array[Dictionary]) -> void:
 		for i: int in LANGS.size():
 			if placeholder.search_all(String(row[i])).size() != base:
 				bad.append("%s [%s]" % [key, LANGS[i]])
-	_check.call(missing.is_empty(), "dicas: todas as chaves nos 11 idiomas (faltam %s)" % [missing])
-	_check.call(bad.is_empty(), "dicas: mesmos %%s em todos os idiomas (%s)" % [bad])
+	_check.call(missing.is_empty(), "dicas: todas as chaves nos 11 idiomas (faltam %s)", [missing])
+	_check.call(bad.is_empty(), "dicas: mesmos %%s em todos os idiomas (%s)", [bad])
 	for tip: Dictionary in catalog:
 		var row: Array = csv.get(String(tip["key"]), [""])
 		var count := placeholder.search_all(String(row[0])).size()
 		_check.call(count == (tip["args"] as Array).size(),
-				"dicas: %s com um %%s por argumento (%d e %d)" % [tip["id"], count, (tip["args"] as Array).size()])
+				"dicas: %s com um %%s por argumento (%d e %d)", [tip["id"], count, (tip["args"] as Array).size()])
 	var pt := func(key: String) -> String: return String((csv.get(key, [key]) as Array)[0])
 	var sample := TipBook.text(_find(catalog, "evo.katana"), pt)
 	_check.call(sample == "Katana no nível máx. + Saquê Sagrado = Lâmina do Amanhecer no próximo baú!",
-			"dicas: texto gerado da Katana em português (%s)" % sample)
+			"dicas: texto gerado da Katana em português (%s)", sample)
 
 
 func _test_generated(catalog: Array[Dictionary]) -> void:
@@ -197,37 +197,37 @@ func _test_generated(catalog: Array[Dictionary]) -> void:
 			var want := ["weapon.%s.name" % id, "passive.%s.name" % w["evolves_with"], "weapon.%s.name" % w["evolution"]]
 			_check.call(not tip.is_empty() and tip["args"] == want and tip["key"] == TipBook.GEN_EVOLUTION
 					and bool(tip["recipe"]) and tip["base"] == id,
-					"dicas: evolução de %s cita arma, relíquia e evolução certas" % id)
+					"dicas: evolução de %s cita arma, relíquia e evolução certas", id)
 			_check.call((tip["when"] as Dictionary).get("unlocked", []) == ["weapons:" + id, "passives:%s" % w["evolves_with"]],
-					"dicas: evolução de %s só com arma e relíquia liberadas" % id)
+					"dicas: evolução de %s só com arma e relíquia liberadas", id)
 		if String(w.get("kind", "")) == "union":
 			var tip := _find(catalog, "union." + id)
 			var needs: Array = w["requires"]
 			_check.call(not tip.is_empty() and tip["args"] == ["weapon.%s.name" % needs[0], "weapon.%s.name" % needs[1],
-					"weapon.%s.name" % id], "dicas: união %s cita as duas evoluções" % id)
+					"weapon.%s.name" % id], "dicas: união %s cita as duas evoluções", id)
 			var unlocked: Array = (tip.get("when", {}) as Dictionary).get("unlocked", [])
 			for need: Variant in needs:
 				var base: Dictionary = by_id[String((by_id[String(need)] as Dictionary)["from"])]
 				_check.call(unlocked.has("weapons:%s" % base["id"]) and unlocked.has("passives:%s" % base["evolves_with"]),
-						"dicas: união %s pede %s e a relíquia dela liberadas" % [id, base["id"]])
+						"dicas: união %s pede %s e a relíquia dela liberadas", [id, base["id"]])
 		if not String(w.get("unlock", "")).is_empty():
 			var tip := _find(catalog, "unlock.weapon." + id)
 			_check.call(not tip.is_empty() and (tip["when"] as Dictionary).get("locked", []) == ["weapons:" + id],
-					"dicas: %s bloqueada tem dica de como liberar" % id)
+					"dicas: %s bloqueada tem dica de como liberar", id)
 			if not tip.is_empty():
 				var ach := String(tip["args"][1]).trim_prefix("achievement.").trim_suffix(".desc")
 				var gives: bool = (_json("achievements") as Array).any(func(a: Dictionary) -> bool:
 					return a["id"] == ach and String(a["reward"]).split(",").has("weapon:" + id))
-				_check.call(gives, "dicas: a conquista citada (%s) libera mesmo %s" % [ach, id])
+				_check.call(gives, "dicas: a conquista citada (%s) libera mesmo %s", [ach, id])
 	var evo_tips := catalog.filter(func(t: Dictionary) -> bool: return String(t["id"]).begins_with("evo."))
 	_check.call(evo_tips.size() == evolutions,
-			"dicas: uma dica por arma com evolução (%d)" % evolutions)
+			"dicas: uma dica por arma com evolução (%d)", evolutions)
 	for pid: String in ["scroll", "jade", "noh_mask"]:
-		_check.call(not _find(catalog, "shared." + pid).is_empty(), "dicas: %s evolui duas armas" % pid)
+		_check.call(not _find(catalog, "shared." + pid).is_empty(), "dicas: %s evolui duas armas", pid)
 	for p: Dictionary in _json("passives"):
 		if not String(p.get("unlock", "")).is_empty():
 			_check.call(not _find(catalog, "unlock.passive.%s" % p["id"]).is_empty(),
-					"dicas: relíquia %s bloqueada tem dica de como liberar" % p["id"])
+					"dicas: relíquia %s bloqueada tem dica de como liberar", p["id"])
 	var missed := TipBook.missed_tip([{"id": "shuriken", "level": 3}, {"id": "katana", "level": 8}], weapons)
 	_check.call(missed.get("id") == "missed.katana" and missed["args"][1] == "passive.sake.name",
 			"dicas: Katana no nível 8 sem evoluir vira a dica \"faltou\"")
@@ -298,7 +298,7 @@ func _test_rotation(catalog: Array[Dictionary]) -> void:
 	for id: String in cycle:
 		unique[id] = true
 	_check.call(unique.size() == pool.size(),
-			"dicas: um ciclo inteiro sem repetir (%d de %d)" % [unique.size(), pool.size()])
+			"dicas: um ciclo inteiro sem repetir (%d de %d)", [unique.size(), pool.size()])
 	var sorted := tiers.duplicate()
 	sorted.sort()
 	_check.call(tiers == sorted, "dicas: iniciante primeiro, avançadas depois")
@@ -330,7 +330,7 @@ func _sequence(catalog: Array[Dictionary], ctx: Dictionary, seed: int, count: in
 func _test_backup(catalog: Array[Dictionary]) -> void:
 	var ctx := _ctx({"platform": "android", "runs": 3})
 	var seq := _sequence(catalog, ctx, 5, 40)
-	_check.call(seq[0] == "backup_enable", "dicas: backup é a 1ª dica no Android com progresso (%s)" % seq[0])
+	_check.call(seq[0] == "backup_enable", "dicas: backup é a 1ª dica no Android com progresso (%s)", seq[0])
 	var positions: Array[int] = []
 	for i: int in seq.size():
 		if String(_find(catalog, seq[i]).get("cat", "")) == "backup":
@@ -338,7 +338,7 @@ func _test_backup(catalog: Array[Dictionary]) -> void:
 	var spaced := true
 	for i: int in range(1, positions.size()):
 		spaced = spaced and positions[i] - positions[i - 1] > int(_find(catalog, "backup_restore")["gap"])
-	_check.call(positions.size() >= 2 and spaced, "dicas: backup volta de tempos em tempos, espaçado (%s)" % [positions])
+	_check.call(positions.size() >= 2 and spaced, "dicas: backup volta de tempos em tempos, espaçado (%s)", [positions])
 	var desktop := _sequence(catalog, _ctx({"runs": 3}), 5, 40)
 	_check.call(not desktop.any(func(id: String) -> bool: return id.begins_with("backup")), "dicas: nada de backup no PC")
 
@@ -365,11 +365,11 @@ func _test_result_tags() -> void:
 	r = {"victory": false, "time": 400.0, "damage_taken": {"cause": "tanuki"}, "weapons": [{"id": "katana"}]}
 	var tags := TipBook.result_tags(r, bosses, enemies, weapons)
 	_check.call(tags.has("boss") and tags.has("no_evolution") and tags.has("few_weapons") and not tags.has("early"),
-			"dicas: chefe, sem evolução e poucas armas (%s)" % [tags])
+			"dicas: chefe, sem evolução e poucas armas (%s)", [tags])
 	r["damage_taken"] = {"cause": "onikuma"}
 	r["weapons"] = [{"id": "dawn_blade"}, {"id": "katana"}, {"id": "katana"}]
 	tags = TipBook.result_tags(r, bosses, enemies, weapons)
-	_check.call(tags == ["midboss"], "dicas: Guardião do Limiar com evolução (%s)" % [tags])
+	_check.call(tags == ["midboss"], "dicas: Guardião do Limiar com evolução (%s)", [tags])
 	r["damage_taken"] = {"cause": "shinigami"}
 	_check.call(TipBook.result_tags(r, bosses, enemies, weapons) == ["shinigami"], "dicas: Shinigami")
 	r["damage_taken"] = {"cause": "yurei"}
@@ -383,7 +383,7 @@ func _test_result_tags() -> void:
 		var tip := TipBook.pick_for_result(catalog, ctx, TipBook.default_state(), _rng(seed), ["boss"])
 		if (tip["after"] as Array).has("boss"):
 			hits += 1
-	_check.call(hits == 20, "dicas: derrota para chefe traz dica de chefe (%d de 20)" % hits)
+	_check.call(hits == 20, "dicas: derrota para chefe traz dica de chefe (%d de 20)", hits)
 	var missed := _find(catalog, "evo.katana")
 	_check.call(TipBook.pick_for_result(catalog, ctx, TipBook.default_state(), _rng(1), ["early"], missed) == missed,
 			"dicas: a dica \"faltou\" vem antes de tudo")
@@ -454,7 +454,7 @@ func _test_translations() -> void:
 				raw.append(String(tip["id"]))
 			if TipDeck.category_text(tip).begins_with("tip.cat"):
 				raw.append(String(tip["id"]) + " (categoria)")
-		_check.call(raw.is_empty(), "dicas [%s]: todas traduzidas e montadas (%s)" % [lang, raw])
+		_check.call(raw.is_empty(), "dicas [%s]: todas traduzidas e montadas (%s)", [lang, raw])
 	Locale.set_language("pt_BR", false)
 
 
@@ -505,7 +505,7 @@ func _test_title() -> void:
 	balloon.call("_process", TipBalloon.ROTATE_EVERY + 0.1)
 	await _host.get_tree().create_timer(TipBalloon.FADE_TIME + 0.1).timeout
 	_check.call(balloon.current_tip()["id"] != second["id"],
-			"balão: troca sozinho a cada %d s" % int(TipBalloon.ROTATE_EVERY))
+			"balão: troca sozinho a cada %d s", int(TipBalloon.ROTATE_EVERY))
 	var close: Rect2 = balloon.layout_rects()["close"]
 	balloon.tap(close.get_center())
 	await _host.get_tree().create_timer(TipBalloon.FADE_TIME + 0.1).timeout
@@ -561,7 +561,7 @@ func _test_results() -> void:
 	var box := screen.get("_tip_box") as Control
 	var card := screen.get("_tip") as TipBalloon.Card
 	_check.call(box.visible and String((r["tip"] as Dictionary).get("id", "")) == "missed.katana",
-			"resultados: Katana no máximo sem evoluir mostra a receita que faltou (%s)" % (r["tip"] as Dictionary).get("id"))
+			"resultados: Katana no máximo sem evoluir mostra a receita que faltou (%s)", (r["tip"] as Dictionary).get("id"))
 	_check.call(card.text.text == TipDeck.text(r["tip"]) and card.icons.get_child_count() == 3,
 			"resultados: cartão 心得 com o texto e os ícones da receita")
 	var shown := card.text.text
@@ -574,7 +574,7 @@ func _test_results() -> void:
 	screen.call("on_show")
 	_check.call(((boss["tip"] as Dictionary)["after"] as Array).has("boss")
 			or ((boss["tip"] as Dictionary)["after"] as Array).has("no_evolution"),
-			"resultados: derrota para chefe traz dica de chefe ou de evolução (%s)" % (boss["tip"] as Dictionary)["id"])
+			"resultados: derrota para chefe traz dica de chefe ou de evolução (%s)", (boss["tip"] as Dictionary)["id"])
 	var win := ResultsLayout.make_result("victory", 2)
 	app.last_result = win
 	screen.call("on_show")

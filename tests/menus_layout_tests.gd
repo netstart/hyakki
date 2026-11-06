@@ -5,6 +5,8 @@ extends RefCounted
 ## por tests/integration_tests.gd e por tests/menus_layout_runner.gd.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 const GuideTests := preload("res://tests/guide_tests.gd")
 const SCREENS := {
 	&"heroes": "res://scripts/app/screens/hero_screen.gd",
@@ -59,20 +61,22 @@ func run(host: Node, check: Callable) -> void:
 			await _test_heroes(view, state)
 			await _test_options(view, state)
 			await _test_codex(view, state)
-			await _test_guide(view, state)
 	use_insets(Vector2.ZERO)
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
+	# Percorrem layout_cases(): rodam em toda fatia, com a parte dela dos casos.
+	await _test_back_everywhere()
+	await _test_real_app()
+	if not TestShards.runs_rest(&"MenusLayoutTests"):
+		return
 	await _test_hero_behaviour()
 	await _test_options_behaviour()
 	await _test_codex_behaviour()
 	await _test_codex_recipes()
-	await _test_back_everywhere()
-	await _test_real_app()
 
 
-func _ok(condition: bool, label: String) -> void:
-	_check.call(condition, label)
+func _ok(condition: bool, label: String, args: Variant = null) -> void:
+	_check.call(condition, label, args)
 
 
 ## Liga o recorte simulado da câmera (MenuKit.safe_insets) para as próximas telas.
@@ -93,15 +97,15 @@ func _area(view: Vector2) -> Rect2:
 func check_common(screen: Control, view: Vector2, state: String) -> void:
 	var area := _area(view)
 	var back := find_back(screen)
-	_ok(back != null and back.is_visible_in_tree(), "%s: tem o voltar" % state)
+	_ok(back != null and back.is_visible_in_tree(), "%s: tem o voltar", state)
 	if back != null:
 		var r := back.get_global_rect()
-		_ok(area.encloses(r) and r.size.y >= 34.0, "%s: voltar inteiro e com alvo ≥ 34 (%s)" % [state, r])
+		_ok(area.encloses(r) and r.size.y >= 34.0, "%s: voltar inteiro e com alvo ≥ 34 (%s)", [state, r])
 		var title := screen.find_child("Title", true, false) as Label
 		if title != null:
-			_ok(not r.intersects(title.get_global_rect()), "%s: voltar não encosta no título" % state)
+			_ok(not r.intersects(title.get_global_rect()), "%s: voltar não encosta no título", state)
 			_ok(title.get_minimum_size().x <= title.size.x + 0.5 and area.encloses(title.get_global_rect()),
-					"%s: título inteiro" % state)
+					"%s: título inteiro", state)
 	for node: Node in screen.find_children("*", "Label", true, false):
 		var l := node as Label
 		if not l.is_visible_in_tree() or l.text.strip_edges() == "":
@@ -111,12 +115,12 @@ func check_common(screen: Control, view: Vector2, state: String) -> void:
 		if not clip.intersects(r):
 			continue
 		_ok(r.position.x >= clip.position.x - 0.5 and r.end.x <= clip.end.x + 0.5,
-				"%s: rótulo \"%s\" dentro da largura (%s em %s)" % [state, l.text.left(30), r, clip])
+				"%s: rótulo \"%s\" dentro da largura (%s em %s)", [state, l.text.left(30), r, clip])
 		if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
-			_ok(l.get_minimum_size().x <= l.size.x + 0.5, "%s: rótulo \"%s\" sem corte" % [state, l.text.left(30)])
+			_ok(l.get_minimum_size().x <= l.size.x + 0.5, "%s: rótulo \"%s\" sem corte", [state, l.text.left(30)])
 		else:
 			_ok(l.get_line_count() <= l.get_visible_line_count(),
-					"%s: rótulo \"%s\" com todas as linhas" % [state, l.text.left(30)])
+					"%s: rótulo \"%s\" com todas as linhas", [state, l.text.left(30)])
 	for node: Node in screen.find_children("*", "BaseButton", true, false):
 		var b := node as BaseButton
 		if not b.is_visible_in_tree():
@@ -127,13 +131,13 @@ func check_common(screen: Control, view: Vector2, state: String) -> void:
 			continue
 		var in_scroll := clip != area
 		_ok(r.position.x >= clip.position.x - 0.5 and r.end.x <= clip.end.x + 0.5
-				and (in_scroll or clip.grow(0.5).encloses(r)), "%s: botão %s inteiro (%s em %s)" % [state, b.name, r, clip])
-		_ok(r.size.y >= 24.0, "%s: botão %s com altura de toque (%.0f)" % [state, b.name, r.size.y])
+				and (in_scroll or clip.grow(0.5).encloses(r)), "%s: botão %s inteiro (%s em %s)", [state, b.name, r, clip])
+		_ok(r.size.y >= 24.0, "%s: botão %s com altura de toque (%.0f)", [state, b.name, r.size.y])
 		if b is Button and (b as Button).text != "" and (b as Button).autowrap_mode == TextServer.AUTOWRAP_OFF:
 			var bt := b as Button
 			var need := bt.get_theme_font("font").get_string_size(bt.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
 					bt.get_theme_font_size("font_size")).x
-			_ok(need <= r.size.x, "%s: texto do botão \"%s\" cabe (%.0f de %.0f)" % [state, bt.text, need, r.size.x])
+			_ok(need <= r.size.x, "%s: texto do botão \"%s\" cabe (%.0f de %.0f)", [state, bt.text, need, r.size.x])
 
 
 ## Retângulo visível de um nó: a tela, ou a área de rolagem que o contém.
@@ -162,13 +166,13 @@ func _test_heroes(view: Vector2, state: String) -> void:
 		var screen := await open_screen(_host, view, &"heroes")
 		var st := "Guardiões %s%s" % [state, " bloqueados" if locked else ""]
 		var grid := screen.get("_grid") as Control
-		_ok(grid.get_child_count() == DB.ids("heroes").size(), "%s: um retrato por guardião" % st)
+		_ok(grid.get_child_count() == DB.ids("heroes").size(), "%s: um retrato por guardião", st)
 		var rects: Array[Rect2] = []
 		for child: Node in grid.get_children():
 			var r := (child as Control).get_global_rect()
-			_ok(_area(view).encloses(r) and r.size.x >= 26.0, "%s: retrato %s inteiro" % [st, child.name])
+			_ok(_area(view).encloses(r) and r.size.x >= 26.0, "%s: retrato %s inteiro", [st, child.name])
 			for o: Rect2 in rects:
-				_ok(not o.intersects(r), "%s: retratos sem sobrepor" % st)
+				_ok(not o.intersects(r), "%s: retratos sem sobrepor", st)
 			rects.append(r)
 		var ids := DB.ids("heroes")
 		# Todos: cada um tem a sua energia e as suas 3 habilidades (textos de tamanhos diferentes).
@@ -181,18 +185,18 @@ func _test_heroes(view: Vector2, state: String) -> void:
 			var sub := "%s %s" % [st, id]
 			var panel := screen.get("_panel") as Control
 			var go := screen.get("_go") as Button
-			_ok(_area(view).encloses(panel.get_global_rect()), "%s: painel inteiro" % sub)
+			_ok(_area(view).encloses(panel.get_global_rect()), "%s: painel inteiro", sub)
 			_ok(_area(view).encloses(go.get_global_rect())
 					and panel.get_global_rect().end.y <= go.get_global_rect().position.y,
-					"%s: Escolher fase na base, abaixo do painel" % sub)
-			_ok(go.disabled != unlocked, "%s: Escolher fase só liberado" % sub)
-			_ok((screen.get("_lock_box") as Control).visible != unlocked, "%s: condição só no bloqueado" % sub)
+					"%s: Escolher fase na base, abaixo do painel", sub)
+			_ok(go.disabled != unlocked, "%s: Escolher fase só liberado", sub)
+			_ok((screen.get("_lock_box") as Control).visible != unlocked, "%s: condição só no bloqueado", sub)
 			var stage := screen.get("_stage") as Control
 			var hero_rect: Rect2 = stage.call("hero_rect")
-			_ok(Rect2(Vector2.ZERO, stage.size).encloses(hero_rect), "%s: guardião inteiro no palco" % sub)
-			_ok(not stage.get_global_rect().intersects(panel.get_global_rect()), "%s: palco fora do painel" % sub)
+			_ok(Rect2(Vector2.ZERO, stage.size).encloses(hero_rect), "%s: guardião inteiro no palco", sub)
+			_ok(not stage.get_global_rect().intersects(panel.get_global_rect()), "%s: palco fora do painel", sub)
 			for r: Rect2 in rects:
-				_ok(not r.intersects(panel.get_global_rect()), "%s: retratos fora do painel" % sub)
+				_ok(not r.intersects(panel.get_global_rect()), "%s: retratos fora do painel", sub)
 			_check_ability_sheet(screen.get("_abilities") as Control, screen.get("_scroll") as Control, id, true, sub)
 			check_common(screen, view, sub)
 		close_screen(screen)
@@ -204,7 +208,7 @@ func _test_heroes(view: Vector2, state: String) -> void:
 ## visível só se `shown`, com o glifo e os 3 ícones carregados, inteira na largura da rolagem e com
 ## o aviso do preço em vida só na Yuki.
 func _check_ability_sheet(sheet: Control, scroll: Control, id: StringName, shown: bool, st: String) -> void:
-	_ok(sheet != null and sheet.is_visible_in_tree() == shown, "%s: energia e habilidades %s" % [st,
+	_ok(sheet != null and sheet.is_visible_in_tree() == shown, "%s: energia e habilidades %s", [st,
 			"à vista" if shown else "escondidas"])
 	if sheet == null or not shown:
 		return
@@ -217,19 +221,19 @@ func _check_ability_sheet(sheet: Control, scroll: Control, id: StringName, shown
 		if row == null:
 			continue
 		var icon := row.find_child("Icon", true, false) as TextureRect
-		_ok(icon != null and icon.texture != null and icon.size == Vector2(24, 24), "%s: ícone 24x24 de %s" % [st, a["id"]])
+		_ok(icon != null and icon.texture != null and icon.size == Vector2(24, 24), "%s: ícone 24x24 de %s", [st, a["id"]])
 		var r := row.get_global_rect()
 		_ok(r.position.x >= clip.position.x - 0.5 and r.end.x <= clip.end.x + 0.5,
-				"%s: linha de %s na largura da rolagem (%s em %s)" % [st, a["id"], r, clip])
+				"%s: linha de %s na largura da rolagem (%s em %s)", [st, a["id"], r, clip])
 		var meta := row.find_child("Meta", true, false) as Label
 		_ok(meta != null and meta.text.contains(str(int(a["cost"]))) and meta.text.contains(str(int(a["level"]))),
-				"%s: nível e custo de %s" % [st, a["id"]])
-	_ok(rows == 3, "%s: 3 habilidades (%d)" % [st, rows])
+				"%s: nível e custo de %s", [st, a["id"]])
+	_ok(rows == 3, "%s: 3 habilidades (%d)", [st, rows])
 	var energy := sheet.find_child("Energy", false, false) as Control
 	_ok(energy != null and (energy.find_child("Icon", true, false) as TextureRect).texture != null,
-			"%s: glifo da energia" % st)
+			"%s: glifo da energia", st)
 	var blood := sheet.find_child("BloodPrice", false, false)
-	_ok((blood != null) == (float(data["energy"].get("hp_price", 0.0)) > 0.0), "%s: preço em vida só na Yuki" % st)
+	_ok((blood != null) == (float(data["energy"].get("hp_price", 0.0)) > 0.0), "%s: preço em vida só na Yuki", st)
 
 
 func _test_hero_behaviour() -> void:
@@ -253,7 +257,7 @@ func _test_hero_behaviour() -> void:
 		Settings.changed.emit(GfxQuality.changed_signal_key())
 		screen.call("_select", &"aki")
 		var motes := screen.get("_motes") as MenuKit.Motes
-		_ok(motes.count == [0, 14, 36][level], "Guardiões: partículas por nível (%d: %d)" % [level, motes.count])
+		_ok(motes.count == [0, 14, 36][level], "Guardiões: partículas por nível (%d: %d)", [level, motes.count])
 		_ok(int((screen.get("_stage") as Control).get("fx")) == level, "Guardiões: palco segue ui_fx ao vivo")
 	GfxQuality.clear_override()
 	_ok(screen.call("_attr_level", 0.2) == 5 and screen.call("_attr_level", -0.1) == 2
@@ -398,18 +402,18 @@ func _test_options(view: Vector2, state: String) -> void:
 	var st := "Opções %s" % state
 	var scroll := screen.get("_scroll") as ScrollContainer
 	_ok(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED and scroll.scroll_deadzone > 0,
-			"%s: rola só na vertical, com zona morta" % st)
+			"%s: rola só na vertical, com zona morta", st)
 	var rail := screen.get("_rail") as Control
 	var tabs: Array = screen.get("_tabs")
-	_ok(tabs.size() == 6, "%s: seis abas" % st)
+	_ok(tabs.size() == 6, "%s: seis abas", st)
 	for t: Button in tabs:
-		_ok(_area(view).encloses(t.get_global_rect()) and t.size.y >= 28.0, "%s: aba %s inteira" % [st, t.name])
-		_ok(not t.get_global_rect().intersects(scroll.get_global_rect()), "%s: aba %s fora da rolagem" % [st, t.name])
-	_ok(rail.get_global_rect().end.y <= view.y, "%s: trilho cabe na altura" % st)
+		_ok(_area(view).encloses(t.get_global_rect()) and t.size.y >= 28.0, "%s: aba %s inteira", [st, t.name])
+		_ok(not t.get_global_rect().intersects(scroll.get_global_rect()), "%s: aba %s fora da rolagem", [st, t.name])
+	_ok(rail.get_global_rect().end.y <= view.y, "%s: trilho cabe na altura", st)
 	var controls: Array[Control] = []
 	for key: String in expected_option_keys():
 		var c := screen.find_child("opt_%s" % key, true, false) as Control
-		_ok(c != null, "%s: tem opt_%s" % [st, key])
+		_ok(c != null, "%s: tem opt_%s", [st, key])
 		if c != null:
 			controls.append(c)
 	var area := scroll.get_global_rect()
@@ -420,19 +424,19 @@ func _test_options(view: Vector2, state: String) -> void:
 	for i: int in interactive.size():
 		var a := interactive[i].get_global_rect()
 		_ok(a.position.x >= area.position.x - 0.5 and a.end.x <= area.end.x + 0.5,
-				"%s: %s não passa da largura" % [st, interactive[i].name])
+				"%s: %s não passa da largura", [st, interactive[i].name])
 		for j: int in range(i + 1, interactive.size()):
 			_ok(not a.grow(-0.5).intersects(interactive[j].get_global_rect().grow(-0.5)),
-					"%s: %s não encosta em %s" % [st, interactive[i].name, interactive[j].name])
+					"%s: %s não encosta em %s", [st, interactive[i].name, interactive[j].name])
 	for i: int in 6:
 		screen.call("show_section", i, false)
 		await _host.get_tree().process_frame
-		_ok(screen.call("current_section") == i, "%s: aba %d leva à seção" % [st, i])
+		_ok(screen.call("current_section") == i, "%s: aba %d leva à seção", [st, i])
 		check_common(screen, view, "%s seção %d" % [st, i])
 	for c: Control in controls:
 		scroll.ensure_control_visible(c)
 		await _host.get_tree().process_frame
-		_ok(area.grow(0.5).encloses(c.get_global_rect()), "%s: %s alcançável pela rolagem" % [st, c.name])
+		_ok(area.grow(0.5).encloses(c.get_global_rect()), "%s: %s alcançável pela rolagem", [st, c.name])
 	close_screen(screen)
 	await _host.get_tree().process_frame
 
@@ -446,7 +450,7 @@ func _test_options_behaviour() -> void:
 		Settings.set_value(key, mode)
 		await _host.get_tree().process_frame
 		_ok(preview.call("level_shown") == GfxQuality.MODE_LEVEL[mode],
-				"Opções: prévia acompanha a qualidade %s ao vivo" % mode)
+				"Opções: prévia acompanha a qualidade %s ao vivo", mode)
 	var desc := preview.find_child("Description", true, false) as Label
 	_ok(desc.text == TranslationServer.translate("options.gfx_desc_high"), "Opções: prévia descreve o nível Alta")
 	Settings.set_value(key, "auto")
@@ -487,7 +491,7 @@ func _test_options_behaviour() -> void:
 	(screen.find_child("opt_privacy_policy", true, false) as Button).pressed.emit()
 	options_script.set("url_opener", Callable())
 	_ok(opened == ["https://netstart.github.io/privacy-policy.html"],
-			"Opções: Política de privacidade pede a URL publicada (%s)" % [opened])
+			"Opções: Política de privacidade pede a URL publicada (%s)", [opened])
 	var reset := screen.find_child("opt_reset", true, false) as Button
 	SaveManager.data["ryo"] = 77
 	reset.pressed.emit()
@@ -507,10 +511,10 @@ func _test_codex(view: Vector2, state: String) -> void:
 	var screen := await open_screen(_host, view, &"codex")
 	var st := "Diário %s" % state
 	var book := screen.get("_book") as Control
-	_ok(_area(view).encloses(book.get_global_rect()), "%s: livro inteiro" % st)
+	_ok(_area(view).encloses(book.get_global_rect()), "%s: livro inteiro", st)
 	var left := screen.get("_left") as Control
 	var right := screen.get("_right") as Control
-	_ok(not left.get_global_rect().intersects(right.get_global_rect()), "%s: páginas lado a lado" % st)
+	_ok(not left.get_global_rect().intersects(right.get_global_rect()), "%s: páginas lado a lado", st)
 	var chip := screen.find_child("Progress", true, false) as Control
 	var tabs: Array = screen.get("_tabs")
 	for id: StringName in screen.get("CATEGORIES"):
@@ -519,15 +523,15 @@ func _test_codex(view: Vector2, state: String) -> void:
 		await _host.get_tree().process_frame
 		var sub := "%s %s" % [st, id]
 		var cards: Array = screen.call("cards")
-		_ok(cards.size() == (screen.call("entries") as Array).size() and cards.size() > 0, "%s: um cartão por entrada" % sub)
+		_ok(cards.size() == (screen.call("entries") as Array).size() and cards.size() > 0, "%s: um cartão por entrada", sub)
 		for t: Button in tabs:
 			_ok(_area(view).encloses(t.get_global_rect()) and t.size.y >= 24.0
-					and not t.get_global_rect().intersects(chip.get_global_rect()), "%s: marcador %s inteiro" % [sub, t.name])
+					and not t.get_global_rect().intersects(chip.get_global_rect()), "%s: marcador %s inteiro", [sub, t.name])
 		var grid_area := (screen.get("_grid_scroll") as Control).get_global_rect()
 		for c: Button in cards:
 			var r := c.get_global_rect()
 			_ok(r.position.x >= grid_area.position.x - 0.5 and r.end.x <= grid_area.end.x + 0.5,
-					"%s: cartão dentro da página" % sub)
+					"%s: cartão dentro da página", sub)
 		var entries: Array = screen.call("entries")
 		var picks: Array = range(entries.size()) if id == &"heroes" else [0, entries.size() - 1]
 		for i: int in picks:
@@ -542,6 +546,10 @@ func _test_codex(view: Vector2, state: String) -> void:
 			await _test_codex_recipe_layout(screen, view, sub)
 		if id == &"achievements":
 			await _test_codex_missions_layout(screen, view, sub)
+	# Guia: cada capítulo com tudo descoberto (os nomes mais longos) e a seção do Android, no mesmo
+	# Diário aberto (o capítulo é montado de novo ao abrir a aba, com o perfil cheio).
+	GuideTests.full_profile()
+	await GuideTests.new().check_layout(self, _host, screen, view, state, _check)
 	close_screen(screen)
 	await _host.get_tree().process_frame
 
@@ -553,12 +561,12 @@ func _test_codex_missions_layout(screen: Control, view: Vector2, sub: String) ->
 	var page := (screen.get("_grid_scroll") as Control).get_global_rect()
 	var headers := (screen.get("_list") as Node).get_children().filter(func(n: Node) -> bool:
 			return String(n.name).begins_with("Section_"))
-	_ok(headers.size() == MissionBook.CATEGORIES.size(), "%s: uma seção por categoria (%d)" % [sub, headers.size()])
+	_ok(headers.size() == MissionBook.CATEGORIES.size(), "%s: uma seção por categoria (%d)", [sub, headers.size()])
 	for h: Control in headers:
 		var r := h.get_global_rect()
 		_ok(r.position.x >= page.position.x - 0.5 and r.end.x <= page.end.x + 0.5,
-				"%s: cabeçalho %s na página" % [sub, h.name])
-	_ok((screen.call("cards") as Array).size() == MissionBook.ids().size(), "%s: um cartão por missão" % sub)
+				"%s: cabeçalho %s na página", [sub, h.name])
+	_ok((screen.call("cards") as Array).size() == MissionBook.ids().size(), "%s: um cartão por missão", sub)
 	var right := (screen.get("_right") as Control).get_global_rect()
 	for id: StringName in [&"m_dark_500", &"ach_first_steps", &"m_pacts_60", &"m_elite_all_affixes"]:
 		screen.call("open_entry", screen.call("index_of", id))
@@ -566,20 +574,11 @@ func _test_codex_missions_layout(screen: Control, view: Vector2, sub: String) ->
 		var row := screen.get("_progress_row") as Control
 		var value := screen.get("_progress_text") as Label
 		var rewards := screen.get("_rewards") as RichTextLabel
-		_ok(row.is_visible_in_tree() and value.text == MissionBook.progress_text(id), "%s %s: barra e progresso" % [sub, id])
+		_ok(row.is_visible_in_tree() and value.text == MissionBook.progress_text(id), "%s %s: barra e progresso", [sub, id])
 		_ok(rewards.is_visible_in_tree() and rewards.get_global_rect().position.x >= right.position.x - 0.5
 				and rewards.get_global_rect().end.x <= right.end.x + 0.5 and rewards.get_content_height() <= rewards.size.y + 0.5,
-				"%s %s: recompensas inteiras na página" % [sub, id])
+				"%s %s: recompensas inteiras na página", [sub, id])
 		check_common(screen, view, "%s %s" % [sub, id])
-
-
-## Guia: cada capítulo com tudo descoberto (os nomes mais longos) e a seção do Android.
-func _test_guide(view: Vector2, state: String) -> void:
-	GuideTests.full_profile()
-	var screen := await open_screen(_host, view, &"codex")
-	await GuideTests.new().check_layout(self, _host, screen, view, state, _check)
-	close_screen(screen)
-	await _host.get_tree().process_frame
 
 
 func _test_codex_behaviour() -> void:
@@ -621,7 +620,7 @@ func _test_codex_behaviour() -> void:
 		await _host.get_tree().create_timer(0.5).timeout
 		_ok(screen.call("category") == &"kami" and (screen.call("cards") as Array).size() == DB.ids("kami").size()
 				and is_equal_approx((screen.get("_left") as Control).scale.x, 1.0),
-				"Diário: virar a página termina na categoria nova (nível %d)" % level)
+				"Diário: virar a página termina na categoria nova (nível %d)", level)
 		screen.call("open_category", &"weapons")
 		await _host.get_tree().create_timer(0.5).timeout
 	GfxQuality.clear_override()
@@ -694,27 +693,27 @@ func _test_codex_recipe_layout(screen: Control, view: Vector2, sub: String) -> v
 ## descrição e acima dos números, sem sobrepor; e o resto da página continua sem corte.
 func check_recipe(screen: Control, view: Vector2, st: String) -> void:
 	var recipe := screen.get("_recipe") as RichTextLabel
-	_ok(recipe != null and recipe.is_visible_in_tree() and recipe.get_line_count() >= 1, "%s: receita visível" % st)
+	_ok(recipe != null and recipe.is_visible_in_tree() and recipe.get_line_count() >= 1, "%s: receita visível", st)
 	if recipe == null or not recipe.is_visible_in_tree():
 		return
 	var scroll := screen.get("_detail_scroll") as Control
 	var clip := scroll.get_global_rect().intersection(_area(view))
 	var r := recipe.get_global_rect()
 	_ok(r.position.x >= clip.position.x - 0.5 and r.end.x <= clip.end.x + 0.5,
-			"%s: receita dentro da largura (%s em %s)" % [st, r, clip])
+			"%s: receita dentro da largura (%s em %s)", [st, r, clip])
 	_ok(recipe.get_content_width() <= r.size.x + 0.5,
-			"%s: nenhuma linha da receita passa da largura (%d de %.0f)" % [st, recipe.get_content_width(), r.size.x])
+			"%s: nenhuma linha da receita passa da largura (%d de %.0f)", [st, recipe.get_content_width(), r.size.x])
 	_ok(recipe.get_content_height() <= r.size.y + 0.5,
-			"%s: receita com todas as linhas (%d de %.0f)" % [st, recipe.get_content_height(), r.size.y])
+			"%s: receita com todas as linhas (%d de %.0f)", [st, recipe.get_content_height(), r.size.y])
 	var chip := recipe_chip_size()
 	_ok(recipe.get_content_height() >= recipe.get_line_count() * chip,
-			"%s: cada linha comporta o chip de %d px (%d linhas, %d px)" % [st, chip, recipe.get_line_count(),
+			"%s: cada linha comporta o chip de %d px (%d linhas, %d px)", [st, chip, recipe.get_line_count(),
 			recipe.get_content_height()])
 	var lore := screen.get("_lore") as Label
-	_ok(lore.get_global_rect().end.y <= r.position.y + 0.5, "%s: receita abaixo da descrição" % st)
+	_ok(lore.get_global_rect().end.y <= r.position.y + 0.5, "%s: receita abaixo da descrição", st)
 	var stats := screen.get("_stats") as Label
 	if stats.is_visible_in_tree():
-		_ok(r.end.y <= stats.get_global_rect().position.y + 0.5, "%s: receita acima dos números" % st)
+		_ok(r.end.y <= stats.get_global_rect().position.y + 0.5, "%s: receita acima dos números", st)
 	check_common(screen, view, st)
 
 
@@ -750,13 +749,13 @@ func _test_codex_recipes() -> void:
 				var known := _ref_known(String(ref["category"]), String(ref["id"]))
 				if bool(ref["known"]) != known or (String(ref["name"]) == "???") == known:
 					unknown_named.append("%s→%s" % [w, ref["id"]])
-			_ok(String(line["text"]).count("%s") == pair.size(), "Receitas %s: um %%s por chip" % w)
+			_ok(String(line["text"]).count("%s") == pair.size(), "Receitas %s: um %%s por chip", w)
 			got.append(pair)
 		if got != expected:
 			wrong.append("%s: %s != %s" % [w, got, expected])
-	_ok(wrong.is_empty(), "Receitas: parceiro e resultado certos em toda arma %s" % [wrong])
-	_ok(bad_icons.is_empty(), "Receitas: todo ícone citado existe e vira chip de %d px %s" % [chip, bad_icons])
-	_ok(unknown_named.is_empty(), "Receitas: desconhecido como ???, conhecido com nome %s" % [unknown_named])
+	_ok(wrong.is_empty(), "Receitas: parceiro e resultado certos em toda arma %s", [wrong])
+	_ok(bad_icons.is_empty(), "Receitas: todo ícone citado existe e vira chip de %d px %s", [chip, bad_icons])
+	_ok(unknown_named.is_empty(), "Receitas: desconhecido como ???, conhecido com nome %s", [unknown_named])
 	var katana := int(screen.call("index_of", &"katana"))
 	var dawn := TranslationServer.translate("weapon.dawn_blade.name")
 	screen.call("open_entry", katana)
@@ -765,7 +764,7 @@ func _test_codex_recipes() -> void:
 	var text := recipe.get_parsed_text()
 	_ok(recipe.is_visible_in_tree() and text.contains(TranslationServer.translate("passive.sake.name"))
 			and text.contains("???") and not text.contains(dawn),
-			"Receitas: Katana mostra Saquê e a evolução ainda desconhecida como ??? (%s)" % text)
+			"Receitas: Katana mostra Saquê e a evolução ainda desconhecida como ??? (%s)", text)
 	_ok(not (screen.get("_lore") as Label).text.contains("???"), "Receitas: a descrição fica só com a descrição")
 	(SaveManager.data["stats"]["evolved"] as Array).append("dawn_blade")
 	screen.call("_fill_page")
@@ -790,7 +789,7 @@ func _test_codex_recipes() -> void:
 		for x: int in chip:
 			ink += int(unknown_chip.get_pixel(x, y).is_equal_approx(script.get_script_constant_map()["CHIP_UNKNOWN_INK"]))
 	_ok(ink >= 8 and not unknown_chip.get_pixel(9, 9).is_equal_approx(known_chip.get_pixel(9, 9)),
-			"Receitas: chip desconhecido em silhueta com \"?\" (%d px de tinta)" % ink)
+			"Receitas: chip desconhecido em silhueta com \"?\" (%d px de tinta)", ink)
 	# Relíquia bloqueada: a receita da arma esconde o nome dela; a página da relíquia não mostra receita.
 	var raijin := int(screen.call("index_of", &"raijin"))
 	var rosary_ref: Dictionary = (entries[raijin]["recipe"] as Array)[0]["refs"][0]
@@ -810,7 +809,7 @@ func _test_codex_recipes() -> void:
 	var multi := 0
 	for r: Dictionary in relics:
 		multi = maxi(multi, (r.get("recipe", []) as Array).size())
-	_ok(multi >= 2 and recipe.is_visible_in_tree(), "Receitas: relíquia de várias armas lista todas (%d)" % multi)
+	_ok(multi >= 2 and recipe.is_visible_in_tree(), "Receitas: relíquia de várias armas lista todas (%d)", multi)
 	var rosary: Dictionary = relics[int(screen.call("index_of", &"rosary"))]
 	_ok(not bool(rosary["known"]) and (rosary["recipe"] as Array).is_empty(), "Receitas: relíquia bloqueada sem receita")
 	screen.call("_on_recipe_meta", {"category": &"weapons", "id": "katana"})
@@ -869,20 +868,20 @@ func _test_back_everywhere() -> void:
 			var screen := await open_screen(_host, view, name)
 			var back := find_back(screen)
 			var st := "Voltar %s [%s]" % [name, c["label"]]
-			_ok(back != null, "%s: usa o voltar único" % st)
+			_ok(back != null, "%s: usa o voltar único", st)
 			if back == null:
 				close_screen(screen)
 				continue
 			var r := back.get_global_rect()
 			_ok(r.position.is_equal_approx(Vector2(4.0 + _insets.x, 2)) and r.size.y >= 34.0 and r.size.x >= 48.0,
-					"%s: posição e alvo de toque (%s)" % [st, r])
-			_ok(_area(view).encloses(r), "%s: voltar fora do furo da câmera (%s)" % [st, r])
-			_ok(back.text == TranslationServer.translate("menu.back"), "%s: texto Voltar" % st)
+					"%s: posição e alvo de toque (%s)", [st, r])
+			_ok(_area(view).encloses(r), "%s: voltar fora do furo da câmera (%s)", [st, r])
+			_ok(back.text == TranslationServer.translate("menu.back"), "%s: texto Voltar", st)
 			var font := back.get_theme_font("font")
 			var need := font.get_string_size(back.text, HORIZONTAL_ALIGNMENT_LEFT, -1, back.get_theme_font_size("font_size")).x
-			_ok(need + 30.0 <= r.size.x, "%s: texto inteiro na placa" % st)
+			_ok(need + 30.0 <= r.size.x, "%s: texto inteiro na placa", st)
 			var top := screen.get_child(screen.get_child_count() - 1)
-			_ok(top == back, "%s: voltar por cima de tudo" % st)
+			_ok(top == back, "%s: voltar por cima de tudo", st)
 			close_screen(screen)
 			await _host.get_tree().process_frame
 	use_insets(Vector2.ZERO)
@@ -893,7 +892,7 @@ func _test_back_everywhere() -> void:
 		await _host.get_tree().process_frame
 		b.size = b.get_combined_minimum_size()
 		var need := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		_ok(need + 30.0 <= b.size.x + 0.5 and b.size.y >= 34.0, "Voltar %s: cabe o texto" % lang)
+		_ok(need + 30.0 <= b.size.x + 0.5 and b.size.y >= 34.0, "Voltar %s: cabe o texto", lang)
 		b.queue_free()
 	Locale.set_language("pt_BR", false)
 
@@ -947,7 +946,7 @@ func _test_real_app() -> void:
 				for i: int in 3:
 					await _host.get_tree().process_frame
 				var screen := (app.get("_screens") as Dictionary)[name] as Control
-				_ok(screen.size.is_equal_approx(view), "%s %s: tela do tamanho do viewport" % [st, name])
+				_ok(screen.size.is_equal_approx(view), "%s %s: tela do tamanho do viewport", [st, name])
 				if name == &"heroes":
 					for id: StringName in DB.ids("heroes"):
 						screen.call("_select", id)
@@ -955,10 +954,10 @@ func _test_real_app() -> void:
 						var go := screen.get("_go") as Button
 						var panel := screen.get("_panel") as Control
 						_ok(go.is_visible_in_tree() and area.encloses(go.get_global_rect()) and go.size.y >= 28.0,
-								"%s %s: Escolher fase visível (%s)" % [st, id, go.get_global_rect()])
+								"%s %s: Escolher fase visível (%s)", [st, id, go.get_global_rect()])
 						_ok(area.encloses(panel.get_global_rect())
 								and panel.get_global_rect().end.y <= go.get_global_rect().position.y,
-								"%s %s: painel acima do botão (%s)" % [st, id, panel.get_global_rect()])
+								"%s %s: painel acima do botão (%s)", [st, id, panel.get_global_rect()])
 				check_common(screen, view, "%s %s" % [st, name])
 			app.queue_free()
 			vp.queue_free()

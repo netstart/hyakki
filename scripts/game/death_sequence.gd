@@ -358,7 +358,9 @@ func _frame(k: float) -> void:
 
 
 func _set_hud(alpha: float) -> void:
-	if not is_equal_approx(alpha, _hud_alpha):
+	# Comparação exata: com is_equal_approx, um resto de 1e-16 (passos de 1/60 s somados) prendia a
+	# HUD quase apagada, sem chegar a 0 nem soltar o joystick.
+	if alpha != _hud_alpha:
 		_hud_alpha = alpha
 		game.hud.set_gameplay_alpha(alpha)
 

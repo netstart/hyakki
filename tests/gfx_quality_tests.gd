@@ -11,7 +11,6 @@ extends RefCounted
 ## Chamado por tests/integration_tests.gd.
 
 const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
-const PauseMenuTests := preload("res://tests/pause_menu_tests.gd")
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const KEY := "graphics_quality"
 
@@ -28,7 +27,8 @@ func run(host: Node, check: Callable) -> void:
 	_test_setting()
 	_test_adaptive()
 	await _test_options()
-	await _test_pause()
+	# Botão de qualidade da pausa em todos os casos de layout: dentro da própria matriz da pausa, no
+	# mesmo menu aberto (tests/pause_menu_tests.gd, check_quality), sem abrir a pausa de novo.
 	Settings.changed.disconnect(_on_changed)
 	GfxQuality.reset_session()
 	GfxQuality.clear_override()
@@ -49,7 +49,7 @@ func _test_setting() -> void:
 	_emitted.clear()
 	for entry: Array in [["low", GfxQuality.LOW], ["medium", GfxQuality.MEDIUM], ["high", GfxQuality.HIGH]]:
 		Settings.set_value(KEY, entry[0])
-		_check.call(GfxQuality.level() == int(entry[1]), "gfx: opção %s vale ao vivo" % entry[0])
+		_check.call(GfxQuality.level() == int(entry[1]), "gfx: opção %s vale ao vivo", entry[0])
 	_check.call(_emitted.count(GfxQuality.changed_signal_key()) == 3, "gfx: cada troca emite Settings.changed")
 	Settings.set_value(KEY, "low")
 	Settings.load_settings()
@@ -57,7 +57,7 @@ func _test_setting() -> void:
 			"gfx: opção persiste no arquivo de opções")
 	var config := ConfigFile.new()
 	_check.call(config.load(Settings.path) == OK and config.get_value("settings", KEY, "") == "low",
-			"gfx: gravada em %s" % Settings.path)
+			"gfx: gravada em %s", Settings.path)
 	GfxQuality.set_override(GfxQuality.HIGH)
 	_check.call(GfxQuality.level() == GfxQuality.HIGH, "gfx: override vence a opção")
 	GfxQuality.clear_override()
@@ -86,7 +86,7 @@ func _test_adaptive() -> void:
 	_check.call(_run_monitor(monitor, 10.0, 58.0) == 0, "gfx: FPS volta e zera a contagem")
 	_emitted.clear()
 	_check.call(_run_monitor(monitor, 6.5, 30.0) == 1 and GfxQuality.level() == GfxQuality.MEDIUM,
-			"gfx: FPS abaixo de 80%% por 5 s desce um nível (agora %d)" % GfxQuality.level())
+			"gfx: FPS abaixo de 80%% por 5 s desce um nível (agora %d)", GfxQuality.level())
 	_check.call(GfxQuality.changed_signal_key() in _emitted, "gfx: rebaixamento avisa por Settings.changed")
 	_check.call(Settings.get_value(KEY) == "auto", "gfx: rebaixamento não mexe na opção salva")
 	_check.call(_run_monitor(monitor, 12.0, 30.0) == 0, "gfx: no máximo um rebaixamento a cada 20 s")
@@ -128,7 +128,7 @@ func _test_options() -> void:
 		for i: int in range(option.item_count):
 			texts.append(option.get_item_text(i))
 		_check.call(texts == [tr("options.gfx_auto_level") % tr("options.gfx_high"), tr("options.gfx_low"),
-				tr("options.gfx_medium"), tr("options.gfx_high")], "gfx: textos das opções (%s)" % [texts])
+				tr("options.gfx_medium"), tr("options.gfx_high")], "gfx: textos das opções (%s)", [texts])
 		_check.call(str(option.get_item_metadata(option.selected)) == "auto", "gfx: Opções mostra a opção atual")
 		var cell_label := option.get_parent().get_child(0) as Label
 		_check.call(cell_label.text == tr("options.graphics_quality"), "gfx: rótulo Qualidade gráfica")
@@ -139,52 +139,3 @@ func _test_options() -> void:
 	host.queue_free()
 	await _host.get_tree().process_frame
 	Settings.set_value(KEY, "auto")
-
-
-func _test_pause() -> void:
-	var tests := PauseMenuTests.new()
-	tests.set("_host", _host)
-	for c: Dictionary in DeviceProfiles.layout_cases():
-		tests.call("use_insets", c["insets"])
-		for lang: String in c["langs"]:
-			await _check_pause(tests, c["view"], lang, c["label"])
-	tests.call("use_insets", Vector2.ZERO)
-	Locale.set_language("pt_BR", false)
-
-
-func _check_pause(tests: RefCounted, view: Vector2, lang: String, label: String) -> void:
-	Locale.set_language(lang, false)
-	Settings.set_value(KEY, "auto")
-	var state := "gfx %s [%s]" % [lang, label]
-	var menu: PauseMenu = await tests.call("open_standalone", view, PauseMenuTests.make_snapshot(true))
-	var quality := menu.get("_quality") as Button
-	var caption := menu.get("_quality_caption") as Label
-	var value := menu.get("_quality_value") as Label
-	var compact := bool(menu.get("_compact"))
-	_check.call(compact == (view.y < 300.0), "%s: modo compacto só na tela baixa" % state)
-	_check.call(quality != null and quality.is_visible_in_tree() and quality.size.y >= 22.0,
-			"%s: pausa tem o botão de qualidade" % state)
-	var font := value.get_theme_font("font")
-	if not compact:
-		var need := font.get_string_size(caption.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		_check.call(need <= caption.size.x + 0.5 and caption.text == tr("pause.graphics"),
-				"%s: legenda inteira (%.0f de %.0f)" % [state, need, caption.size.x])
-	for mode: String in GfxQuality.MODES:
-		Settings.set_value(KEY, mode)
-		await _host.get_tree().process_frame
-		var width := font.get_string_size(value.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		_check.call(width <= value.size.x + 0.5 and quality.get_global_rect().grow(0.5).encloses(value.get_global_rect()),
-				"%s: valor \"%s\" inteiro dentro do botão (%.0f de %.0f)" % [state, value.text, width, value.size.x])
-	Settings.set_value(KEY, "auto")
-	if lang == "pt_BR":
-		var seen: Array[String] = [value.text]
-		for i: int in range(4):
-			quality.pressed.emit()
-			seen.append(value.text)
-		var auto_text := "Auto" if compact else "Auto (Alta)"
-		_check.call(seen == [auto_text, "Baixa", "Média", "Alta", auto_text], "%s: ciclo na pausa (%s)" % [state, seen])
-		_check.call(Settings.get_value(KEY) == "auto", "%s: ciclo volta ao auto" % state)
-		Settings.set_value(KEY, "low")
-		_check.call(value.text == "Baixa", "%s: pausa acompanha troca feita fora dela" % state)
-	menu.get_parent().queue_free()
-	await _host.get_tree().process_frame

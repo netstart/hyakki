@@ -56,16 +56,16 @@ func _check_styles(check: Callable) -> void:
 	for id: StringName in DB.ids("weapons"):
 		var data := DB.weapon(id)
 		var style := WeaponStyle.of(data)
-		check.call(data.has("fx") and (data["fx"] as Dictionary).has("color"), "%s tem cor de efeito" % id)
-		check.call(HitSounds.MIX.has(String(style["impact"])), "%s tem tipo de impacto válido" % id)
-		check.call((style["color"] as Color).a > 0.0, "%s: cor de efeito visível" % id)
+		check.call(data.has("fx") and (data["fx"] as Dictionary).has("color"), "%s tem cor de efeito", id)
+		check.call(HitSounds.MIX.has(String(style["impact"])), "%s tem tipo de impacto válido", id)
+		check.call((style["color"] as Color).a > 0.0, "%s: cor de efeito visível", id)
 	# Evolução diferente da base (cor própria, mais forte).
 	for id: StringName in DB.ids("weapons"):
 		var data := DB.weapon(id)
 		if String(data.get("kind", "")) == "evolution":
 			var base := DB.weapon(StringName(data.get("from", "")))
 			check.call(WeaponStyle.of(data)["color"] != WeaponStyle.of(base)["color"],
-					"%s tem cor própria, diferente da base" % id)
+					"%s tem cor própria, diferente da base", id)
 	check.call(WeaponStyle.of({})["impact"] == "hit", "arma vazia: impacto genérico")
 
 
@@ -75,15 +75,15 @@ func _check_budgets(game: HyakkiGame, check: Callable) -> void:
 	for level: int in [GfxQuality.LOW, GfxQuality.MEDIUM, GfxQuality.HIGH]:
 		_set_level(game, level)
 		var cap := int(GfxQuality.budget_at("particles_max", level))
-		check.call(FxLayer.particles_max == cap, "nível %d: cota de partículas %d" % [level, cap])
+		check.call(FxLayer.particles_max == cap, "nível %d: cota de partículas %d", [level, cap])
 		check.call(FxLayer.trail_points == int(GfxQuality.budget_at("trail_points", level)),
-				"nível %d: pontos de rastro do orçamento" % level)
-		check.call(FxLayer.glow == bool(GfxQuality.budget_at("glow", level)), "nível %d: brilho do orçamento" % level)
-		check.call(FxLayer.wfx == int(GfxQuality.budget_at("weapon_fx", level)), "nível %d: detalhe das armas" % level)
+				"nível %d: pontos de rastro do orçamento", level)
+		check.call(FxLayer.glow == bool(GfxQuality.budget_at("glow", level)), "nível %d: brilho do orçamento", level)
+		check.call(FxLayer.wfx == int(GfxQuality.budget_at("weapon_fx", level)), "nível %d: detalhe das armas", level)
 		for _k: int in range(400):
 			fx.sparks(Vector2.ZERO, Vector2.RIGHT, Color.WHITE, 8)
 		var alive := fx.particles_alive()
-		check.call(alive <= cap and alive >= cap - 8, "nível %d: partículas no teto (%d de %d)" % [level, alive, cap])
+		check.call(alive <= cap and alive >= cap - 8, "nível %d: partículas no teto (%d de %d)", [level, alive, cap])
 
 
 ## Troca ao vivo: Alta cheia → Baixa apaga o excesso, o brilho e as distorções.
@@ -97,7 +97,7 @@ func _check_live_switch(game: HyakkiGame, check: Callable) -> void:
 	GfxQuality.set_override(GfxQuality.LOW)
 	Settings.changed.emit(KEY)
 	var low_cap := int(GfxQuality.budget_at("particles_max", GfxQuality.LOW))
-	check.call(fx.particles_alive() <= low_cap, "troca ao vivo para Baixa corta as partículas (%d)" % fx.particles_alive())
+	check.call(fx.particles_alive() <= low_cap, "troca ao vivo para Baixa corta as partículas (%d)", fx.particles_alive())
 	check.call(fx.waves_alive() == 0 and not FxLayer.glow, "troca ao vivo para Baixa apaga brilho e distorção")
 	fx.shockwave(Vector2.ZERO, 60.0, Color.WHITE)
 	check.call(fx.waves_alive() == 0, "Baixa: onda de choque sem distorção")
@@ -121,7 +121,7 @@ func _check_projectile_fx(game: HyakkiGame, check: Callable) -> void:
 			check.call(n == 0, "Baixa: projétil sem rastro")
 		else:
 			check.call(n >= FxLayer.trail_points and n <= ProjectileManager.TRAIL_MAX,
-					"nível %d: projétil com rastro (%d pontos)" % [level, n])
+					"nível %d: projétil com rastro (%d pontos)", [level, n])
 	pm.reset()
 	check.call(ProjectileManager.KINDS.has("steel_shuriken") and ProjectileManager.KINDS.has("reaper_hook"),
 			"evoluções com projétil próprio (Tempestade de Aço, Corrente do Ceifador)")
@@ -144,14 +144,14 @@ func _check_projectile_size(game: HyakkiGame, check: Callable) -> void:
 		var key := String(id)
 		var behavior := String(data.get("behavior", ""))
 		if not expected.has(key) and not others.has(behavior):
-			check.call(not data.has("proj_size"), "%s: sem proj_size (só as 4 armas de projétil reduzidas)" % id)
+			check.call(not data.has("proj_size"), "%s: sem proj_size (só as 4 armas de projétil reduzidas)", id)
 			continue
 		var weapon: Weapon = game.call("_make_weapon", id)
 		var want_size := float(expected[key][0]) if expected.has(key) else 1.0
 		var want_r := float(expected[key][1]) if expected.has(key) else float(others[behavior])
 		if behavior == "kusarigama":
 			want_r *= weapon.area()
-		check.call(is_equal_approx(weapon.proj_size(), want_size), "%s: proj_size %.2f" % [id, weapon.proj_size()])
+		check.call(is_equal_approx(weapon.proj_size(), want_size), "%s: proj_size %.2f", [id, weapon.proj_size()])
 		pm.reset()
 		weapon.fire(game.player.sim_pos)
 		var seen := 0
@@ -160,9 +160,9 @@ func _check_projectile_size(game: HyakkiGame, check: Callable) -> void:
 				continue
 			seen += 1
 			check.call(is_equal_approx(pm.size[i], want_size) and is_equal_approx(pm.radius[i], want_r),
-					"%s: projétil com tamanho %.2f e raio %.2f (esperado %.2f e %.2f)"
-					% [id, pm.size[i], pm.radius[i], want_size, want_r])
-		check.call(seen > 0, "%s: disparo cria projétil" % id)
+					"%s: projétil com tamanho %.2f e raio %.2f (esperado %.2f e %.2f)",
+							[id, pm.size[i], pm.radius[i], want_size, want_r])
+		check.call(seen > 0, "%s: disparo cria projétil", id)
 	# Sem proj_size, o spawn mantém o raio e o tamanho de antes.
 	pm.reset()
 	var j := pm.spawn(&"shuriken", "shuriken", Vector2.ZERO, Vector2.RIGHT, 1.0, 5.0, 0, 1.0)
@@ -176,7 +176,7 @@ func _check_waves(game: HyakkiGame, check: Callable) -> void:
 	var fx := game.fx
 	for _k: int in range(FxLayer.MAX_WAVES + 4):
 		fx.shockwave(Vector2.ZERO, 40.0, Color.WHITE)
-	check.call(fx.waves_alive() == FxLayer.MAX_WAVES, "distorções ficam no teto (%d)" % fx.waves_alive())
+	check.call(fx.waves_alive() == FxLayer.MAX_WAVES, "distorções ficam no teto (%d)", fx.waves_alive())
 	fx.step(1.0)
 	check.call(fx.waves_alive() == 0, "distorções somem")
 	for _k: int in range(FxLayer.FLASHES_PER_STEP + 10):
@@ -194,7 +194,7 @@ func _check_impacts(game: HyakkiGame, check: Callable) -> void:
 			fx.reset()
 			fx.impact(id, Vector2.ZERO, Vector2.RIGHT)
 			var n := fx.particles_alive()
-			check.call(n >= 1, "nível %d: impacto de %s solta partículas (%d)" % [level, id, n])
+			check.call(n >= 1, "nível %d: impacto de %s solta partículas (%d)", [level, id, n])
 			low_total += n
 		if level == GfxQuality.LOW:
 			check.call(low_total <= DB.ids("weapons").size() * 2, "Baixa: impactos com partículas mínimas")
@@ -239,4 +239,4 @@ func _check_determinism(host: Node, check: Callable) -> void:
 		game.queue_free()
 		await host.get_tree().process_frame
 	GameClock.paused = false
-	check.call(hashes[0] == hashes[1], "mesmo estado na Baixa e na Alta com %d armas" % ARSENAL.size())
+	check.call(hashes[0] == hashes[1], "mesmo estado na Baixa e na Alta com %d armas", ARSENAL.size())

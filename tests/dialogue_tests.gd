@@ -55,11 +55,11 @@ func run_unit(check: Callable) -> void:
 	var scripts: Dictionary = _json("dialogues")
 	var csv_keys := _csv_keys()
 	var ids := dialogue_bosses(stages)
-	_check.call(ids.size() == stages.size() * 2, "diálogo: chefe das 10:00 e Guardião em cada fase (%d)" % ids.size())
+	_check.call(ids.size() == stages.size() * 2, "diálogo: chefe das 10:00 e Guardião em cada fase (%d)", ids.size())
 	for id: String in ids:
 		_check_script(id, scripts.get(id, {}), heroes, csv_keys)
 	for id: String in scripts:
-		_check.call(ids.has(id), "diálogo: %s é chefe das 10:00 ou Guardião" % id)
+		_check.call(ids.has(id), "diálogo: %s é chefe das 10:00 ou Guardião", id)
 	var settings := load("res://scripts/autoload/settings.gd") as GDScript
 	var defaults: Dictionary = settings.get_script_constant_map()["DEFAULTS"]
 	_check.call(defaults.has("dialogues_always") and defaults["dialogues_always"] == true,
@@ -69,17 +69,17 @@ func run_unit(check: Callable) -> void:
 
 func _check_script(id: String, entry: Variant, heroes: Array[String], csv_keys: Dictionary) -> void:
 	var lines: Array = (entry as Dictionary).get("lines", []) if typeof(entry) == TYPE_DICTIONARY else []
-	_check.call(not lines.is_empty(), "diálogo: %s tem roteiro" % id)
+	_check.call(not lines.is_empty(), "diálogo: %s tem roteiro", id)
 	if lines.is_empty():
 		return
 	_check.call(String(lines[0]["who"]) == "boss" and String(lines.back()["who"]) == "boss",
-			"diálogo: %s abre e fecha com o chefe" % id)
+			"diálogo: %s abre e fecha com o chefe", id)
 	var missing: Array[String] = []
 	var replies := 0
 	for raw: Dictionary in lines:
 		var who := String(raw["who"])
 		var key := String(raw["key"])
-		_check.call(["boss", "hero", "tora", "hana", "rin"].has(who), "diálogo: %s, quem fala (%s)" % [id, who])
+		_check.call(["boss", "hero", "tora", "hana", "rin"].has(who), "diálogo: %s, quem fala (%s)", [id, who])
 		if who == "hero":
 			replies += 1
 			for hero: String in heroes:
@@ -88,19 +88,19 @@ func _check_script(id: String, entry: Variant, heroes: Array[String], csv_keys: 
 		elif not csv_keys.has(key):
 			missing.append(key)
 		if who in ["tora", "hana", "rin"]:
-			_check.call((raw.get("skip", []) as Array).has(who), "diálogo: %s, %s não faz aparte para si" % [id, who])
-	_check.call(replies == 1, "diálogo: %s com uma resposta do herói" % id)
-	_check.call(missing.is_empty(), "diálogo: %s com todas as chaves no CSV (faltam %s)" % [id, missing])
+			_check.call((raw.get("skip", []) as Array).has(who), "diálogo: %s, %s não faz aparte para si", [id, who])
+	_check.call(replies == 1, "diálogo: %s com uma resposta do herói", id)
+	_check.call(missing.is_empty(), "diálogo: %s com todas as chaves no CSV (faltam %s)", [id, missing])
 	for hero: String in heroes:
 		var kept: Array = lines.filter(func(l: Dictionary) -> bool: return not (l.get("skip", []) as Array).has(hero))
 		var asides := kept.filter(func(l: Dictionary) -> bool: return String(l["who"]) in ["tora", "hana", "rin"])
 		_check.call(kept.size() >= 3 and kept.size() <= 4,
-				"diálogo: %s com %s tem 3 a 4 falas (%d)" % [id, hero, kept.size()])
+				"diálogo: %s com %s tem 3 a 4 falas (%d)", [id, hero, kept.size()])
 		if ASIDE_SKIPS.has(id) and (ASIDE_SKIPS[id] as Array).has(hero):
-			_check.call(asides.is_empty(), "diálogo: %s sem aparte quando o herói é %s" % [id, hero])
+			_check.call(asides.is_empty(), "diálogo: %s sem aparte quando o herói é %s", [id, hero])
 	for hero: String in ASIDE_SKIPS.get(id, []):
 		var skips := lines.any(func(l: Dictionary) -> bool: return (l.get("skip", []) as Array).has(hero))
-		_check.call(skips, "diálogo: %s pula o aparte para %s" % [id, hero])
+		_check.call(skips, "diálogo: %s pula o aparte para %s", [id, hero])
 
 
 static func _csv_keys() -> Dictionary:
@@ -148,17 +148,17 @@ func _test_build() -> void:
 		for hero: StringName in DB.ids("heroes"):
 			var lines := DialogueScript.build(StringName(id), hero)
 			var tag := "diálogo: build(%s, %s)" % [id, hero]
-			_check.call(lines.size() >= 3 and lines.size() <= 4, "%s com 3 a 4 falas (%d)" % [tag, lines.size()])
+			_check.call(lines.size() >= 3 and lines.size() <= 4, "%s com 3 a 4 falas (%d)", [tag, lines.size()])
 			if lines.size() < 3:
 				continue
 			_check.call(lines[0]["who"] == "boss" and lines[0]["side"] == "right" and lines[0]["speaker_id"] == StringName(id)
-					and lines.back()["who"] == "boss", "%s: abre e fecha com o chefe, à direita" % tag)
+					and lines.back()["who"] == "boss", "%s: abre e fecha com o chefe, à direita", tag)
 			_check.call(lines[1]["who"] == "hero" and lines[1]["speaker_id"] == hero and lines[1]["side"] == "left"
 					and String(lines[1]["text_key"]) == "dialog.%s.reply.%s" % [id, hero],
-					"%s: resposta do herói da partida, à esquerda" % tag)
+					"%s: resposta do herói da partida, à esquerda", tag)
 			for line: Dictionary in lines:
 				_check.call(String(line["who"]) == "boss" or line["speaker_id"] != hero or line["who"] == "hero",
-						"%s: nenhum aparte do próprio herói" % tag)
+						"%s: nenhum aparte do próprio herói", tag)
 	_check.call(DialogueScript.build(&"kappa_elder", &"tora").size() == 3, "diálogo: Velho Kappa com Tora tem 3 falas")
 	_check.call(DialogueScript.build(&"faceless_monk", &"goro").size() == 3,
 			"diálogo: Monge sem Rosto com Goro tem 3 falas")
@@ -181,7 +181,7 @@ func _test_texts() -> void:
 		faces[DialogueScript.face_path(line)] = String(line["speaker_id"])
 	for path: String in faces:
 		_check.call(not path.is_empty() and ResourceLoader.exists(path) and DialoguePanel.face_texture(path) != null,
-				"diálogo: retrato de %s (%s)" % [faces[path], path])
+				"diálogo: retrato de %s (%s)", [faces[path], path])
 	for lang: String in Locale.SUPPORTED:
 		Locale.set_language(lang, false)
 		var missing: Array[String] = []
@@ -190,7 +190,7 @@ func _test_texts() -> void:
 				if tr(key) == key or tr(key).strip_edges().is_empty():
 					if not missing.has(key):
 						missing.append(key)
-		_check.call(missing.is_empty(), "diálogo: %s traduz todas as falas e nomes (faltam %s)" % [lang, missing])
+		_check.call(missing.is_empty(), "diálogo: %s traduz todas as falas e nomes (faltam %s)", [lang, missing])
 	Locale.set_language("pt_BR", false)
 
 
@@ -271,40 +271,40 @@ func _test_midboss_flow() -> void:
 		warned[0] = warned[0] or _toast(game) == tr("midboss.warning")
 		return game.hud.dialogue_open())
 	var tag := "diálogo do Guardião"
-	_check.call(warned[0], "%s: aviso antes da entrada" % tag)
+	_check.call(warned[0], "%s: aviso antes da entrada", tag)
 	_check.call(opened and GameClock.game_time >= 450.0 and GameClock.game_time < 450.0 + STEP * 2.0,
-			"%s: abre aos 7:30 (%.2f)" % [tag, GameClock.game_time])
-	_check.call(GameClock.paused and game.hud.overlay_open(), "%s: a luta para" % tag)
-	_check.call(game.bosses.has_boss(&"onikuma"), "%s: Onikuma já em campo, parado" % tag)
+			"%s: abre aos 7:30 (%.2f)", [tag, GameClock.game_time])
+	_check.call(GameClock.paused and game.hud.overlay_open(), "%s: a luta para", tag)
+	_check.call(game.bosses.has_boss(&"onikuma"), "%s: Onikuma já em campo, parado", tag)
 	_check.call(not game.hud.boss_panel().visible and _toast(game) != tr("midboss.title") and _music() != "midboss",
-			"%s: painel, aviso \"Guardião do Limiar\" e música só depois" % tag)
+			"%s: painel, aviso \"Guardião do Limiar\" e música só depois", tag)
 	var panel := game.hud.dialogue_panel()
 	_check.call(panel.lines().size() == 4 and panel.speaker_name() == tr("boss.onikuma.name")
 			and panel.current_side() == "right" and panel.portrait() != null,
-			"%s: 4 falas, abre com o chefe à direita e com retrato" % tag)
-	_check.call(DialogueScript.seen(&"onikuma"), "%s: marcado como visto ao abrir" % tag)
+			"%s: 4 falas, abre com o chefe à direita e com retrato", tag)
+	_check.call(DialogueScript.seen(&"onikuma"), "%s: marcado como visto ao abrir", tag)
 	game.hud.bot_answer()
-	_check.call(not game.hud.dialogue_open() and not GameClock.paused, "%s: bot fecha e o relógio volta" % tag)
+	_check.call(not game.hud.dialogue_open() and not GameClock.paused, "%s: bot fecha e o relógio volta", tag)
 	var boss := game.hud.boss_panel()
 	_check.call(boss.visible and boss.seal_glyph == "門" and boss.title == tr("boss.onikuma.name"),
-			"%s: depois, painel do chefe com o selo 門" % tag)
+			"%s: depois, painel do chefe com o selo 門", tag)
 	_check.call(_toast(game) == tr("midboss.title") and _music() == "midboss",
-			"%s: depois, aviso e música do Guardião" % tag)
+			"%s: depois, aviso e música do Guardião", tag)
 	await _free(game)
 	# Segunda partida: já visto.
 	game = await _new_game()
 	var again := _run_until(game, 445.0, 6.0, func() -> bool: return game.hud.dialogue_open())
 	_check.call(not again and game.bosses.has_boss(&"onikuma") and game.hud.boss_panel().visible
-			and _toast(game) == tr("midboss.title"), "%s: segunda partida entra direto" % tag)
+			and _toast(game) == tr("midboss.title"), "%s: segunda partida entra direto", tag)
 	await _free(game)
 	# Opção "Mostrar diálogos sempre".
 	Settings.set_value("dialogues_always", true)
 	game = await _new_game()
 	_check.call(_run_until(game, 445.0, 6.0, func() -> bool: return game.hud.dialogue_open())
-			and not game.hud.boss_panel().visible, "%s: com a opção ligada, volta" % tag)
+			and not game.hud.boss_panel().visible, "%s: com a opção ligada, volta", tag)
 	game.hud.dialogue_panel().skip()
 	_check.call(not game.hud.dialogue_open() and not GameClock.paused and game.hud.boss_panel().visible,
-			"%s: \"Pular\" segue com a entrada" % tag)
+			"%s: \"Pular\" segue com a entrada", tag)
 	await _free(game)
 	Settings.set_value("dialogues_always", false)
 
@@ -316,26 +316,26 @@ func _test_boss_flow() -> void:
 	var tag := "diálogo do Velho Kappa"
 	var opened := _run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open())
 	_check.call(opened and GameClock.game_time >= 600.0 and GameClock.paused and game.bosses.has_boss(&"kappa_elder"),
-			"%s: abre aos 10:00 com a luta parada" % tag)
-	_check.call(not game.hud.boss_panel().visible and _music() != "boss_b", "%s: painel e música só depois" % tag)
-	_check.call(game.hud.dialogue_panel().lines().size() == 4, "%s: 4 falas com Aki" % tag)
+			"%s: abre aos 10:00 com a luta parada", tag)
+	_check.call(not game.hud.boss_panel().visible and _music() != "boss_b", "%s: painel e música só depois", tag)
+	_check.call(game.hud.dialogue_panel().lines().size() == 4, "%s: 4 falas com Aki", tag)
 	game.hud.bot_answer()
 	var boss := game.hud.boss_panel()
 	_check.call(not GameClock.paused and boss.visible and boss.title == tr("boss.kappa_elder.name")
 			and _music() == "boss_b",
-			"%s: depois do diálogo, painel e música" % tag)
+			"%s: depois do diálogo, painel e música", tag)
 	await _free(game)
 	game = await _new_game()
 	_check.call(not _run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open())
-			and game.hud.boss_panel().visible, "%s: segunda partida entra direto" % tag)
+			and game.hud.boss_panel().visible, "%s: segunda partida entra direto", tag)
 	await _free(game)
 	SaveManager.data = SaveManager.default_profile()
 	game = await _new_game("tora")
-	_check.call(_run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open()), "%s com Tora: abre" % tag)
+	_check.call(_run_until(game, 598.0, 4.0, func() -> bool: return game.hud.dialogue_open()), "%s com Tora: abre", tag)
 	var lines := game.hud.dialogue_panel().lines()
 	var whos: Array = lines.map(func(l: Dictionary) -> String: return String(l["who"]))
 	_check.call(lines.size() == 3 and whos == ["boss", "hero", "boss"] and lines[1]["speaker_id"] == &"tora",
-			"%s com Tora: 3 falas, sem o aparte (%s)" % [tag, whos])
+			"%s com Tora: 3 falas, sem o aparte (%s)", [tag, whos])
 	game.hud.bot_answer()
 	await _free(game)
 

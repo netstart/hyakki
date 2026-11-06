@@ -253,7 +253,7 @@ func _launch_fx(slot: int) -> void:
 func _voice(voice: String) -> void:
 	if voice.is_empty() or game.is_bot():
 		return
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if now - _voice_ms < VOICE_GAP_MS:
 		return
 	var options: Array[String] = []

@@ -68,7 +68,7 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 	var screen := await _open()
 	var status := screen.get("_status") as Label
 	var toast := screen.get("_toast") as Control
-	check.call(toast.modulate.a == 0.0, "%s: o aviso começa escondido" % lang)
+	check.call(toast.modulate.a == 0.0, "%s: o aviso começa escondido", lang)
 	check_layout(screen, view, "%s, ao abrir" % lang)
 	_check_cards(screen, lang)
 	await check_speed_states(screen, view, lang)
@@ -81,10 +81,10 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 		waited += 0.1
 	await host.get_tree().process_frame
 	await host.get_tree().process_frame
-	check.call(not ShopManager.is_ready(&"slot_ryo"), "%s: o resgate põe a vaga em cronômetro" % lang)
+	check.call(not ShopManager.is_ready(&"slot_ryo"), "%s: o resgate põe a vaga em cronômetro", lang)
 	check.call(status.text == tr("shop.received") % tr("shop.slot_ryo.name"),
-			"%s: o status mostra o recebido" % lang)
-	check.call(toast.modulate.a > 0.9, "%s: o aviso aparece com o recebido" % lang)
+			"%s: o status mostra o recebido", lang)
+	check.call(toast.modulate.a > 0.9, "%s: o aviso aparece com o recebido", lang)
 	check_layout(screen, view, "%s, depois do resgate" % lang)
 
 	# Status (o texto mais longo de cada caso), escrito direto no Label: o aviso acompanha.
@@ -93,11 +93,11 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 		status.text = text
 		await host.get_tree().process_frame
 		await host.get_tree().process_frame
-		check.call(toast.modulate.a > 0.9, "%s: o aviso mostra \"%s\"" % [lang, text])
+		check.call(toast.modulate.a > 0.9, "%s: o aviso mostra \"%s\"", [lang, text])
 		check_layout(screen, view, "%s, status \"%s\"" % [lang, text])
 	# O aviso some sozinho depois do tempo dele.
 	screen.call("_update_toast", 3.0)
-	check.call(toast.modulate.a == 0.0, "%s: o aviso some depois de ~2,5 s" % lang)
+	check.call(toast.modulate.a == 0.0, "%s: o aviso some depois de ~2,5 s", lang)
 
 	# Sem anúncio disponível: as vagas prontas ficam desativadas com o aviso.
 	SaveManager.data = SaveManager.default_profile()
@@ -119,17 +119,17 @@ func _layout_lang(host: Node, check: Callable, lang_code: String, lang: String) 
 	for id: StringName in cards:
 		var state_text := (cards[id]["state"] as Label).text
 		gifts = gifts and not (cards[id]["button"] as Button).disabled and state_text == "> %s" % tr("shop.claim_free")
-	check.call(gifts, "%s: com Apoie o jogo as vagas dizem \"%s\"" % [lang, tr("shop.claim_free")])
+	check.call(gifts, "%s: com Apoie o jogo as vagas dizem \"%s\"", [lang, tr("shop.claim_free")])
 	check.call((screen.get("_offer_hint") as Label).text == tr("shop.hint_free"),
-			"%s: com Apoie o jogo o subtítulo das Oferendas fala de presente" % lang)
+			"%s: com Apoie o jogo o subtítulo das Oferendas fala de presente", lang)
 	var buy := screen.get("_buy") as Button
 	check.call(buy.is_visible_in_tree() and buy.disabled and buy.text == tr("shop.owned"),
-			"%s: com Apoie o jogo a compra mostra \"%s\"" % [lang, tr("shop.owned")])
+			"%s: com Apoie o jogo a compra mostra \"%s\"", [lang, tr("shop.owned")])
 	SaveManager.data = SaveManager.default_profile()
 	screen.call("on_show")
 	await host.get_tree().process_frame
 	check.call((screen.get("_buy") as Button).text == tr("shop.support") % PurchaseManager.price_text(),
-			"%s: sem a compra o botão é \"Apoiar o jogo\" com o preço" % lang)
+			"%s: sem a compra o botão é \"Apoiar o jogo\" com o preço", lang)
 	screen.get_parent().queue_free()
 	await host.get_tree().process_frame
 
@@ -191,8 +191,8 @@ func run_scroll(host: Node, check: Callable) -> void:
 	check.call(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
 			and scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED, "Loja: rola só na vertical")
 	check.call(is_equal_approx(scroll.get_global_rect().end.y, _view.end.y),
-			"Loja: a área rolável vai até a borda inferior (%s)" % scroll.get_global_rect())
-	check.call(content.size.y > scroll.size.y, "Loja: conteúdo (%.0f) mais alto que a área (%.0f) rola" % [
+			"Loja: a área rolável vai até a borda inferior (%s)", scroll.get_global_rect())
+	check.call(content.size.y > scroll.size.y, "Loja: conteúdo (%.0f) mais alto que a área (%.0f) rola", [
 			content.size.y, scroll.size.y])
 	check.call(scroll.get_v_scroll_bar().visible and scroll.get_v_scroll_bar().max_value > scroll.size.y,
 			"Loja: a barra de rolagem aparece")
@@ -201,14 +201,14 @@ func run_scroll(host: Node, check: Callable) -> void:
 	check.call(cards.size() == 6, "Loja: 6 cartões de reforço")
 	for id: StringName in cards:
 		var b := cards[id]["button"] as Button
-		check.call(b.mouse_filter == Control.MOUSE_FILTER_PASS, "Loja: cartão %s deixa o arrasto passar" % id)
-		check.call(b.disabled, "Loja: sem ryō o cartão %s fica apagado" % id)
+		check.call(b.mouse_filter == Control.MOUSE_FILTER_PASS, "Loja: cartão %s deixa o arrasto passar", id)
+		check.call(b.disabled, "Loja: sem ryō o cartão %s fica apagado", id)
 		check.call((cards[id]["price"] as Label).get_theme_color("font_color") != ThemeFactory.ACCENT,
-				"Loja: sem ryō o preço de %s muda de cor" % id)
+				"Loja: sem ryō o preço de %s muda de cor", id)
 	var ad_cards: Dictionary = screen.get("_cards")
 	for id: StringName in ad_cards:
 		check.call((ad_cards[id]["button"] as Button).mouse_filter == Control.MOUSE_FILTER_PASS,
-				"Loja: vaga %s deixa o arrasto passar" % id)
+				"Loja: vaga %s deixa o arrasto passar", id)
 	# Compra e restauração: dentro do conteúdo rolável, depois de todos os cartões.
 	var buy := screen.get("_buy") as Button
 	var restore := screen.get("_restore") as Button
@@ -217,12 +217,12 @@ func run_scroll(host: Node, check: Callable) -> void:
 		for id: StringName in row:
 			last_card_end = maxf(last_card_end, (row[id]["button"] as Control).get_global_rect().end.y)
 	for b: Button in [buy, restore]:
-		check.call(content.is_ancestor_of(b), "Loja: \"%s\" fica no conteúdo rolável" % b.text)
+		check.call(content.is_ancestor_of(b), "Loja: \"%s\" fica no conteúdo rolável", b.text)
 		check.call(b.get_global_rect().position.y >= last_card_end,
-				"Loja: \"%s\" vem depois de todos os cartões" % b.text)
+				"Loja: \"%s\" vem depois de todos os cartões", b.text)
 		check.call(not scroll.get_global_rect().intersects(b.get_global_rect()),
-				"Loja: \"%s\" só aparece rolando até o fim" % b.text)
-		check.call(b.mouse_filter == Control.MOUSE_FILTER_PASS, "Loja: \"%s\" deixa o arrasto passar" % b.text)
+				"Loja: \"%s\" só aparece rolando até o fim", b.text)
+		check.call(b.mouse_filter == Control.MOUSE_FILTER_PASS, "Loja: \"%s\" deixa o arrasto passar", b.text)
 	scroll.scroll_vertical = int(content.size.y)
 	await host.get_tree().process_frame
 	await host.get_tree().process_frame
@@ -231,7 +231,7 @@ func run_scroll(host: Node, check: Callable) -> void:
 	# A Ampulheta de Fūjin fica entre os Reforços e a compra: no fim aparecem a compra e a restauração.
 	for c: Control in [buy, restore]:
 		check.call(scroll.get_global_rect().grow(0.5).encloses(c.get_global_rect()),
-				"Loja: rolando até o fim, %s aparece inteiro" % c.name)
+				"Loja: rolando até o fim, %s aparece inteiro", c.name)
 	# Ampulheta de Fūjin: entre os Reforços e "Apoie o jogo".
 	var speed_card := screen.get("_speed_card") as Control
 	check.call(content.is_ancestor_of(speed_card)
@@ -249,7 +249,7 @@ func run_scroll(host: Node, check: Callable) -> void:
 	check.call(bool(screen.call("_buy_coin", &"coin_bag")), "Loja: compra pela tela")
 	var left := 1000 - ShopManager.coin_price(&"coin_bag")
 	check.call(SaveManager.ryo() == left and (screen.get("_ryo") as Label).text.contains(Locale.format_number(left)),
-			"Loja: o saldo mostrado cai para %d" % left)
+			"Loja: o saldo mostrado cai para %d", left)
 	check.call(bag.disabled and (cards[&"coin_bag"]["price"] as Label).text == tr("shop.coin.queued"),
 			"Loja: o cartão comprado fica com o selo de guardado")
 	var queued_box := bag.get_theme_stylebox("disabled") as StyleBoxFlat
@@ -281,7 +281,7 @@ func _speed_purchase(screen: Control, status: Label) -> void:
 	SaveManager.data["ryo"] = price + 50
 	screen.call("_update_coin_cards")
 	_check.call(bool(screen.call("_buy_speed_ryo")) and SaveManager.ryo() == 50 and PurchaseManager.owns_speed(),
-			"Loja: com %d ryō a Ampulheta é comprada e debitada" % price)
+			"Loja: com %d ryō a Ampulheta é comprada e debitada", price)
 	await _host.get_tree().process_frame
 	await _host.get_tree().process_frame
 	_check.call((screen.get("_speed_seal") as Control).is_visible_in_tree()
@@ -304,7 +304,7 @@ func check_speed_states(screen: Control, view: Rect2, lang: String) -> void:
 	check_speed_card(screen, "%s, Ampulheta sem saldo" % lang)
 	var ryo_button := screen.get("_speed_ryo") as Button
 	_check.call(ryo_button.get_theme_color("font_color") != ThemeFactory.ACCENT and ryo_button.modulate.a < 1.0,
-			"%s: sem saldo o preço da Ampulheta fica em vermelho e apagado" % lang)
+			"%s: sem saldo o preço da Ampulheta fica em vermelho e apagado", lang)
 	SaveManager.data["ryo"] = PurchaseManager.SPEED_RYO_PRICE
 	screen.call("on_show")
 	await _host.get_tree().process_frame
@@ -312,7 +312,7 @@ func check_speed_states(screen: Control, view: Rect2, lang: String) -> void:
 	check_layout(screen, view, "%s, Ampulheta com saldo" % lang)
 	check_speed_card(screen, "%s, Ampulheta com saldo" % lang)
 	_check.call(ryo_button.get_theme_color("font_color") == ThemeFactory.ACCENT and ryo_button.modulate.a == 1.0,
-			"%s: com saldo o preço da Ampulheta fica dourado" % lang)
+			"%s: com saldo o preço da Ampulheta fica dourado", lang)
 	SaveManager.data["purchases"]["unlock_speed"] = true
 	SaveManager.data["purchases"]["unlock_speed_source"] = "ryo"
 	screen.call("on_show")
@@ -334,14 +334,14 @@ func check_speed_card(screen: Control, state: String) -> void:
 	var ryo_button := screen.get("_speed_ryo") as Button
 	var money := screen.get("_speed_money") as Button
 	var seal := screen.get("_speed_seal") as Control
-	_check.call(card.is_visible_in_tree(), "%s: o cartão da Ampulheta aparece" % state)
+	_check.call(card.is_visible_in_tree(), "%s: o cartão da Ampulheta aparece", state)
 	_check.call(ryo_button.is_visible_in_tree() != owned and seal.is_visible_in_tree() == owned
 			and money.is_visible_in_tree() == (not owned and PurchaseManager.billing_available()),
-			"%s: botões da Ampulheta conforme a posse (liberada: %s)" % [state, owned])
+			"%s: botões da Ampulheta conforme a posse (liberada: %s)", [state, owned])
 	if not owned:
-		_check.call(money.text == PurchaseManager.speed_price_text(), "%s: preço da loja \"%s\"" % [state, money.text])
+		_check.call(money.text == PurchaseManager.speed_price_text(), "%s: preço da loja \"%s\"", [state, money.text])
 		_check.call(ryo_button.text == Locale.format_number(PurchaseManager.SPEED_RYO_PRICE) and ryo_button.icon != null,
-				"%s: preço em ryō com a moeda" % state)
+				"%s: preço em ryō com a moeda", state)
 	var rect := card.get_global_rect()
 	var parts: Array[Control] = [card.find_child("SpeedWell", true, false) as Control,
 			screen.get("_speed_texts") as Control]
@@ -350,11 +350,11 @@ func check_speed_card(screen: Control, state: String) -> void:
 			parts.append(c)
 	for i: int in parts.size():
 		var r := parts[i].get_global_rect()
-		_check.call(rect.grow(0.5).encloses(r), "%s: %s dentro do cartão da Ampulheta (%s em %s)" % [state,
+		_check.call(rect.grow(0.5).encloses(r), "%s: %s dentro do cartão da Ampulheta (%s em %s)", [state,
 				parts[i].name, r, rect])
 		for j: int in range(i + 1, parts.size()):
 			_check.call(not r.grow(-0.5).intersects(parts[j].get_global_rect().grow(-0.5)),
-					"%s: %s e %s não se sobrepõem" % [state, parts[i].name, parts[j].name])
+					"%s: %s e %s não se sobrepõem", [state, parts[i].name, parts[j].name])
 
 
 ## Confere que cada botão e texto da Loja está visível: os fixos do topo dentro de `view` e
@@ -364,25 +364,25 @@ func check_speed_card(screen: Control, state: String) -> void:
 func check_layout(screen: Control, view: Rect2, state: String) -> void:
 	var controls: Array[Control] = []
 	_controls_in(screen, controls)
-	_check.call(controls.size() >= 24, "%s: a Loja mostra os controles (%d)" % [state, controls.size()])
+	_check.call(controls.size() >= 24, "%s: a Loja mostra os controles (%d)", [state, controls.size()])
 	var scroll := screen.get("_scroll") as ScrollContainer
 	var toast := screen.get("_toast") as Control
 	if scroll == null or toast == null:
-		_check.call(false, "%s: a Loja tem a área rolável e o aviso" % state)
+		_check.call(false, "%s: a Loja tem a área rolável e o aviso", state)
 		return
 	var scroll_rect := scroll.get_global_rect()
 	var content := scroll.get_child(0) as Control
 	var content_rect := content.get_global_rect()
-	_check.call(_safe.encloses(scroll_rect), "%s: a área rolável fica dentro da tela (%s em %s)" % [state, scroll_rect,
+	_check.call(_safe.encloses(scroll_rect), "%s: a área rolável fica dentro da tela (%s em %s)", [state, scroll_rect,
 			_safe])
 	_check.call(content.get_combined_minimum_size().x <= content.size.x + 0.5
 			and content_rect.end.x <= scroll_rect.end.x + 0.5,
-			"%s: o conteúdo rolável não estoura na horizontal (%s em %s)" % [state,
+			"%s: o conteúdo rolável não estoura na horizontal (%s em %s)", [state,
 			content.get_combined_minimum_size(), scroll.size])
 	var bar := scroll.get_v_scroll_bar()
 	if bar.visible:
 		_check.call(content_rect.end.x <= bar.get_global_rect().position.x + 0.5,
-				"%s: a barra de rolagem não cobre os cartões" % state)
+				"%s: a barra de rolagem não cobre os cartões", state)
 	for control: Control in controls:
 		var rect := control.get_global_rect()
 		var path := "%s (%s, %s)" % [control.get_class(), rect, control.get_path()]
@@ -391,19 +391,19 @@ func check_layout(screen: Control, view: Rect2, state: String) -> void:
 			_check.call(control.is_visible_in_tree() and local.position.x >= -0.5 and local.position.y >= -0.5
 					and local.end.x <= content.size.x + 0.5 and local.end.y <= content.size.y + 0.5
 					and rect.size.y <= scroll_rect.size.y + 0.5,
-					"%s: %s alcançável rolando" % [state, path])
+					"%s: %s alcançável rolando", [state, path])
 		elif toast.is_ancestor_of(control):
 			_check.call(control.is_visible_in_tree() and view.encloses(rect),
-					"%s: %s (aviso) dentro da tela com folga" % [state, path])
+					"%s: %s (aviso) dentro da tela com folga", [state, path])
 		else:
 			_check.call(control.is_visible_in_tree() and view.encloses(rect),
-					"%s: %s dentro da tela com folga" % [state, path])
-			_check.call(not rect.intersects(scroll_rect), "%s: %s fixo fora da área rolável" % [state, path])
+					"%s: %s dentro da tela com folga", [state, path])
+			_check.call(not rect.intersects(scroll_rect), "%s: %s fixo fora da área rolável", [state, path])
 		# Nada sai da caixa que o corta (ex.: o preço dentro do cartão).
 		var clip := _clip_parent(control, scroll)
 		if clip != null and control.is_visible_in_tree():
 			_check.call(clip.get_global_rect().grow(0.5).encloses(rect),
-					"%s: %s cabe na caixa %s" % [state, path, clip.get_global_rect()])
+					"%s: %s cabe na caixa %s", [state, path, clip.get_global_rect()])
 		# Texto inteiro (sem corte): o motor calcula a altura necessária com a quebra de linha
 		# da largura real; ela tem de caber na caixa (Label) ou no botão.
 		if control is Label and (control as Label).text != "":
@@ -412,18 +412,18 @@ func check_layout(screen: Control, view: Rect2, state: String) -> void:
 			var font_size := label_node.get_theme_font_size("font_size")
 			var needed := label_node.get_line_count() * font.get_height(font_size)
 			_check.call(needed <= label_node.size.y + 0.5,
-					"%s: o texto \"%s\" cabe na caixa (%.0f de %.0f px)" % [state, label_node.text,
+					"%s: o texto \"%s\" cabe na caixa (%.0f de %.0f px)", [state, label_node.text,
 					needed, label_node.size.y])
 			if label_node.autowrap_mode == TextServer.AUTOWRAP_OFF:
 				var width := font.get_string_size(label_node.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 				_check.call(width <= label_node.size.x + 0.5,
-						"%s: o texto \"%s\" cabe na largura (%.0f de %.0f px)" % [state, label_node.text,
+						"%s: o texto \"%s\" cabe na largura (%.0f de %.0f px)", [state, label_node.text,
 						width, label_node.size.x])
 		if control is Button and (control as Button).text != "":
 			var button_node := control as Button
 			var minimum := button_node.get_combined_minimum_size()
 			_check.call(minimum.x <= button_node.size.x + 0.5 and minimum.y <= button_node.size.y + 0.5,
-					"%s: o botão \"%s\" mostra o texto inteiro (%s de %s)" % [state, button_node.text,
+					"%s: o botão \"%s\" mostra o texto inteiro (%s de %s)", [state, button_node.text,
 					minimum, button_node.size])
 
 
@@ -433,33 +433,33 @@ func _check_cards(screen: Control, lang: String) -> void:
 	var well_size := Vector2.ZERO
 	for key: String in ["_cards", "_coin_cards"]:
 		var cards: Dictionary = screen.get(key)
-		_check.call(cards.size() == 6, "%s: 6 cartões em %s" % [lang, key])
+		_check.call(cards.size() == 6, "%s: 6 cartões em %s", [lang, key])
 		_check_grid(cards, "%s, %s" % [lang, key])
 		for id: StringName in cards:
 			var b := cards[id]["button"] as Button
 			var rect := b.get_global_rect()
 			var icons: Array[Control] = []
 			_icons_in(b, icons)
-			_check.call(icons.size() == 1, "%s: cartão %s mostra um ícone" % [lang, id])
+			_check.call(icons.size() == 1, "%s: cartão %s mostra um ícone", [lang, id])
 			for icon: Control in icons:
 				var well := icon.get_parent() as Control
-				_check.call(well.clip_contents, "%s: o poço do ícone de %s corta o que sobra" % [lang, id])
+				_check.call(well.clip_contents, "%s: o poço do ícone de %s corta o que sobra", [lang, id])
 				_check.call(rect.encloses(well.get_global_rect()) and well.get_global_rect().encloses(icon.get_global_rect()),
-						"%s: ícone de %s dentro do poço e do cartão (%s em %s)" % [lang, id,
+						"%s: ícone de %s dentro do poço e do cartão (%s em %s)", [lang, id,
 						icon.get_global_rect(), rect])
 				if well_size == Vector2.ZERO:
 					well_size = well.size
-				_check.call(well.size.is_equal_approx(well_size), "%s: poço de %s do mesmo tamanho" % [lang, id])
+				_check.call(well.size.is_equal_approx(well_size), "%s: poço de %s do mesmo tamanho", [lang, id])
 			for style_name: String in ["hover", "pressed", "focus"]:
 				var style := b.get_theme_stylebox(style_name)
-				_check.call(style is StyleBoxFlat, "%s: %s do cartão %s é o cartão escuro, sem o painel claro" % [
+				_check.call(style is StyleBoxFlat, "%s: %s do cartão %s é o cartão escuro, sem o painel claro", [
 						lang, style_name, id])
 			var hover := b.get_theme_stylebox("hover") as StyleBoxFlat
 			if hover != null:
 				_check.call(_contrast(hover.bg_color, ThemeFactory.TEXT) >= MIN_CONTRAST,
-						"%s: texto legível no hover de %s (%.1f:1)" % [lang, id,
+						"%s: texto legível no hover de %s (%.1f:1)", [lang, id,
 						_contrast(hover.bg_color, ThemeFactory.TEXT)])
-				_check.call(hover.border_color == ThemeFactory.ACCENT, "%s: hover de %s com borda dourada" % [lang, id])
+				_check.call(hover.border_color == ThemeFactory.ACCENT, "%s: hover de %s com borda dourada", [lang, id])
 
 
 ## Grade uniforme (generaliza a antiga "linha única de 6 cartões", que só cabia em 678x305):
@@ -478,20 +478,20 @@ func _check_grid(cards: Dictionary, tag: String) -> void:
 		if is_equal_approx(rect.position.y, first.position.y):
 			cols += 1
 	_check.call(cols in [6, 3] and rects.size() % cols == 0,
-			"%s: cartões em linhas completas de 6 ou 3 colunas (%d por linha)" % [tag, cols])
+			"%s: cartões em linhas completas de 6 ou 3 colunas (%d por linha)", [tag, cols])
 	if _view.size == DeviceProfiles.main_view() and _safe.size == _view.size:
-		_check.call(cols == 6, "%s: na tela de referência os 6 cartões ficam numa linha só" % tag)
+		_check.call(cols == 6, "%s: na tela de referência os 6 cartões ficam numa linha só", tag)
 	if cols <= 0:
 		return
 	var step_x := rects[1].position.x - first.position.x if cols > 1 else 0.0
 	var step_y := rects[cols].position.y - first.position.y if rects.size() > cols else 0.0
-	_check.call(cols == 1 or step_x >= first.size.x, "%s: colunas sem sobreposição (passo %.1f)" % [tag, step_x])
+	_check.call(cols == 1 or step_x >= first.size.x, "%s: colunas sem sobreposição (passo %.1f)", [tag, step_x])
 	_check.call(rects.size() == cols or step_y >= first.size.y,
-			"%s: linhas sem sobreposição (passo %.1f)" % [tag, step_y])
+			"%s: linhas sem sobreposição (passo %.1f)", [tag, step_y])
 	for i: int in rects.size():
 		var expected := first.position + Vector2((i % cols) * step_x, floori(i / float(cols)) * step_y)
 		_check.call(rects[i].size.is_equal_approx(first.size) and rects[i].position.is_equal_approx(expected),
-				"%s: cartão %d do mesmo tamanho e no lugar da grade (%s, esperado em %s)" % [tag, i,
+				"%s: cartão %d do mesmo tamanho e no lugar da grade (%s, esperado em %s)", [tag, i,
 				rects[i], expected])
 
 

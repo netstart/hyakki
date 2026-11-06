@@ -376,7 +376,7 @@ func show_tip(tip: Dictionary, animate: bool = true) -> void:
 		_state = HIDDEN
 		return
 	visible = true
-	_shown_at = Time.get_ticks_msec()
+	_shown_at = UiClock.msec()
 	_idle = 0.0
 	var fx := MenuKit.ui_fx()
 	if fx == 0:
@@ -563,7 +563,7 @@ func tap(at: Vector2) -> void:
 	if (_layout.get("close", Rect2()) as Rect2).has_point(at):
 		dismiss()
 		return
-	if Time.get_ticks_msec() - _shown_at < TAP_LOCK_MS:
+	if UiClock.msec() - _shown_at < TAP_LOCK_MS:
 		return
 	if _state == TYPING:
 		reveal()

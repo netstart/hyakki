@@ -8,6 +8,7 @@ extends RefCounted
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "goro", "stage": "bamboo", "moon": 0, "mode": "normal", "seed": 23, "speed": 1}
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+const SimClock := preload("res://tests/sim_clock.gd")
 
 var _host: Node
 var _check: Callable
@@ -38,7 +39,7 @@ func _test_fall_curve() -> void:
 		rising = rising and DeathSequence.fall_curve(p) > DeathSequence.fall_curve(p - 0.01)
 	_check.call(rising, "queda acelera até tocar o chão")
 	var bounce := DeathSequence.fall_curve((1.0 + DeathSequence.FALL_HIT) * 0.5)
-	_check.call(bounce < 1.0 and bounce > 0.85, "quique pequeno depois de tocar o chão (%.2f)" % bounce)
+	_check.call(bounce < 1.0 and bounce > 0.85, "quique pequeno depois de tocar o chão (%.2f)", bounce)
 
 
 ## Sem anúncio: golpe letal em 3x, queda em tempo real, aviso, trava de toque e fim único.
@@ -56,25 +57,28 @@ func _test_death_to_notice() -> void:
 	_check.call(game.death.is_active() and game.running and GameClock.paused,
 			"golpe letal começa a sequência de morte com o mundo parado")
 	_check.call(game.player.down == 0.0, "hit-stop: o corpo ainda não se mexeu no golpe")
-	var started := Time.get_ticks_msec()
+	# Duração pelo tempo de simulação (soma dos deltas), o mesmo que a sequência usa.
+	var clock := SimClock.new()
+	_host.add_child(clock)
 	await _seconds(0.5)
 	var mid := game.player.down
 	var mid_elapsed := game.death.elapsed
-	_check.call(mid > 0.1 and mid < 1.0, "em 0,5 s a guardiã está caindo (%.2f)" % mid)
+	_check.call(mid > 0.1 and mid < 1.0, "em 0,5 s a guardiã está caindo (%.2f)", mid)
 	await _wait_until(func() -> bool: return game.player.down >= 1.0, 2.0)
-	var real := (Time.get_ticks_msec() - started) / 1000.0
+	var real := clock.elapsed
+	clock.queue_free()
 	_check.call(game.player.down >= 1.0, "a queda chega a 1 (deitada)")
 	_check.call(real >= 0.6 and real < 1.6,
-			"a queda dura o mesmo tempo real em 3x (%.2f s, mundo parado)" % real)
+			"a queda dura o mesmo tempo real em 3x (%.2f s, mundo parado)", real)
 	_check.call(mid_elapsed >= 0.35 and mid_elapsed <= 0.8,
-			"a sequência anda em tempo real, não em tempo de jogo (%.2f s)" % mid_elapsed)
+			"a sequência anda em tempo real, não em tempo de jogo (%.2f s)", mid_elapsed)
 	_check.call(is_equal_approx(GameClock.game_time, frozen), "o tempo de jogo não anda durante a morte")
 	await _wait_until(func() -> bool: return game.death.notice_open(), 2.0)
 	var p := game.player
 	_check.call(game.death.notice_open() and ends.is_empty(), "o aviso da morte aparece antes do fim da partida")
 	_check.call(p.down == 1.0 and p.chill >= 0.99 and p.glow == 0.0,
 			"o corpo fica deitado, frio e com a lanterna apagada")
-	_check.call(game.camera.zoom.x > 1.05, "a câmera se aproxima do corpo (zoom %.2f)" % game.camera.zoom.x)
+	_check.call(game.camera.zoom.x > 1.05, "a câmera se aproxima do corpo (zoom %.2f)", game.camera.zoom.x)
 	_check.call(game.hud.gameplay_alpha() == 0.0 and not game.hud.joystick.is_processing_input(),
 			"a HUD de jogo some e o joystick para de ler o toque")
 	_check.call(game.death._grade_rect.visible, "o mundo perde a cor (shader de morte ligado)")
@@ -84,7 +88,7 @@ func _test_death_to_notice() -> void:
 			"o aviso mostra o tempo resistido")
 	# Toque antes da trava: ignorado.
 	_tap(game)
-	_check.call(ends.is_empty(), "toque logo no começo do aviso não pula (trava de %.1f s)" % DeathSequence.NOTICE_GUARD)
+	_check.call(ends.is_empty(), "toque logo no começo do aviso não pula (trava de %.1f s)", DeathSequence.NOTICE_GUARD)
 	await _wait_until(func() -> bool: return game.death.can_skip(), 2.0)
 	_tap(game)
 	_check.call(ends.size() == 1 and bool(ends[0]["notice"]) and not bool(ends[0]["victory"]),
@@ -110,14 +114,14 @@ func _test_framing(game: HyakkiGame) -> void:
 	var cam := game.camera
 	var offset := game.death.corpse_center() - cam.get_screen_center_position()
 	var corpse_y := offset.y * cam.zoom.y + view.y * 0.5
-	_check.call(is_equal_approx(cam.zoom.x, DeathSequence.ZOOM_TO), "zoom final no corpo (%.2f)" % cam.zoom.x)
+	_check.call(is_equal_approx(cam.zoom.x, DeathSequence.ZOOM_TO), "zoom final no corpo (%.2f)", cam.zoom.x)
 	# Em frações da tela (a janela dos testes não tem o tamanho do jogo).
 	_check.call(absf(corpse_y / view.y - DeathSequence.FOCUS_Y) < 0.03,
-			"o corpo fica a %.0f%% da altura (%.2f)" % [DeathSequence.FOCUS_Y * 100.0, corpse_y / view.y])
+			"o corpo fica a %.0f%% da altura (%.2f)", [DeathSequence.FOCUS_Y * 100.0, corpse_y / view.y])
 	for screen: Vector2 in [HyakkiGame.FALLBACK_VIEW] + DeviceProfiles.views():
 		var game_h := screen.y
 		_check.call(game_h * DeathSequence.FOCUS_Y + 16.0 < game_h * DeathSequence.BAND_Y - DeathSequence.BAND_HALF,
-				"em %dx%d o corpo fica acima da faixa do aviso" % [screen.x, screen.y])
+				"em %dx%d o corpo fica acima da faixa do aviso", [screen.x, screen.y])
 
 
 ## Reviver aceito e recompensado: levanta, a cor, a câmera, a música e a HUD voltam.

@@ -22,7 +22,7 @@ static func run_unit(check: Callable) -> void:
 	var med := EnemyFx.cap_for(GfxQuality.MEDIUM)
 	var high := EnemyFx.cap_for(GfxQuality.HIGH)
 	check.call(low < med and med < high and high <= EnemyFx.CAPACITY, "inimigos: cota de partículas Baixa < Média < Alta")
-	check.call(low >= 16, "inimigos: Baixa ainda tem partículas (%d)" % low)
+	check.call(low >= 16, "inimigos: Baixa ainda tem partículas (%d)", low)
 	check.call(EnemyFx.death_style({"id": "oni_small", "death": "embers"}) == "embers", "inimigos: oni morre em brasas")
 	check.call(EnemyFx.death_style({"id": "slime_rice"}) == "splash", "inimigos: slime respinga (sem campo)")
 	check.call(EnemyFx.death_style({"id": "yurei", "flying": true, "archetype": "shade"}) == "mist",
@@ -44,7 +44,7 @@ func run(host: Node, check: Callable) -> void:
 	var low_state := await _play("low")
 	var high_state := await _play("high")
 	_check.call(low_state != "" and low_state == high_state,
-			"inimigos: mesma partida em Baixa e Alta dá o mesmo estado (%s)" % high_state.get_slice(" hash=", 1))
+			"inimigos: mesma partida em Baixa e Alta dá o mesmo estado (%s)", high_state.get_slice(" hash=", 1))
 	await _test_live_and_boss()
 	Settings.set_value(KEY, saved)
 	GfxQuality.clear_override()
@@ -55,21 +55,21 @@ func _test_data() -> void:
 	for id: StringName in DB.ids("bosses"):
 		var data: Dictionary = DB.bosses[id]
 		var kanji := String(data.get("kanji", ""))
-		_check.call(kanji.length() >= 2, "chefe %s tem nome em kanji" % id)
+		_check.call(kanji.length() >= 2, "chefe %s tem nome em kanji", id)
 		var missing := ""
 		for c: int in range(kanji.length()):
 			if ja and not ja.has_char(kanji.unicode_at(c)):
 				missing += kanji[c]
 		var note := (" (falta %s)" % missing) if missing else ""
-		_check.call(missing == "", "kanji de %s existe na fonte japonesa%s" % [id, note])
+		_check.call(missing == "", "kanji de %s existe na fonte japonesa%s", [id, note])
 		for key: String in ["walk_sprite", "attack_sprite"]:
 			if data.has(key):
-				_check.call(ResourceLoader.exists(String(data[key]["path"])), "%s.%s existe" % [id, key])
+				_check.call(ResourceLoader.exists(String(data[key]["path"])), "%s.%s existe", [id, key])
 	for part: String in ["Head", "Body1", "Body2", "BodyEnd", "Wing"]:
-		_check.call(ResourceLoader.exists(EnemyLook.DRAGON_DIR + part + ".png"), "Dragão de Cinza: parte %s" % part)
+		_check.call(ResourceLoader.exists(EnemyLook.DRAGON_DIR + part + ".png"), "Dragão de Cinza: parte %s", part)
 	for name: String in ["e_roar_0", "e_boss_fall_0", "e_die_ash_0", "e_die_ember_2", "e_die_mist_1", "e_die_splat_0",
 			"e_die_bone_0"]:
-		_check.call(ResourceLoader.exists("res://assets/audio/sfx/%s.wav" % name), "som %s existe" % name)
+		_check.call(ResourceLoader.exists("res://assets/audio/sfx/%s.wav" % name), "som %s existe", name)
 
 
 func _new_game() -> HyakkiGame:

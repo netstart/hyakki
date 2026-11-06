@@ -29,11 +29,11 @@ func _test_data() -> void:
 	var data := WeatherModel.data()
 	var stages: Dictionary = data.get("stages", {})
 	for id: StringName in DB.ids("stages"):
-		_check.call(stages.has(String(id)), "clima: weather.json tem a fase %s" % id)
+		_check.call(stages.has(String(id)), "clima: weather.json tem a fase %s", id)
 	for id: String in stages:
-		_check.call(DB.stages.has(StringName(id)), "clima: fase %s do weather.json existe" % id)
+		_check.call(DB.stages.has(StringName(id)), "clima: fase %s do weather.json existe", id)
 		var p := WeatherModel.profile_for(id)
-		_check.call(String(p["precip"]) in ["rain", "snow", "sand", "ash", "spirit"], "clima: %s precip válida" % id)
+		_check.call(String(p["precip"]) in ["rain", "snow", "sand", "ash", "spirit"], "clima: %s precip válida", id)
 
 
 func _test_cycle() -> void:
@@ -58,8 +58,8 @@ func _test_cycle() -> void:
 	_check.call(same, "clima: mesma semente → mesmo clima (estado, vento, chuva, umidade)")
 	_check.call(differs, "clima: outra semente → outro ciclo")
 	_check.call(seen.size() == WeatherModel.STATE_NAMES.size(),
-			"clima: 15 min passam por todos os estados (%s)" % [seen.keys()])
-	_check.call(max_jump < 0.2, "clima: vento muda suave (maior salto %.3f em 0,5 s)" % max_jump)
+			"clima: 15 min passam por todos os estados (%s)", [seen.keys()])
+	_check.call(max_jump < 0.2, "clima: vento muda suave (maior salto %.3f em 0,5 s)", max_jump)
 	_check.call(a.state_at(0.0) == WeatherModel.State.CALM, "clima: partida começa na calmaria")
 	# Ordem de consulta não muda o resultado (função pura): de trás para frente.
 	var d := WeatherModel.new("village", 42)
@@ -74,7 +74,7 @@ func _test_cycle() -> void:
 	_check.call(forced.state_name_at(5.0) == "storm" and forced.rain_at(5.0) > 0.9 and forced.wetness_at(0.0) >= 1.0,
 			"clima: estado forçado (--weather=storm) já chove e molha")
 	var strikes := forced.strikes_between(0.0, 60.0)
-	_check.call(strikes.size() >= 3, "clima: tempestade da vila tem relâmpagos (%d em 60 s)" % strikes.size())
+	_check.call(strikes.size() >= 3, "clima: tempestade da vila tem relâmpagos (%d em 60 s)", strikes.size())
 	_check.call(WeatherModel.new("temple", 1, {}, WeatherModel.State.STORM).strikes_between(0.0, 60.0).is_empty(),
 			"clima: templo (neve) sem relâmpagos")
 
@@ -90,7 +90,7 @@ func _test_wetness_and_mud() -> void:
 	_check.call(t_storm > 0.0, "clima: há tempestade longa na partida")
 	_check.call(m.wetness_at(5.0) == 0.0, "clima: chão seco no começo")
 	_check.call(m.wetness_at(t_storm) > 0.7 and m.mud_level_at(t_storm) > 0.5,
-			"clima: tempestade encharca e faz lama (umidade %.2f, lama %.2f)" % [m.wetness_at(t_storm), m.mud_level_at(t_storm)])
+			"clima: tempestade encharca e faz lama (umidade %.2f, lama %.2f)", [m.wetness_at(t_storm), m.mud_level_at(t_storm)])
 	var dry_t := t_storm
 	while m.rain_at(dry_t) > 0.05:
 		dry_t += 1.0
@@ -108,7 +108,7 @@ func _test_wetness_and_mud() -> void:
 				if int(p["type"]) == mud:
 					grown += int(field.scale_of(p, t_storm) > 0.0)
 					dry += int(field.scale_of(p, 3.0) > 0.0)
-	_check.call(grown > 0 and dry == 0, "clima: lama cresce na tempestade (%d) e não existe no seco (%d)" % [grown, dry])
+	_check.call(grown > 0 and dry == 0, "clima: lama cresce na tempestade (%d) e não existe no seco (%d)", [grown, dry])
 
 
 func _test_dunes_sync() -> void:
@@ -180,9 +180,9 @@ func _test_game() -> void:
 		await _host.get_tree().process_frame
 		_check.call(sky.drop_capacity() == int(GfxQuality.budget_at("weather_drops", lv))
 				and sky.layer_count() == int(GfxQuality.budget_at("weather_layers", lv)),
-				"clima: nível %d usa %d gotas em %d camadas" % [lv, sky.drop_capacity(), sky.layer_count()])
+				"clima: nível %d usa %d gotas em %d camadas", [lv, sky.drop_capacity(), sky.layer_count()])
 		_check.call(sky.active_drops() > 0 and sky.active_drops() <= sky.drop_capacity(),
-				"clima: gotas ativas no nível %d" % lv)
+				"clima: gotas ativas no nível %d", lv)
 	GfxQuality.clear_override()
 	Settings.changed.emit(GfxQuality.changed_signal_key())
 	weather.force_state("")

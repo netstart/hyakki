@@ -110,32 +110,32 @@ func _check_layout(screen: Control, state: String) -> void:
 	var map_rect := map.get_global_rect()
 	var card_rect := card.get_global_rect()
 	_check.call(_safe.encloses(map_rect) and _safe.encloses(card_rect),
-			"Jornada %s: mapa e cartão na tela (%s, %s em %s)" % [state, map_rect, card_rect, _safe])
-	_check.call(not map_rect.intersects(card_rect), "Jornada %s: mapa e cartão lado a lado" % state)
+			"Jornada %s: mapa e cartão na tela (%s, %s em %s)", [state, map_rect, card_rect, _safe])
+	_check.call(not map_rect.intersects(card_rect), "Jornada %s: mapa e cartão lado a lado", state)
 	# O mapa encolhe com a tela, mas segue o painel principal (os pontos precisam de espaço).
 	_check.call(map_rect.size.x >= card_rect.size.x and map_rect.size.y >= card_rect.size.y,
-			"Jornada %s: mapa ao menos do tamanho do cartão (%s, %s)" % [state, map_rect.size, card_rect.size])
+			"Jornada %s: mapa ao menos do tamanho do cartão (%s, %s)", [state, map_rect.size, card_rect.size])
 	_check_card_size(card_rect, "Jornada %s: cartão não cresce com o texto" % state)
 	var back := _back_button(screen)
 	var title := map.get("_title") as Label
 	_check.call(title.get_minimum_size().x <= title.size.x + 0.5 and map_rect.encloses(title.get_global_rect()),
-			"Jornada %s: título cabe no topo do mapa" % state)
+			"Jornada %s: título cabe no topo do mapa", state)
 	_check.call(back != null and not back.get_global_rect().intersects(title.get_global_rect()),
-			"Jornada %s: título não encosta no voltar" % state)
+			"Jornada %s: título não encosta no voltar", state)
 	_check.call(back != null and _safe.encloses(back.get_global_rect()),
-			"Jornada %s: voltar fora do furo da câmera (%s)" % [state, back.get_global_rect() if back else Rect2()])
+			"Jornada %s: voltar fora do furo da câmera (%s)", [state, back.get_global_rect() if back else Rect2()])
 	var rects: Array[Rect2] = []
 	for id: StringName in map.nodes:
 		var node := map.nodes[id] as Control
 		var rect := node.get_global_rect()
-		_check.call(map_rect.encloses(rect) and _safe.encloses(rect), "Jornada %s: ponto %s dentro do mapa" % [state, id])
-		_check.call(rect.size.x >= 28 and rect.size.y >= 28, "Jornada %s: ponto %s tocável (≥ 28)" % [state, id])
-		_check.call(not rect.intersects(card_rect), "Jornada %s: ponto %s fora do cartão" % [state, id])
+		_check.call(map_rect.encloses(rect) and _safe.encloses(rect), "Jornada %s: ponto %s dentro do mapa", [state, id])
+		_check.call(rect.size.x >= 28 and rect.size.y >= 28, "Jornada %s: ponto %s tocável (≥ 28)", [state, id])
+		_check.call(not rect.intersects(card_rect), "Jornada %s: ponto %s fora do cartão", [state, id])
 		_check.call(back == null or not rect.intersects(back.get_global_rect()),
-				"Jornada %s: ponto %s longe do voltar" % [state, id])
+				"Jornada %s: ponto %s longe do voltar", [state, id])
 		for other: Rect2 in rects:
 			_check.call(not other.intersects(rect) and other.get_center().distance_to(rect.get_center()) >= 28.0,
-					"Jornada %s: ponto %s não encosta em outro" % [state, id])
+					"Jornada %s: ponto %s não encosta em outro", [state, id])
 		rects.append(rect)
 	# Passa o cartão por cada ponto e volta ao que estava escolhido ao abrir (o _viewing
 	# acompanha o ponto olhado, então não serve para voltar).
@@ -160,7 +160,7 @@ func _check_story_fits(screen: Control, state: String, must_fit: bool) -> void:
 	var bar := (screen.get("_scroll") as ScrollContainer).get_v_scroll_bar()
 	var px := int(screen.call("story_font_size"))
 	_check.call(px >= ThemeFactory.FONT_SIZE and (not must_fit or bar.max_value - bar.page <= 0.5),
-			"Jornada %s: narrativa inteira sem rolar (fonte %d, sobra %.0f px)" % [state, px, bar.max_value - bar.page])
+			"Jornada %s: narrativa inteira sem rolar (fonte %d, sobra %.0f px)", [state, px, bar.max_value - bar.page])
 
 
 ## Esfumado da narrativa: embaixo enquanto há texto abaixo; em cima depois de rolar até o fim.
@@ -170,13 +170,13 @@ func _check_fade(screen: Control, state: String) -> void:
 	var bar := scroll.get_v_scroll_bar()
 	var more := bar.max_value - bar.page > 0.5
 	_check.call(screen.call("fade_state") == Vector2i(0, int(more)),
-			"Jornada %s: esfumado só embaixo e só com texto abaixo (%s)" % [state, screen.call("fade_state")])
+			"Jornada %s: esfumado só embaixo e só com texto abaixo (%s)", [state, screen.call("fade_state")])
 	if not more:
 		return
 	scroll.scroll_vertical = int(bar.max_value)
 	await _host.get_tree().process_frame
 	_check.call(screen.call("fade_state") == Vector2i(1, 0),
-			"Jornada %s: esfumado em cima ao rolar até o fim (%s)" % [state, screen.call("fade_state")])
+			"Jornada %s: esfumado em cima ao rolar até o fim (%s)", [state, screen.call("fade_state")])
 	scroll.scroll_vertical = 0
 
 
@@ -187,48 +187,48 @@ func _check_card(screen: Control, state: String) -> void:
 		var l := screen.get(key) as Label
 		if not l.visible:
 			continue
-		_check.call(card_rect.encloses(l.get_global_rect()), "Jornada %s: %s dentro do cartão" % [state, key])
-		_check.call(l.get_visible_line_count() >= l.get_line_count(), "Jornada %s: %s aparece inteiro" % [state, key])
+		_check.call(card_rect.encloses(l.get_global_rect()), "Jornada %s: %s dentro do cartão", [state, key])
+		_check.call(l.get_visible_line_count() >= l.get_line_count(), "Jornada %s: %s aparece inteiro", [state, key])
 	var headline := screen.get("_name") as Label
 	_check.call(headline.get_line_count() == 1,
-			"Jornada %s: nome da fase numa linha só (%d linhas)" % [state, headline.get_line_count()])
+			"Jornada %s: nome da fase numa linha só (%d linhas)", [state, headline.get_line_count()])
 	var scroll := screen.get("_scroll") as ScrollContainer
 	var scroll_rect := scroll.get_global_rect()
 	_check.call(card_rect.encloses(scroll_rect) and scroll_rect.size.y >= 40.0,
-			"Jornada %s: narrativa dentro do cartão com espaço (%.0f px)" % [state, scroll_rect.size.y])
+			"Jornada %s: narrativa dentro do cartão com espaço (%.0f px)", [state, scroll_rect.size.y])
 	if _view.size.y <= 270.0:
 		# Linha na fonte do texto (a narrativa só sobe de fonte quando cabe inteira).
 		var journey := screen.get("_journey") as Label
 		var line := journey.get_theme_font("font").get_height(ThemeFactory.FONT_SIZE) \
 				+ journey.get_theme_constant("line_spacing")
 		_check.call(scroll_rect.size.y >= line * STORY_LINES_270,
-				"Jornada %s: narrativa com %d linhas sem rolar (%.0f px, linha %.0f)"
-				% [state, STORY_LINES_270, scroll_rect.size.y, line])
+				"Jornada %s: narrativa com %d linhas sem rolar (%.0f px, linha %.0f)",
+						[state, STORY_LINES_270, scroll_rect.size.y, line])
 	for key: String in ["_journey", "_chronicle"]:
 		var l := screen.get(key) as Label
 		if l.visible:
 			_check.call(not l.text.is_empty() and l.size.x <= scroll_rect.size.x + 0.5,
-					"Jornada %s: %s quebra dentro da largura do cartão" % [state, key])
+					"Jornada %s: %s quebra dentro da largura do cartão", [state, key])
 	for key: String in ["_mode", "_moon", "_endless", "_go"]:
 		var c := screen.get(key) as Control
 		var rect := c.get_global_rect()
 		_check.call(c.is_visible_in_tree() and card_rect.encloses(rect) and _safe.encloses(rect),
-				"Jornada %s: %s visível dentro do cartão" % [state, key])
-		_check.call(rect.size.y >= 28.0, "Jornada %s: %s com altura tocável" % [state, key])
+				"Jornada %s: %s visível dentro do cartão", [state, key])
+		_check.call(rect.size.y >= 28.0, "Jornada %s: %s com altura tocável", [state, key])
 	var go := (screen.get("_go") as Control).get_global_rect()
 	_check.call(go.end.x >= card_rect.end.x - 14.0 and go.end.y >= card_rect.end.y - 14.0,
-			"Jornada %s: Começar no canto inferior direito" % state)
+			"Jornada %s: Começar no canto inferior direito", state)
 	for key: String in ["_mode", "_moon", "_endless"]:
 		_check.call(not (screen.get(key) as Control).get_global_rect().intersects(go),
-				"Jornada %s: %s não encosta no Começar" % [state, key])
+				"Jornada %s: %s não encosta no Começar", [state, key])
 	# Noite Sem Fim e Começar sempre na mesma linha (o Começar encolhe a fonte, não desce).
 	var endless := (screen.get("_endless") as Control).get_global_rect()
 	_check.call(endless.end.x <= go.position.x and endless.position.y < go.end.y and go.position.y < endless.end.y,
-			"Jornada %s: Noite Sem Fim e Começar na mesma linha (%s, %s)" % [state, endless, go])
+			"Jornada %s: Noite Sem Fim e Começar na mesma linha (%s, %s)", [state, endless, go])
 	for icon: TextureRect in screen.get("_boss_icons"):
 		if icon.visible:
 			_check.call(card_rect.encloses(icon.get_global_rect()) and icon.size.x >= 24.0 and icon.size.x <= 28.0,
-					"Jornada %s: retrato do chefe no cartão" % state)
+					"Jornada %s: retrato do chefe no cartão", state)
 
 
 ## Na resolução de referência o pergaminho tem o tamanho de CARD_SIZE; em toda tela, o mesmo em todo ponto.
@@ -236,7 +236,7 @@ func _check_card_size(card_rect: Rect2, label: String) -> void:
 	if _card_size == Vector2.ZERO:
 		_card_size = card_rect.size
 	var expected := CARD_SIZE if _view.size == DeviceProfiles.main_view() else _card_size
-	_check.call(card_rect.size.is_equal_approx(expected), "%s (%s, esperado %s)" % [label, card_rect.size, expected])
+	_check.call(card_rect.size.is_equal_approx(expected), "%s (%s, esperado %s)", [label, card_rect.size, expected])
 
 
 func _back_button(screen: Control) -> Button:
@@ -249,63 +249,63 @@ func _back_button(screen: Control) -> Button:
 
 func _check_new_profile(screen: Control, lang: String) -> void:
 	var map := screen.get("_map") as JourneyMap
-	_check.call(map.selected == &"village", "Jornada %s: perfil novo começa na vila" % lang)
-	_check.call(map.node_state(&"village") == &"open", "Jornada %s: vila liberada e não vencida" % lang)
+	_check.call(map.selected == &"village", "Jornada %s: perfil novo começa na vila", lang)
+	_check.call(map.node_state(&"village") == &"open", "Jornada %s: vila liberada e não vencida", lang)
 	var village := map.nodes[&"village"] as JourneyMap.MapNode
 	_check.call(village.face != null and village.face_modulate().v < 0.15 and not village.has_seal(),
-			"Jornada %s: vila mostra o chefe em silhueta, sem selo" % lang)
+			"Jornada %s: vila mostra o chefe em silhueta, sem selo", lang)
 	for id: StringName in map.nodes:
 		if id != &"village":
-			_check.call(map.node_state(id) == &"locked", "Jornada %s: %s bloqueada no perfil novo" % [lang, id])
-			_check.call(map.road_state(id) == &"locked", "Jornada %s: estrada até %s apagada" % [lang, id])
-	_check.call(not (screen.get("_go") as Button).disabled, "Jornada %s: Começar liberado na vila" % lang)
+			_check.call(map.node_state(id) == &"locked", "Jornada %s: %s bloqueada no perfil novo", [lang, id])
+			_check.call(map.road_state(id) == &"locked", "Jornada %s: estrada até %s apagada", [lang, id])
+	_check.call(not (screen.get("_go") as Button).disabled, "Jornada %s: Começar liberado na vila", lang)
 	_check.call(not screen.call("boss_icon_known", 0) and not screen.call("boss_icon_known", 1),
-			"Jornada %s: chefes da vila em silhueta no cartão" % lang)
+			"Jornada %s: chefes da vila em silhueta no cartão", lang)
 	map.select(&"bamboo", false)
-	_check.call((screen.get("_go") as Button).disabled, "Jornada %s: Começar desliga na fase bloqueada" % lang)
+	_check.call((screen.get("_go") as Button).disabled, "Jornada %s: Começar desliga na fase bloqueada", lang)
 	_check.call((screen.get("_stats") as Label).text == TranslationServer.translate("stages.locked"),
-			"Jornada %s: cartão avisa que está bloqueada" % lang)
+			"Jornada %s: cartão avisa que está bloqueada", lang)
 	_check.call(String(SaveManager.data["selected"]["stage"]) == "village"
 			and String(screen.get("app").selection["stage"]) == "village",
-			"Jornada %s: fase bloqueada não vira a escolhida" % lang)
+			"Jornada %s: fase bloqueada não vira a escolhida", lang)
 	map.select(&"secret", false)
 	_check.call((screen.get("_name") as Label).text == "???"
 			and (screen.get("_journey") as Label).text == TranslationServer.translate("stages.secret_hint"),
-			"Jornada %s: fase secreta bloqueada não se revela" % lang)
+			"Jornada %s: fase secreta bloqueada não se revela", lang)
 	map.select(&"village", false)
-	_check.call(not (screen.get("_go") as Button).disabled, "Jornada %s: volta à vila liga o Começar" % lang)
+	_check.call(not (screen.get("_go") as Button).disabled, "Jornada %s: volta à vila liga o Começar", lang)
 
 
 func _check_progress(screen: Control, lang: String) -> void:
 	var map := screen.get("_map") as JourneyMap
-	_check.call(map.selected == &"temple", "Jornada %s: sem escolha, abre na primeira fase não vencida" % lang)
+	_check.call(map.selected == &"temple", "Jornada %s: sem escolha, abre na primeira fase não vencida", lang)
 	for id: StringName in [&"village", &"bamboo"]:
 		var node := map.nodes[id] as JourneyMap.MapNode
 		_check.call(map.node_state(id) == &"cleared" and node.has_seal() and node.face_modulate() == Color.WHITE,
-				"Jornada %s: %s vencida, colorida e com selo" % [lang, id])
-	_check.call(map.road_state(&"bamboo") == &"cleared", "Jornada %s: estrada vermelha até o bambuzal" % lang)
+				"Jornada %s: %s vencida, colorida e com selo", [lang, id])
+	_check.call(map.road_state(&"bamboo") == &"cleared", "Jornada %s: estrada vermelha até o bambuzal", lang)
 	_check.call(map.node_state(&"temple") == &"open" and map.road_state(&"temple") == &"open",
-			"Jornada %s: templo liberado com estrada aberta" % lang)
-	_check.call(map.node_state(&"dunes") == &"locked", "Jornada %s: dunas ainda bloqueadas" % lang)
-	_check.call((map.nodes[&"village"] as JourneyMap.MapNode).moons == 2, "Jornada %s: vila mostra Lua II" % lang)
+			"Jornada %s: templo liberado com estrada aberta", lang)
+	_check.call(map.node_state(&"dunes") == &"locked", "Jornada %s: dunas ainda bloqueadas", lang)
+	_check.call((map.nodes[&"village"] as JourneyMap.MapNode).moons == 2, "Jornada %s: vila mostra Lua II", lang)
 	_check.call(screen.call("boss_icon_known", 0) and not screen.call("boss_icon_known", 1),
-			"Jornada %s: templo com o Tengu derrotado colorido e o chefe final em silhueta" % lang)
-	_check.call((screen.get("_suggest") as Label).visible, "Jornada %s: sugere Brisa após 5 derrotas" % lang)
+			"Jornada %s: templo com o Tengu derrotado colorido e o chefe final em silhueta", lang)
+	_check.call((screen.get("_suggest") as Label).visible, "Jornada %s: sugere Brisa após 5 derrotas", lang)
 	map.select(&"bamboo", false)
 	var moon_line := TranslationServer.translate("stages.moon_best").replace("%s", "").strip_edges()
 	_check.call(not (screen.get("_stats") as Label).text.contains(moon_line),
-			"Jornada %s: vencida sem Lua Vermelha não mostra linha de lua vazia" % lang)
+			"Jornada %s: vencida sem Lua Vermelha não mostra linha de lua vazia", lang)
 	map.select(&"village", false)
 	var chronicle := screen.get("_chronicle") as Label
 	_check.call(chronicle.visible and chronicle.text.contains(TranslationServer.translate("stage.village.dawn")),
-			"Jornada %s: vila vencida mostra a crônica" % lang)
+			"Jornada %s: vila vencida mostra a crônica", lang)
 	var moon := screen.get("_moon") as OptionButton
 	_check.call(moon.item_count == 4 and not (screen.get("_endless") as Button).disabled,
-			"Jornada %s: vila vencida libera Lua até III e Noite Sem Fim" % lang)
+			"Jornada %s: vila vencida libera Lua até III e Noite Sem Fim", lang)
 	for id: StringName in map.nodes:
 		var node := map.nodes[id] as Control
 		_check.call(not node.get_focus_neighbor(SIDE_LEFT).is_empty() or not node.get_focus_neighbor(SIDE_RIGHT).is_empty(),
-				"Jornada %s: ponto %s navegável pelas setas" % [lang, id])
+				"Jornada %s: ponto %s navegável pelas setas", [lang, id])
 	map.select(&"temple", false)
 
 
@@ -315,7 +315,7 @@ func _check_progress(screen: Control, lang: String) -> void:
 func _check_moon_rules(screen: Control, state: String) -> void:
 	var moon := screen.get("_moon") as OptionButton
 	var top := HyakkiGame.MAX_MOON
-	_check.call(moon.item_count == top + 1 and not moon.disabled, "Jornada %s: Lua até a %s liberada" % [state, top])
+	_check.call(moon.item_count == top + 1 and not moon.disabled, "Jornada %s: Lua até a %s liberada", [state, top])
 	moon.select(top)
 	moon.item_selected.emit(top)
 	await _host.get_tree().process_frame
@@ -323,25 +323,25 @@ func _check_moon_rules(screen: Control, state: String) -> void:
 	var rules := screen.get("_rules") as Label
 	_check.call(rules.visible and rules.text == "\n".join(RedMoon.rules_text(top))
 			and RedMoon.rules_text(top).size() == RedMoon.RULES,
-			"Jornada %s: as %d regras da Lua escolhida, somadas" % [state, RedMoon.RULES])
+			"Jornada %s: as %d regras da Lua escolhida, somadas", [state, RedMoon.RULES])
 	_check_card(screen, state)
 	var scroll := screen.get("_scroll") as ScrollContainer
 	var scroll_rect := scroll.get_global_rect()
 	var r := rules.get_global_rect()
 	_check.call(r.size.x <= scroll_rect.size.x + 0.5 and r.position.x >= scroll_rect.position.x - 0.5
 			and r.position.y >= scroll_rect.position.y - 0.5 and r.position.y < scroll_rect.end.y,
-			"Jornada %s: regras no alto da narrativa, dentro da largura (%s em %s)" % [state, r, scroll_rect])
+			"Jornada %s: regras no alto da narrativa, dentro da largura (%s em %s)", [state, r, scroll_rect])
 	_check.call(rules.get_visible_line_count() >= rules.get_line_count() and rules.get_line_count() >= RedMoon.RULES,
-			"Jornada %s: regras inteiras (%d linhas)" % [state, rules.get_line_count()])
+			"Jornada %s: regras inteiras (%d linhas)", [state, rules.get_line_count()])
 	var journey := screen.get("_journey") as Label
 	_check.call(journey.visible and journey.get_global_rect().position.y >= r.end.y - 0.5,
-			"Jornada %s: narrativa logo abaixo das regras" % state)
+			"Jornada %s: narrativa logo abaixo das regras", state)
 	if Locale.current == "pt_BR":
 		await _check_fade(screen, state)
 	moon.select(0)
 	moon.item_selected.emit(0)
 	await _host.get_tree().process_frame
-	_check.call(not rules.visible, "Jornada %s: sem Lua Vermelha, sem regras" % state)
+	_check.call(not rules.visible, "Jornada %s: sem Lua Vermelha, sem regras", state)
 
 
 ## Trocar de ponto faz a guardiã andar até o novo ponto.
@@ -352,7 +352,7 @@ func _check_walk(screen: Control) -> void:
 	map.select(&"village")
 	await _host.get_tree().create_timer(0.5).timeout
 	_check.call(map.hero_position().distance_to(map.node_center(&"village")) < 34.0,
-			"Jornada: guardiã caminha até a vila (%.0f px)" % map.hero_position().distance_to(map.node_center(&"village")))
+			"Jornada: guardiã caminha até a vila (%.0f px)", map.hero_position().distance_to(map.node_center(&"village")))
 	(map.nodes[&"bamboo"] as BaseButton).pressed.emit()
 	await _host.get_tree().process_frame
 	_check.call(map.selected == &"bamboo" and String(screen.get("app").selection["stage"]) == "bamboo",

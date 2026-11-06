@@ -62,7 +62,7 @@ func ambient_bolt(center: Vector2) -> void:
 			1, FxLayer.BOLT_LIFE * 0.8)
 	fx.flash(at, 10.0, Color(SEAL, 0.7), 0.1)
 	fx.sparks(at, Vector2.UP, SEAL.lerp(Color.WHITE, 0.5), [1, 3, 5][FxLayer.wfx], 80.0, 1.2, 0.16)
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if now - _last_ambient_ms > AMBIENT_GAP_MS:
 		_last_ambient_ms = now
 		_sfx("alt_thunder", 1.3, 0.1, AMBIENT_DB)
@@ -303,7 +303,7 @@ func shield_up(at: Vector2) -> void:
 
 func shield_hit(at: Vector2) -> void:
 	var fx := _fx()
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if fx == null or now - _last_shield_ms < SHIELD_HIT_GAP_MS:
 		return
 	_last_shield_ms = now

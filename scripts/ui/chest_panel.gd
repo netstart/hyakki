@@ -1068,7 +1068,7 @@ func _draw_ryo(w: float, opened: bool, a: float) -> void:
 
 
 func _time() -> float:
-	return float(Time.get_ticks_msec()) / 1000.0
+	return float(UiClock.msec()) / 1000.0
 
 
 ## Tubo, vareta e papel do omikuji (só durante a fase do omikuji).

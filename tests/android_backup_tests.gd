@@ -27,8 +27,8 @@ func run_unit(check: Callable) -> void:
 	_test_write_all()
 
 
-func _ok(condition: bool, label: String) -> void:
-	_check.call(condition, "backup Android: " + label)
+func _ok(condition: bool, label: String, args: Variant = null) -> void:
+	_check.call(condition, "backup Android: " + label, args)
 
 
 func _constant(path: String, constant: String) -> String:
@@ -38,13 +38,13 @@ func _constant(path: String, constant: String) -> String:
 
 func _test_files_match_game_paths() -> void:
 	var files := Rules.backup_files()
-	_ok(Array(files) == EXPECTED, "arquivos = save.json, save.bak, settings.cfg (%s)" % [files])
+	_ok(Array(files) == EXPECTED, "arquivos = save.json, save.bak, settings.cfg (%s)", [files])
 	var real := [_constant(Rules.SAVE_SCRIPT, "PATH"), _constant(Rules.SAVE_SCRIPT, "BACKUP_PATH"),
 			_constant(Rules.SETTINGS_SCRIPT, "PATH")]
 	_ok(real == ["user://save.json", "user://save.bak", "user://settings.cfg"],
-			"constantes do SaveManager e do Settings continuam em user:// (%s)" % [real])
+			"constantes do SaveManager e do Settings continuam em user:// (%s)", [real])
 	for i: int in real.size():
-		_ok("user://" + files[i] == real[i], "%s vem da constante do jogo" % real[i])
+		_ok("user://" + files[i] == real[i], "%s vem da constante do jogo", real[i])
 	var temp := _constant(Rules.SAVE_SCRIPT, "TEMP_PATH").trim_prefix("user://")
 	_ok(not temp.is_empty() and not files.has(temp), "save.tmp fica fora do backup")
 
@@ -144,7 +144,7 @@ func _test_outputs_and_build_dir() -> void:
 	keys.sort()
 	_ok(keys == ["res/xml/hyakki_backup_rules.xml", "res/xml/hyakki_data_extraction_rules.xml",
 			"src/standardDebug/AndroidManifest.xml", "src/standardRelease/AndroidManifest.xml"],
-			"saídas: duas regras em res/xml e o manifesto das duas variantes (%s)" % [keys])
+			"saídas: duas regras em res/xml e o manifesto das duas variantes (%s)", [keys])
 	_ok(Rules.outputs(PackedStringArray()).is_empty(), "sem arquivos: não liga o backup")
 	_ok(Rules.build_dir("") == "res://android/build", "pasta Gradle padrão")
 	_ok(Rules.build_dir("res://custom") == "res://custom/build", "pasta Gradle do preset")
@@ -162,7 +162,7 @@ func _test_project_config() -> void:
 		android += 1
 		var options := section + ".options"
 		_ok(presets.get_value(options, "gradle_build/use_gradle_build", false) == true,
-				"%s usa o build Gradle (o plugin só age nele)" % presets.get_value(section, "name"))
+				"%s usa o build Gradle (o plugin só age nele)", presets.get_value(section, "name"))
 	_ok(android > 0, "há presets Android")
 
 

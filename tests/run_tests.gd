@@ -4,6 +4,8 @@ extends SceneTree
 
 var _count: int = 0
 var _failures: int = 0
+## Lista também as verificações que passaram (-- --verbose).
+var _verbose: bool = "--verbose" in OS.get_cmdline_user_args()
 
 
 func _initialize() -> void:
@@ -35,13 +37,14 @@ func _initialize() -> void:
 	quit(1 if _failures > 0 else 0)
 
 
-func _check(condition: bool, label: String) -> void:
+## `args` (opcional): valores do rótulo, que só é formatado (`label % args`) na falha ou com --verbose.
+func _check(condition: bool, label: String, args: Variant = null) -> void:
 	_count += 1
 	if not condition:
 		_failures += 1
-		printerr("FALHOU: " + label)
-	elif "--verbose" in OS.get_cmdline_user_args():
-		print("ok: " + label)
+		printerr("FALHOU: " + (label if args == null else label % args))
+	elif _verbose:
+		print("ok: " + (label if args == null else label % args))
 
 
 ## Modo "sem anúncios": só liga os anúncios de release com todos os IDs reais preenchidos.
@@ -78,7 +81,7 @@ func _test_xp_curve() -> void:
 	_check(Progression.xp_to_next(40) == 185 + 260 + 16 + 2400, "nível 40 tem o muro de +2400")
 	for level: int in range(1, 19):
 		_check(Progression.xp_to_next(level + 1) > Progression.xp_to_next(level),
-				"curva cresce do nível %d para o %d" % [level, level + 1])
+				"curva cresce do nível %d para o %d", [level, level + 1])
 
 
 func _test_target_count() -> void:
@@ -184,7 +187,7 @@ func _test_spatial_hash_reference() -> void:
 			queries += 1
 			if found != expected:
 				mismatches += 1
-	_check(mismatches == 0, "grade plana = grade de referência (%d consultas, %d diferentes)" % [queries, mismatches])
+	_check(mismatches == 0, "grade plana = grade de referência (%d consultas, %d diferentes)", [queries, mismatches])
 	# Inserir depois de consultar remonta a grade com o ponto novo no fim da célula.
 	grid.clear()
 	grid.insert(5, Vector2(-1.0, -1.0))
@@ -235,7 +238,7 @@ func _test_hit_sounds() -> void:
 	}
 	for behavior: String in cases:
 		_check(HitSounds.for_weapon({"behavior": behavior, "tags": []}) == cases[behavior],
-				"som do golpe: %s -> %s" % [behavior, cases[behavior]])
+				"som do golpe: %s -> %s", [behavior, cases[behavior]])
 	_check(HitSounds.for_weapon({"behavior": "taiko", "tags": ["area"]}) == "hit_area",
 			"comportamento vence a tag (Trovão Ritual usa taiko)")
 	_check(HitSounds.for_weapon({"behavior": "kaminari", "tags": ["thunder"]}) == "hit_thunder",
@@ -250,7 +253,7 @@ func _test_settings_defaults() -> void:
 	var script := load("res://scripts/autoload/settings.gd") as GDScript
 	var defaults: Dictionary = script.get_script_constant_map()["DEFAULTS"]
 	for key: String in ["damage_numbers", "damage_sounds", "hurt_sounds"]:
-		_check(defaults.get(key) == true, "opção %s vem ligada por padrão" % key)
+		_check(defaults.get(key) == true, "opção %s vem ligada por padrão", key)
 
 
 ## Mapa da Jornada (scripts/app/journey_geo.gd): estados, projeção, encaixe, contornos,
@@ -275,12 +278,12 @@ func _test_journey_geo() -> void:
 			JourneyGeo.KOREA] + JourneyGeo.ISLETS:
 		var projected := JourneyGeo.project_all(poly, xf)
 		_check(not Geometry2D.triangulate_polygon(projected).is_empty(),
-				"jornada: contorno de %d pontos é um polígono válido" % poly.size())
+				"jornada: contorno de %d pontos é um polígono válido", poly.size())
 		for passes: int in [1, 2]:
 			var smooth := JourneyGeo.chaikin(projected, passes)
 			_check(smooth.size() == projected.size() * (2 ** passes)
 					and not Geometry2D.triangulate_polygon(smooth).is_empty(),
-					"jornada: costa de %d pontos suavizada (%d passes) segue válida" % [poly.size(), passes])
+					"jornada: costa de %d pontos suavizada (%d passes) segue válida", [poly.size(), passes])
 	var corners := PackedVector2Array([Vector2(0, 0), Vector2(8, 0), Vector2(8, 8), Vector2(0, 8)])
 	var square := JourneyGeo.chaikin(corners, 1)
 	_check(square.size() == 8 and square[0] == Vector2(2, 0) and square[1] == Vector2(6, 0),
@@ -293,7 +296,7 @@ func _test_journey_geo() -> void:
 		var on_land := false
 		for island: PackedVector2Array in islands:
 			on_land = on_land or Geometry2D.is_point_in_polygon(at, island)
-		_check(on_land, "jornada: ponto %s fica em terra depois da costa suavizada" % id)
+		_check(on_land, "jornada: ponto %s fica em terra depois da costa suavizada", id)
 	var crowded := {&"a": Vector2(50, 50), &"b": Vector2(52, 51), &"c": Vector2(300, 100)}
 	var apart := JourneyGeo.separate(crowded, 30.0, Rect2(0, 0, 400, 200))
 	var gap: Vector2 = ((apart[&"b"] as Vector2) - (apart[&"a"] as Vector2)).abs()
@@ -342,13 +345,13 @@ func _test_gfx_quality() -> void:
 	for lv: int in [q.LOW, q.MEDIUM, q.HIGH]:
 		q.set_override(lv)
 		_check(q.level() == lv and q.is_low() == (lv == q.LOW) and q.is_high() == (lv == q.HIGH),
-				"gfx: override %d vale" % lv)
-		_check(q.pick("a", "b", "c") == ["a", "b", "c"][lv], "gfx: pick no nível %d" % lv)
+				"gfx: override %d vale", lv)
+		_check(q.pick("a", "b", "c") == ["a", "b", "c"][lv], "gfx: pick no nível %d", lv)
 		for key: String in expected:
 			var want: Variant = (expected[key] as Array)[lv]
 			var got: Variant = q.budget(key)
 			_check(typeof(got) == typeof(want) and got == want,
-					"gfx: budget %s no nível %d = %s (veio %s)" % [key, lv, want, got])
+					"gfx: budget %s no nível %d = %s (veio %s)", [key, lv, want, got])
 	q.set_override(9)
 	_check(q.level() == q.HIGH, "gfx: override fora da faixa é limitado")
 	q.clear_override()

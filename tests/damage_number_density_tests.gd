@@ -46,7 +46,7 @@ func _test_pressure() -> void:
 	_check.call(up, "pressão: cresce com inimigos e com números por segundo")
 	var rise := DamagePalette.next_pressure(0.0, 1.0, 0.1)
 	var fall := 1.0 - DamagePalette.next_pressure(1.0, 0.0, 0.1)
-	_check.call(rise > fall * 2.0, "pressão: sobe rápido e desce devagar (%.2f × %.2f)" % [rise, fall])
+	_check.call(rise > fall * 2.0, "pressão: sobe rápido e desce devagar (%.2f × %.2f)", [rise, fall])
 
 
 func _test_levels() -> void:
@@ -59,7 +59,7 @@ func _test_levels() -> void:
 			levels.append(next)
 		level = next
 		p += 0.01
-	_check.call(levels == [1, 2], "nível: sobe 0 → 1 → 2 com a pressão (%s)" % [levels])
+	_check.call(levels == [1, 2], "nível: sobe 0 → 1 → 2 com a pressão (%s)", [levels])
 	var down: Array[float] = []
 	while p >= 0.0:
 		var next := DamagePalette.next_level(p, level)
@@ -68,7 +68,7 @@ func _test_levels() -> void:
 		level = next
 		p -= 0.01
 	_check.call(level == 0 and down.size() == 2 and down[0] < DamagePalette.LEVEL_UP[1]
-			and down[1] < DamagePalette.LEVEL_UP[0], "nível: desce mais baixo do que subiu (%s)" % [down])
+			and down[1] < DamagePalette.LEVEL_UP[0], "nível: desce mais baixo do que subiu (%s)", [down])
 	# Perto do limite: oscila entre 0,3 e 0,4 sem trocar de nível depois da primeira subida.
 	level = 1
 	var flips := 0
@@ -91,16 +91,16 @@ func _test_size_life() -> void:
 			var a := DamagePalette.LADDER.find(sizes[level])
 			var b := DamagePalette.LADDER.find(sizes[level - 1])
 			shrink = shrink and a <= b and lives[level] <= lives[level - 1]
-		_check.call(shrink, "densidade %d: tamanho e vida não crescem com o nível (%s)" % [kind, sizes])
-		_check.call(sizes[0] == DamagePalette.SIZES[0] and lives[0] == 1.0, "densidade %d: nível 0 igual a antes" % kind)
+		_check.call(shrink, "densidade %d: tamanho e vida não crescem com o nível (%s)", [kind, sizes])
+		_check.call(sizes[0] == DamagePalette.SIZES[0] and lives[0] == 1.0, "densidade %d: nível 0 igual a antes", kind)
 		var legible := true
 		for size: int in sizes:
 			legible = legible and (size == 0 or size >= 10)
-		_check.call(legible, "densidade %d: nunca abaixo do legível (fonte ≥ 10 ou dígitos 3×5)" % kind)
+		_check.call(legible, "densidade %d: nunca abaixo do legível (fonte ≥ 10 ou dígitos 3×5)", kind)
 	for kind: int in [K.CRIT, K.TAKEN, K.TAKEN_HEAVY]:
 		_check.call(DamagePalette.number_size(kind, 1, 2) == DamagePalette.SIZES[1]
 				and DamagePalette.level_life(kind, 2) == 1.0,
-				"densidade %d: crítico e recebido não encolhem nem encurtam" % kind)
+				"densidade %d: crítico e recebido não encolhem nem encurtam", kind)
 	_check.call(DamagePalette.number_size(K.HIT, 0, 1) == 10 and DamagePalette.number_size(K.HIT, 0, 2) == 0,
 			"densidade: comum 12 → 10 → dígitos 3×5")
 	_check.call(DamagePalette.number_size(K.HIGH, 1, 2) == 12, "densidade: alto encolhe só um degrau")
@@ -115,7 +115,7 @@ func _test_fold_rule() -> void:
 			and not DamagePalette.should_fold(K.HIT, 1, 30.0, 10.0, 10.0),
 			"juntar: raio cresce com a pressão")
 	for kind: int in [K.CRIT, K.TAKEN, K.TAKEN_HEAVY, K.HEAL]:
-		_check.call(not DamagePalette.should_fold(kind, 2, 0.0, 10.0, 10.0), "juntar: tipo %d nunca junta" % kind)
+		_check.call(not DamagePalette.should_fold(kind, 2, 0.0, 10.0, 10.0), "juntar: tipo %d nunca junta", kind)
 
 
 func _test_significance_rule() -> void:
@@ -125,7 +125,7 @@ func _test_significance_rule() -> void:
 	_check.call(DamagePalette.insignificant(K.HIT, 2.0, 10.0, 1) and not DamagePalette.insignificant(K.HIT, 5.0, 10.0, 1),
 			"pequenos: corte cresce com a pressão")
 	for kind: int in [K.HIGH, K.CRIT, K.DOT, K.TAKEN, K.TAKEN_HEAVY, K.HEAL]:
-		_check.call(not DamagePalette.insignificant(kind, 0.1, 10.0, 2), "pequenos: tipo %d nunca some" % kind)
+		_check.call(not DamagePalette.insignificant(kind, 0.1, 10.0, 2), "pequenos: tipo %d nunca some", kind)
 
 
 func _test_abbreviation() -> void:
@@ -133,7 +133,7 @@ func _test_abbreviation() -> void:
 			[123456, ".", "123k"], [1234567, ",", "1,2M"], [25000000, ".", "25M"]]
 	for c: Array in cases:
 		_check.call(DamagePalette.abbreviate(int(c[0]), String(c[1])) == String(c[2]),
-				"abreviação: %d → %s (%s)" % [c[0], c[2], DamagePalette.abbreviate(int(c[0]), String(c[1]))])
+				"abreviação: %d → %s (%s)", [c[0], c[2], DamagePalette.abbreviate(int(c[0]), String(c[1]))])
 	_check.call(DamagePalette.decimal_for("pt_BR") == "," and DamagePalette.decimal_for("de") == ","
 			and DamagePalette.decimal_for("en") == "." and DamagePalette.decimal_for("ja") == ".",
 			"abreviação: vírgula do idioma")
@@ -171,7 +171,7 @@ func _test_early(n: DamageNumbers) -> void:
 		if k % 12 == 0:
 			n.add(Vector2(k * 3.0, 0.0), 10.0, K.HIT, 10.0)
 		n.step(STEP)
-	_check.call(n.level == 0 and n.pressure < 0.1, "começo: poucos inimigos não ligam a densidade (%.2f)" % n.pressure)
+	_check.call(n.level == 0 and n.pressure < 0.1, "começo: poucos inimigos não ligam a densidade (%.2f)", n.pressure)
 	n.add(Vector2(500, 500), 10.0, K.HIT, 10.0, 3)
 	var early := n.last()
 	_check.call(int(early["size"]) == DamagePalette.SIZES[0] and int(early["count"]) == 1,
@@ -184,7 +184,7 @@ func _test_levels_live(n: DamageNumbers) -> void:
 	n.enemies = 500
 	for _k: int in range(60):
 		n.step(STEP)
-	_check.call(n.level == 2, "pressão ao vivo: 500 inimigos chegam ao nível 2 em 1 s (%d, %.2f)" % [n.level, n.pressure])
+	_check.call(n.level == 2, "pressão ao vivo: 500 inimigos chegam ao nível 2 em 1 s (%d, %.2f)", [n.level, n.pressure])
 	n.enemies = 0
 	for _k: int in range(30):
 		n.step(STEP)
@@ -206,7 +206,7 @@ func _test_levels_live(n: DamageNumbers) -> void:
 	for kind: int in [K.CRIT, K.TAKEN]:
 		_check.call(base["2_%d" % kind]["size"] == base["0_%d" % kind]["size"]
 				and is_equal_approx(float(base["2_%d" % kind]["life"]), float(base["0_%d" % kind]["life"])),
-				"nível 2: tipo %d com o mesmo tamanho e vida" % kind)
+				"nível 2: tipo %d com o mesmo tamanho e vida", kind)
 
 
 func _test_fold_live(n: DamageNumbers) -> void:
@@ -257,11 +257,11 @@ func _test_stress() -> void:
 	print("densidade: cobertura máx %.2f%% (antes %.2f%%), média %.2f%% (antes %.2f%%), vivos máx %d (antes %d)" % [
 			adaptive["max"] * 100.0, before["max"] * 100.0, adaptive["avg"] * 100.0, before["avg"] * 100.0,
 			adaptive["live"], before["live"]])
-	_check.call(adaptive["max"] <= COVERAGE_MAX, "estresse: cobertura da tela ≤ %d%% (%.2f%%)" % [
+	_check.call(adaptive["max"] <= COVERAGE_MAX, "estresse: cobertura da tela ≤ %d%% (%.2f%%)", [
 			roundi(COVERAGE_MAX * 100.0), adaptive["max"] * 100.0])
 	_check.call(adaptive["avg"] < before["avg"], "estresse: a densidade adaptativa cobre menos que antes")
 	_check.call(int(adaptive["live"]) <= int(DamagePalette.LEVEL_CAP[2]) and int(adaptive["live"]) < int(before["live"]),
-			"estresse: menos números vivos com pressão (%d, antes %d)" % [adaptive["live"], before["live"]])
+			"estresse: menos números vivos com pressão (%d, antes %d)", [adaptive["live"], before["live"]])
 	_check.call(int(adaptive["crits"]) > 0, "estresse: críticos continuam visíveis")
 	_check.call(int(adaptive["level"]) == 2, "estresse: 500 inimigos levam ao nível 2")
 

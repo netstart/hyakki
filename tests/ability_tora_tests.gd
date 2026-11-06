@@ -51,7 +51,7 @@ func _check_hammer(game: HyakkiGame, tora: ToraAbilities) -> void:
 	_t._tick(game, 8)
 	var blow := 70.0 * mp
 	_check.call(_t._lost(game, target) >= blow - 0.01 and _t._lost(game, target) <= blow * 2.0 + 0.01,
-			"Martelo: %.0f no raio (veio %.1f)" % [blow, _t._lost(game, target)])
+			"Martelo: %.0f no raio (veio %.1f)", [blow, _t._lost(game, target)])
 	_check.call(game.enemies.stun[target] > 0.5, "Martelo: atordoa ~0,8 s")
 	_check.call(_t._lost(game, far) == 0.0 and tora._hammers.is_empty() and not tora._marks.is_empty(),
 			"Martelo: longe fica; chão chamuscado")
@@ -75,11 +75,11 @@ func _check_chain(game: HyakkiGame, tora: ToraAbilities) -> void:
 	_check.call(ab.activate(1), "Corrente Puxadora sai")
 	var lash := 30.0 * mp
 	_check.call(_t._lost(game, a) >= lash - 0.01 and _t._lost(game, b) >= lash - 0.01 and _t._lost(game, out) == 0.0,
-			"Corrente: %.0f em todos do raio" % lash)
+			"Corrente: %.0f em todos do raio", lash)
 	_check.call(tora._trails.size() == 2 and tora._blasts.size() == 1, "Corrente: rastros e estouro pendente")
 	_t._tick(game, 20)
 	_check.call(game.enemies.pos[a].length() < 45.0 and game.enemies.pos[b].length() < 45.0,
-			"Corrente: puxa para perto (%.0f, %.0f)" % [game.enemies.pos[a].length(), game.enemies.pos[b].length()])
+			"Corrente: puxa para perto (%.0f, %.0f)", [game.enemies.pos[a].length(), game.enemies.pos[b].length()])
 	_check.call(game.enemies.pos[out].distance_to(out_at) < 1.0, "Corrente: fora do raio não é puxado")
 	_t._tick(game, 10)
 	_check.call(tora._blasts.is_empty() and _t._lost(game, a) >= lash + 60.0 * mp - 0.01,
@@ -100,7 +100,7 @@ func _check_quench(game: HyakkiGame, tora: ToraAbilities) -> void:
 	_check.call(is_equal_approx(player.hp, hp + player.max_hp() * 0.1), "Têmpera: cura 10% da vida")
 	_check.call(is_equal_approx(player.armor_bonus, 5.0) and player.armor_time > 5.9, "Têmpera: +5 de armadura por 6 s")
 	_t._tick(game, 12)
-	_check.call(game.enemies.pos[e].length() > 90.0, "Têmpera: empurra para longe (%.0f)" % game.enemies.pos[e].length())
+	_check.call(game.enemies.pos[e].length() > 90.0, "Têmpera: empurra para longe (%.0f)", game.enemies.pos[e].length())
 	_check.call(player.ability_rim.a > 0.0, "Têmpera: Tora brilha em laranja")
 	_t._clear(game)
 	_t._tick(game, 360)

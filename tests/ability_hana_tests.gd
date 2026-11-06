@@ -102,7 +102,7 @@ func _check_harae(game: HyakkiGame) -> void:
 	_check.call(ab.activate(0), "Purificação sai")
 	var hit := 35.0 * _scale(game)
 	_check.call(absf(_lost(game, front) - hit) < 0.01 and absf(_lost(game, side) - hit) < 0.01,
-			"Purificação: leque de 100° fere (%.1f, %.1f de %.1f)" % [_lost(game, front), _lost(game, side), hit])
+			"Purificação: leque de 100° fere (%.1f, %.1f de %.1f)", [_lost(game, front), _lost(game, side), hit])
 	_check.call(_lost(game, behind) == 0.0, "Purificação: quem está atrás fica")
 	_check.call(game.enemies.vel[front].x > 50.0, "Purificação: empurra para fora")
 	_check.call(shots.count_alive == 1, "Purificação: purifica só os tiros no leque")
@@ -131,7 +131,7 @@ func _check_kekkai(game: HyakkiGame) -> void:
 	_check.call(game.enemy_shots.count_alive == 0, "Kekkai: o tiro que entra se desfaz")
 	var tick := 8.0 * _scale(game)
 	_check.call(_lost(game, inside) >= tick * 3.0 - 0.01 and _lost(game, outside) == 0.0,
-			"Kekkai: 8 a cada 0,5 s em quem está dentro (%.2f de %.2f)" % [_lost(game, inside), tick * 3.0])
+			"Kekkai: 8 a cada 0,5 s em quem está dentro (%.2f de %.2f)", [_lost(game, inside), tick * 3.0])
 	# Cura dentro menos a regeneração natural (medida fora, no mesmo tempo).
 	var healed := player.hp - hp
 	player.sim_pos = Vector2(0, 96)
@@ -141,7 +141,7 @@ func _check_kekkai(game: HyakkiGame) -> void:
 	var natural := player.hp - hp_out
 	var extra := healed - natural
 	_check.call(absf(extra - 0.02 * player.max_hp() * 64.0 / 60.0) < 0.05,
-			"Kekkai: cura 2%% da vida/s dentro (+%.2f além da regeneração em 64 passos)" % extra)
+			"Kekkai: cura 2%% da vida/s dentro (+%.2f além da regeneração em 64 passos)", extra)
 	_tick(game, 190)
 	_check.call(hana._kek_time == 0.0, "Kekkai: acaba em 5 s")
 
@@ -167,7 +167,7 @@ func _check_seal(game: HyakkiGame) -> void:
 			"Selo da Avó: os ofuda chegam e prendem o alvo")
 	_tick(game, 62)
 	_check.call(enemies.alive[strong] == 0 and hana._seals.is_empty(), "Selo da Avó: o selado se desfaz em 1 s")
-	_check.call(game.tracker.kills == kills + 1, "Selo da Avó: conta o abate (%d → %d)" % [kills, game.tracker.kills])
+	_check.call(game.tracker.kills == kills + 1, "Selo da Avó: conta o abate (%d → %d)", [kills, game.tracker.kills])
 	_check.call(enemies.alive[weak] == 1 and enemies.alive[far] == 1, "Selo da Avó: só o alvo é selado")
 
 
@@ -182,10 +182,10 @@ func _check_seal_boss(game: HyakkiGame) -> void:
 	var enemies := game.enemies
 	var stun := 2.5 * game.player.stats.get_stat("duration")
 	_check.call(enemies.alive[boss] == 1 and enemies.stun[boss] >= stun - 0.1,
-			"Selo da Avó: chefe atordoado 2,5 s (%.2f)" % enemies.stun[boss])
+			"Selo da Avó: chefe atordoado 2,5 s (%.2f)", enemies.stun[boss])
 	var wound := 200.0 * _scale(game)
 	_check.call(_lost(game, boss) >= wound - 0.01,
-			"Selo da Avó: chefe leva 200 (%.1f)" % _lost(game, boss))
+			"Selo da Avó: chefe leva 200 (%.1f)", _lost(game, boss))
 	_check.call(_lost(game, strong) == 0.0, "Selo da Avó: o comum forte fica")
 	_tick(game, 100)
 	_check.call(not hana._seals.is_empty() and enemies.alive[boss] == 1,
@@ -207,7 +207,7 @@ func _check_save(game: HyakkiGame) -> void:
 	copy.load_state(JSON.parse_string(saved))
 	_check.call(JSON.stringify(copy.state()) == saved, "Hana: state/load_state mantém kekkai e selos")
 	_check.call(copy.hash_tag() == hana.hash_tag() and hana.hash_tag().begins_with(" hana=4.9"),
-			"Hana: mesmo hash depois de retomar (%s)" % hana.hash_tag())
+			"Hana: mesmo hash depois de retomar (%s)", hana.hash_tag())
 	copy.reset()
 	_check.call(not copy.has_visuals() and copy.hash_tag() == " hana=0.000,0", "Hana: reset limpa tudo")
 	_clear(game)

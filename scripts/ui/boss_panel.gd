@@ -228,7 +228,7 @@ func _draw_bar(view: Vector2) -> void:
 	var appear := clampf((intro_t - (OUT_FROM - 0.3)) / 0.4, 0.0, 1.0)
 	if appear <= 0.0:
 		return
-	var time := Time.get_ticks_msec() / 1000.0
+	var time := UiClock.msec() / 1000.0
 	var bar := Rect2(Vector2(roundf(view.x * 0.5 - BAR_W * 0.5 + SEAL * 0.5), BAR_Y - (1.0 - appear) * 12.0),
 			Vector2(BAR_W, BAR_H))
 	var a := appear

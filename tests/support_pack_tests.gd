@@ -51,16 +51,16 @@ func _ad_layers() -> int:
 
 func _test_no_app_open_api() -> void:
 	for method: String in ["should_show_app_open", "show_app_open", "_mark_open_ad_seen"]:
-		_check.call(not AdsManager.has_method(method), "sem anúncio de abertura: AdsManager não tem %s" % method)
+		_check.call(not AdsManager.has_method(method), "sem anúncio de abertura: AdsManager não tem %s", method)
 	var admob := AdMobProvider.new()
 	for method: String in ["load_app_open", "show_app_open", "app_open_ready"]:
-		_check.call(not admob.has_method(method), "sem anúncio de abertura: AdMobProvider não tem %s" % method)
+		_check.call(not admob.has_method(method), "sem anúncio de abertura: AdMobProvider não tem %s", method)
 	admob.free()
 	_check.call(not AdMobProvider.TEST_UNITS.has("app_open") and not AdMobProvider.RELEASE_UNITS.has("app_open"),
 			"sem anúncio de abertura: nenhum bloco app_open (teste nem produção)")
 	var fresh := SaveManager.default_profile()
 	for key: String in SaveManager.OBSOLETE_KEYS:
-		_check.call(not fresh.has(key), "perfil novo sem o campo antigo %s" % key)
+		_check.call(not fresh.has(key), "perfil novo sem o campo antigo %s", key)
 	_check.call(fresh["purchases"].has(PurchaseManager.PRODUCT) and PurchaseManager.PRODUCT == "remove_open_ad",
 			"Apoie o jogo mantém o id de produto da Play (remove_open_ad)")
 
@@ -72,7 +72,7 @@ func _test_save_migration() -> void:
 			"purchases": {"remove_open_ad": true, "pending": false, "acknowledged": true}}
 	var migrated: Dictionary = SaveManager.migrate(JSON.parse_string(JSON.stringify(old)))
 	for key: String in SaveManager.OBSOLETE_KEYS:
-		_check.call(not migrated.has(key), "migração: o campo antigo %s sai do save" % key)
+		_check.call(not migrated.has(key), "migração: o campo antigo %s sai do save", key)
 	_check.call(int(migrated["ryo"]) == 77 and int(migrated["launches"]) == 12
 			and bool(migrated["purchases"]["remove_open_ad"]), "migração: o resto do save antigo fica")
 	SaveManager.data = migrated
@@ -100,11 +100,11 @@ func _test_cold_start() -> void:
 		app.call("_boot")
 		var expected := &"title" if intro_seen else &"story"
 		_check.call(app.current == expected,
-				"abertura com anúncios (introdução vista: %s): vai direto para %s, sem esperar (foi %s)" % [
+				"abertura com anúncios (introdução vista: %s): vai direto para %s, sem esperar (foi %s)", [
 				intro_seen, expected, app.current])
 		await _host.get_tree().create_timer(0.6).timeout
 		_check.call(app.current == expected and _ad_layers() == layers,
-				"abertura com anúncios (introdução vista: %s): nenhum anúncio de abertura aparece" % intro_seen)
+				"abertura com anúncios (introdução vista: %s): nenhum anúncio de abertura aparece", intro_seen)
 		_check.call(app.current != &"shop", "abertura com anúncios: não leva à Loja")
 		app.queue_free()
 		vp.queue_free()
@@ -179,9 +179,9 @@ func _test_results_and_revive_texts() -> void:
 		var screen := results.new() as Node
 		var h := hud.new() as Node
 		_check.call(String(screen.call("double_text")) == (tr("results.double_free") if owned else tr("results.double")),
-				"Resultados (Apoie o jogo: %s): texto do Dobrar ryō" % owned)
+				"Resultados (Apoie o jogo: %s): texto do Dobrar ryō", owned)
 		_check.call(String(h.call("revive_text")) == (tr("revive.free") if owned else tr("revive.watch")),
-				"Reviver (Apoie o jogo: %s): texto do botão" % owned)
+				"Reviver (Apoie o jogo: %s): texto do botão", owned)
 		screen.free()
 		h.free()
 	SaveManager.data = SaveManager.default_profile()

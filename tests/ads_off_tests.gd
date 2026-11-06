@@ -12,6 +12,8 @@ const SHOP_SCREEN := "res://scripts/app/screens/shop_screen.gd"
 const RESULTS_SCREEN := "res://scripts/app/screens/results_screen.gd"
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 const ShopLayoutTests := preload("res://tests/shop_layout_tests.gd")
 const MenusLayoutTests := preload("res://tests/menus_layout_tests.gd")
 const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
@@ -32,17 +34,21 @@ func run(host: Node, check: Callable) -> void:
 	# Nada de resposta automática do simulado: se algo pedir anúncio, o teste percebe.
 	AdsManager.auto_answer = false
 	AdsManager.mock_fill = false
-	_test_manager()
-	_test_shop_rewards()
-	_test_purchase()
+	var rest := TestShards.runs_rest(&"AdsOffTests")
+	if rest:
+		_test_manager()
+		_test_shop_rewards()
+		_test_purchase()
 	await _test_shop_screen()
 	await _test_results()
 	await _test_options()
-	await _test_boot()
-	await _test_revive()
+	if rest:
+		await _test_boot()
+		await _test_revive()
 	AdsManager.ads_enabled = true
 	AdsManager.mock_fill = true
-	_test_back_to_ads()
+	if rest:
+		_test_back_to_ads()
 	AdsManager.ads_enabled = was_enabled
 	AdsManager.mock_fill = was_fill
 	AdsManager.auto_answer = was_auto
@@ -88,7 +94,7 @@ func _test_shop_rewards() -> void:
 	var result := {"ok": false}
 	ShopManager.claim(&"slot_ryo", func(ok: bool) -> void: result["ok"] = ok)
 	_check.call(bool(result["ok"]) and SaveManager.ryo() == before + value,
-			"sem anúncios: a vaga de ryō entrega %d ryō na hora" % value)
+			"sem anúncios: a vaga de ryō entrega %d ryō na hora", value)
 	_check.call(ShopManager.seconds_left(&"slot_ryo") > ShopManager.COOLDOWN - 5,
 			"sem anúncios: a vaga entra na mesma espera de 6 h")
 	result["ok"] = true
@@ -119,7 +125,7 @@ func _test_purchase() -> void:
 	# A Ampulheta de Fūjin (velocidade 2x/3x) não depende de anúncios: dinheiro e ryō seguem.
 	SaveManager.data = SaveManager.default_profile()
 	_check.call(PurchaseManager.speed_available_for_money(),
-			"sem anúncios: a Ampulheta continua à venda por dinheiro (%s)" % PurchaseManager.provider)
+			"sem anúncios: a Ampulheta continua à venda por dinheiro (%s)", PurchaseManager.provider)
 	answers.clear()
 	PurchaseManager.purchase_finished.connect(listener)
 	PurchaseManager.buy_speed_with_money()
@@ -158,17 +164,17 @@ func _shop_lang(layout: ShopLayoutTests, lang_code: String, lang: String, size: 
 		var state := cards[id]["state"] as Label
 		var b := cards[id]["button"] as Button
 		all_free = all_free and not b.disabled and state.text == "> %s" % tr("shop.claim_free")
-	_check.call(all_free, "%s: sem anúncios as vagas dizem \"%s\"" % [lang, tr("shop.claim_free")])
+	_check.call(all_free, "%s: sem anúncios as vagas dizem \"%s\"", [lang, tr("shop.claim_free")])
 	var hint := screen.get("_offer_hint") as Label
-	_check.call(hint.text == tr("shop.hint_free"), "%s: subtítulo das Oferendas fala de presente" % lang)
+	_check.call(hint.text == tr("shop.hint_free"), "%s: subtítulo das Oferendas fala de presente", lang)
 	var buy := screen.get("_buy") as Button
 	var restore := screen.get("_restore") as Button
 	_check.call(not buy.is_visible_in_tree() and not restore.is_visible_in_tree(),
-			"%s: sem anúncios a compra e a restauração somem da Loja" % lang)
+			"%s: sem anúncios a compra e a restauração somem da Loja", lang)
 	_check.call((screen.get("_speed_card") as Control).is_visible_in_tree()
 			and (screen.get("_speed_ryo") as Control).is_visible_in_tree()
 			and (screen.get("_speed_money") as Control).is_visible_in_tree(),
-			"%s: sem anúncios a Ampulheta de Fūjin continua na Loja (ryō e dinheiro)" % lang)
+			"%s: sem anúncios a Ampulheta de Fūjin continua na Loja (ryō e dinheiro)", lang)
 	layout.check_layout(screen, view, "%s, sem anúncios" % lang)
 	if lang_code == "pt_BR":
 		var before := SaveManager.ryo()
@@ -209,7 +215,7 @@ func _test_results() -> void:
 			var screen := await _open_results(r, c["view"])
 			var double := screen.get("_double") as Button
 			_check.call(double.is_visible_in_tree() and double.text == tr("results.double_free"),
-					"%s: sem anúncios o botão é \"%s\"" % [tag, tr("results.double_free")])
+					"%s: sem anúncios o botão é \"%s\"", [tag, tr("results.double_free")])
 			layout.check_layout(screen, "%s, Dobrar ryō de presente" % tag)
 			if lang == "pt_BR":
 				var before := SaveManager.ryo()
@@ -261,14 +267,14 @@ func _test_options() -> void:
 			"Opções sem anúncios: \"Restaurar compras\" continua (Ampulheta de Fūjin)")
 	for key: String in ["notifications", "credits", "licenses", "privacy_policy", "reset", "version"]:
 		_check.call(screen.find_child("opt_%s" % key, true, false) != null,
-				"Opções sem anúncios: opt_%s continua" % key)
+				"Opções sem anúncios: opt_%s continua", key)
 	var opened: Array[String] = []
 	var options_script := load(MenusLayoutTests.SCREENS[&"options"]) as GDScript
 	options_script.set("url_opener", func(url: String) -> void: opened.append(url))
 	(screen.find_child("opt_privacy_policy", true, false) as Button).pressed.emit()
 	options_script.set("url_opener", Callable())
 	_check.call(opened == ["https://netstart.github.io/privacy-policy.html"],
-			"Opções sem anúncios: Política de privacidade pede a URL publicada (%s)" % [opened])
+			"Opções sem anúncios: Política de privacidade pede a URL publicada (%s)", [opened])
 	menus.close_screen(screen)
 	await _host.get_tree().process_frame
 	# Layout completo (sem as duas linhas) em cada idioma e tamanho, com a política visível.
@@ -298,7 +304,7 @@ func _test_boot() -> void:
 		await _host.get_tree().process_frame
 		var expected := &"title" if intro_seen else &"story"
 		_check.call(app.current == expected,
-				"abertura sem anúncios (introdução vista: %s): vai direto para %s (foi %s)" % [
+				"abertura sem anúncios (introdução vista: %s): vai direto para %s (foi %s)", [
 				intro_seen, expected, app.current])
 		_check.call(not bool(SaveManager.data["consent"]["asked"]) and _ad_layers() == layers,
 				"abertura sem anúncios: sem consentimento e sem tela de anúncio")
@@ -326,7 +332,7 @@ func _test_revive() -> void:
 	_check.call(game.hud.revive_open(), "sem anúncios: morrer oferece reviver de presente")
 	var watch := game.hud.get("_revive_watch") as Button
 	_check.call(watch != null and watch.text == tr("revive.free"),
-			"sem anúncios: o botão é \"%s\"" % tr("revive.free"))
+			"sem anúncios: o botão é \"%s\"", tr("revive.free"))
 	var layers := _ad_layers()
 	game.hud._revive_panel.visible = false
 	game.hud.revive_answered.emit(true)

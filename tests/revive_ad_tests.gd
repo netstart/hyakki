@@ -73,7 +73,7 @@ func _test_manager_reentry() -> void:
 	AdsManager.show_rewarded("test", func(rewarded: bool) -> void: second.append(rewarded))
 	AdsManager.show_rewarded("revive", func(rewarded: bool) -> void: second.append(rewarded))
 	_check.call(_fake.shows == 1 and second.is_empty(),
-			"AdsManager: pedidos com o anúncio na tela são ignorados (%d anúncio(s))" % _fake.shows)
+			"AdsManager: pedidos com o anúncio na tela são ignorados (%d anúncio(s))", _fake.shows)
 	_fake.close(true)
 	_check.call(calls == [true] and second.is_empty() and not AdsManager.is_showing(),
 			"AdsManager: o anúncio responde uma vez só, e só para quem pediu")
@@ -98,7 +98,7 @@ func _test_revive_taps() -> void:
 	game.hud.revive_answered.emit(true)
 	await _host.get_tree().process_frame
 	_check.call(_fake.shows == 1 and _fake.is_open(),
-			"reviver: 3 toques e 2 sinais extras mostram 1 anúncio (%d)" % _fake.shows)
+			"reviver: 3 toques e 2 sinais extras mostram 1 anúncio (%d)", _fake.shows)
 	# O tempo da oferta acabando (ou "Ver resultados") com o anúncio na tela não corta o anúncio.
 	game.hud.revive_answered.emit(false)
 	game.hud.set("_revive_left", 0.0)
@@ -151,7 +151,7 @@ func _test_mock_overlay_once() -> void:
 		watch.pressed.emit()
 	game.hud.revive_answered.emit(true)
 	_check.call(_ad_layers() == layers + 1,
-			"simulado: 3 toques abrem uma tela de anúncio só (%d)" % (_ad_layers() - layers))
+			"simulado: 3 toques abrem uma tela de anúncio só (%d)", (_ad_layers() - layers))
 	await _wait_until(func() -> bool:
 		return game.player.is_alive and not game.death.is_active(), 6.0)
 	_check.call(game.player.is_alive and game.tracker.revived_by_ad and _ad_layers() == layers,

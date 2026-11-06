@@ -28,8 +28,8 @@ static func _json(name: String) -> Variant:
 	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % name))
 
 
-func _ok(condition: bool, label: String) -> void:
-	_check.call(condition, label)
+func _ok(condition: bool, label: String, args: Variant = null) -> void:
+	_check.call(condition, label, args)
 
 
 ## Perfil com tudo descoberto (os nomes mais longos aparecem no lugar de "???").
@@ -91,7 +91,7 @@ func _test_all_languages() -> void:
 	for lang: String in LANGS:
 		Locale.set_language(lang, false)
 		_ok(book.entries().size() == GuideBook.CHAPTERS.size() and GuideBook.CHAPTERS.size() == 11,
-				"Guia [%s]: 11 capítulos" % lang)
+				"Guia [%s]: 11 capítulos", lang)
 		for id: StringName in GuideBook.CHAPTERS:
 			var ch := book.chapter(id)
 			var blocks: Array = ch.get("blocks", [])
@@ -107,7 +107,7 @@ func _test_all_languages() -> void:
 						or text.contains("moon.rule") or text.contains("powerup.") or text.contains("mission.") \
 						or text.contains("goals.") or text.contains("omikuji."):
 					bad.append("%s %s: %s" % [lang, id, text.left(60)])
-	_ok(bad.is_empty(), "Guia: todos os capítulos montam nos 11 idiomas, sem chave crua nem %%s %s" % [bad.slice(0, 6)])
+	_ok(bad.is_empty(), "Guia: todos os capítulos montam nos 11 idiomas, sem chave crua nem %%s %s", [bad.slice(0, 6)])
 
 
 func _test_numbers() -> void:
@@ -129,13 +129,13 @@ func _test_numbers() -> void:
 	_ok(GuideBook.weapon_max_level() == max_level and max_level == 8, "Guia números: nível máximo das armas dos dados (8)")
 	var levels := chapter_text(book.chapter(&"levels"))
 	var weapons_line := TranslationServer.translate("guide.levels.weapons") % [LevelUpSystem.MAX_WEAPONS, max_level]
-	_ok(levels.contains(weapons_line), "Guia números: %s" % weapons_line)
+	_ok(levels.contains(weapons_line), "Guia números: %s", weapons_line)
 	_ok(levels.contains(TranslationServer.translate("guide.levels.up") % [LevelUpSystem.BASE_CARDS,
 			LevelUpSystem.BASE_CARDS + 1]), "Guia números: cartas por nível de LevelUpSystem")
 	for pu: Dictionary in powerups:
 		if String(pu["id"]) in ["pu_reroll", "pu_skip", "pu_banish"]:
 			_ok(levels.contains(TranslationServer.translate("powerup.%s.name" % pu["id"]) + ": +" + str(int(pu["per_level"]))),
-					"Guia números: cargas de %s dos dados" % pu["id"])
+					"Guia números: cargas de %s dos dados", pu["id"])
 	var chests := chapter_text(book.chapter(&"chests"))
 	var one := 1.0 - ChestSystem.BASE_THREE - ChestSystem.BASE_FIVE
 	_ok(chests.contains("70%") and chests.contains("25%") and chests.contains("5%")
@@ -151,8 +151,8 @@ func _test_numbers() -> void:
 		var line: Array = fortunes[i]
 		seals.append(String((line[0] as Dictionary).get("seal", "")))
 		_ok(GuideBook.plain(line).ends_with(str(ChestSystem.COUNTS[i])),
-				"Guia omikuji: %s mostra %d melhorias" % [seals[i], ChestSystem.COUNTS[i]])
-	_ok(seals == ["吉", "中吉", "大吉"], "Guia omikuji: selos 吉, 中吉 e 大吉 %s" % [seals])
+				"Guia omikuji: %s mostra %d melhorias", [seals[i], ChestSystem.COUNTS[i]])
+	_ok(seals == ["吉", "中吉", "大吉"], "Guia omikuji: selos 吉, 中吉 e 大吉 %s", [seals])
 	_ok(chests.contains(TranslationServer.translate("guide.chests.kyo") % [GuideBook.pct(Omikuji.KYO_CHANCE),
 			Omikuji.KYO_RYO, Omikuji.GENEROUS_CHESTS, TranslationServer.translate("omikuji.chukichi")]),
 			"Guia omikuji: chance e consolo do 凶 e baús generosos do Omikuji")
@@ -161,9 +161,9 @@ func _test_numbers() -> void:
 		if String(w.get("kind", "base")) == "base" and w.has("evolution"):
 			evo_count += 1
 	_ok(book.evolution_lines().size() == evo_count and evo_count > 0,
-			"Guia: uma receita por arma base com evolução (%d)" % evo_count)
+			"Guia: uma receita por arma base com evolução (%d)", evo_count)
 	var union_count := weapons.filter(func(w: Dictionary) -> bool: return String(w.get("kind", "")) == "union").size()
-	_ok(book.union_lines().size() == union_count, "Guia: uma linha por união (%d)" % union_count)
+	_ok(book.union_lines().size() == union_count, "Guia: uma linha por união (%d)", union_count)
 	var items_text := chapter_text(book.chapter(&"items"))
 	var total := 0.0
 	for it: Dictionary in items:
@@ -174,9 +174,9 @@ func _test_numbers() -> void:
 		var name := TranslationServer.translate("item.%s.name" % it["id"])
 		var chance := GuideBook.pct(float(it["weight"]) / total)
 		_ok(items_text.contains("%s: %s (%s)" % [name, book.item_effect(it), chance]),
-				"Guia números: item %s com efeito e chance dos dados (%s)" % [it["id"], chance])
+				"Guia números: item %s com efeito e chance dos dados (%s)", [it["id"], chance])
 		if String(it["effect"]) in ["heal", "ryo", "freeze", "solar"]:
-			_ok(book.item_effect(it).contains(str(int(it["value"]))), "Guia números: valor de %s" % it["id"])
+			_ok(book.item_effect(it).contains(str(int(it["value"]))), "Guia números: valor de %s", it["id"])
 	_ok(items_text.contains(str(BossDirector.BOSS_RYO)) and items_text.contains(GuideBook.pct(PickupManager.COIN_CHANCE)),
 			"Guia números: ryō por chefe e chance de moeda do jogo")
 	var bosses := chapter_text(book.chapter(&"bosses"))
@@ -206,7 +206,7 @@ func _test_numbers() -> void:
 		done += int(MissionBook.is_done(id))
 	_ok(stronger.contains(TranslationServer.translate("guide.stronger.missions") % [MissionBook.ids().size(),
 			MissionBook.CATEGORIES.size(), done]),
-			"Guia missões: total, categorias e concluídas (%d)" % MissionBook.ids().size())
+			"Guia missões: total, categorias e concluídas (%d)", MissionBook.ids().size())
 	var sections := CodexMissions.sections(CodexMissions.entries())
 	var cats_ok := sections.size() == MissionBook.CATEGORIES.size()
 	for sec: Dictionary in sections:
@@ -228,7 +228,7 @@ func _test_numbers() -> void:
 		rules_ok = rules_ok and stronger.contains(RedMoon.rule_text(rule))
 	_ok(rules_ok and stronger.contains("+%d%%" % roundi((RedMoon.ELITE_MULT - 1.0) * 100.0))
 			and stronger.contains(str(RedMoon.PACTS)) and stronger.contains(GuideBook.pct(RedMoon.SHADE_LIGHT_CHANCE)),
-			"Guia números: as %d regras da Lua Vermelha com os números das constantes" % RedMoon.RULES)
+			"Guia números: as %d regras da Lua Vermelha com os números das constantes", RedMoon.RULES)
 	_ok(stronger.contains(TranslationServer.translate("guide.stronger.moon_rules") % [GuideBook.roman(HyakkiGame.MAX_MOON),
 			GuideBook._num(RedMoon.ECLIPSE_DELAY), RedMoon.ECLIPSE_RING_COUNT]),
 			"Guia números: as regras se somam e o Eclipse (atraso e círculos do anel)")
@@ -244,7 +244,7 @@ func _test_numbers() -> void:
 		var hazard: Dictionary = s.get("hazard", {})
 		if not hazard.is_empty():
 			_ok(terrain.contains(book.hazard_text(hazard)) and book.hazard_text(hazard) != "",
-					"Guia: perigo de %s descrito" % s["id"])
+					"Guia: perigo de %s descrito", s["id"])
 	for s: Dictionary in stages:
 		var hz: Dictionary = s.get("hazard", {})
 		if String(hz.get("type", "")) == "lava":
@@ -272,7 +272,7 @@ func _test_discovery() -> void:
 	for b: StringName in DB.ids("bosses"):
 		if bosses.contains(TranslationServer.translate("boss.%s.name" % b)):
 			leaked.append(String(b))
-	_ok(leaked.is_empty() and bosses.contains("???"), "Guia descoberta: chefes não vencidos escondidos %s" % [leaked])
+	_ok(leaked.is_empty() and bosses.contains("???"), "Guia descoberta: chefes não vencidos escondidos %s", [leaked])
 	_ok(not bosses.contains(TranslationServer.translate("stage.bamboo.name"))
 			and bosses.contains(TranslationServer.translate("stage.village.name")), "Guia descoberta: fase bloqueada sem nome")
 	var terrain := chapter_text(book.chapter(&"stages"))
@@ -299,10 +299,10 @@ func _test_discovery() -> void:
 				if part.has("ref") and String(part["ref"]["category"]) == "heroes":
 					heroes_known += int(bool(part["ref"]["known"]))
 					_ok(bool(part["ref"]["known"]) == (String(part["ref"]["name"]) != "???"),
-							"Guia descoberta: guardiã %s" % part["ref"]["id"])
+							"Guia descoberta: guardiã %s", part["ref"]["id"])
 				if part.has("chip") and String(part["chip"]).contains("/kami/") and String(part.get("kind", "")) == "skill":
 					kami_known += int(bool(part["known"]))
-	_ok(heroes_known == 1, "Guia descoberta: só as guardiãs liberadas com rosto e nome (%d)" % heroes_known)
+	_ok(heroes_known == 1, "Guia descoberta: só as guardiãs liberadas com rosto e nome (%d)", heroes_known)
 	_ok(kami_known == DB.ids("kami").size(), "Guia descoberta: Kami pela regra do Diário (todos conhecidos)")
 
 
@@ -324,7 +324,7 @@ func _test_abilities() -> void:
 					str(roundi(float(a["cost"]))), AbilitySheet.seconds(float(a["cooldown"]))]
 			if not text.contains(line) or not text.contains(String(a["kanji"])):
 				missing.append(String(a["id"]))
-	_ok(missing.is_empty(), "Guia habilidades: energia e nível/custo/recarga de cada habilidade dos dados %s" % [missing])
+	_ok(missing.is_empty(), "Guia habilidades: energia e nível/custo/recarga de cada habilidade dos dados %s", [missing])
 	_ok(text.contains(GuideBook.pct(AbilitySystem.POWER_PER_LEVEL)), "Guia habilidades: poder por nível do AbilitySystem")
 	# A guardiã que paga com vida sai dos dados (a energia com "hp_price"), com o nome dela no texto.
 	var payer := &""
@@ -336,7 +336,7 @@ func _test_abilities() -> void:
 	var blood := TranslationServer.translate("guide.abilities.blood") % [
 			TranslationServer.translate("energy.%s.name" % yuki["id"]), TranslationServer.translate("hero.%s.name" % payer),
 			str(roundi(1.0 / float(yuki["hp_price"]))), GuideBook.pct(float(yuki["hp_floor"]))]
-	_ok(text.contains(blood), "Guia habilidades: Yuki paga com vida (%s)" % blood.left(40))
+	_ok(text.contains(blood), "Guia habilidades: Yuki paga com vida (%s)", blood.left(40))
 	var raw_ok := true
 	for lang: String in LANGS:
 		Locale.set_language(lang, false)
@@ -349,7 +349,7 @@ func _test_abilities() -> void:
 	var count := GuideBook.ability_count()
 	_ok(count == (DB.hero_abilities(&"aki")["abilities"] as Array).size()
 			and text.contains(TranslationServer.translate("guide.abilities.intro") % count),
-			"Guia habilidades: quantidade de habilidades lida dos dados (%d)" % count)
+			"Guia habilidades: quantidade de habilidades lida dos dados (%d)", count)
 	var blocks: Array = book.chapter(&"abilities")["blocks"]
 	_ok(blocks.any(func(b: Dictionary) -> bool: return String(b["type"]) == "link" and b["category"] == &"heroes"),
 			"Guia habilidades: Ver guardiões no Diário")
@@ -393,7 +393,7 @@ func _test_modes() -> void:
 	_ok(ryo > 0 and GuideBook.daily_ryo() == ryo and play.contains(_t("guide.play.daily_reward")
 			% [Screen.format_time(MetaProgress.DAILY_MIN_TIME), _t("achievement.ach_daily.name"), ryo])
 			and play.contains(_t("guide.play.daily") % _t("title.daily")),
-			"Guia Desafio Diário: tempo de MetaProgress.DAILY_MIN_TIME e ryō de data/achievements.json (%d)" % ryo)
+			"Guia Desafio Diário: tempo de MetaProgress.DAILY_MIN_TIME e ryō de data/achievements.json (%d)", ryo)
 	_ok(is_equal_approx(MetaProgress.DAILY_MIN_TIME, 300.0), "Guia Desafio Diário: 5 minutos (mesmo valor de antes)")
 	var stronger := chapter_text(book.chapter(&"stronger"))
 	_ok(stronger.contains(_t("guide.stronger.endless") % [_t("stages.endless"),
@@ -458,7 +458,7 @@ func _test_altars() -> void:
 			"Guia baús: a frase dos baús cita o saque próprio dos Elites dos altares")
 	# Descoberta: save novo, todos os afixos como ?.
 	var lines := _affix_lines(ch)
-	_ok(lines.size() == EliteAffixes.IDS.size(), "Guia altares: uma linha por afixo (%d)" % lines.size())
+	_ok(lines.size() == EliteAffixes.IDS.size(), "Guia altares: uma linha por afixo (%d)", lines.size())
 	var all_hidden := lines.all(func(l: Array) -> bool: return (String((l[0] as Dictionary)["seal"]) == "?"
 			and GuideBook.plain(l).contains(Discovery.UNKNOWN)))
 	var leaked: Array[String] = []
@@ -468,7 +468,7 @@ func _test_altars() -> void:
 		if text.contains(full):
 			leaked.append(String(id))
 	_ok(all_hidden and leaked.is_empty() and text.contains(_t("guide.altars.unknown")),
-			"Guia altares descoberta: save novo mostra os afixos como ? %s" % [leaked])
+			"Guia altares descoberta: save novo mostra os afixos como ? %s", [leaked])
 	# Registro: um Elite surgiu com Trovão e Diamante; o fim da partida grava os vistos.
 	var tracker := RunTracker.new()
 	tracker.on_elite_spawned([&"raijin", &"kongo"])
@@ -491,7 +491,7 @@ func _test_altars() -> void:
 	for l: Array in _affix_lines(ch):
 		seals.append(String((l[0] as Dictionary)["seal"]))
 	_ok(seals.count("?") == EliteAffixes.IDS.size() - 2 and seals.has(EliteAffixes.kanji_of(&"raijin"))
-			and seals.has(EliteAffixes.kanji_of(&"kongo")), "Guia altares: só os afixos vistos com o kanji %s" % [seals])
+			and seals.has(EliteAffixes.kanji_of(&"kongo")), "Guia altares: só os afixos vistos com o kanji %s", [seals])
 	# Tudo visto: cada afixo com o kanji e o poder; sem o aviso de "?".
 	SaveManager.data = SaveManager.default_profile()
 	full_profile()
@@ -507,7 +507,7 @@ func _test_altars() -> void:
 			missing.append(String(id))
 		i += 1
 	_ok(missing.is_empty() and not text.contains(_t("guide.altars.unknown")),
-			"Guia altares: os %d afixos com kanji e poder %s" % [EliteAffixes.IDS.size(), missing])
+			"Guia altares: os %d afixos com kanji e poder %s", [EliteAffixes.IDS.size(), missing])
 	var nums_ok := text.contains(str(EliteAffixes.FOX_COUNT)) and text.contains(str(EliteAffixes.KASUMI_COUNT)) \
 			and text.contains(str(EliteAffixes.KASUMI_CAP)) and text.contains(GuideBook.pct(EliteAffixes.SHIELD_FRACTION)) \
 			and text.contains(GuideBook._num(EliteAffixes.KONGO_REGEN)) \
@@ -551,7 +551,7 @@ func _test_realm() -> void:
 		var sky_prefix := "· " + _t("guide.stages.weather_line").split("%s")[0]
 		if precip != "" and not terrain.contains(sky_prefix):
 			bad.append("%s clima" % s["id"])
-	_ok(bad.is_empty(), "Guia Kakuriyo: nome, clima e perigo do otherworld de cada fase %s" % [bad])
+	_ok(bad.is_empty(), "Guia Kakuriyo: nome, clima e perigo do otherworld de cada fase %s", [bad])
 	var temple: Dictionary = (stages.filter(func(s: Dictionary) -> bool: return s["id"] == "temple")[0] as Dictionary)
 	_ok(not is_equal_approx(float(temple["hazard"]["interval"]), float(temple["otherworld"]["hazard"]["interval"]))
 			and terrain.contains(book.hazard_text(temple["otherworld"]["hazard"])),
@@ -595,25 +595,25 @@ func _test_tips() -> void:
 		for cat: String in groups["shown"]:
 			shown += (groups["shown"][cat] as Array).size()
 		_ok(shown + int(groups["hidden"]) + int(groups["other_platform"]) == catalog.size(),
-				"Guia dicas (%s): toda dica do catálogo aparece, fica guardada ou é da outra plataforma" % platform)
+				"Guia dicas (%s): toda dica do catálogo aparece, fica guardada ou é da outra plataforma", platform)
 		var text := chapter_text(book.chapter(&"tips"))
 		var missing: Array[String] = []
 		for cat: String in groups["shown"]:
 			for tip: Dictionary in groups["shown"][cat]:
 				if not text.contains(TipDeck.text(tip)):
 					missing.append(String(tip["id"]))
-		_ok(missing.is_empty(), "Guia dicas (%s): toda dica mostrada está no capítulo %s" % [platform, missing])
+		_ok(missing.is_empty(), "Guia dicas (%s): toda dica mostrada está no capítulo %s", [platform, missing])
 		var leak: Array[String] = []
 		for cat: String in groups["shown"]:
 			for tip: Dictionary in groups["shown"][cat]:
 				for w: StringName in DB.ids("weapons"):
 					if not Discovery.weapon_known(w) and TipDeck.text(tip).contains(TranslationServer.translate("weapon.%s.name" % w)):
 						leak.append("%s→%s" % [tip["id"], w])
-		_ok(leak.is_empty(), "Guia dicas (%s, save novo): nenhuma cita evolução não vista %s" % [platform, leak])
+		_ok(leak.is_empty(), "Guia dicas (%s, save novo): nenhuma cita evolução não vista %s", [platform, leak])
 		var backup_shown := (groups["shown"] as Dictionary).has("backup")
-		_ok(backup_shown == (platform == "android"), "Guia dicas: Backup só no Android (%s)" % platform)
+		_ok(backup_shown == (platform == "android"), "Guia dicas: Backup só no Android (%s)", platform)
 		_ok(int(groups["hidden"]) > 0 and text.contains(TranslationServer.translate("guide.tips.hidden") % groups["hidden"]),
-				"Guia dicas (%s, save novo): dicas com spoiler guardadas e contadas (%d)" % [platform, groups["hidden"]])
+				"Guia dicas (%s, save novo): dicas com spoiler guardadas e contadas (%d)", [platform, groups["hidden"]])
 	SaveManager.data = SaveManager.default_profile()
 	full_profile()
 	var book := GuideBook.new()
@@ -701,7 +701,7 @@ func run(host: Node, check: Callable) -> void:
 		await host.get_tree().process_frame
 	var tips_blocks := (page.chapter()["blocks"] as Array).size()
 	_ok(sync_children <= GuidePage.SYNC_BLOCKS and page.is_complete() and page.get_child_count() == tips_blocks,
-			"Guia: capítulo longo monta aos poucos e termina sozinho (%d na hora, %d no fim)" % [sync_children, tips_blocks])
+			"Guia: capítulo longo monta aos poucos e termina sozinho (%d na hora, %d no fim)", [sync_children, tips_blocks])
 	# Chips da página: textos ricos com imagens, sem nada redesenhando por quadro.
 	for i: int in GuideBook.CHAPTERS.size():
 		screen.call("open_entry", i)
@@ -709,7 +709,7 @@ func run(host: Node, check: Callable) -> void:
 		var procs := 0
 		for node: Node in page.find_children("*", "", true, false):
 			procs += int(node.is_processing())
-		_ok(procs == 0, "Guia: capítulo %d sem _process (página estática)" % (i + 1))
+		_ok(procs == 0, "Guia: capítulo %d sem _process (página estática)", (i + 1))
 	layout.close_screen(screen)
 	await host.get_tree().process_frame
 	SaveManager.data = original
@@ -736,7 +736,7 @@ func check_layout(layout: MenusLayout, host: Node, screen: Control, view: Vector
 		layout.check_common(screen, view, st)
 		var clip := scroll.get_global_rect().intersection(area)
 		var page := screen.call("guide_page") as GuidePage
-		_ok(page.get_child_count() > 0, "%s: página com conteúdo" % st)
+		_ok(page.get_child_count() > 0, "%s: página com conteúdo", st)
 		var bad: Array[String] = []
 		for node: Node in page.find_children("*", "RichTextLabel", true, false):
 			var rtl := node as RichTextLabel
@@ -751,9 +751,9 @@ func check_layout(layout: MenusLayout, host: Node, screen: Control, view: Vector
 			var r := (node as Control).get_global_rect()
 			if r.position.x < clip.position.x - 0.5 or r.end.x > clip.end.x + 0.5:
 				bad.append("dica fora %s" % r)
-		_ok(bad.is_empty(), "%s: textos e dicas inteiros na página %s" % [st, bad.slice(0, 3)])
+		_ok(bad.is_empty(), "%s: textos e dicas inteiros na página %s", [st, bad.slice(0, 3)])
 		var row := rows[i] as Control
 		var grid_clip := (screen.get("_grid_scroll") as Control).get_global_rect()
 		var rr := row.get_global_rect()
 		_ok(rr.position.x >= grid_clip.position.x - 0.5 and rr.end.x <= grid_clip.end.x + 0.5
-				and row.size.y >= 24.0, "%s: cartão do capítulo na página esquerda" % st)
+				and row.size.y >= 24.0, "%s: cartão do capítulo na página esquerda", st)

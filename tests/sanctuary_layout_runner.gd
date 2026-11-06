@@ -11,6 +11,8 @@ const DeviceProfiles := preload("res://tests/device_profiles.gd")
 
 var _count: int = 0
 var _failures: int = 0
+## Lista também as verificações que passaram (-- --verbose).
+var _verbose: bool = "--verbose" in OS.get_cmdline_user_args()
 var _real_files: Dictionary = {}
 
 
@@ -35,18 +37,19 @@ func _ready() -> void:
 			DirAccess.remove_absolute(path)
 	for path: String in _real_files:
 		var now := FileAccess.get_md5(path) if FileAccess.file_exists(path) else ""
-		_check(now == _real_files[path], "testes não mexeram em %s do jogador" % path)
+		_check(now == _real_files[path], "testes não mexeram em %s do jogador", path)
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
 
 
-func _check(condition: bool, label: String) -> void:
+## `args` (opcional): valores do rótulo, que só é formatado (`label % args`) na falha ou com --verbose.
+func _check(condition: bool, label: String, args: Variant = null) -> void:
 	_count += 1
 	if not condition:
 		_failures += 1
-		printerr("FALHOU: " + label)
-	elif "--verbose" in OS.get_cmdline_user_args():
-		print("ok: " + label)
+		printerr("FALHOU: " + (label if args == null else label % args))
+	elif _verbose:
+		print("ok: " + (label if args == null else label % args))
 
 
 ## Capturas: o perfil dos testes (comprável, sem ryō e no máximo) com um item selecionado.

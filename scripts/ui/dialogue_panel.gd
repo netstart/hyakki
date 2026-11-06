@@ -219,7 +219,7 @@ func open(lines: Array[Dictionary]) -> void:
 		return
 	_lines = lines.duplicate()
 	_open = true
-	_opened_at = Time.get_ticks_msec()
+	_opened_at = UiClock.msec()
 	visible = true
 	modulate.a = 1.0
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -275,7 +275,7 @@ func bot_finish() -> void:
 func advance() -> void:
 	if not _open:
 		return
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if now - _opened_at < LOCK_MS or now - _line_at < LINE_LOCK_MS:
 		return
 	if _text.visible_characters >= 0 and _text.visible_characters < _text.get_total_character_count():
@@ -342,7 +342,7 @@ func _show_line(index: int) -> void:
 		_finish()
 		return
 	_index = index
-	_line_at = Time.get_ticks_msec()
+	_line_at = UiClock.msec()
 	var line := _lines[index]
 	_side = String(line.get("side", "left"))
 	_name = tr(DialogueScript.name_key(line))

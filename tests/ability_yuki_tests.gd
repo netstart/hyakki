@@ -55,12 +55,12 @@ func _check_claw(game: HyakkiGame) -> void:
 	_check.call(game.player.is_dashing() and game.player.invuln > 0.0, "Garra Oni: salto invencível")
 	_t._tick(game, 12)
 	_check.call(game.player.sim_pos.x > 55.0 and game.player.sim_pos.x < 70.0,
-			"Garra Oni: salta até o inimigo mais próximo sem passar dele (x=%.1f)" % game.player.sim_pos.x)
+			"Garra Oni: salta até o inimigo mais próximo sem passar dele (x=%.1f)", game.player.sim_pos.x)
 	_t._tick(game, 30)
 	var claws := 3.0 * 30.0 * _scale(game)
 	_check.call(absf(_t._lost(game, target) - claws) < 0.01,
-			"Garra Oni: 3 garradas de 30 (%.1f de %.1f)" % [_t._lost(game, target), claws])
-	_check.call(_t._lost(game, off) == 0.0, "Garra Oni: só em volta dela (%.1f)" % _t._lost(game, off))
+			"Garra Oni: 3 garradas de 30 (%.1f de %.1f)", [_t._lost(game, target), claws])
+	_check.call(_t._lost(game, off) == 0.0, "Garra Oni: só em volta dela (%.1f)", _t._lost(game, off))
 	_check.call(yuki._gashes.size() == 3, "Garra Oni: três cortes no chão")
 	_t._tick(game, 120)
 	_check.call(not yuki.has_visuals(), "Garra Oni: cortes e rastro somem")
@@ -87,7 +87,7 @@ func _check_roar(game: HyakkiGame) -> void:
 	var d0 := enemies.pos[near].length()
 	_t._tick(game, 60)
 	_check.call(enemies.pos[near].length() > d0 + 20.0,
-			"Rugido: com medo, foge dela (%.1f → %.1f)" % [d0, enemies.pos[near].length()])
+			"Rugido: com medo, foge dela (%.1f → %.1f)", [d0, enemies.pos[near].length()])
 	_t._tick(game, 120)
 	_check.call(enemies.fear[near] <= 0.0, "Rugido: o medo acaba")
 
@@ -113,11 +113,11 @@ func _check_whirl(game: HyakkiGame) -> void:
 	var all_hit := true
 	for i: int in ring:
 		all_hit = all_hit and absf(_t._lost(game, i) - each) < 0.05
-	_check.call(all_hit, "Redemoinho: 12 golpes de 22 em 2 s (%.1f de %.1f)" % [_t._lost(game, ring[0]), each])
+	_check.call(all_hit, "Redemoinho: 12 golpes de 22 em 2 s (%.1f de %.1f)", [_t._lost(game, ring[0]), each])
 	var regen := player.stats.get_stat("regen") * 2.2
 	var healed := player.hp - hp
 	_check.call(healed >= 30.0 - 0.01 and healed <= 30.0 + regen + 0.01,
-			"Redemoinho: rouba vida até o teto de 30 (%.1f)" % healed)
+			"Redemoinho: rouba vida até o teto de 30 (%.1f)", healed)
 	_check.call(_t._lost(game, ring[0]) * 4.0 * 0.1 > 30.0, "Redemoinho: o teto limitou o roubo")
 	_check.call(yuki._whirl_time <= 0.0 and is_equal_approx(player.stats.get_stat("speed"), speed),
 			"Redemoinho: acaba e a velocidade volta")
@@ -132,7 +132,7 @@ func _check_blood(game: HyakkiGame) -> void:
 	var hp := player.hp
 	_check.call(ab.activate(0), "Preço de sangue: sem energia, paga com vida")
 	_check.call(is_equal_approx(ab.last_hp_price, 12.5) and is_equal_approx(player.hp, hp - 12.5),
-			"Preço de sangue: 1 de vida por 2 de energia (%.1f)" % ab.last_hp_price)
+			"Preço de sangue: 1 de vida por 2 de energia (%.1f)", ab.last_hp_price)
 	var number := game.fx.last_number()
 	_check.call(not number.is_empty() and int(number.get("kind", -1)) == DamagePalette.Kind.TAKEN,
 			"Preço de sangue: número vermelho da vida perdida")
@@ -188,7 +188,7 @@ func _check_bot(host: Node) -> void:
 			game._on_tick(AbilityTests.DT)
 		summaries.append(game.state_summary("BOT"))
 		uses.append(str(Array(game.abilities.uses_by_slot)))
-		_check.call(game.abilities.uses > 0, "Yuki: bot usa as habilidades (%s)" % uses[-1])
+		_check.call(game.abilities.uses > 0, "Yuki: bot usa as habilidades (%s)", uses[-1])
 		game.queue_free()
 		await host.get_tree().process_frame
 	GfxQuality.clear_override()

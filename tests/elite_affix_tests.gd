@@ -38,7 +38,7 @@ func run_unit(check: Callable) -> void:
 		for pair: Array in EliteAffixes.FORBIDDEN:
 			ok = ok and not (list.has(pair[0]) and list.has(pair[1]))
 	_check.call(ok, "afixo: sorteio sem repetir e sem par proibido")
-	_check.call(seen.size() == EliteAffixes.IDS.size(), "afixo: os 8 afixos saem (%d)" % seen.size())
+	_check.call(seen.size() == EliteAffixes.IDS.size(), "afixo: os 8 afixos saem (%d)", seen.size())
 	var again := RandomNumberGenerator.new()
 	again.seed = 5
 	var other := RandomNumberGenerator.new()
@@ -129,11 +129,11 @@ func _test_affix(id: StringName) -> void:
 			for _s: int in 40:
 				_tick(game, 6, me)
 				marks = maxi(marks, _telegraphs(game, src, EliteAffixes.RAIJIN_RADIUS))
-			_check.call(marks == EliteAffixes.RAIJIN_MARKS, "%s %d raios marcados perto da guardiã" % [label, marks])
+			_check.call(marks == EliteAffixes.RAIJIN_MARKS, "%s %d raios marcados perto da guardiã", [label, marks])
 		&"kitsunebi":
 			var before := game.enemy_shots.count_alive
 			_tick(game, roundi((EliteAffixes.FIRST_CAST + 0.1) / STEP), me)
-			_check.call(game.enemy_shots.count_alive >= before + EliteAffixes.FOX_COUNT, "%s leque de fogos-fátuos" % label)
+			_check.call(game.enemy_shots.count_alive >= before + EliteAffixes.FOX_COUNT, "%s leque de fogos-fátuos", label)
 		&"kagero":
 			var moved := false
 			for _s: int in 60:
@@ -141,7 +141,7 @@ func _test_affix(id: StringName) -> void:
 				if enemies.alive[i] == 1 and absf(enemies.pos[i].distance_to(me) - EliteAffixes.KAGERO_BEHIND) < 12.0:
 					moved = true
 					break
-			_check.call(moved, "%s reaparece atrás da guardiã" % label)
+			_check.call(moved, "%s reaparece atrás da guardiã", label)
 		&"iwa":
 			var ring := 0
 			var held := false
@@ -149,25 +149,25 @@ func _test_affix(id: StringName) -> void:
 				_tick(game, 6, me)
 				ring = maxi(ring, _telegraphs(game, src, EliteAffixes.IWA_RADIUS))
 				held = held or enemies.controlled[i] == 1
-			_check.call(ring > 0 and held, "%s para e bate no chão com aviso em anel" % label)
+			_check.call(ring > 0 and held, "%s para e bate no chão com aviso em anel", label)
 		&"kasumi":
 			var common := enemies.count_common
 			_tick(game, roundi(30.0 / STEP), me + Vector2(-120, 0))
 			var minions := (game.altars.affixes.record(i)["minions"] as Array).size()
 			_check.call(enemies.count_common > common and minions <= EliteAffixes.KASUMI_CAP and minions > 0,
-					"%s lacaios com teto (%d)" % [label, minions])
+					"%s lacaios com teto (%d)", [label, minions])
 		&"kongo":
 			var full := enemies.shield[i]
 			_check.call(full > 0.0 and is_equal_approx(full, enemies.max_hp[i] * EliteAffixes.SHIELD_FRACTION),
-					"%s escudo cheio" % label)
+					"%s escudo cheio", label)
 			var hp := enemies.hp[i]
 			game.deal_damage(&"katana", i, full * 0.5, Vector2.RIGHT, 0.0)
-			_check.call(is_equal_approx(enemies.hp[i], hp) and enemies.shield[i] < full, "%s escudo absorve o golpe" % label)
+			_check.call(is_equal_approx(enemies.hp[i], hp) and enemies.shield[i] < full, "%s escudo absorve o golpe", label)
 			game.deal_damage(&"katana", i, full, Vector2.RIGHT, 0.0)
-			_check.call(enemies.shield[i] <= 0.0 and enemies.hp[i] < hp, "%s escudo quebra e o resto passa" % label)
+			_check.call(enemies.shield[i] <= 0.0 and enemies.hp[i] < hp, "%s escudo quebra e o resto passa", label)
 			_tick(game, roundi((EliteAffixes.KONGO_REGEN + 0.2) / STEP), me + Vector2(-200, 0))
 			_check.call(is_equal_approx(enemies.shield[i], full),
-					"%s escudo volta depois de %.0f s" % [label, EliteAffixes.KONGO_REGEN])
+					"%s escudo volta depois de %.0f s", [label, EliteAffixes.KONGO_REGEN])
 		&"yomi":
 			var pools := 0
 			for _s: int in 30:
@@ -175,7 +175,7 @@ func _test_affix(id: StringName) -> void:
 				pools = 0
 				for e: Dictionary in game.areas.effects:
 					pools += 1 if int(e["kind"]) == AreaEffects.Kind.HAZARD_POOL else 0
-			_check.call(pools >= 2, "%s poças de miasma pelo caminho (%d)" % [label, pools])
+			_check.call(pools >= 2, "%s poças de miasma pelo caminho (%d)", [label, pools])
 		&"kaze":
 			var start := enemies.pos[i]
 			var dashed := 0.0
@@ -186,8 +186,8 @@ func _test_affix(id: StringName) -> void:
 				warned = warned or (not rec.is_empty() and (rec["line"] as Array).size() == 2)
 				dashed = maxf(dashed, enemies.vel[i].length())
 			_check.call(warned and dashed >= EliteAffixes.KAZE_SPEED * 0.9 and enemies.pos[i] != start,
-					"%s investida com aviso em linha (%s, %.0f px/s)" % [label, warned, dashed])
-	_check.call(game.altars.affixes.hash_tag().contains(String(id)), "%s entra no hash" % label)
+					"%s investida com aviso em linha (%s, %.0f px/s)", [label, warned, dashed])
+	_check.call(game.altars.affixes.hash_tag().contains(String(id)), "%s entra no hash", label)
 	await _free(game)
 
 
@@ -208,7 +208,7 @@ func _test_names() -> void:
 	var name := EliteAffixes.elite_name(&"kappa_young", [&"raijin", &"kagero"])
 	var enemy := TranslationServer.translate("enemy.kappa_young.name")
 	_check.call(name.contains(enemy) and name.contains(TranslationServer.translate("elite.affix.raijin"))
-			and name.contains(" · " + TranslationServer.translate("elite.affix.kagero")), "afixo: nome \"%s\"" % name)
+			and name.contains(" · " + TranslationServer.translate("elite.affix.kagero")), "afixo: nome \"%s\"", name)
 	_check.call(EliteAffixes.elite_name(&"kappa_young", []) == enemy, "afixo: sem afixo, só o nome do inimigo")
 
 

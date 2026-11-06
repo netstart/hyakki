@@ -83,11 +83,11 @@ func _done(id: String) -> bool:
 func _test_data() -> void:
 	var ach := DB.ids("achievements")
 	var missions := DB.ids("missions")
-	_check.call(ach.size() == 41, "missões: as 41 conquistas de sempre continuam (%d)" % ach.size())
-	_check.call(missions.size() >= 110, "missões: ao menos 110 missões novas (%d)" % missions.size())
-	_check.call(MissionBook.ids().size() >= 150, "missões: ~150 no total (%d)" % MissionBook.ids().size())
+	_check.call(ach.size() == 41, "missões: as 41 conquistas de sempre continuam (%d)", ach.size())
+	_check.call(missions.size() >= 110, "missões: ao menos 110 missões novas (%d)", missions.size())
+	_check.call(MissionBook.ids().size() >= 150, "missões: ~150 no total (%d)", MissionBook.ids().size())
 	for id: StringName in [&"ach_first_steps", &"ach_win_village", &"ach_boss_red_oni", &"ach_win_moon5"]:
-		_check.call(DB.achievements.has(id), "missões: conquista antiga %s mantida" % id)
+		_check.call(DB.achievements.has(id), "missões: conquista antiga %s mantida", id)
 	_check.call(String(DB.achievements[&"ach_win_village"]["reward"]) == "stage:bamboo,hero:hana"
 			and String(DB.achievements[&"ach_survive_10"]["reward"]) == "hero:kenta"
 			and String(DB.achievements[&"ach_win_moon5"]["reward"]) == "ryo:3000,cosmetic:crimson_lantern",
@@ -96,29 +96,29 @@ func _test_data() -> void:
 	for id: StringName in MissionBook.ids():
 		var cat := MissionBook.category(id)
 		per_cat[cat] = int(per_cat.get(cat, 0)) + 1
-		_check.call(MissionBook.CATEGORIES.has(cat), "missão %s: categoria conhecida (%s)" % [id, cat])
+		_check.call(MissionBook.CATEGORIES.has(cat), "missão %s: categoria conhecida (%s)", [id, cat])
 		_check.call(MissionBook.icon(id) != "" and ResourceLoader.exists(MissionBook.icon(id)),
-				"missão %s: ícone existe (%s)" % [id, MissionBook.icon(id)])
-		_check.call(MissionBook.raw_progress(id).y > 0.0, "missão %s: alvo positivo" % id)
+				"missão %s: ícone existe (%s)", [id, MissionBook.icon(id)])
+		_check.call(MissionBook.raw_progress(id).y > 0.0, "missão %s: alvo positivo", id)
 	for cat: StringName in MissionBook.CATEGORIES:
-		_check.call(int(per_cat.get(cat, 0)) >= 4, "missões: categoria %s com ao menos 4 (%d)" % [cat,
+		_check.call(int(per_cat.get(cat, 0)) >= 4, "missões: categoria %s com ao menos 4 (%d)", [cat,
 				int(per_cat.get(cat, 0))])
 	for id: StringName in missions:
-		_check.call(not DB.achievements.has(id), "missão %s: id não repete uma conquista" % id)
+		_check.call(not DB.achievements.has(id), "missão %s: id não repete uma conquista", id)
 		var c := MissionBook.condition(id)
-		_check.call(_refs_exist(c), "missão %s: referências existem (%s)" % [id, c])
+		_check.call(_refs_exist(c), "missão %s: referências existem (%s)", [id, c])
 		for part: String in String(MissionBook.data(id)["reward"]).split(",", false):
 			var kv := part.split(":")
-			_check.call(kv.size() == 2 and KNOWN_REWARDS.has(kv[0]), "missão %s: recompensa conhecida %s" % [id, part])
+			_check.call(kv.size() == 2 and KNOWN_REWARDS.has(kv[0]), "missão %s: recompensa conhecida %s", [id, part])
 			if kv[0] == "ryo":
-				_check.call(kv[1].to_int() >= 100, "missão %s: ryō ≥ 100" % id)
+				_check.call(kv[1].to_int() >= 100, "missão %s: ryō ≥ 100", id)
 			elif kv[0] == "cosmetic":
-				_check.call(COSMETICS.has(kv[1]), "missão %s: lanterna existe %s" % [id, kv[1]])
+				_check.call(COSMETICS.has(kv[1]), "missão %s: lanterna existe %s", [id, kv[1]])
 			elif kv[0] == "next_run":
 				_check.call(DB.shop.has(StringName(kv[1])) and String(DB.shop[StringName(kv[1])]["reward"]) == "next_run",
-						"missão %s: reforço da Loja existe %s" % [id, kv[1]])
+						"missão %s: reforço da Loja existe %s", [id, kv[1]])
 		# Sem missão impossível de registrar: toda condição nova tem recorde no perfil.
-		_check.call(_tracked(c), "missão %s: condição %s registrada pelo perfil" % [id, c["type"]])
+		_check.call(_tracked(c), "missão %s: condição %s registrada pelo perfil", [id, c["type"]])
 
 
 static func _refs_exist(c: Dictionary) -> bool:
@@ -163,9 +163,9 @@ func _test_texts() -> void:
 			for part: Dictionary in MissionBook.reward_parts(id):
 				if String(part["text"]).contains(".") and not String(part["text"]).contains(" "):
 					raw.append("%s recompensa: %s" % [id, part["text"]])
-		_check.call(raw.is_empty(), "missões [%s]: textos montados (%s)" % [lang, raw.slice(0, 3)])
+		_check.call(raw.is_empty(), "missões [%s]: textos montados (%s)", [lang, raw.slice(0, 3)])
 		_check.call(TranslationServer.translate("codex.achievements") != "codex.achievements",
-				"missões [%s]: marcador do Diário traduzido" % lang)
+				"missões [%s]: marcador do Diário traduzido", lang)
 	Locale.set_language("pt_BR", false)
 	var village := TranslationServer.translate("stage.village.name")
 	_check.call(MissionBook.title(&"m_moon3_village") == "%s · Lua III" % village,
@@ -366,13 +366,13 @@ func _test_altars() -> void:
 	var rec := MissionBook.records()
 	_check.call(int(rec["altars"]) == 2 and int(rec["altars_run"]) == 2 and int(rec["altar_elites"]) == 1
 			and int(rec["elite_affix_max"]) == 2 and (rec["elite_affixes"] as Array) == ["raijin", "kaze"],
-			"altares: partida gravada no perfil (%s)" % [rec])
+			"altares: partida gravada no perfil (%s)", [rec])
 	_check.call(_done("m_altars_1") and _done("m_elites_1") and not _done("m_altars_10")
 			and not _done("m_altars_run_3") and not _done("m_elite_affix_3"),
 			"altares: 1º selo e 1º Elite concluídos, os outros abertos")
 	_check.call(MissionBook.progress(&"m_altars_10") == Vector2(2, 10)
 			and MissionBook.progress(&"m_elite_all_affixes") == Vector2(2, EliteAffixes.IDS.size()),
-			"altares: progresso 2/10 nos selos e 2/%d na coleção" % EliteAffixes.IDS.size())
+			"altares: progresso 2/10 nos selos e 2/%d na coleção", EliteAffixes.IDS.size())
 	# Três selos numa partida e um Elite com 3 afixos; afixo repetido não conta duas vezes.
 	t = RunTracker.new()
 	for i: int in 3:
@@ -394,7 +394,7 @@ func _test_altars() -> void:
 		t.on_elite_slain([EliteAffixes.IDS[i % EliteAffixes.IDS.size()]])
 	got = _play(_result(), t)
 	for id: StringName in [&"m_altars_10", &"m_altars_50", &"m_elites_10", &"m_elites_50", &"m_elite_all_affixes"]:
-		_check.call(got.has(id), "altares: %s concluída pelas somas" % id)
+		_check.call(got.has(id), "altares: %s concluída pelas somas", id)
 	_check.call(int(rec["altar_elites"]) == 50 and (rec["elite_affixes"] as Array).size() == EliteAffixes.IDS.size(),
 			"altares: 50 Elites e a coleção completa")
 	# Categoria própria, com os 9 e os textos com números.
@@ -433,14 +433,14 @@ func _test_rewards() -> void:
 	var t := RunTracker.new()
 	t.kami.append(&"inari")
 	_play(_result({"victory": false}), t)
-	_check.call(SaveManager.ryo() == 150, "recompensa: 150 ryō do pacto de Inari (%d)" % SaveManager.ryo())
+	_check.call(SaveManager.ryo() == 150, "recompensa: 150 ryō do pacto de Inari (%d)", SaveManager.ryo())
 	MissionBook.check_missions(false)
 	_check.call(SaveManager.ryo() == 150, "recompensa: dada uma vez só")
 	var t2 := RunTracker.new()
 	t2.evolutions.append(&"dawn_blade")
 	_play(_result({"victory": false}), t2)
 	_check.call(bool((SaveManager.data["shop"]["next_run"] as Dictionary).get("slot_embers", false))
-			and SaveManager.ryo() == 150 + 250, "recompensa: evolução inicial dá ryō e as Brasas Vivas (%d)" % SaveManager.ryo())
+			and SaveManager.ryo() == 150 + 250, "recompensa: evolução inicial dá ryō e as Brasas Vivas (%d)", SaveManager.ryo())
 	var bonus := ShopManager.take_next_run_bonuses()
 	_check.call(float((bonus["modifiers"] as Dictionary).get("growth", 0.0)) > 0.0, "recompensa: reforço entra na partida")
 	MetaProgress.grant("next_run:slot_chest", false)
@@ -503,7 +503,7 @@ func _test_migration() -> void:
 	SaveManager.load_profile()
 	var done: Dictionary = SaveManager.data["achievements"]
 	for id: String in ["m_win_aki", "m_win_hana", "m_moon1_village", "m_boss_onikuma", "m_evo_dawn_blade"]:
-		_check.call(done.has(id), "save antigo: %s conferida ao carregar" % id)
+		_check.call(done.has(id), "save antigo: %s conferida ao carregar", id)
 	_check.call(not done.has("m_moon3_village") and not done.has("m_noheal_village"),
 			"save antigo: o que não dá para saber fica aberto")
 	var ryo := SaveManager.ryo()
@@ -512,7 +512,7 @@ func _test_migration() -> void:
 		if not DB.achievements.has(StringName(id)):
 			for part: Dictionary in MissionBook.reward_parts(StringName(id)):
 				paid += int(part["amount"])
-	_check.call(ryo == paid and ryo > 100 + 400 * 2, "save antigo: recompensas das missões cumpridas (%d)" % ryo)
+	_check.call(ryo == paid and ryo > 100 + 400 * 2, "save antigo: recompensas das missões cumpridas (%d)", ryo)
 	_check.call(bool(MissionBook.records()["synced"]) and done.has("ach_win_village"),
 			"save antigo: conferido e conquista mantida")
 	SaveManager.save_profile()
@@ -528,12 +528,12 @@ func _test_next_goals() -> void:
 	stats["kills"] = 950
 	var goals := MissionBook.next_goals()
 	_check.call(goals.size() == 3 and goals == MissionBook.next_goals(), "metas: 3 e determinísticas")
-	_check.call(goals[0] == &"ach_kills_1000", "metas: a mais perto primeiro (950/1000 abates): %s" % [goals])
+	_check.call(goals[0] == &"ach_kills_1000", "metas: a mais perto primeiro (950/1000 abates): %s", [goals])
 	var cats := {}
 	for id: StringName in goals:
 		cats[MissionBook.category(id)] = true
-		_check.call(not MissionBook.is_done(id) and MissionBook.is_available(id), "metas: %s aberta e liberada" % id)
-	_check.call(cats.size() == 3, "metas: categorias variadas (%s)" % [goals])
+		_check.call(not MissionBook.is_done(id) and MissionBook.is_available(id), "metas: %s aberta e liberada", id)
+	_check.call(cats.size() == 3, "metas: categorias variadas (%s)", [goals])
 	_check.call(not MissionBook.is_available(&"m_noheal_temple") and not MissionBook.is_available(&"m_moon1_bamboo")
 			and not MissionBook.is_available(&"m_boss_onmoraki"), "metas: fase bloqueada (e o chefe dela) fica de fora")
 	SaveManager.data["unlocked"]["heroes"] = ["aki"]
@@ -560,7 +560,7 @@ func _test_goals_delta() -> void:
 	var applied := MetaProgress.apply_run(_result({"victory": false, "time": 30.0}), t)
 	var goals: Array = applied["goals"]
 	var kills: Array = goals.filter(func(g: Dictionary) -> bool: return g["id"] == "ach_kills_1000")
-	_check.call(goals.size() == 3 and kills.size() == 1, "metas: apply_run devolve as 3 metas (%s)" % [goals])
+	_check.call(goals.size() == 3 and kills.size() == 1, "metas: apply_run devolve as 3 metas (%s)", [goals])
 	if kills.size() == 1:
 		_check.call(is_equal_approx(float(kills[0]["before"]), 900.0) and is_equal_approx(float(kills[0]["after"]), 960.0)
 				and is_equal_approx(float(kills[0]["target"]), 1000.0), "metas: antes 900, depois 960 de 1000")
@@ -607,7 +607,7 @@ func _test_bot_run() -> void:
 		_tick(game)
 	var kills := game.tracker.kills
 	var dark := game.tracker.dark_kills
-	_check.call(kills > 0 and dark <= kills, "bot: abates na partida (%d, %d fora da luz)" % [kills, dark])
+	_check.call(kills > 0 and dark <= kills, "bot: abates na partida (%d, %d fora da luz)", [kills, dark])
 	game.bosses.spawn(&"onikuma", false)
 	_tick(game)
 	_check.call(game.tracker.boss_fights.has(&"onikuma"), "bot: entrada do Guardião registrada")
@@ -627,8 +627,8 @@ func _test_bot_run() -> void:
 	if results.size() == 1:
 		var news: Array = results[0]["new_achievements"]
 		for id: StringName in [&"m_boss_onikuma", &"m_clean_onikuma", &"m_win_aki", &"ach_win_village"]:
-			_check.call(news.has(id), "bot: %s concluída no fim da partida" % id)
-		_check.call(news.has(&"m_noheal_village") != ate, "bot: sem onigiri só se não comeu (%s)" % ate)
+			_check.call(news.has(id), "bot: %s concluída no fim da partida", id)
+		_check.call(news.has(&"m_noheal_village") != ate, "bot: sem onigiri só se não comeu (%s)", ate)
 		_check.call((results[0]["goals"] as Array).size() == 3, "bot: 3 próximas metas no resultado")
 		_check.call(int(MissionBook.records()["dark_kills"]) == game.tracker.dark_kills
 				and int(MissionBook.records()["kills_run"]) == game.tracker.kills, "bot: recordes gravados no perfil")

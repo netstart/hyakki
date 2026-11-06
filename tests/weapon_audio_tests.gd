@@ -44,16 +44,16 @@ func _test_groups(check: Callable) -> void:
 	for group: String in ["katana", "ofuda_fan", "paper_flutter", "paper_fold", "arrow", "bow", "slash", "whoosh",
 			"shuriken_whirl", "kunai_throw", "bow_twang", "chain_rattle", "smoke_pop", "spirit_flame", "wind_gust",
 			"heavy_blade", "suzu", "draw_knife", "metal_light", "ult_burst"]:
-		check.call(AudioManager.VARIANTS.has(group), "grupo de som %s registrado" % group)
+		check.call(AudioManager.VARIANTS.has(group), "grupo de som %s registrado", group)
 		for file: String in AudioManager.VARIANTS.get(group, []):
-			check.call(AudioManager._sfx(file) is AudioStream, "som %s do grupo %s carrega" % [file, group])
+			check.call(AudioManager._sfx(file) is AudioStream, "som %s do grupo %s carrega", [file, group])
 	for weak: String in ["slash", "whoosh"]:
 		check.call(not (AudioManager.VARIANTS[weak] as Array).has(weak),
-				"grupo %s sem o arquivo fraco %s.wav" % [weak, weak])
+				"grupo %s sem o arquivo fraco %s.wav", [weak, weak])
 	for id: String in HIT_IDS:
-		check.call(AudioManager.is_hit(id), "%s é som de acerto" % id)
+		check.call(AudioManager.is_hit(id), "%s é som de acerto", id)
 	for id: String in OTHER_IDS + ["player_hurt", "alert"]:
-		check.call(not AudioManager.is_hit(id), "%s não é som de acerto" % id)
+		check.call(not AudioManager.is_hit(id), "%s não é som de acerto", id)
 	check.call(AudioManager.POOL_SIZE == 32, "pool de efeitos com 32 canais")
 
 
@@ -62,26 +62,26 @@ func _test_groups(check: Callable) -> void:
 func _test_cues(check: Callable) -> void:
 	for cue: String in WeaponSfx.CUES:
 		var layers := WeaponSfx.layers(cue)
-		check.call(not layers.is_empty(), "cue %s tem camadas" % cue)
+		check.call(not layers.is_empty(), "cue %s tem camadas", cue)
 		for layer: Array in layers:
 			var id := String(layer[0])
 			var file := String((AudioManager.VARIANTS[id] as Array)[0]) if AudioManager.VARIANTS.has(id) else id
-			check.call(AudioManager._sfx(file) is AudioStream, "cue %s: som %s existe" % [cue, id])
-			check.call(float(layer[3]) <= 0.0 and float(layer[3]) >= -24.0, "cue %s: volume de %s na mixagem" % [cue, id])
+			check.call(AudioManager._sfx(file) is AudioStream, "cue %s: som %s existe", [cue, id])
+			check.call(float(layer[3]) <= 0.0 and float(layer[3]) >= -24.0, "cue %s: volume de %s na mixagem", [cue, id])
 	var launch_ids := {}
 	for id: StringName in DB.ids("weapons"):
 		var data := DB.weapon(id)
 		var cue := WeaponSfx.launch_cue(data)
-		check.call(WeaponSfx.CUES.has(cue), "%s tem som de lançamento (%s)" % [id, cue])
-		check.call(HitSounds.MIX.has(HitSounds.for_weapon(data)), "%s tem som de impacto válido" % id)
+		check.call(WeaponSfx.CUES.has(cue), "%s tem som de lançamento (%s)", [id, cue])
+		check.call(HitSounds.MIX.has(HitSounds.for_weapon(data)), "%s tem som de impacto válido", id)
 		launch_ids[id] = cue
 	for id: StringName in DB.ids("weapons"):
 		var data := DB.weapon(id)
 		if String(data.get("kind", "")) == "evolution" and String(data.get("behavior", "")) != "onikiri":
 			check.call(launch_ids[id] != launch_ids[StringName(data.get("from", ""))],
-					"%s soa diferente da base" % id)
+					"%s soa diferente da base", id)
 	for type: String in UltimateSystem.ULT_COLORS:
-		check.call(WeaponSfx.CUES.has("ult_" + type), "golpe %s tem assinatura sonora" % type)
+		check.call(WeaponSfx.CUES.has("ult_" + type), "golpe %s tem assinatura sonora", type)
 	check.call(AudioManager.is_important("ult_burst") and not AudioManager.is_important("zap"),
 			"golpe da lanterna é som importante")
 	# Intervalo mínimo por cue: 100 pedidos no mesmo instante tocam uma vez.
@@ -90,7 +90,7 @@ func _test_cues(check: Callable) -> void:
 	for _k: int in range(100):
 		if WeaponSfx.play("shuriken"):
 			played += 1
-	check.call(played == 1, "cue de rajada toca 1 vez em 100 pedidos no mesmo instante (%d)" % played)
+	check.call(played == 1, "cue de rajada toca 1 vez em 100 pedidos no mesmo instante (%d)", played)
 	WeaponSfx.reset_gaps()
 
 
@@ -108,7 +108,7 @@ func _test_abilities(check: Callable) -> void:
 			count += 1
 			var cue := String(ability.get("sfx", ""))
 			check.call(cue == "ab_" + String(ability.get("id", "")) and WeaponSfx.CUES.has(cue),
-					"habilidade %s tem cue de lançamento (%s)" % [ability.get("id", "?"), cue])
+					"habilidade %s tem cue de lançamento (%s)", [ability.get("id", "?"), cue])
 			var signature := WeaponSfx.layers(cue).any(func(layer: Array) -> bool:
 				return String(layer[0]).begins_with("a_"))
 			var hit_signature := WeaponSfx.layers(cue + "_hit").any(func(layer: Array) -> bool:
@@ -116,20 +116,20 @@ func _test_abilities(check: Callable) -> void:
 			# Assinatura própria (a_*) no lançamento ou no impacto; as que não têm (Purificação,
 			# Passo Sombrio, Troca de Corpo) somam ao menos 3 grupos das armas.
 			check.call(signature or hit_signature or WeaponSfx.layers(cue).size() >= 3,
-					"%s tem assinatura em camadas" % cue)
+					"%s tem assinatura em camadas", cue)
 			var voice := String(ability.get("voice", ""))
 			var path := AudioManager.VOICE_DIR + voice + ".ogg"
-			check.call(AudioManager._sfx(path) is AudioStream, "voz %s carrega" % voice)
-			check.call(AudioManager.is_important(path), "voz %s é som importante" % voice)
+			check.call(AudioManager._sfx(path) is AudioStream, "voz %s carrega", voice)
+			check.call(AudioManager.is_important(path), "voz %s é som importante", voice)
 			var alt := AudioManager.VOICE_DIR + voice + "_b.ogg"
 			if ResourceLoader.exists(alt):
-				check.call(AudioManager._sfx(alt) is AudioStream, "variação %s_b carrega" % voice)
-	check.call(count == 21, "21 habilidades com som e voz (%d)" % count)
+				check.call(AudioManager._sfx(alt) is AudioStream, "variação %s_b carrega", voice)
+	check.call(count == 21, "21 habilidades com som e voz (%d)", count)
 	for cue: String in ["ab_denied", "ab_ready"]:
-		check.call(WeaponSfx.CUES.has(cue), "cue %s existe" % cue)
+		check.call(WeaponSfx.CUES.has(cue), "cue %s existe", cue)
 	for group: String in AudioManager.VARIANTS:
 		if group.begins_with("a_"):
-			check.call(AudioManager.is_important(group), "assinatura %s é som importante" % group)
+			check.call(AudioManager.is_important(group), "assinatura %s é som importante", group)
 	check.call(not AudioManager.is_important("achievement"), "prefixo a_ não pega outros sons")
 
 
@@ -141,10 +141,10 @@ func _test_voice_limits(check: Callable) -> void:
 		_play_now("shuriken_whirl")
 		_play_now(HIT_IDS[k % HIT_IDS.size()])
 	check.call(AudioManager.playing_count("shuriken_whirl") <= AudioManager.MAX_PER_SOUND,
-			"100 lançamentos: no máximo %d vozes do mesmo som" % AudioManager.MAX_PER_SOUND)
+			"100 lançamentos: no máximo %d vozes do mesmo som", AudioManager.MAX_PER_SOUND)
 	var active := AudioManager.active_sounds()
 	check.call(active.size() <= AudioManager.POOL_SIZE and _count_hits(active) <= AudioManager.MAX_HIT_PLAYERS,
-			"100 acertos: pool e cota de acertos respeitados (%d, %d)" % [active.size(), _count_hits(active)])
+			"100 acertos: pool e cota de acertos respeitados (%d, %d)", [active.size(), _count_hits(active)])
 	# Pool cheio de sons comuns (sem acertos): o golpe da lanterna rouba o mais antigo.
 	AudioManager.stop_sfx()
 	var k := 0
@@ -181,7 +181,7 @@ func _test_pool_priority(check: Callable) -> void:
 		_play_now(HIT_IDS[k % HIT_IDS.size()])
 	var active := AudioManager.active_sounds()
 	check.call(active.size() == AudioManager.MAX_HIT_PLAYERS,
-			"acertos ocupam no máximo %d canais (%d)" % [AudioManager.MAX_HIT_PLAYERS, active.size()])
+			"acertos ocupam no máximo %d canais (%d)", [AudioManager.MAX_HIT_PLAYERS, active.size()])
 	# Completa o pool com outros sons: cabem nos canais livres.
 	var k := 0
 	while AudioManager.active_sounds().size() < AudioManager.POOL_SIZE and k < 80:
@@ -202,12 +202,12 @@ func _test_pool_priority(check: Callable) -> void:
 	active = AudioManager.active_sounds()
 	check.call(active.has("katana"), "pool cheio de acertos: o som da arma ainda toca")
 	check.call(_count_hits(active) == hits_before - 1 and active.size() == AudioManager.POOL_SIZE,
-			"o som da arma rouba exatamente um acerto (%d -> %d)" % [hits_before, _count_hits(active)])
+			"o som da arma rouba exatamente um acerto (%d -> %d)", [hits_before, _count_hits(active)])
 	var counts := AudioManager.get("_playing_ids") as Dictionary
 	var total := 0
 	for id: String in counts:
 		total += int(counts[id])
-	check.call(total == AudioManager.POOL_SIZE, "contagem por id acompanha o roubo (%d)" % total)
+	check.call(total == AudioManager.POOL_SIZE, "contagem por id acompanha o roubo (%d)", total)
 	# Pool cheio só de outros sons: um acerto não rouba ninguém.
 	AudioManager.stop_sfx()
 	k = 0
@@ -281,7 +281,7 @@ func _test_ofuda(game: HyakkiGame, check: Callable) -> void:
 		steps += 1
 	var active_time := steps * DT
 	var heard := _requests("paper_flutter") - flutter
-	check.call(heard >= 2, "Ofuda farfalha enquanto gira (%d em %.1f s)" % [heard, active_time])
+	check.call(heard >= 2, "Ofuda farfalha enquanto gira (%d em %.1f s)", [heard, active_time])
 	check.call(heard <= ceili(active_time / Ofuda.FLUTTER_GAP) + 1, "farfalhar respeita o intervalo mínimo")
 	check.call(_requests("paper_fold") == fold + 1, "Ofuda: papel recolhendo ao sumir")
 	flutter = _requests("paper_flutter")
@@ -294,7 +294,7 @@ func _test_ofuda(game: HyakkiGame, check: Callable) -> void:
 	for _i: int in range(int(10.0 / DT)):
 		barrier.step(DT)
 	heard = _requests("paper_flutter") - flutter
-	check.call(heard >= 8, "Barreira de Amaterasu farfalha sem parar (%d em 10 s)" % heard)
+	check.call(heard >= 8, "Barreira de Amaterasu farfalha sem parar (%d em 10 s)", heard)
 	check.call(_requests("paper_fold") == fold + 1, "a Barreira permanente nunca recolhe")
 
 
@@ -314,11 +314,11 @@ func _test_every_weapon(game: HyakkiGame, check: Callable) -> void:
 		if game.enemies.alive[i] == 1:
 			game.enemies.spatial.insert(i, game.enemies.pos[i])
 	var ids := DB.ids("weapons")
-	check.call(ids.size() >= 30, "todas as armas do weapons.json entram no teste (%d)" % ids.size())
+	check.call(ids.size() >= 30, "todas as armas do weapons.json entram no teste (%d)", ids.size())
 	for id: StringName in ids:
 		var weapon := game._make_weapon(id)
 		if weapon == null:
-			check.call(false, "%s nasce com comportamento" % id)
+			check.call(false, "%s nasce com comportamento", id)
 			continue
 		WeaponSfx.reset_gaps()
 		var before := _weapon_requests()
@@ -326,8 +326,8 @@ func _test_every_weapon(game: HyakkiGame, check: Callable) -> void:
 		var own := _requests(first)
 		for _i: int in range(int(6.0 / DT)):
 			weapon.step(DT)
-		check.call(_weapon_requests() > before, "%s toca som próprio em 6 s" % id)
-		check.call(_requests(first) > own, "%s toca o lançamento (%s) em 6 s" % [id, first])
+		check.call(_weapon_requests() > before, "%s toca som próprio em 6 s", id)
+		check.call(_requests(first) > own, "%s toca o lançamento (%s) em 6 s", [id, first])
 		weapon.on_removed()
 	for j: int in targets:
 		if j >= 0 and game.enemies.alive[j] == 1:

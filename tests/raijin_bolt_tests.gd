@@ -23,7 +23,7 @@ func run(host: Node, check: Callable) -> void:
 	for id: StringName in [&"raijin", &"raijin_fury"]:
 		areas.reset()
 		var weapon := game._make_weapon(id)
-		check.call(weapon is Raijin, "%s nasce com o comportamento Raijin" % id)
+		check.call(weapon is Raijin, "%s nasce com o comportamento Raijin", id)
 		if not weapon is Raijin:
 			continue
 		var targets: Array[int] = []
@@ -34,11 +34,11 @@ func run(host: Node, check: Callable) -> void:
 			if game.enemies.alive[i] == 1:
 				game.enemies.spatial.insert(i, game.enemies.pos[i])
 		weapon.fire(origin)
-		check.call(not areas.bolts.is_empty(), "%s cria um raio visual" % id)
+		check.call(not areas.bolts.is_empty(), "%s cria um raio visual", id)
 		var tint := Color(String((DB.weapon(id)["fx"] as Dictionary)["color"]))
 		check.call((areas.bolts[0].get("tint", Color.BLACK) as Color).is_equal_approx(tint),
-				"%s: raio na cor da arma (Fúria roxa, mais forte)" % id)
-		check.call(game.fx.particles_alive() > 0, "%s: impacto do raio solta faíscas" % id)
+				"%s: raio na cor da arma (Fúria roxa, mais forte)", id)
+		check.call(game.fx.particles_alive() > 0, "%s: impacto do raio solta faíscas", id)
 		var sky := 0
 		var chain := 0
 		var variants_ok := true
@@ -50,15 +50,15 @@ func run(host: Node, check: Callable) -> void:
 				sky += 1
 			else:
 				chain += 1
-		check.call(sky >= 1, "%s: o raio cai do céu sobre o alvo" % id)
-		check.call(variants_ok, "%s: variante do raio entre 0 e 7" % id)
+		check.call(sky >= 1, "%s: o raio cai do céu sobre o alvo", id)
+		check.call(variants_ok, "%s: variante do raio entre 0 e 7", id)
 		if id == &"raijin_fury":
 			check.call(chain >= 1, "Fúria de Raijin estica o raio entre os alvos da corrente")
-		check.call(areas.bolts.size() <= AreaEffects.MAX_BOLTS, "%s: raios dentro do teto" % id)
+		check.call(areas.bolts.size() <= AreaEffects.MAX_BOLTS, "%s: raios dentro do teto", id)
 		areas.step(AreaEffects.BOLT_LIFE * 0.5)
-		check.call(not areas.bolts.is_empty(), "%s: o raio ainda aparece no meio da vida" % id)
+		check.call(not areas.bolts.is_empty(), "%s: o raio ainda aparece no meio da vida", id)
 		areas.step(AreaEffects.BOLT_LIFE)
-		check.call(areas.bolts.is_empty(), "%s: o raio expira" % id)
+		check.call(areas.bolts.is_empty(), "%s: o raio expira", id)
 		for j: int in targets:
 			if j >= 0:
 				game.enemies.despawn(j)

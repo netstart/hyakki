@@ -17,6 +17,8 @@ extends RefCounted
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "moon": 2, "mode": "normal", "seed": 5, "speed": 1}
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 const RewardFlightTests := preload("res://tests/reward_flight_tests.gd")
 const LevelRerollTests := preload("res://tests/level_reroll_tests.gd")
 ## Espera até o baú pousar e começar a tremer.
@@ -31,14 +33,18 @@ var _insets := Vector2.ZERO
 func run(host: Node, check: Callable) -> void:
 	_host = host
 	_check = check
-	_test_rules()
-	await _test_combo_ready()
-	await _test_level_flow()
-	await _test_chest_flow()
-	await _test_quality()
+	var rest := TestShards.runs_rest(&"LevelChestTests")
+	if rest:
+		_test_rules()
+		await _test_combo_ready()
+		await _test_level_flow()
+		await _test_chest_flow()
+		await _test_quality()
+		await _test_finish_intro()
 	await _test_layouts()
-	await RewardFlightTests.new().run(host, check)
-	await LevelRerollTests.new().run(host, check)
+	if rest:
+		await RewardFlightTests.new().run(host, check)
+		await LevelRerollTests.new().run(host, check)
 	GfxQuality.clear_override()
 	Locale.set_language("pt_BR", false)
 	GameClock.paused = true
@@ -107,7 +113,7 @@ static func sample_rewards(count: int) -> Array[Dictionary]:
 func _test_rules() -> void:
 	var bb := UiPaint.highlight_numbers("+5 dano, -8% recarga [x]")
 	_check.call(bb.contains("[color=#") and bb.contains("+5[/color]") and bb.contains("-8%[/color]")
-			and bb.contains("[lb]x]"), "números da melhoria destacados e colchetes escapados (%s)" % bb)
+			and bb.contains("[lb]x]"), "números da melhoria destacados e colchetes escapados (%s)", bb)
 	var cards := sample_cards()
 	var legend := LevelUpPanel.card_info(cards[0], null)
 	_check.call(int(legend["category"]) == LevelCard.Cat.LEGEND, "nível máximo com evolução = carta lendária")
@@ -138,16 +144,16 @@ func _test_combo_rules() -> void:
 	_check.call(sake.size() == 1 and String(sake[0]["label"]) == evolves
 			and _same(sake[0]["names"], [tr("weapon.katana.name")])
 			and (sake[0]["icons"] as Array).size() == 1 and (sake[0]["icons"] as Array)[0] != null
-			and not bool(sake[0]["ready"]), "relíquia sem a arma mostra a arma que evolui (%s)" % [sake])
+			and not bool(sake[0]["ready"]), "relíquia sem a arma mostra a arma que evolui (%s)", [sake])
 	# Relíquias que evoluem duas armas mostram as duas, na ordem dos dados.
 	for pair: Array in [[&"jade", &"smoke_bomb", &"kaminari"], [&"scroll", &"shuriken", &"inazuma"],
 			[&"noh_mask", &"hitodama", &"onikiri"]]:
 		var list := _combos({"kind": "passive", "id": pair[0], "level": 2})
 		var both := [tr("weapon.%s.name" % pair[1]), tr("weapon.%s.name" % pair[2])]
 		_check.call(list.size() == 1 and _same(list[0]["names"], both)
-				and (list[0]["icons"] as Array).size() == 2, "%s mostra as duas armas (%s)" % [pair[0], list])
+				and (list[0]["icons"] as Array).size() == 2, "%s mostra as duas armas (%s)", [pair[0], list])
 		_check.call(_same(LevelUpPanel.weapons_evolved_by(pair[0]), [pair[1], pair[2]]),
-				"%s evolui %s e %s" % pair)
+				"%s evolui %s e %s", pair)
 	# Arma com relíquia e união: "Evolui com" a relíquia e "Une com" a arma base parceira.
 	for pair: Array in [[&"katana", &"sake", &"kusarigama"], [&"kusarigama", &"sandals", &"katana"],
 			[&"raijin", &"rosary", &"fujin_fan"], [&"fujin_fan", &"kitsune_magnet", &"raijin"]]:
@@ -157,7 +163,7 @@ func _test_combo_rules() -> void:
 					and _same(list[0]["names"], [tr("passive.%s.name" % pair[1])])
 					and String(list[1]["label"]) == unites_with and _same(list[1]["names"], [tr("weapon.%s.name" % pair[2])])
 					and (list[1]["icons"] as Array)[0] != null,
-					"%s (%s): relíquia %s e união com %s (%s)" % [pair[0], kind, pair[1], pair[2], list])
+					"%s (%s): relíquia %s e união com %s (%s)", [pair[0], kind, pair[1], pair[2], list])
 	# Arma sem união: só a relíquia.
 	var shuriken := _combos({"kind": "weapon_new", "id": &"shuriken", "level": 1})
 	_check.call(shuriken.size() == 1 and _same(shuriken[0]["names"], [tr("passive.scroll.name")]),
@@ -172,11 +178,11 @@ func _test_combo_rules() -> void:
 	card.setup({"kind": "passive", "id": &"jade", "level": 1, "title": "x"},
 			LevelUpPanel.card_info({"kind": "passive", "id": &"jade", "level": 1}, null))
 	_check.call(card.footer_text() == "%s %s / %s" % [evolves, tr("weapon.smoke_bomb.name"), tr("weapon.kaminari.name")],
-			"rodapé da relíquia com as duas armas (%s)" % card.footer_text())
+			"rodapé da relíquia com as duas armas (%s)", card.footer_text())
 	card.setup({"kind": "weapon_new", "id": &"katana", "level": 1, "title": "x"},
 			LevelUpPanel.card_info({"kind": "weapon_new", "id": &"katana", "level": 1}, null))
 	_check.call(card.footer_text() == "%s %s\n%s %s" % [evolves_with, tr("passive.sake.name"), unites_with,
-			tr("weapon.kusarigama.name")], "rodapé da arma com relíquia e união (%s)" % card.footer_text())
+			tr("weapon.kusarigama.name")], "rodapé da arma com relíquia e união (%s)", card.footer_text())
 	card.free()
 
 
@@ -232,7 +238,7 @@ func _test_level_flow() -> void:
 	game.level_up.banishes = 1
 	game.call("_open_level_up")
 	_check.call(hud.level_up_open() and hud.overlay_open() and GameClock.paused, "nível novo abre e pausa a luta")
-	_check.call(hud.level_cards().size() >= 3, "três ou mais cartas (%d)" % hud.level_cards().size())
+	_check.call(hud.level_cards().size() >= 3, "três ou mais cartas (%d)", hud.level_cards().size())
 	var chosen := [-1, 0]
 	hud.card_chosen.connect(func(i: int) -> void:
 		chosen[0] = i
@@ -279,7 +285,7 @@ func _test_level_flow() -> void:
 	var flight := hud.reward_flight()
 	_check.call(panel.outro_playing() and flight.flyer_count() == 1, "o ícone da carta escolhida voa até a guardiã")
 	var slot := hud.skill_slot(data)
-	_check.call(slot.y < 80.0, "encaixe da carta na barra do topo (%s)" % slot)
+	_check.call(slot.y < 80.0, "encaixe da carta na barra do topo (%s)", slot)
 	await _seconds(1.2)
 	_check.call(not panel.visible and not flight.active() and flight.landed_count() >= 1,
 			"a tela some sozinha e o ícone chega ao fim da saída")
@@ -314,9 +320,9 @@ func _test_chest_flow() -> void:
 			"explosão não pega toques nem ocupa espaço")
 	for count: int in [1, 3, 5]:
 		hud.show_chest(sample_rewards(count))
-		_check.call(panel.lines_total() == count + 1, "baú de %d: %d cartões + ryō" % [count, count])
+		_check.call(panel.lines_total() == count + 1, "baú de %d: %d cartões + ryō", [count, count])
 		var expected: Color = ChestPanel.RARITIES[0 if count >= 5 else (1 if count >= 3 else 2)][1]
-		_check.call(panel.rarity_color() == expected, "baú de %d: cor da raridade" % count)
+		_check.call(panel.rarity_color() == expected, "baú de %d: cor da raridade", count)
 		hud.call("_chest_skip")
 	var closed := [0]
 	hud.chest_closed.connect(func() -> void: closed[0] += 1)
@@ -342,7 +348,7 @@ func _test_chest_flow() -> void:
 			"explosão some sozinha sem esperar os itens")
 	_check.call(await _wait(func() -> bool: return not hud.chest_animating(), 7.0), "fim natural")
 	_check.call(hud.chest_lines_shown() == hud.chest_lines_total() and panel.ryo_shown() == panel.ryo_total()
-			and panel.ryo_total() == 30, "todos os cartões e o ryō completo (%d)" % panel.ryo_shown())
+			and panel.ryo_total() == 30, "todos os cartões e o ryō completo (%d)", panel.ryo_shown())
 	_check.call(panel.button().text == tr("chest.close"), "botão vira Continuar")
 	# Pular a qualquer momento, até na queda.
 	hud.show_chest(sample_rewards(5))
@@ -390,25 +396,25 @@ func _test_quality() -> void:
 		hud.show_chest(sample_rewards(5))
 		var panel := hud.chest_panel()
 		var name := GfxQuality.level_name(level)
-		_check.call(panel.fx_level() == GfxQuality.budget("ui_fx"), "%s: baú usa ui_fx" % name)
+		_check.call(panel.fx_level() == GfxQuality.budget("ui_fx"), "%s: baú usa ui_fx", name)
 		_check.call(panel.overlay().blur_on() == (level == GfxQuality.HIGH) or panel.overlay().power == 0.0,
-				"%s: desfoque só em Alta" % name)
+				"%s: desfoque só em Alta", name)
 		await _wait(hud.chest_burst_active, 5.0)
 		await _host.get_tree().process_frame
 		coins[level] = panel.coin_count()
-		_check.call(panel.overlay().blur_on() == (level == GfxQuality.HIGH), "%s: desfoque de tela cheia" % name)
-		_check.call(panel.coin_count() * 10 <= int(GfxQuality.budget("particles_max")), "%s: moedas no orçamento" % name)
+		_check.call(panel.overlay().blur_on() == (level == GfxQuality.HIGH), "%s: desfoque de tela cheia", name)
+		_check.call(panel.coin_count() * 10 <= int(GfxQuality.budget("particles_max")), "%s: moedas no orçamento", name)
 		hud.call("_chest_skip")
 		hud.chest_panel().button().pressed.emit()
 		game.call("_open_level_up")
 		await _seconds(0.9)
 		var lp := hud.level_up_panel()
 		_check.call(lp.fx_level() == GfxQuality.budget("ui_fx") and lp.level_cards()[0].fx_level == lp.fx_level(),
-				"%s: cartas usam ui_fx" % name)
-		_check.call(lp.overlay().mote_count() == OverlayFx.MOTE_COUNT[level], "%s: fogos-fátuos no orçamento" % name)
+				"%s: cartas usam ui_fx", name)
+		_check.call(lp.overlay().mote_count() == OverlayFx.MOTE_COUNT[level], "%s: fogos-fátuos no orçamento", name)
 		hud.bot_answer()
-	_check.call(int(coins[GfxQuality.LOW]) < int(coins[GfxQuality.HIGH]), "Baixa com menos moedas que Alta (%d < %d)"
-			% [coins[GfxQuality.LOW], coins[GfxQuality.HIGH]])
+	_check.call(int(coins[GfxQuality.LOW]) < int(coins[GfxQuality.HIGH]), "Baixa com menos moedas que Alta (%d < %d)",
+			[coins[GfxQuality.LOW], coins[GfxQuality.HIGH]])
 	# Troca ao vivo com a tela aberta.
 	game.call("_open_level_up")
 	await _seconds(0.5)
@@ -427,6 +433,35 @@ func _test_quality() -> void:
 
 # --- Layout ------------------------------------------------------------------------------
 
+## finish_intro() deixa a tela no mesmo estado da entrada natural (cartas, botões e brilho), para os
+## testes de layout não esperarem a animação em cada resolução e idioma.
+func _test_finish_intro() -> void:
+	var view := DeviceProfiles.main_view()
+	var states: Array[Array] = []
+	for natural: bool in [true, false]:
+		var area := _area(view)
+		var panel := LevelUpPanel.new()
+		area.add_child(panel)
+		panel.show_cards(sample_cards(), 2, 1, 3, 27)
+		if natural:
+			await _seconds(0.75)
+		else:
+			panel.finish_intro()
+			await _host.get_tree().process_frame
+		var state: Array = [panel.overlay().power, panel.overlay().rays, panel.get("_intro"),
+				(panel.get("_actions") as Control).modulate.a]
+		for card: LevelCard in panel.level_cards():
+			state.append([card.position, card.rotation, card.scale, card.modulate, card.settled])
+		for b: Control in panel.action_buttons():
+			state.append([b.visible, b.modulate])
+		states.append(state)
+		area.queue_free()
+		await _host.get_tree().process_frame
+	_check.call(var_to_str(states[0]) == var_to_str(states[1]),
+			"Nova habilidade: finish_intro() termina no mesmo estado da entrada natural (%s × %s)", [states[0],
+			states[1]])
+
+
 func _test_layouts() -> void:
 	for c: Dictionary in DeviceProfiles.layout_cases():
 		_insets = c["insets"]
@@ -439,28 +474,30 @@ func _test_layouts() -> void:
 			var panel := LevelUpPanel.new()
 			area.add_child(panel)
 			panel.show_cards(sample_cards(), 2, 1, 3, 27)
-			await _seconds(0.75)
+			# Entrada terminada na hora (o mesmo estado final da animação, conferido em _test_finish_intro).
+			panel.finish_intro()
+			await _host.get_tree().process_frame
 			check_level_layout(panel, view, state)
 			# Rerrolar pago com um preço longo (e sem ryō, apagado).
 			panel.show_cards(sample_cards(), 0, 1, 3, 27, null, 9990, 0)
 			panel.settle_now()
 			await _host.get_tree().process_frame
 			_check.call(panel.action_buttons()[0].visible and panel.action_buttons()[0].price == 9990,
-					"%s: Rerrolar pago com o preço" % state)
+					"%s: Rerrolar pago com o preço", state)
 			check_level_layout(panel, view, state + " pago")
 			# Mão de comida/moedas com a caixa "Não perguntar mais" (e Pular).
 			panel.show_cards(LevelUpSystem.fallback_cards(), 0, 1, 3, 27, null, 10, 100)
 			panel.settle_now()
 			await _host.get_tree().process_frame
 			_check.call(panel.auto_toggle().visible and not panel.action_buttons()[0].visible,
-					"%s: comida/moedas com a caixa e sem Rerrolar" % state)
+					"%s: comida/moedas com a caixa e sem Rerrolar", state)
 			check_level_layout(panel, view, state + " comida/moedas", 2)
 			# Lua Vermelha IV (sem bolinhos de arroz): a mesma mão só com as moedas.
 			panel.show_cards(LevelUpSystem.fallback_cards(true), 0, 1, 3, 27, null, 10, 100)
 			panel.settle_now()
 			await _host.get_tree().process_frame
 			_check.call(panel.auto_toggle().visible and not panel.action_buttons()[0].visible,
-					"%s: só moedas (Lua IV) com a caixa e sem Rerrolar" % state)
+					"%s: só moedas (Lua IV) com a caixa e sem Rerrolar", state)
 			check_level_layout(panel, view, state + " só moedas", 1)
 			var chest := ChestPanel.new()
 			area.add_child(chest)
@@ -480,28 +517,28 @@ func _test_layouts() -> void:
 func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String, expected: int = 4) -> void:
 	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var cards := panel.level_cards()
-	_check.call(cards.size() == expected, "%s: %d cartas" % [state, expected])
+	_check.call(cards.size() == expected, "%s: %d cartas", [state, expected])
 	if cards.size() == 4:
 		_check.call(cards[0].combos.size() == 2 and cards[2].combos.size() == 1
 				and (cards[2].combos[0]["names"] as Array).size() == 2,
-				"%s: rodapés com relíquia + união e com as duas armas da relíquia" % state)
+				"%s: rodapés com relíquia + união e com as duas armas da relíquia", state)
 	for i: int in range(cards.size()):
 		var c := cards[i]
 		var r := c.get_global_rect()
 		_check.call(screen.encloses(r) and r.position.y >= LevelUpPanel.HEADER_H,
-				"%s: carta %d na tela (%s em %s)" % [state, i, r, screen])
-		_check.call(c.desc_fits(), "%s: descrição cabe na carta %d (%s)" % [state, i, c.data["title"]])
-		_check.call(not c.shortened or view.x < 600.0, "%s: descrição inteira na carta %d (%s)" % [state, i, c.data["title"]])
-		_check.call(c.name_fits(), "%s: nome inteiro na carta %d" % [state, i])
-		_check.call(UiPaint.text_width(c.category_text()) <= c.size.x - 16.0, "%s: categoria cabe na fita %d" % [state, i])
+				"%s: carta %d na tela (%s em %s)", [state, i, r, screen])
+		_check.call(c.desc_fits(), "%s: descrição cabe na carta %d (%s)", [state, i, c.data["title"]])
+		_check.call(not c.shortened or view.x < 600.0, "%s: descrição inteira na carta %d (%s)", [state, i, c.data["title"]])
+		_check.call(c.name_fits(), "%s: nome inteiro na carta %d", [state, i])
+		_check.call(UiPaint.text_width(c.category_text()) <= c.size.x - 16.0, "%s: categoria cabe na fita %d", [state, i])
 		if not c.footer_text().is_empty():
 			_check.call(c.footer_fits(),
-					"%s: sinergia cabe na carta %d" % [state, i])
+					"%s: sinergia cabe na carta %d", [state, i])
 		if i > 0:
-			_check.call(not cards[i - 1].get_global_rect().intersects(r), "%s: cartas %d e %d separadas" % [state, i - 1, i])
+			_check.call(not cards[i - 1].get_global_rect().intersects(r), "%s: cartas %d e %d separadas", [state, i - 1, i])
 	var title := UiPaint.text_width(panel.title_text(), 24) + 26.0
-	_check.call(title <= screen.size.x - 16.0, "%s: título cabe" % state)
-	_check.call(UiPaint.text_width(tr("levelup.banish_hint")) <= screen.size.x - 16.0, "%s: dica de banir cabe" % state)
+	_check.call(title <= screen.size.x - 16.0, "%s: título cabe", state)
+	_check.call(UiPaint.text_width(tr("levelup.banish_hint")) <= screen.size.x - 16.0, "%s: dica de banir cabe", state)
 	var last := Rect2()
 	var buttons: Array[Button] = []
 	buttons.assign(panel.action_buttons())
@@ -510,36 +547,36 @@ func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String, expec
 		if not b.visible:
 			continue
 		var r := b.get_global_rect()
-		_check.call(screen.encloses(r), "%s: botão %s na tela (%s em %s)" % [state, b.text, r, screen])
-		_check.call(b.get_combined_minimum_size().x <= r.size.x + 0.5, "%s: botão %s inteiro" % [state, b.text])
+		_check.call(screen.encloses(r), "%s: botão %s na tela (%s em %s)", [state, b.text, r, screen])
+		_check.call(b.get_combined_minimum_size().x <= r.size.x + 0.5, "%s: botão %s inteiro", [state, b.text])
 		for c: LevelCard in cards:
-			_check.call(not c.get_global_rect().intersects(r), "%s: botão %s não cobre cartas" % [state, b.text])
+			_check.call(not c.get_global_rect().intersects(r), "%s: botão %s não cobre cartas", [state, b.text])
 		if last.size.x > 0.0:
-			_check.call(not last.intersects(r), "%s: botões separados" % state)
+			_check.call(not last.intersects(r), "%s: botões separados", state)
 		last = r
 
 
 func check_chest_layout(chest: ChestPanel, view: Vector2, state: String) -> void:
 	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var stage := chest.stage_rect()
-	_check.call(screen.encloses(stage), "%s: palco do baú na tela (%s em %s)" % [state, stage, screen])
+	_check.call(screen.encloses(stage), "%s: palco do baú na tela (%s em %s)", [state, stage, screen])
 	var c := chest.chest()
 	var chest_rect := Rect2(chest.get("_chest_rest") + stage.position, c.size)
-	_check.call(stage.encloses(chest_rect), "%s: baú dentro do palco" % state)
-	_check.call(chest_rect.position.y - 9.0 * c.px >= stage.position.y + 40.0, "%s: tampa aberta abaixo do título" % state)
+	_check.call(stage.encloses(chest_rect), "%s: baú dentro do palco", state)
+	_check.call(chest_rect.position.y - 9.0 * c.px >= stage.position.y + 40.0, "%s: tampa aberta abaixo do título", state)
 	var b := chest.button().get_global_rect()
-	_check.call(screen.encloses(b) and not b.intersects(chest_rect), "%s: botão na tela, longe do baú" % state)
-	_check.call(chest.button().get_combined_minimum_size().x <= b.size.x + 0.5, "%s: botão inteiro" % state)
+	_check.call(screen.encloses(b) and not b.intersects(chest_rect), "%s: botão na tela, longe do baú", state)
+	_check.call(chest.button().get_combined_minimum_size().x <= b.size.x + 0.5, "%s: botão inteiro", state)
 	var title := UiPaint.text_width(tr("chest.title"))
-	_check.call(title <= stage.size.x, "%s: título do baú cabe" % state)
-	_check.call(UiPaint.text_width(tr("chest.ryo") % 999) + 16.0 <= stage.size.x, "%s: ryō cabe" % state)
+	_check.call(title <= stage.size.x, "%s: título do baú cabe", state)
+	_check.call(UiPaint.text_width(tr("chest.ryo") % 999) + 16.0 <= stage.size.x, "%s: ryō cabe", state)
 	for row: ChestPanel.RewardRow in chest.rows():
 		var r := row.get_global_rect()
 		_check.call(screen.encloses(r) and not r.intersects(stage),
-				"%s: cartão %s na tela (%s em %s)" % [state, row.name_label.text, r, screen])
-		_check.call(row.effect_fits(), "%s: efeito cabe em %s" % [state, row.name_label.text])
-		_check.call(not row.shortened or view.x < 600.0, "%s: efeito inteiro em %s" % [state, row.name_label.text])
-		_check.call(row.name_fits(), "%s: nome inteiro em %s" % [state, row.name_label.text])
+				"%s: cartão %s na tela (%s em %s)", [state, row.name_label.text, r, screen])
+		_check.call(row.effect_fits(), "%s: efeito cabe em %s", [state, row.name_label.text])
+		_check.call(not row.shortened or view.x < 600.0, "%s: efeito inteiro em %s", [state, row.name_label.text])
+		_check.call(row.name_fits(), "%s: nome inteiro em %s", [state, row.name_label.text])
 	check_omikuji_layout(chest, state)
 
 
@@ -555,23 +592,23 @@ func check_omikuji_layout(chest: ChestPanel, state: String) -> void:
 	var ryo_top := stage.end.y - ChestPanel.BUTTON_H - 30.0
 	var slip := chest.slip_block_rect()
 	_check.call(stage.encloses(slip) and slip.position.y >= top and slip.end.y <= ryo_top,
-			"%s: papel do omikuji e leitura entre a sorte e o ryō (%s em %s)" % [state, slip, stage])
+			"%s: papel do omikuji e leitura entre a sorte e o ryō (%s em %s)", [state, slip, stage])
 	var tube := chest.tube_global_rect()
-	_check.call(stage.encloses(tube) and tube.position.y >= top, "%s: tubo do omikuji no palco (%s)" % [state, tube])
+	_check.call(stage.encloses(tube) and tube.position.y >= top, "%s: tubo do omikuji no palco (%s)", [state, tube])
 	var reel := chest.reel_global_rect()
 	_check.call(stage.encloses(reel) and reel.position.y >= top and not reel.intersects(chest.button().get_global_rect()),
-			"%s: roleta no palco, abaixo da sorte (%s)" % [state, reel])
-	_check.call(reel.end.y <= rest.y + c.mouth().y + 0.5, "%s: roleta acima da boca do baú" % state)
+			"%s: roleta no palco, abaixo da sorte (%s)", [state, reel])
+	_check.call(reel.end.y <= rest.y + c.mouth().y + 0.5, "%s: roleta acima da boca do baú", state)
 	var branch := chest.branch_global_rect()
 	_check.call(stage.encloses(branch) and branch.position.y >= top and not branch.intersects(open_chest)
-			and not branch.intersects(reel), "%s: galho do 凶 longe do baú e da roleta (%s)" % [state, branch])
+			and not branch.intersects(reel), "%s: galho do 凶 longe do baú e da roleta (%s)", [state, branch])
 	for fortune: StringName in Omikuji.ALL:
 		var kanji := Omikuji.kanji(fortune)
 		var line := UiPaint.text_width(kanji, 12, UiPaint.ja_font()) + 12.0 + UiPaint.text_width(Omikuji.reading(fortune))
-		_check.call(line <= stage.size.x - 4.0, "%s: linha da sorte %s cabe (%d)" % [state, fortune, line])
+		_check.call(line <= stage.size.x - 4.0, "%s: linha da sorte %s cabe (%d)", [state, fortune, line])
 		_check.call(UiPaint.text_width(Omikuji.reading(fortune)) <= stage.size.x - 4.0
 				and UiPaint.text_width(Omikuji.meaning(fortune)) <= stage.size.x - 4.0,
-				"%s: leitura de %s cabe (%s)" % [state, fortune, Omikuji.meaning(fortune)])
+				"%s: leitura de %s cabe (%s)", [state, fortune, Omikuji.meaning(fortune)])
 
 
 # --- Utilidades --------------------------------------------------------------------------
@@ -605,8 +642,8 @@ func _seconds(value: float) -> void:
 
 
 func _wait(condition: Callable, timeout: float) -> bool:
-	var until := Time.get_ticks_msec() + int(timeout * 1000.0)
-	while Time.get_ticks_msec() < until:
+	var until := UiClock.msec() + int(timeout * 1000.0)
+	while UiClock.msec() < until:
 		if condition.call():
 			return true
 		await _host.get_tree().process_frame

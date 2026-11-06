@@ -6,6 +6,7 @@ extends RefCounted
 ##
 ## Toda tela, painel e HUD percorre layout_cases(): cada resolução sem recorte (todos os
 ## idiomas) e com a área segura de um furo de câmera à esquerda e à direita (MenuKit.test_insets).
+## Com --shard=k/N (tools/run_checks), cada processo da integração percorre só a sua fatia.
 ## Em paisagem o furo vai para um lado curto; com o modo imersivo o Godot desenha por baixo dele e
 ## a área segura do Android desconta a faixa (~ altura da barra de status em retrato), em pixels
 ## físicos no campo "cutout".
@@ -117,9 +118,31 @@ static func main_view() -> Vector2:
 	return RESOLUTIONS[0]["view"]
 
 
-## Casos de layout: {label, view, insets (esquerda, direita), langs}. Para cada resolução:
-## sem recorte (todos os idiomas), câmera à esquerda e câmera à direita (INSET_LANGS).
-static func layout_cases() -> Array[Dictionary]:
+## Casos de layout desta fatia (shard): {label, view, insets (esquerda, direita), langs}. Sem
+## --shard, todos os de all_layout_cases(); com --shard=k/N, as unidades (caso, idioma) da fatia k
+## (shard_range em blocos contíguos), cada caso só com os idiomas dele que caem na fatia. A união das
+## N fatias é a tabela inteira, sem repetir unidade (conferido em tests/integration_tests.gd).
+static func layout_cases(which := Vector2i.ZERO) -> Array[Dictionary]:
+	var all := all_layout_cases()
+	var part := shard_range(layout_units(), which)
+	var list: Array[Dictionary] = []
+	var unit := 0
+	for c: Dictionary in all:
+		var langs: Array[String] = []
+		for lang: String in c["langs"]:
+			if unit >= part.x and unit < part.y:
+				langs.append(lang)
+			unit += 1
+		if not langs.is_empty():
+			var copy := c.duplicate()
+			copy["langs"] = langs
+			list.append(copy)
+	return list
+
+
+## Todos os casos de layout, de todas as fatias. Para cada resolução: sem recorte (todos os
+## idiomas), câmera à esquerda e câmera à direita (INSET_LANGS).
+static func all_layout_cases() -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
 	for r: Dictionary in RESOLUTIONS:
 		list.append({"label": r["label"], "view": r["view"], "insets": Vector2.ZERO, "langs": Locale.SUPPORTED})
@@ -129,6 +152,62 @@ static func layout_cases() -> Array[Dictionary]:
 				"insets": Vector2(c, 0.0), "langs": INSET_LANGS})
 		list.append({"label": "%s câmera à direita (%.1f)" % [r["label"], c], "view": r["view"],
 				"insets": Vector2(0.0, c), "langs": INSET_LANGS})
+	return list
+
+
+## Unidades (caso, idioma) de all_layout_cases(): o que as fatias repartem.
+static func layout_units() -> int:
+	var total := 0
+	for c: Dictionary in all_layout_cases():
+		total += (c["langs"] as Array).size()
+	return total
+
+
+# --- Fatias (--shard=k/N) -----------------------------------------------------------------
+
+## Fatia desta execução: Vector2i(k, N) de "--shard=k/N" (depois de "--"; tools/run_checks reparte
+## a integração em N processos). Sem o argumento, Vector2i(1, 1): tudo numa fatia só. Argumento
+## inválido devolve Vector2i(0, 0) (a integração reprova com shard_error()).
+static func shard() -> Vector2i:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--shard="):
+			var parts := arg.trim_prefix("--shard=").split("/")
+			if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int():
+				return Vector2i.ZERO
+			var k := parts[0].to_int()
+			var n := parts[1].to_int()
+			return Vector2i(k, n) if n >= 1 and k >= 1 and k <= n else Vector2i.ZERO
+	return Vector2i(1, 1)
+
+
+## Mensagem do argumento --shard inválido ("" quando está certo ou ausente).
+static func shard_error() -> String:
+	return "argumento --shard inválido (use --shard=k/N com 1 ≤ k ≤ N)" if shard() == Vector2i.ZERO else ""
+
+
+## Fatia efetiva: `which` (Vector2i.ZERO = a desta execução; inválida conta como 1/1).
+static func resolve_shard(which: Vector2i) -> Vector2i:
+	var s := shard() if which == Vector2i.ZERO else which
+	return Vector2i(1, 1) if s.x < 1 or s.y < 1 or s.x > s.y else s
+
+
+## Parte da fatia `which` numa lista de `count` unidades: [início, fim) em blocos contíguos do mesmo
+## tamanho (diferença de no máximo 1). As N partes cobrem 0..count-1, cada unidade uma vez só.
+static func shard_range(count: int, which := Vector2i.ZERO) -> Vector2i:
+	var s := resolve_shard(which)
+	return Vector2i(floori(float(count) * (s.x - 1) / s.y), floori(float(count) * s.x / s.y))
+
+
+## Itens de `items` que caem na fatia `which` (shard_range sobre os índices, na ordem).
+static func shard_items(items: Array, which := Vector2i.ZERO) -> Array:
+	var part := shard_range(items.size(), which)
+	return items.slice(part.x, part.y)
+
+
+## Resoluções desta fatia (para os testes que percorrem RESOLUTIONS em vez de layout_cases()).
+static func shard_resolutions(which := Vector2i.ZERO) -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	list.assign(shard_items(RESOLUTIONS, which))
 	return list
 
 
@@ -176,17 +255,17 @@ static func check_scaler(host: Node, check: Callable) -> void:
 		scaler.call("_apply")
 		check.call(Vector2(root.content_scale_size) == r["view"] and logical_for(r["physical"]) == r["view"]
 				and int(scaler.get("scale_factor")) == int(r["scale"]),
-				"Resoluções: %s físico dá %s lógico (×%d; obtido %s ×%d)" % [r["physical"], r["label"], r["scale"],
+				"Resoluções: %s físico dá %s lógico (×%d; obtido %s ×%d)", [r["physical"], r["label"], r["scale"],
 				root.content_scale_size, scaler.get("scale_factor")])
 		var c := cutout_logical(r)
-		check.call(c >= 20.0 and c <= 40.0, "Resoluções: recorte de %s com %.1f pontos lógicos" % [r["label"], c])
-		check.call((r["view"] as Vector2).x >= 480.0, "Resoluções: %s com largura lógica ≥ 480" % r["label"])
+		check.call(c >= 20.0 and c <= 40.0, "Resoluções: recorte de %s com %.1f pontos lógicos", [r["label"], c])
+		check.call((r["view"] as Vector2).x >= 480.0, "Resoluções: %s com largura lógica ≥ 480", r["label"])
 	for e: Array in SCALER_EXTRA:
 		root.size = e[0]
 		scaler.call("_apply")
 		check.call(int(scaler.get("scale_factor")) == int(e[1]) and Vector2(root.content_scale_size) == e[2]
 				and scale_for(e[0]) == int(e[1]) and logical_for(e[0]) == e[2],
-				"Resoluções: %s físico dá %s lógico (×%d; obtido %s ×%d)" % [e[0], e[2], e[1],
+				"Resoluções: %s físico dá %s lógico (×%d; obtido %s ×%d)", [e[0], e[2], e[1],
 				root.content_scale_size, scaler.get("scale_factor")])
 	root.size = size
 	root.content_scale_size = css

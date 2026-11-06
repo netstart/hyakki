@@ -68,7 +68,7 @@ func _test_mean() -> void:
 
 
 func _test_palette(pal: Array, label: String) -> void:
-	_check.call(pal.size() == K.size(), "paleta %s: um estilo por tipo" % label)
+	_check.call(pal.size() == K.size(), "paleta %s: um estilo por tipo", label)
 	var signatures := {}
 	for kind: int in range(pal.size()):
 		var s: Dictionary = pal[kind]
@@ -76,26 +76,26 @@ func _test_palette(pal: Array, label: String) -> void:
 		var outline: Color = s["outline"]
 		# Contorno escuro e texto claro: lê em bioma escuro (contorno) e claro (outro mundo).
 		var ratio := (DamagePalette.luminance(fill) + 0.05) / (DamagePalette.luminance(outline) + 0.05)
-		_check.call(ratio >= 4.5, "paleta %s: tipo %d com contraste %.1f:1 contra o contorno" % [label, kind, ratio])
-		_check.call(DamagePalette.luminance(outline) < 0.03, "paleta %s: contorno do tipo %d é escuro" % [label, kind])
-		_check.call(int(s["outline_px"]) >= 2, "paleta %s: tipo %d tem contorno" % [label, kind])
-		_check.call(float(s["life"]) > 0.3 and float(s["life"]) <= 1.0, "paleta %s: tipo %d dura pouco" % [label, kind])
-		_check.call(int(s["priority"]) == DamagePalette.priority(kind), "paleta %s: prioridade igual" % label)
+		_check.call(ratio >= 4.5, "paleta %s: tipo %d com contraste %.1f:1 contra o contorno", [label, kind, ratio])
+		_check.call(DamagePalette.luminance(outline) < 0.03, "paleta %s: contorno do tipo %d é escuro", [label, kind])
+		_check.call(int(s["outline_px"]) >= 2, "paleta %s: tipo %d tem contorno", [label, kind])
+		_check.call(float(s["life"]) > 0.3 and float(s["life"]) <= 1.0, "paleta %s: tipo %d dura pouco", [label, kind])
+		_check.call(int(s["priority"]) == DamagePalette.priority(kind), "paleta %s: prioridade igual", label)
 		signatures[DamagePalette.style_signature(s)] = kind
-	_check.call(signatures.size() == pal.size(), "paleta %s: cada tipo tem forma própria, sem depender da cor" % label)
+	_check.call(signatures.size() == pal.size(), "paleta %s: cada tipo tem forma própria, sem depender da cor", label)
 	for kind: int in range(pal.size()):
 		_check.call(DamagePalette.style_signature(pal[kind]) == DamagePalette.style_signature(DamagePalette.NORMAL[kind]),
-				"paleta %s: tipo %d tem a mesma forma nas duas paletas" % [label, kind])
+				"paleta %s: tipo %d tem a mesma forma nas duas paletas", [label, kind])
 	var crit: Dictionary = pal[K.CRIT]
 	_check.call(String(crit["suffix"]) == "!" and bool(crit["bold"]) and int(crit["anim"]) == DamagePalette.Anim.CRIT,
-			"paleta %s: crítico com '!', negrito e animação própria" % label)
+			"paleta %s: crítico com '!', negrito e animação própria", label)
 	var anims := {}
 	for s: Dictionary in pal:
 		anims[int(s["anim"])] = true
-	_check.call(anims.size() == pal.size(), "paleta %s: cada tipo tem seu próprio movimento" % label)
+	_check.call(anims.size() == pal.size(), "paleta %s: cada tipo tem seu próprio movimento", label)
 	_check.call(float(pal[K.TAKEN_HEAVY]["shake"]) > float(pal[K.TAKEN]["shake"]) and bool(pal[K.TAKEN_HEAVY]["bold"]),
-			"paleta %s: recebido pesado treme mais e é negrito" % label)
-	_check.call(float(pal[K.DOT]["life"]) < float(pal[K.HIT]["life"]), "paleta %s: tique contínuo some antes" % label)
+			"paleta %s: recebido pesado treme mais e é negrito", label)
+	_check.call(float(pal[K.DOT]["life"]) < float(pal[K.HIT]["life"]), "paleta %s: tique contínuo some antes", label)
 
 
 ## Causado (quente, sobe, sem prefixo) × recebido (violeta, "-", desce) × cura (verde, "+").
@@ -104,19 +104,19 @@ func _test_families() -> void:
 	for kind: int in [K.HIT, K.HIGH, K.CRIT, K.DOT]:
 		var s: Dictionary = pal[kind]
 		_check.call(DamagePalette.is_enemy(kind) and String(s["prefix"]) == "" and float(s["drift"]) <= 0.0,
-				"causado %d: sem prefixo e não desce" % kind)
+				"causado %d: sem prefixo e não desce", kind)
 		for taken: int in [K.TAKEN, K.TAKEN_HEAVY]:
 			var d := _rgb_distance(s["fill"], pal[taken]["fill"])
-			_check.call(d >= 0.35, "cor do causado %d longe do recebido %d (%.2f)" % [kind, taken, d])
+			_check.call(d >= 0.35, "cor do causado %d longe do recebido %d (%.2f)", [kind, taken, d])
 	for taken: int in [K.TAKEN, K.TAKEN_HEAVY]:
 		var s: Dictionary = pal[taken]
 		var hue := (s["fill"] as Color).h * 360.0
 		_check.call(DamagePalette.is_taken(taken) and String(s["prefix"]) == "-" and float(s["drift"]) > 0.0
-				and float(s["shake"]) > 0.0, "recebido %d: '-', desce e treme" % taken)
-		_check.call(hue >= 260.0 and hue <= 310.0, "recebido %d na família violeta (%.0f°)" % [taken, hue])
+				and float(s["shake"]) > 0.0, "recebido %d: '-', desce e treme", taken)
+		_check.call(hue >= 260.0 and hue <= 310.0, "recebido %d na família violeta (%.0f°)", [taken, hue])
 	for kind: int in [K.HIGH, K.CRIT]:
 		var hue := (pal[kind]["fill"] as Color).h * 360.0
-		_check.call(hue <= 50.0 or hue >= 340.0, "causado %d na família quente (%.0f°)" % [kind, hue])
+		_check.call(hue <= 50.0 or hue >= 340.0, "causado %d na família quente (%.0f°)", [kind, hue])
 	var heal: Dictionary = pal[K.HEAL]
 	var heal_hue := (heal["fill"] as Color).h * 360.0
 	_check.call(String(heal["prefix"]) == "+" and heal_hue >= 100.0 and heal_hue <= 160.0, "cura verde com '+'")
@@ -153,8 +153,8 @@ func _test_sizes() -> void:
 			monotonic = monotonic and step >= prev and step >= 0 and step <= DamagePalette.MAX_STEP
 			prev = step
 			amount *= 1.15
-		_check.call(monotonic, "tamanho %d: cresce com o dano, sem passar do teto" % kind)
-		_check.call(prev == DamagePalette.MAX_STEP, "tamanho %d: golpe enorme chega ao teto" % kind)
+		_check.call(monotonic, "tamanho %d: cresce com o dano, sem passar do teto", kind)
+		_check.call(prev == DamagePalette.MAX_STEP, "tamanho %d: golpe enorme chega ao teto", kind)
 	_check.call(DamagePalette.size_step(K.HIT, 10.0, 10.0) == 0, "tamanho: golpe na média é o de sempre")
 	_check.call(DamagePalette.size_step(K.HIGH, 20.0, 10.0) == 1, "tamanho: 2× a média sobe um degrau")
 	_check.call(DamagePalette.size_step(K.HIGH, 40.0, 10.0) == 2, "tamanho: 4× a média sobe dois")
@@ -168,7 +168,7 @@ func _test_sizes() -> void:
 	for step: int in range(1, DamagePalette.SIZES.size()):
 		sizes_up = sizes_up and DamagePalette.font_size(step) > DamagePalette.font_size(step - 1)
 	_check.call(sizes_up and DamagePalette.font_size(0) == 12 and DamagePalette.font_size(99) == DamagePalette.SIZES[-1],
-			"tamanho: fontes crescentes, base 12 e teto %d" % DamagePalette.SIZES[-1])
+			"tamanho: fontes crescentes, base 12 e teto %d", DamagePalette.SIZES[-1])
 	_check.call(float(DamagePalette.SIZES[-1]) <= 2.0 * DamagePalette.SIZES[0], "tamanho: teto de 2× o normal")
 
 
@@ -200,10 +200,10 @@ func _test_crit_motion() -> void:
 		age += 1.0 / 120.0
 	var cp := DamagePalette.CritPhase
 	_check.call(phases == [cp.HOLD, cp.SLAM, cp.HANG, cp.SHATTER, cp.DONE],
-			"crítico: HOLD → SLAM → HANG → SHATTER (%s)" % [phases])
+			"crítico: HOLD → SLAM → HANG → SHATTER (%s)", [phases])
 	_check.call(DamagePalette.crit_motion(0.0, 0).x == 0.0, "crítico: congela invisível no HOLD")
 	_check.call(integer_steps, "crítico: escala sempre inteira (pixel nítido)")
-	_check.call(slam_scales[0] == 3.0 and slam_scales[-1] == 1.0, "crítico: SLAM bate de 3x até 1x (%s)" % [slam_scales])
+	_check.call(slam_scales[0] == 3.0 and slam_scales[-1] == 1.0, "crítico: SLAM bate de 3x até 1x (%s)", [slam_scales])
 	var down := true
 	for k: int in range(1, slam_scales.size()):
 		down = down and slam_scales[k] <= slam_scales[k - 1]
@@ -238,8 +238,8 @@ func _test_other_motion() -> void:
 			var m := DamagePalette.motion(kind, age, life)
 			same = same and m.x == 1.0 and m.y == 0.0 and is_equal_approx(m.z, float(s["drift"]) * age)
 			age += 1.0 / 120.0
-		_check.call(same, "movimento %d: escala 1, sem inclinação, deriva constante" % kind)
-		_check.call(DamagePalette.motion(kind, 0.0, life).w > 0.9, "movimento %d: aparece na hora (sem congelar)" % kind)
+		_check.call(same, "movimento %d: escala 1, sem inclinação, deriva constante", kind)
+		_check.call(DamagePalette.motion(kind, 0.0, life).w > 0.9, "movimento %d: aparece na hora (sem congelar)", kind)
 	_check.call(DamagePalette.pop_steps(DamagePalette.Anim.POP, 0.0) == 1
 			and DamagePalette.pop_steps(DamagePalette.Anim.POP, DamagePalette.POP_TIME) == 0,
 			"alto: inchaço curto de um degrau")
@@ -250,17 +250,17 @@ func _test_other_motion() -> void:
 func _test_visibility() -> void:
 	_check.call(DamagePalette.SETTING_KEYS.size() == K.size(), "opções: uma por tipo")
 	for kind: int in range(K.size()):
-		_check.call(DamagePalette.visible(kind, {}), "opções: save antigo sem chaves mostra o tipo %d" % kind)
-		_check.call(not DamagePalette.visible(kind, {"damage_numbers": false}), "opções: geral desligada esconde %d" % kind)
+		_check.call(DamagePalette.visible(kind, {}), "opções: save antigo sem chaves mostra o tipo %d", kind)
+		_check.call(not DamagePalette.visible(kind, {"damage_numbers": false}), "opções: geral desligada esconde %d", kind)
 		var off := {DamagePalette.SETTING_KEYS[kind]: false}
 		var only := true
 		for other: int in range(K.size()):
 			only = only and DamagePalette.visible(other, off) == (other != kind)
-		_check.call(only, "opções: desligar %s esconde só aquele tipo" % DamagePalette.SETTING_KEYS[kind])
+		_check.call(only, "opções: desligar %s esconde só aquele tipo", DamagePalette.SETTING_KEYS[kind])
 	var settings := load("res://scripts/autoload/settings.gd") as GDScript
 	var defaults: Dictionary = settings.get_script_constant_map()["DEFAULTS"]
 	for key: String in DamagePalette.SETTING_KEYS:
-		_check.call(defaults.get(key) == true, "opções: %s existe no Settings e vem ligada" % key)
+		_check.call(defaults.get(key) == true, "opções: %s existe no Settings e vem ligada", key)
 
 
 static func _rgb_distance(a: Color, b: Color) -> float:
@@ -353,7 +353,7 @@ func _player_numbers(game: HyakkiGame) -> void:
 	player.take_damage(3.0 + player.stats.get_stat("armor"))
 	var taken := game.fx.last_number()
 	_check.call(int(taken.get("kind", -1)) == K.TAKEN and String(taken.get("text", "")).begins_with("-"),
-			"take_damage comum: violeta com '-' (%s)" % taken)
+			"take_damage comum: violeta com '-' (%s)", taken)
 	player.damage.reset()
 	player.invuln = 0.0
 	player.take_damage(player.max_hp() * 0.3 + player.stats.get_stat("armor"))
@@ -376,4 +376,4 @@ func _player_numbers(game: HyakkiGame) -> void:
 func _expect(game: HyakkiGame, kind: int, text: String, label: String) -> void:
 	var n := game.fx.last_number()
 	_check.call(int(n.get("kind", -1)) == kind and String(n.get("text", "")) == text
-			and n.get("fill") == DamagePalette.NORMAL[kind]["fill"], "números: %s (%s)" % [label, n])
+			and n.get("fill") == DamagePalette.NORMAL[kind]["fill"], "números: %s (%s)", [label, n])

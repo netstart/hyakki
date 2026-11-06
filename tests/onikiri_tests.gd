@@ -54,7 +54,7 @@ func _check_data(check: Callable) -> void:
 			"vencer o Oni Vermelho libera o Onikiri para as outras guardiãs")
 	check.call(HitSounds.for_weapon(base) == "hit_blade", "Onikiri acerta com som de lâmina")
 	for cue: String in ["onikiri", "onikiri_final", "dojigiri_final", "blade_back"]:
-		check.call(WeaponSfx.CUES.has(cue), "som %s do combo existe" % cue)
+		check.call(WeaponSfx.CUES.has(cue), "som %s do combo existe", cue)
 	check.call(WeaponSfx.layers("dojigiri_final").size() > WeaponSfx.layers("onikiri_final").size(),
 			"golpe final do Dōjigiri soa mais encorpado que o do Onikiri")
 	check.call(WeaponStyle.of(evo)["color"] != WeaponStyle.of(base)["color"], "Dōjigiri tem cor própria (rubra)")
@@ -62,7 +62,7 @@ func _check_data(check: Callable) -> void:
 			"ícones do Onikiri e do Dōjigiri existem")
 	for key: String in ["weapon.onikiri.name", "weapon.onikiri.desc", "weapon.dojigiri.name",
 			"weapon.dojigiri.desc"]:
-		check.call(TranslationServer.translate(key) != key, "texto %s existe" % key)
+		check.call(TranslationServer.translate(key) != key, "texto %s existe", key)
 
 
 func _check_combo(game: HyakkiGame, weapon: Onikiri, check: Callable) -> void:
@@ -70,7 +70,7 @@ func _check_combo(game: HyakkiGame, weapon: Onikiri, check: Callable) -> void:
 	for _k: int in range(4):
 		steps.append(weapon.combo)
 		weapon.fire_all()
-	check.call(steps == [0, 1, 2, 0], "combo do Onikiri: 0 → 1 → 2 → 0 (%s)" % [steps])
+	check.call(steps == [0, 1, 2, 0], "combo do Onikiri: 0 → 1 → 2 → 0 (%s)", [steps])
 	check.call(weapon.radius(Onikiri.FINISHER) > weapon.radius(0) * 1.2, "golpe final tem raio maior")
 	check.call(weapon.half_angle(Onikiri.FINISHER) > weapon.half_angle(0), "golpe final é mais aberto")
 	weapon.combo = 0
@@ -89,7 +89,7 @@ func _check_arc(game: HyakkiGame, weapon: Onikiri, check: Callable) -> void:
 	check.call(is_zero_approx(_lost(game, back)), "Onikiri com Quantidade 1 não acerta atrás")
 	check.call(is_zero_approx(_lost(game, far)), "Onikiri não acerta fora do raio")
 	check.call(absf(_lost(game, front) - weapon.swing_damage(0)) < 0.05,
-			"cada inimigo leva um único acerto por golpe (%.2f)" % _lost(game, front))
+			"cada inimigo leva um único acerto por golpe (%.2f)", _lost(game, front))
 	weapon.level_up()
 	check.call(weapon.amount() >= 2, "Onikiri nível 2 tem Quantidade 2")
 	weapon.fire(origin)
@@ -117,7 +117,7 @@ func _check_finisher(game: HyakkiGame, weapon: Onikiri, check: Callable) -> void
 	weapon.combo = Onikiri.FINISHER
 	weapon.fire(origin)
 	var final := _lost(game, target)
-	check.call(normal > 0.0 and final > normal * 1.4, "golpe final dá mais dano (%.1f > %.1f)" % [final, normal])
+	check.call(normal > 0.0 and final > normal * 1.4, "golpe final dá mais dano (%.1f > %.1f)", [final, normal])
 	weapon.combo = 0
 	_clear(game)
 
@@ -158,8 +158,8 @@ func _check_wave(game: HyakkiGame, check: Callable) -> void:
 			hits += 1
 			last = game.enemies.hp[far]
 		game.enemies.pos[far] = origin + Vector2(100, 0)
-	check.call(hits == 1, "a onda do Dōjigiri fere o inimigo distante uma única vez (%d)" % hits)
-	check.call(evo.waves.is_empty(), "a onda do Dōjigiri some depois de %.1f s" % Onikiri.WAVE_TIME)
+	check.call(hits == 1, "a onda do Dōjigiri fere o inimigo distante uma única vez (%d)", hits)
+	check.call(evo.waves.is_empty(), "a onda do Dōjigiri some depois de %.1f s", Onikiri.WAVE_TIME)
 	evo.on_removed()
 	_clear(game)
 
@@ -194,4 +194,4 @@ func _check_no_polygons(check: Callable) -> void:
 		if source.contains(call):
 			offenders.append(call)
 	check.call(offenders.is_empty() and source.contains("Stroke.band("),
-			"Onikiri desenha a meia-lua com Stroke.band, sem polígono do motor %s" % [offenders])
+			"Onikiri desenha a meia-lua com Stroke.band, sem polígono do motor %s", [offenders])

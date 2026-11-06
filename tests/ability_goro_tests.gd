@@ -53,7 +53,7 @@ func _check_diamond(game: HyakkiGame, goro: GoroAbilities) -> void:
 	var guarded := player.take_damage(30.0, &"test")
 	player.damage.reset()
 	_check.call(guarded > 0.0 and guarded < plain * 0.6,
-			"Corpo de Diamante: golpe reduzido (%.1f de %.1f)" % [guarded, plain])
+			"Corpo de Diamante: golpe reduzido (%.1f de %.1f)", [guarded, plain])
 	player.invuln = 0.0
 	# Quem encosta leva o dano devolvido.
 	var e: int = _t._spawn(game, Vector2(2, 0))
@@ -87,7 +87,7 @@ func _check_shakujo(game: HyakkiGame, goro: GoroAbilities) -> void:
 	_t._tick(game, 8)
 	var blow := 70.0 * mp
 	_check.call(_t._lost(game, near) >= blow - 0.01 and _t._lost(game, near) <= blow * 2.0 + 0.01,
-			"Shakujō: onda de %.0f no raio (veio %.1f)" % [blow, _t._lost(game, near)])
+			"Shakujō: onda de %.0f no raio (veio %.1f)", [blow, _t._lost(game, near)])
 	_check.call(game.enemies.stun[near] > 0.9, "Shakujō: atordoa ~1,2 s")
 	_check.call(_t._lost(game, far) == 0.0, "Shakujō: fora do raio fica")
 	_check.call(not goro._cracks.is_empty() and goro._staff_time > 0.0, "Shakujō: rachaduras e o cajado fincado")
@@ -108,7 +108,7 @@ func _check_mantra(game: HyakkiGame, goro: GoroAbilities) -> void:
 	_check.call(ab.activate(2), "Mantra do Mestre sai")
 	var pulse := 45.0 * mp
 	_check.call(_t._lost(game, group[0]) >= pulse - 0.01, "Mantra: 1º pulso na hora")
-	_check.call(is_equal_approx(player.hp, hp + 5.0), "Mantra: cura 1 por inimigo atingido (%.1f)" % (player.hp - hp))
+	_check.call(is_equal_approx(player.hp, hp + 5.0), "Mantra: cura 1 por inimigo atingido (%.1f)", (player.hp - hp))
 	_t._tick(game, 40)
 	_check.call(goro._mantra_left == 1, "Mantra: 2º pulso depois de 0,6 s")
 	_t._tick(game, 40)
@@ -122,7 +122,7 @@ func _check_mantra(game: HyakkiGame, goro: GoroAbilities) -> void:
 	hp = player.hp
 	_full(game)
 	ab.activate(2)
-	_check.call(is_equal_approx(player.hp, hp + 15.0), "Mantra: cura no máximo 15 por pulso (%.1f)" % (player.hp - hp))
+	_check.call(is_equal_approx(player.hp, hp + 15.0), "Mantra: cura no máximo 15 por pulso (%.1f)", (player.hp - hp))
 	_t._tick(game, 90)
 	_check.call(goro._mantra_left == 0, "Mantra: acaba")
 	player.hp = player.max_hp()

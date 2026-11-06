@@ -105,39 +105,39 @@ func _check_banner(altar: AltarSystem, font: Font, kanji_font: Font, elite_name:
 		view: Vector2, insets: Vector2, safe: Rect2, avoid: Dictionary, st: String) -> void:
 	var lay: Dictionary = altar.banner_layout(elite_name, affixes, view, insets)
 	var plate: Rect2 = lay["plate"]
-	_check.call(safe.encloses(plate), "%s: faixa inteira na área segura (%s em %s)" % [st, plate, safe])
+	_check.call(safe.encloses(plate), "%s: faixa inteira na área segura (%s em %s)", [st, plate, safe])
 	# Nome inteiro na faixa, sem corte, na fonte mínima ou maior.
 	var name_size := int(lay["name_size"])
 	var name_at: Vector2 = lay["name_at"]
 	var name_w := font.get_string_size(elite_name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
 	var name_rect := Rect2(name_at.x, name_at.y - font.get_ascent(name_size), name_w, font.get_height(name_size))
-	_check.call(name_size >= MIN_NAME_SIZE, "%s: nome com fonte ≥ %d (%d)" % [st, MIN_NAME_SIZE, name_size])
-	_check.call(plate.grow(-2.0).encloses(name_rect), "%s: nome \"%s\" inteiro na faixa (%s em %s)"
-			% [st, elite_name, name_rect, plate])
+	_check.call(name_size >= MIN_NAME_SIZE, "%s: nome com fonte ≥ %d (%d)", [st, MIN_NAME_SIZE, name_size])
+	_check.call(plate.grow(-2.0).encloses(name_rect), "%s: nome \"%s\" inteiro na faixa (%s em %s)",
+			[st, elite_name, name_rect, plate])
 	# 強敵 e os chips dos afixos dos dois lados (mesma conta do _draw_banner).
 	var title_size := int(lay["title_size"])
 	var title_w := float(lay["title_w"])
 	var title_at: Vector2 = lay["title_at"]
 	var title_rect := Rect2(title_at.x, title_at.y - kanji_font.get_ascent(title_size), title_w,
 			kanji_font.get_ascent(title_size))
-	_check.call(plate.encloses(title_rect), "%s: 強敵 inteiro na faixa (%s em %s)" % [st, title_rect, plate])
-	_check.call(title_rect.end.y <= name_rect.position.y + 1.0, "%s: 強敵 acima do nome" % st)
+	_check.call(plate.encloses(title_rect), "%s: 強敵 inteiro na faixa (%s em %s)", [st, title_rect, plate])
+	_check.call(title_rect.end.y <= name_rect.position.y + 1.0, "%s: 強敵 acima do nome", st)
 	var cy := float(lay["chips_y"])
 	for k: int in affixes.size():
 		var sgn := -1.0 if k % 2 == 0 else 1.0
 		var cx := plate.get_center().x + sgn * (title_w * 0.5 + 12.0 + floorf(k / 2.0) * 16.0)
 		var chip := Rect2(Vector2(roundf(cx - 7.0), roundf(cy - 7.0)), Vector2(14, 14))
-		_check.call(plate.encloses(chip), "%s: chip do afixo %d inteiro na faixa (%s em %s)" % [st, k, chip, plate])
-		_check.call(not chip.intersects(title_rect), "%s: chip do afixo %d sem cobrir o 強敵" % [st, k])
+		_check.call(plate.encloses(chip), "%s: chip do afixo %d inteiro na faixa (%s em %s)", [st, k, chip, plate])
+		_check.call(not chip.intersects(title_rect), "%s: chip do afixo %d sem cobrir o 強敵", [st, k])
 	for key: String in avoid:
 		var r: Rect2 = avoid[key]
 		if r.size.x <= 0.0 or r.size.y <= 0.0:
 			continue
-		_check.call(not plate.intersects(r), "%s: faixa sem cobrir %s (%s e %s)" % [st, key, plate, r])
+		_check.call(not plate.intersects(r), "%s: faixa sem cobrir %s (%s e %s)", [st, key, plate, r])
 
 
 ## Barra sobre a cabeça: os ícones (8 px, passo de 9) de até 3 afixos cabem na largura da barra.
 func _check_overhead_bar(st: String) -> void:
 	var span := (3 - 1) * 9.0 + 8.0
-	_check.call(span <= EliteAffixes.BAR_WIDTH, "%s: ícones de 3 afixos (%.0f px) cabem na barra (%.0f px)"
-			% [st, span, EliteAffixes.BAR_WIDTH])
+	_check.call(span <= EliteAffixes.BAR_WIDTH, "%s: ícones de 3 afixos (%.0f px) cabem na barra (%.0f px)",
+			[st, span, EliteAffixes.BAR_WIDTH])

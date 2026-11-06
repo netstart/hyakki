@@ -506,7 +506,7 @@ func collect_lights(center: Vector2, half: Vector2) -> Array:
 	var r := 70.0 + portal_radius * 1.5
 	if not Rect2(center - half, half * 2.0).grow(r).has_point(portal_pos):
 		return []
-	var pulse := 0.85 + 0.15 * sin(Time.get_ticks_msec() * 0.004)
+	var pulse := 0.85 + 0.15 * sin(UiClock.msec() * 0.004)
 	return [[portal_pos + Vector2(0.0, -VORTEX_LIFT), LIGHT_COLOR, r, pulse]]
 
 
@@ -515,7 +515,7 @@ func collect_lights(center: Vector2, half: Vector2) -> Array:
 func _draw() -> void:
 	if not is_open():
 		return
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := UiClock.msec() / 1000.0
 	var calm := bool(Settings.get_value("reduce_flashes"))
 	var grow := portal_radius / PORTAL_RADIUS
 	var base := portal_pos.round()
@@ -626,7 +626,7 @@ func _draw_glow() -> void:
 	var grow := portal_radius / PORTAL_RADIUS
 	var core := portal_pos + Vector2(0.0, -VORTEX_LIFT * art_scale())
 	var call := beckon()
-	var pulse := 0.8 + (0.2 + 0.15 * call) * sin(Time.get_ticks_msec() * (0.005 + 0.004 * call))
+	var pulse := 0.8 + (0.2 + 0.15 * call) * sin(UiClock.msec() * (0.005 + 0.004 * call))
 	var r := 34.0 * grow * pulse * (1.0 + 0.35 * call)
 	_glow.draw_texture_rect(tex, Rect2(core - Vector2(r, r), Vector2(r, r) * 2.0), false, Color(SWIRL, 0.45 + 0.25 * call))
 	var c := 12.0 * grow

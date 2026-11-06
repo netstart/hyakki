@@ -58,9 +58,9 @@ func _test_ryo_purchase() -> void:
 	_check.call(SaveManager.ryo() == price - 1 and not PurchaseManager.owns_speed(),
 			"Ampulheta: compra que falha não debita nem libera")
 	SaveManager.data["ryo"] = price + 7
-	_check.call(PurchaseManager.buy_speed_with_ryo(), "Ampulheta: com %d ryō a compra passa" % price)
+	_check.call(PurchaseManager.buy_speed_with_ryo(), "Ampulheta: com %d ryō a compra passa", price)
 	_check.call(SaveManager.ryo() == 7 and PurchaseManager.owns_speed() and PurchaseManager.speed_source() == "ryo",
-			"Ampulheta: compra com ryō debita %d e libera com origem ryō" % price)
+			"Ampulheta: compra com ryō debita %d e libera com origem ryō", price)
 	_check.call(int(events["unlocked"]) == 1, "Ampulheta: speed_unlocked avisa a partida uma vez")
 	SaveManager.data["ryo"] = price * 2
 	_check.call(not PurchaseManager.buy_speed_with_ryo() and SaveManager.ryo() == price * 2,
@@ -75,7 +75,7 @@ func _test_ryo_purchase() -> void:
 	PurchaseManager.buy_speed_with_ryo()
 	var refunded := MetaProgress.refund_all()
 	_check.call(refunded == price + 1000 - after_powerup and SaveManager.ryo() == price + 1000 - price,
-			"Ampulheta: reembolso do Santuário não devolve os %d ryō dela (devolveu %d)" % [price, refunded])
+			"Ampulheta: reembolso do Santuário não devolve os %d ryō dela (devolveu %d)", [price, refunded])
 	_check.call(PurchaseManager.owns_speed() and PurchaseManager.speed_source() == "ryo",
 			"Ampulheta: depois do reembolso do Santuário a posse continua")
 	_fresh()
@@ -196,10 +196,10 @@ func _test_migration() -> void:
 func _test_price_text() -> void:
 	Locale.set_language("pt_BR", false)
 	_check.call(PurchaseManager.speed_price_text() == PurchaseManager.SPEED_PRICE_BRL,
-			"Ampulheta: preço de referência em pt_BR é %s" % PurchaseManager.SPEED_PRICE_BRL)
+			"Ampulheta: preço de referência em pt_BR é %s", PurchaseManager.SPEED_PRICE_BRL)
 	Locale.set_language("en", false)
 	_check.call(PurchaseManager.speed_price_text() == PurchaseManager.SPEED_PRICE_USD,
-			"Ampulheta: preço de referência nos outros idiomas é %s" % PurchaseManager.SPEED_PRICE_USD)
+			"Ampulheta: preço de referência nos outros idiomas é %s", PurchaseManager.SPEED_PRICE_USD)
 	Locale.set_language("pt_BR", false)
 
 
@@ -223,7 +223,7 @@ func _test_locked_run() -> void:
 	_check.call(hud.speed_denied() and is_equal_approx(button.scale.x, 1.0),
 			"toque bloqueado treme (negado) em vez do soco de escala")
 	var toast := hud.get("_toast") as Label
-	_check.call(toast.visible and toast.text == tr("speed.locked"), "toque bloqueado avisa \"%s\"" % tr("speed.locked"))
+	_check.call(toast.visible and toast.text == tr("speed.locked"), "toque bloqueado avisa \"%s\"", tr("speed.locked"))
 	_check.call(not hud.overlay_open() and game.running, "toque bloqueado não abre tela nenhuma")
 	game.cycle_speed()
 	_check.call(GameClock.speed == 1, "teclado (Tab) sem a Ampulheta não acelera")
@@ -256,7 +256,7 @@ func _test_owned_run() -> void:
 	for i: int in 3:
 		game.cycle_speed()
 		seen.append(GameClock.speed)
-	_check.call(seen == [2, 3, 1], "com a Ampulheta a velocidade cicla 1 → 2 → 3 → 1 (%s)" % [seen])
+	_check.call(seen == [2, 3, 1], "com a Ampulheta a velocidade cicla 1 → 2 → 3 → 1 (%s)", [seen])
 	await _free(game)
 	cfg["speed"] = 3
 	game = await _new_game(cfg)

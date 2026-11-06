@@ -48,12 +48,12 @@ func _test_reroll_rules() -> void:
 			"a carga grátis é gasta primeiro, sem tocar no ryō")
 	var base := LevelUpSystem.REROLL_BASE_COST
 	var step := LevelUpSystem.REROLL_STEP
-	_check.call(lu.reroll_cost() == base, "sem carga: a 1ª rolagem paga custa %d" % base)
+	_check.call(lu.reroll_cost() == base, "sem carga: a 1ª rolagem paga custa %d", base)
 	_check.call(lu.spend_reroll() and game.tracker.ryo == 35 - base and lu.paid_rerolls == 1
-			and lu.reroll_cost() == base + step, "paga com ryō e o preço sobe +%d" % step)
+			and lu.reroll_cost() == base + step, "paga com ryō e o preço sobe +%d", step)
 	_check.call(lu.spend_reroll() and game.tracker.ryo == 35 - base * 2 - step and lu.paid_rerolls == 2
-			and lu.reroll_cost() == base + step * 2, "2ª paga e o preço sobe de novo (%d)" % lu.reroll_cost())
-	_check.call(game.tracker.ryo_spent == base * 2 + step, "o gasto fica registrado à parte (%d)" % game.tracker.ryo_spent)
+			and lu.reroll_cost() == base + step * 2, "2ª paga e o preço sobe de novo (%d)", lu.reroll_cost())
+	_check.call(game.tracker.ryo_spent == base * 2 + step, "o gasto fica registrado à parte (%d)", game.tracker.ryo_spent)
 	var left := game.tracker.ryo
 	_check.call(not lu.can_reroll() and not lu.spend_reroll() and game.tracker.ryo == left and lu.paid_rerolls == 2,
 			"sem ryō para pagar: nada muda")
@@ -62,7 +62,7 @@ func _test_reroll_rules() -> void:
 	var second := lu.build_choices(game.rng, first)
 	var overlap := _ids(first).filter(func(id: String) -> bool: return _ids(second).has(id))
 	_check.call(second.size() == first.size() and overlap.is_empty(),
-			"rerrolar traz só cartas novas (%s -> %s)" % [_ids(first), _ids(second)])
+			"rerrolar traz só cartas novas (%s -> %s)", [_ids(first), _ids(second)])
 	# Com uma opção só (tudo banido), a mesma carta volta para encher a mão.
 	for id: StringName in DB.ids("weapons") + DB.ids("passives"):
 		lu.banished.append(id)
@@ -135,9 +135,9 @@ func _test_reroll_panel() -> void:
 	var after := _ids(_shown(panel))
 	var base := LevelUpSystem.REROLL_BASE_COST
 	_check.call(rerolled[0] == 1 and game.tracker.ryo == 100 - base and lu.paid_rerolls == 1,
-			"rerrolar pago gasta %d ryō" % base)
+			"rerrolar pago gasta %d ryō", base)
 	_check.call(after.filter(func(id: String) -> bool: return before.has(id)).is_empty(),
-			"rolagem paga mostra cartas novas (%s -> %s)" % [before, after])
+			"rolagem paga mostra cartas novas (%s -> %s)", [before, after])
 	_check.call(reroll.price == base + LevelUpSystem.REROLL_STEP and hud.level_up_open(), "o preço da próxima sobe")
 	await _seconds(DEAL_WAIT)
 	reroll.pressed.emit()
@@ -211,10 +211,10 @@ func _test_auto_choice() -> void:
 	_check.call(not hud.level_up_open() and not panel.visible and not hud.overlay_open() and not GameClock.paused,
 			"escolha automática: sem pausa e sem tela")
 	_check.call(int(game.get("_pending_levels")) == 0 and game.tracker.ryo == ryo + bag * 3 and player.hp == hp,
-			"três níveis pendentes resolvidos juntos (+%d ryō)" % (game.tracker.ryo - ryo))
+			"três níveis pendentes resolvidos juntos (+%d ryō)", (game.tracker.ryo - ryo))
 	var now := _sounds(["magic1", "jingle_levelup", "ui_accept"])
 	_check.call(now[0] == sounds[0] + 1 and now[1] == sounds[1] and now[2] == sounds[2],
-			"um som de escolha só, sem fanfarra (%s -> %s)" % [sounds, now])
+			"um som de escolha só, sem fanfarra (%s -> %s)", [sounds, now])
 	_check.call(game.rng.state == probe.state, "o rng gasta igual à escolha manual (um sorteio por nível)")
 	# Comida com vida cheia vira ryō; sem vida cheia, cura.
 	Settings.set_value(LevelUpSystem.AUTO_SETTING, "heal")

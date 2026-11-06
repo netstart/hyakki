@@ -37,7 +37,7 @@ func run_unit(check: Callable) -> void:
 		each = each and n >= 1
 		total += n
 	_check.call(each and total == floori(10 * RedMoon.ELITE_MULT) and RedMoon.elite_count(1, 1) == 2,
-			"Lua I: %d elites em 10 eventos (×%.1f, sem sorteio)" % [total, RedMoon.ELITE_MULT])
+			"Lua I: %d elites em 10 eventos (×%.1f, sem sorteio)", [total, RedMoon.ELITE_MULT])
 	_check.call(not RedMoon.boss_extra(1) and RedMoon.boss_extra(2), "Eclipse só a partir da Lua II")
 	_check.call(not RedMoon.shades_in_light(2) and RedMoon.shades_in_light(3), "Sombras na luz só a partir da Lua III")
 	var food := RedMoon.FOOD_ITEM
@@ -48,7 +48,7 @@ func run_unit(check: Callable) -> void:
 	_check.call(meal.size() == 2 and coins.size() == 1 and String(coins[0]["kind"]) == "ryo"
 			and LevelUpSystem.is_fallback(coins), "Lua IV: a mão de comida/moedas fica só com as moedas")
 	_check.call(RedMoon.kami_offers(4, KamiSystem.OFFER_COUNT) == KamiSystem.OFFER_COUNT
-			and RedMoon.kami_offers(5, KamiSystem.OFFER_COUNT) == RedMoon.PACTS, "Lua V: %d pactos" % RedMoon.PACTS)
+			and RedMoon.kami_offers(5, KamiSystem.OFFER_COUNT) == RedMoon.PACTS, "Lua V: %d pactos", RedMoon.PACTS)
 	var texts := true
 	for moon: int in range(0, HyakkiGame.MAX_MOON + 1):
 		var lines := RedMoon.rules_text(moon)
@@ -92,7 +92,7 @@ func _test_elites() -> void:
 		var alive := 0
 		for i: int in range(EnemyManager.CAPACITY):
 			alive += int(game.enemies.alive[i] == 1 and game.enemies.elite[i] == 1)
-		_check.call(alive == 2, "Lua %d: evento com 2 elites põe 2 em campo" % moon)
+		_check.call(alive == 2, "Lua %d: evento com 2 elites põe 2 em campo", moon)
 		# Altares: chance da 1ª depois de um Elite (sem pena), no rng da partida.
 		var altars := game.altars
 		altars.awakened = 1
@@ -103,12 +103,12 @@ func _test_elites() -> void:
 			elites += int(altars.roll_outcome() == &"elite")
 		chances.append(elites / 600.0)
 		_check.call(events > 0 and total == (events if moon == 0 else floori(events * RedMoon.ELITE_MULT)),
-				"Lua %d: %d elites nos %d eventos da vila" % [moon, total, events])
+				"Lua %d: %d elites nos %d eventos da vila", [moon, total, events])
 		await _free(game)
-	_check.call(counts[1] > counts[0], "Lua I: mais elites que sem lua (%d > %d)" % [counts[1], counts[0]])
+	_check.call(counts[1] > counts[0], "Lua I: mais elites que sem lua (%d > %d)", [counts[1], counts[0]])
 	var base := AltarSystem.ELITE_BASE
 	_check.call(absf(chances[0] - base) < 0.07 and absf(chances[1] - base * RedMoon.ELITE_MULT) < 0.07,
-			"Lua I: Elite dos altares %.0f%% -> %.0f%%" % [chances[0] * 100.0, chances[1] * 100.0])
+			"Lua I: Elite dos altares %.0f%% -> %.0f%%", [chances[0] * 100.0, chances[1] * 100.0])
 
 
 func _test_eclipse() -> void:
@@ -146,7 +146,7 @@ func _test_eclipse() -> void:
 				bad.append("%s: %d avisos carmesim" % [id, marks])
 			director.bosses.remove_at(director.bosses.size() - 1)
 		_check.call(bad.is_empty() and tested >= 10,
-				"Lua %d: Eclipse %s no rodízio dos %d chefes %s" % [moon, "só uma vez" if moon >= 2 else "ausente",
+				"Lua %d: Eclipse %s no rodízio dos %d chefes %s", [moon, "só uma vez" if moon >= 2 else "ausente",
 				tested, bad.slice(0, 4)])
 		if moon >= RedMoon.BOSS_ATTACK:
 			_check_eclipse_hits(game)
@@ -186,7 +186,7 @@ func _check_eclipse_hits(game: HyakkiGame) -> void:
 			t += 1.0 / 60.0
 		var hurt := player.hp < player.max_hp()
 		_check.call(hurt != safe and _eclipse_marks(game) == 0,
-				"Eclipse: %s" % ("faixa entre o disco e o anel é segura" if safe else "o disco acerta quem fica"))
+				"Eclipse: %s", ("faixa entre o disco e o anel é segura" if safe else "o disco acerta quem fica"))
 	player.sim_pos = center
 	player.hp = player.max_hp()
 
@@ -200,7 +200,7 @@ func _test_shades() -> void:
 		game.lantern.radius = 24.0
 		var light := game.lantern.radius
 		_check.call(game.view_size().y * 0.5 + Spawner.EDGE_MARGIN_MIN > light * 1.5,
-				"Lua %d: borda da tela fora da luz" % moon)
+				"Lua %d: borda da tela fora da luz", moon)
 		var inside := 0
 		var other := 0
 		for k: int in range(400):
@@ -208,7 +208,7 @@ func _test_shades() -> void:
 			other += int(RedMoon.spawn_point(game, &"slime_rice").distance_to(me) < light)
 		var expect := RedMoon.SHADE_LIGHT_CHANCE * 400.0 if moon >= RedMoon.SHADES else 0.0
 		_check.call(absf(inside - expect) < 40.0 and other == 0,
-				"Lua %d: %d de 400 Sombras nascem na luz (outros: %d)" % [moon, inside, other])
+				"Lua %d: %d de 400 Sombras nascem na luz (outros: %d)", [moon, inside, other])
 		# Uma Sombra dentro da luz: com a regra ela anda como no escuro (SHADE_DARK_SPEED).
 		game.enemies.reset()
 		var i := game.enemies.spawn(&"shade_ghost", me + Vector2(light * 0.4, 0.0), 1.0, 1.0)
@@ -218,7 +218,7 @@ func _test_shades() -> void:
 		speeds.append(game.enemies.vel[i].length() / game.enemies.speed[i])
 		await _free(game)
 	_check.call(speeds[0] > 0.0 and absf(speeds[1] / speeds[0] - EnemyManager.SHADE_DARK_SPEED) < 0.02,
-			"Lua III: Sombra na luz %.1fx mais rápida (sem a regra, passo normal)" % (speeds[1] / maxf(speeds[0], 0.001)))
+			"Lua III: Sombra na luz %.1fx mais rápida (sem a regra, passo normal)", (speeds[1] / maxf(speeds[0], 0.001)))
 
 
 func _test_no_food() -> void:
@@ -230,7 +230,7 @@ func _test_no_food() -> void:
 			seen[id] = int(seen.get(id, 0)) + 1
 		var gone := moon >= RedMoon.NO_FOOD
 		_check.call(seen.has(RedMoon.FOOD_ITEM) != gone and seen.has(&"sushi"),
-				"Lua %d: onigiri %s das lanternas, sushi continua (%s)" % [moon, "fora" if gone else "dentro", seen])
+				"Lua %d: onigiri %s das lanternas, sushi continua (%s)", [moon, "fora" if gone else "dentro", seen])
 		# Tudo no máximo: a mão vira comida/moedas (só moedas na Lua IV).
 		var lu := game.level_up
 		for weapon: Weapon in game.weapons:
@@ -240,18 +240,18 @@ func _test_no_food() -> void:
 		var hand := lu.build_choices(game.rng)
 		var kinds := hand.map(func(c: Dictionary) -> String: return String(c["kind"]))
 		_check.call(LevelUpSystem.is_fallback(hand) and kinds == (["ryo"] if gone else ["heal", "ryo"]),
-				"Lua %d: mão de quem tem tudo no máximo %s" % [moon, kinds])
+				"Lua %d: mão de quem tem tudo no máximo %s", [moon, kinds])
 		# "Comida" na escolha automática, com a vida baixa: sem bolinho, pega as moedas.
 		game.player.hp = game.player.max_hp() * 0.3
 		Settings.set_value(LevelUpSystem.AUTO_SETTING, "heal")
 		var auto := lu.auto_card(hand)
 		_check.call(String(auto.get("kind", "")) == ("ryo" if gone else "heal"),
-				"Lua %d: escolha automática Comida -> %s" % [moon, auto.get("kind", "")])
+				"Lua %d: escolha automática Comida -> %s", [moon, auto.get("kind", "")])
 		Settings.set_value(LevelUpSystem.AUTO_SETTING, "")
 		var ryo := game.tracker.ryo
 		var reward := game.chests.call("_next_reward") as Dictionary
 		_check.call(String(reward.get("kind", "")) == ("ryo" if gone else "heal")
-				and (game.tracker.ryo > ryo) == gone, "Lua %d: baú do fim dá %s" % [moon, reward.get("kind", "")])
+				and (game.tracker.ryo > ryo) == gone, "Lua %d: baú do fim dá %s", [moon, reward.get("kind", "")])
 		await _free(game)
 
 
@@ -260,7 +260,7 @@ func _test_pacts() -> void:
 		var game := await _new_game(moon)
 		var offer := game.kami.offer()
 		var want := RedMoon.PACTS if moon >= RedMoon.FEW_PACTS else KamiSystem.OFFER_COUNT
-		_check.call(offer.size() == want, "Lua %d: santuário com %d Kami" % [moon, offer.size()])
+		_check.call(offer.size() == want, "Lua %d: santuário com %d Kami", [moon, offer.size()])
 		await _free(game)
 
 

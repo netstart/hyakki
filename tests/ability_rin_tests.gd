@@ -63,7 +63,7 @@ func _check_hamaya(game: HyakkiGame) -> void:
 	var all_hit := true
 	for i: int in line:
 		all_hit = all_hit and absf(_t._lost(game, i) - cut) < 0.01
-	_check.call(all_hit, "Hamaya: atravessa todos na linha, um golpe cada (%.1f)" % cut)
+	_check.call(all_hit, "Hamaya: atravessa todos na linha, um golpe cada (%.1f)", cut)
 	_check.call(_t._lost(game, off) == 0.0 and _t._lost(game, far) == 0.0,
 			"Hamaya: nada fora da linha nem além de 320 px")
 	_check.call(game.tracker.damage_by_weapon.has(&"hamaya"), "Hamaya: dano registrado pela habilidade")
@@ -104,7 +104,7 @@ func _check_trap(game: HyakkiGame) -> void:
 		rooted += 1 if enemies.root[i] > 0.0 else 0
 		hurt += 1 if absf(_t._lost(game, i) - damage) < 0.01 else 0
 	_check.call(rooted == 6 and hurt == 6,
-			"Armadilha: prende e fere só os 6 primeiros (%d presos, %d feridos)" % [rooted, hurt])
+			"Armadilha: prende e fere só os 6 primeiros (%d presos, %d feridos)", [rooted, hurt])
 	_check.call(enemies.root[outside] <= 0.0 and _t._lost(game, outside) == 0.0, "Armadilha: quem está fora fica")
 	_check.call(int(trap["left"]) == 0 and bool(trap["spent"]), "Armadilha: sem cargas, fecha")
 	var held := -1
@@ -155,16 +155,16 @@ func _check_leap(game: HyakkiGame) -> void:
 	_check.call(game.player.is_dashing() and game.player.invuln > 0.2, "Salto: invencível no salto")
 	_t._tick(game, 16)
 	_check.call(game.player.sim_pos.x < -70.0 and absf(game.player.sim_pos.y) < 1.0,
-			"Salto: 80 px para trás, longe do inimigo (x=%.1f)" % game.player.sim_pos.x)
+			"Salto: 80 px para trás, longe do inimigo (x=%.1f)", game.player.sim_pos.x)
 	_check.call(rin._arrows.size() == 9, "Salto: leque de 9 flechas ao cair")
 	_t._tick(game, 40)
 	var arrow := 35.0 * game.player.stats.get_stat("might") * game.abilities.power()
 	var first := 0
 	for k: int in range(3):
 		first += 1 if _t._lost(game, row[k]) >= arrow - 0.01 else 0
-	_check.call(first == 3, "Salto: a flecha do meio acerta os 3 primeiros (%d)" % first)
+	_check.call(first == 3, "Salto: a flecha do meio acerta os 3 primeiros (%d)", first)
 	_check.call(_t._lost(game, row[3]) == 0.0 and _t._lost(game, row[4]) == 0.0,
-			"Salto: cada flecha atravessa só 3 (%.1f, %.1f)" % [_t._lost(game, row[3]), _t._lost(game, row[4])])
+			"Salto: cada flecha atravessa só 3 (%.1f, %.1f)", [_t._lost(game, row[3]), _t._lost(game, row[4])])
 	_t._tick(game, 60)
 	_check.call(rin._arrows.is_empty() and not rin._leap_active, "Salto: flechas acabam no alcance")
 
@@ -222,7 +222,7 @@ func _check_bot(host: Node) -> void:
 			game._on_tick(AbilityTests.DT)
 		summaries.append(game.state_summary("BOT"))
 		uses.append(str(Array(game.abilities.uses_by_slot)))
-		_check.call(game.abilities.uses > 0, "Rin: bot usa as habilidades (%s)" % uses[-1])
+		_check.call(game.abilities.uses > 0, "Rin: bot usa as habilidades (%s)", uses[-1])
 		game.queue_free()
 		await host.get_tree().process_frame
 	GfxQuality.clear_override()

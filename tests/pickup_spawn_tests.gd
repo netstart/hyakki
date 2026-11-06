@@ -71,9 +71,9 @@ func _test_overlapping_house() -> void:
 	for at: Vector2 in [Vector2(128, 128), Vector2(118, 128), Vector2(138, 128), Vector2(108, 128),
 			Vector2(128, 120), Vector2(140, 135)]:
 		var out := w.free_point(at, R)
-		_check.call(not w.overlaps_solid(out, R), "casa de vários círculos: %s fica livre" % at)
-		_check.call(out.distance_to(at) <= 14.0 + R + 6.0, "casa de vários círculos: %s fica perto (%.1f px)"
-				% [at, out.distance_to(at)])
+		_check.call(not w.overlaps_solid(out, R), "casa de vários círculos: %s fica livre", at)
+		_check.call(out.distance_to(at) <= 14.0 + R + 6.0, "casa de vários círculos: %s fica perto (%.1f px)",
+				[at, out.distance_to(at)])
 	w.free()
 
 
@@ -112,8 +112,8 @@ func _test_real_village() -> void:
 				var out := w.free_point(solid[0], R)
 				if w.overlaps_solid(out, R) or out.distance_to(solid[0]) > float(solid[1]) + 60.0:
 					bad += 1
-	_check.call(total > 20, "vila: obstáculos reais para testar (%d)" % total)
-	_check.call(bad == 0, "vila: todo centro de obstáculo vira ponto livre perto (%d falhas)" % bad)
+	_check.call(total > 20, "vila: obstáculos reais para testar (%d)", total)
+	_check.call(bad == 0, "vila: todo centro de obstáculo vira ponto livre perto (%d falhas)", bad)
 	w.free()
 
 
@@ -139,7 +139,7 @@ func run(host: Node, check: Callable) -> void:
 	pickups.spawn_item(pickups.random_item_id(), Vector2(148, 130))
 	_check.call(pickups.items.size() == 4, "pickup: quatro itens no chão")
 	for item: Dictionary in pickups.items:
-		_check.call(not world.overlaps_solid(item["pos"], R), "pickup: %s nasce fora da casa" % item["id"])
+		_check.call(not world.overlaps_solid(item["pos"], R), "pickup: %s nasce fora da casa", item["id"])
 	_check.call(bool(pickups.items[1].get("boss", false)), "pickup: baú do chefe mantém o extra")
 	pickups.spawn(Vector2(130, 127), 3)
 	var gem := -1

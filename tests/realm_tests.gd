@@ -57,7 +57,7 @@ func run_unit(check: Callable) -> void:
 		_test_midboss_data(s, bosses, seen)
 		_test_quiet_window(s)
 		_test_realm_data(id, s, biomes, sprites, weather)
-	_check.call(seen.size() == stages.size(), "limiar: um Guardião diferente por fase (%d)" % seen.size())
+	_check.call(seen.size() == stages.size(), "limiar: um Guardião diferente por fase (%d)", seen.size())
 	_test_realm_stage(stages[0])
 	_test_arrow_rect()
 
@@ -65,37 +65,37 @@ func run_unit(check: Callable) -> void:
 func _test_midboss_data(s: Dictionary, bosses: Dictionary, seen: Dictionary) -> void:
 	var id := String(s["id"])
 	var mid := RiftPortal.midboss_of(s)
-	_check.call(not mid.is_empty(), "limiar %s: fase tem Guardião" % id)
+	_check.call(not mid.is_empty(), "limiar %s: fase tem Guardião", id)
 	if mid.is_empty():
 		return
 	_check.call(is_equal_approx(float(mid["t"]), HyakkiGame.RUN_LENGTH * 0.5),
-			"limiar %s: Guardião no meio da noite (%.0f s)" % [id, float(mid["t"])])
+			"limiar %s: Guardião no meio da noite (%.0f s)", [id, float(mid["t"])])
 	var boss: Dictionary = bosses.get(String(mid["id"]), {})
 	seen[String(mid["id"])] = true
-	_check.call(bool(boss.get("midboss", false)), "limiar %s: %s marcado midboss" % [id, mid["id"]])
+	_check.call(bool(boss.get("midboss", false)), "limiar %s: %s marcado midboss", [id, mid["id"]])
 	var hp := float(boss.get("hp", 0))
 	var first := float((bosses[String(s["bosses"][0]["id"])] as Dictionary)["hp"])
 	var last := float((bosses[String(s["bosses"][1]["id"])] as Dictionary)["hp"])
-	_check.call(hp > first and hp < last, "limiar %s: vida %.0f entre %.0f e %.0f" % [id, hp, first, last])
+	_check.call(hp > first and hp < last, "limiar %s: vida %.0f entre %.0f e %.0f", [id, hp, first, last])
 	var patterns := 0
 	for phase: Dictionary in boss.get("phases", []):
 		patterns += (phase["patterns"] as Array).size()
 	patterns += (boss.get("patterns", []) as Array).size()
-	_check.call(patterns >= 4, "limiar %s: padrões próprios (%d)" % [id, patterns])
+	_check.call(patterns >= 4, "limiar %s: padrões próprios (%d)", [id, patterns])
 	_check.call(String(boss.get("kanji", "")).length() >= 2 and String(boss.get("seal", "")) == "門",
-			"limiar %s: kanji e selo 門" % id)
+			"limiar %s: kanji e selo 門", id)
 	var sheet: Dictionary = boss.get("sprite", {})
 	var sprite := String(sheet.get("path", ""))
-	_check.call(ResourceLoader.exists(sprite), "limiar %s: sprite existe (%s)" % [id, sprite])
-	_check.call(sprite.begins_with("res://assets/art/midbosses/%s/" % id), "limiar %s: arte própria do Guardião" % id)
-	_check.call(not boss.has("tint") and not sheet.has("composite"), "limiar %s: sem tinta nem montagem provisória" % id)
-	_check.call(ResourceLoader.exists(String(boss.get("faceset", ""))), "limiar %s: retrato do códice existe" % id)
+	_check.call(ResourceLoader.exists(sprite), "limiar %s: sprite existe (%s)", [id, sprite])
+	_check.call(sprite.begins_with("res://assets/art/midbosses/%s/" % id), "limiar %s: arte própria do Guardião", id)
+	_check.call(not boss.has("tint") and not sheet.has("composite"), "limiar %s: sem tinta nem montagem provisória", id)
+	_check.call(ResourceLoader.exists(String(boss.get("faceset", ""))), "limiar %s: retrato do códice existe", id)
 	var frame: Array = sheet.get("frame", [0, 0])
 	var tall := maxf(float(frame[0]), float(frame[1])) * float(boss.get("scale", 1.0))
-	_check.call(tall >= 44.0 and tall <= 100.0, "limiar %s: tamanho de chefe intermediário (%.0f px)" % [id, tall])
-	_check.call(String(boss.get("music", "")) == "midboss", "limiar %s: música do Guardião" % id)
+	_check.call(tall >= 44.0 and tall <= 100.0, "limiar %s: tamanho de chefe intermediário (%.0f px)", [id, tall])
+	_check.call(String(boss.get("music", "")) == "midboss", "limiar %s: música do Guardião", id)
 	_check.call(String((s.get("otherworld", {}) as Dictionary).get("music", "")) == "kakuriyo",
-			"reino %s: música do Kakuriyo na chegada" % id)
+			"reino %s: música do Kakuriyo na chegada", id)
 
 
 ## Nenhum evento (onda especial, elite, cerco) cai na entrada do Guardião; nem chefe nem Kami.
@@ -112,48 +112,48 @@ func _test_quiet_window(s: Dictionary) -> void:
 	for k: Variant in s.get("kami", []):
 		if absf(float(k) - t) < 30.0:
 			clash.append(float(k))
-	_check.call(clash.is_empty(), "limiar %s: nada colide com a entrada do Guardião %s" % [s["id"], clash])
+	_check.call(clash.is_empty(), "limiar %s: nada colide com a entrada do Guardião %s", [s["id"], clash])
 
 
 func _test_realm_data(id: String, s: Dictionary, biomes: Dictionary, sprites: Dictionary,
 		weather: Dictionary) -> void:
 	var ow: Dictionary = s.get("otherworld", {})
-	_check.call(not ow.is_empty(), "reino %s: fase tem outro mundo" % id)
+	_check.call(not ow.is_empty(), "reino %s: fase tem outro mundo", id)
 	var biome: Dictionary = biomes.get(String(ow.get("biome", "")), {})
 	_check.call(bool(biome.get("otherworld", false)) and String(ow.get("biome", "")) == id + "_ura",
-			"reino %s: bioma %s do outro mundo" % [id, ow.get("biome", "")])
+			"reino %s: bioma %s do outro mundo", [id, ow.get("biome", "")])
 	_check.call(String(biome.get("layout", "")) in ["village", "bamboo", "temple", "dunes", "yomi", "secret"],
-			"reino %s: layout válido" % id)
-	_check.call((biome.get("materials", []) as Array).size() == 6, "reino %s: 6 materiais" % id)
-	_check.call((biome.get("grade", {}) as Dictionary).has("night"), "reino %s: noite própria" % id)
+			"reino %s: layout válido", id)
+	_check.call((biome.get("materials", []) as Array).size() == 6, "reino %s: 6 materiais", id)
+	_check.call((biome.get("grade", {}) as Dictionary).has("night"), "reino %s: noite própria", id)
 	var missing: Array = []
 	for set_v: Dictionary in biome.get("scatter", []):
 		for e: Array in set_v["sprites"]:
 			if not sprites.has(String(e[0])) and not String(e[0]).begins_with("gen_"):
 				missing.append(e[0])
-	_check.call(missing.is_empty(), "reino %s: sprites do espalhado existem %s" % [id, missing])
-	_check.call(String(ow.get("kanji", "")).length() >= 2, "reino %s: nome em kanji" % id)
+	_check.call(missing.is_empty(), "reino %s: sprites do espalhado existem %s", [id, missing])
+	_check.call(String(ow.get("kanji", "")).length() >= 2, "reino %s: nome em kanji", id)
 	_check.call(String(ow.get("tint", "")).begins_with("#") and String(ow.get("tint")) != String(s.get("tint")),
-			"reino %s: tinta própria" % id)
-	_check.call(float(ow.get("light_mult", 0.0)) > 0.0, "reino %s: luz definida" % id)
+			"reino %s: tinta própria", id)
+	_check.call(float(ow.get("light_mult", 0.0)) > 0.0, "reino %s: luz definida", id)
 	var music := "res://assets/audio/music/%s" % ow.get("music", "")
 	_check.call(ResourceLoader.exists(music + ".mp3") or ResourceLoader.exists(music + ".ogg"),
-			"reino %s: música existe" % id)
-	_check.call(weather.has(String(ow.get("weather", ""))), "reino %s: clima existe" % id)
+			"reino %s: música existe", id)
+	_check.call(weather.has(String(ow.get("weather", ""))), "reino %s: clima existe", id)
 	# Outro lugar de verdade, não a mesma fase com outra tinta.
 	var origin: Dictionary = biomes.get(id, {})
 	_check.call(String(biome.get("layout", "")) != String(origin.get("layout", "")),
-			"reino %s: estruturas de outro tipo (%s → %s)" % [id, origin.get("layout"), biome.get("layout")])
-	_check.call(String(ow.get("weather", "")) != id, "reino %s: clima de outro tipo" % id)
+			"reino %s: estruturas de outro tipo (%s → %s)", [id, origin.get("layout"), biome.get("layout")])
+	_check.call(String(ow.get("weather", "")) != id, "reino %s: clima de outro tipo", id)
 	var same := 0
 	for k: int in 6:
 		var a: Dictionary = (origin.get("materials", []) as Array)[k]
 		var b: Dictionary = (biome.get("materials", []) as Array)[k]
 		if a.get("tiles", a.get("block")) == b.get("tiles", b.get("block")) and a.get("tint") == b.get("tint"):
 			same += 1
-	_check.call(same == 0, "reino %s: chão todo diferente da origem (%d materiais iguais)" % [id, same])
+	_check.call(same == 0, "reino %s: chão todo diferente da origem (%d materiais iguais)", [id, same])
 	_check.call((biome["grade"] as Dictionary)["night"] != (origin["grade"] as Dictionary)["night"]
-			and biome.get("tufts") != origin.get("tufts"), "reino %s: luz da noite e vegetação próprias" % id)
+			and biome.get("tufts") != origin.get("tufts"), "reino %s: luz da noite e vegetação próprias", id)
 
 
 func _test_realm_stage(s: Dictionary) -> void:
@@ -172,7 +172,7 @@ func _test_arrow_rect() -> void:
 		var dir := Vector2.RIGHT.rotated(TAU * i / 16.0)
 		var r := RiftPortal.arrow_rect(Vector2(100, 100), dir)
 		_check.call(Rect2(Vector2(100, 100), Vector2.ZERO).grow(17.0).encloses(r),
-				"seta do portal para %.0f° cabe na folga da borda (%s)" % [rad_to_deg(dir.angle()), r])
+				"seta do portal para %.0f° cabe na folga da borda (%s)", [rad_to_deg(dir.angle()), r])
 
 
 # --- Partida (com a árvore) -----------------------------------------------------------------
@@ -241,9 +241,9 @@ func _test_terrain() -> void:
 		for cy: int in range(-1, 2):
 			for cx: int in range(-1, 2):
 				solids += (w.chunk_data(Vector2i(cx, cy))["solids"] as Array).size()
-		_check.call(bool(w.biome.get("otherworld", false)), "reino %s: mundo monta o bioma do outro lado" % id)
-		_check.call(solids > 0, "reino %s: estrutura gerada (%d obstáculos)" % [id, solids])
-		_check.call(not w.overlaps_solid(Vector2.ZERO, Player.RADIUS + 2.0), "reino %s: origem livre" % id)
+		_check.call(bool(w.biome.get("otherworld", false)), "reino %s: mundo monta o bioma do outro lado", id)
+		_check.call(solids > 0, "reino %s: estrutura gerada (%d obstáculos)", [id, solids])
+		_check.call(not w.overlaps_solid(Vector2.ZERO, Player.RADIUS + 2.0), "reino %s: origem livre", id)
 		w.free()
 	await _host.get_tree().process_frame
 
@@ -292,8 +292,8 @@ func _test_double_chest() -> void:
 		ok = ok and not world.overlaps_solid(game.rift.portal_pos, RiftPortal.CLEARANCE)
 		if not ok:
 			bad += 1
-	_check.call(spots.size() >= 4, "limiar: pontos de morte para testar (%d)" % spots.size())
-	_check.call(bad == 0, "limiar: dois baús de chefe livres e separados e o portal livre (%d falhas)" % bad)
+	_check.call(spots.size() >= 4, "limiar: pontos de morte para testar (%d)", spots.size())
+	_check.call(bad == 0, "limiar: dois baús de chefe livres e separados e o portal livre (%d falhas)", bad)
 	_check.call(game.tracker.bosses.has(&"onikuma") and game.rift.midboss_done, "limiar: Guardião vencido conta")
 	# Os dois baús pegos juntos abrem um depois do outro.
 	game.rift.close_portal()
@@ -303,7 +303,7 @@ func _test_double_chest() -> void:
 	_tick(game, 3)
 	_check.call(game.hud.chest_open() or game.tracker.chests > opened, "limiar: primeiro baú abre")
 	_tick(game, 30)
-	_check.call(game.tracker.chests == opened + 2, "limiar: os dois baús abrem (%d)" % (game.tracker.chests - opened))
+	_check.call(game.tracker.chests == opened + 2, "limiar: os dois baús abrem (%d)", (game.tracker.chests - opened))
 	await _free(game)
 
 
@@ -347,7 +347,7 @@ func _test_portal() -> void:
 	var boss_at: Vector2 = game.enemies.pos[int(game.bosses.bosses[0]["index"])]
 	var half := game.view_size() * 0.5
 	_check.call(absf(boss_at.x) >= half.x - 1.0 or absf(boss_at.y) >= half.y - 1.0,
-			"travessia: chefe reaparece na borda da tela, longe da guardiã (%s, tela %s)" % [boss_at, half * 2.0])
+			"travessia: chefe reaparece na borda da tela, longe da guardiã (%s, tela %s)", [boss_at, half * 2.0])
 	_check.call(not GameClock.paused and not game.hud.realm_active() and not rift.is_open(),
 			"travessia: relógio volta e o portal fecha")
 	_check.call(is_equal_approx(GameClock.game_time, time + STEP), "travessia: o tempo da noite continua")
@@ -383,7 +383,7 @@ func _test_touch_only_and_bot() -> void:
 		_tick(game, 1)
 		steps += 1
 	_check.call(rift.crossing() and game.player.sim_pos.distance_to(at) <= RiftPortal.PORTAL_RADIUS + Player.RADIUS + 2.0,
-			"bot: anda até o portal e atravessa ao tocar (%.1f s)" % (steps * STEP))
+			"bot: anda até o portal e atravessa ao tocar (%.1f s)", (steps * STEP))
 	rift.finish_crossing_now()
 	_check.call(rift.in_realm, "portal: o toque leva ao Kakuriyo")
 	await _free(game)
@@ -413,10 +413,10 @@ func _test_realm_continues(endless: bool) -> void:
 	_tick(game, 1)
 	game.rift.finish_crossing_now()
 	var tag := "Noite Sem Fim" if endless else "amanhecer"
-	_check.call(game.rift.in_realm and game.stage["biome"] == "bamboo_ura", "reino (%s): na Planície Nevada da Lua" % tag)
+	_check.call(game.rift.in_realm and game.stage["biome"] == "bamboo_ura", "reino (%s): na Planície Nevada da Lua", tag)
 	GameClock.game_time = 599.0
 	_tick(game, roundi(1.5 / STEP))
-	_check.call(game.bosses.has_boss(&"kitsune_nine"), "reino (%s): chefe dos 10:00 entra no outro mundo" % tag)
+	_check.call(game.bosses.has_boss(&"kitsune_nine"), "reino (%s): chefe dos 10:00 entra no outro mundo", tag)
 	game.bosses.reset()
 	GameClock.game_time = HyakkiGame.RUN_LENGTH - STEP * 2.0
 	_tick(game, 4)
@@ -487,7 +487,7 @@ func _test_dir4_facing() -> void:
 		boss["timer"] = 5.0
 		_tick(game, 2)
 		_check.call(enemies.facing[i] == dir and sheet.region(0, dir).position.x == dir * 16.0,
-				"dir4: anda e olha para %s" % ["baixo", "cima", "esquerda", "direita"][dir])
+				"dir4: anda e olha para %s", ["baixo", "cima", "esquerda", "direita"][dir])
 	boss["state"] = "charge"
 	boss["timer"] = 1.0
 	boss["dir"] = Vector2(-200, 0)

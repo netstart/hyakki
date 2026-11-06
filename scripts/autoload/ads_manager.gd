@@ -27,6 +27,9 @@ var ads_enabled: bool = true
 var mock_fill: bool = true
 ## Para testes automáticos: responde sozinho (assiste até o fim).
 var auto_answer: bool = false
+## Segundos que o anúncio simulado fica aberto antes da resposta automática (0,5 s no jogo com
+## --ads-auto; os testes usam 0: o mesmo fluxo de botões e sinais, sem esperar).
+var auto_answer_wait: float = 0.5
 
 var _layer: CanvasLayer
 var _admob: AdMobProvider
@@ -200,10 +203,12 @@ func _show_mock(placement: String, done: Callable) -> void:
 	var left := MOCK_AD_SECONDS
 	while left > 0.0 and not bool(state["done"]):
 		counter.text = tr("ads.mock_counter") % ceili(left)
+		if auto_answer and left <= MOCK_AD_SECONDS - auto_answer_wait:
+			# Resposta automática: o anúncio fica na tela um quadro e auto_answer_wait segundos.
+			await tree.process_frame
+			break
 		await tree.create_timer(0.25, true, false, true).timeout
 		left -= 0.25
-		if auto_answer and left <= MOCK_AD_SECONDS - 0.5:
-			break
 	if bool(state["done"]):
 		return
 	counter.text = tr("ads.mock_ready")

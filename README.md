@@ -74,18 +74,42 @@ Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espa�
 powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 ```
 
-Faz, em ordem: importação (sintaxe de todos os scripts), testes de regras, `gdlint`, textos (1326 chaves ×
-11 idiomas, marcadores `%s/%d`), licenças (cobertura de todos os arquivos de `assets/`, hashes, licenças
-permitidas), limites da ficha da loja, testes de integração (dados, idiomas, cobertura de glifos, Loja,
-Santuário, save, regras de anúncio), determinismo 1x/2x/3x e estresse com 500 inimigos.
+Primeiro a importação (sintaxe de todos os scripts), sozinha; depois, **ao mesmo tempo**, cada tarefa num
+processo próprio: os testes de integração em N fatias (dados, idiomas, cobertura de glifos, Loja, Santuário,
+save, regras de anúncio e o layout de toda tela em todas as resoluções × 11 idiomas × furo dos dois lados), os
+testes de regras, o determinismo (bot em 1x, 2x, 3x e 3x na Baixa, mesmo hash), o estresse com 500 inimigos,
+o `gdlint` em partes e os checks em Python (textos, 1389 chaves × 11 idiomas e marcadores `%s/%d`; licenças;
+ficha da loja; site irmão). No fim, um resumo por tarefa; qualquer falha, erro de script ou trava reprova o todo.
 
-Para um relatório completo (cada verificação listada, tempos e logs) em `build\test-report\<data_hora>\relatorio.html`:
+- **Fatias (`--shard=k/N`):** cada processo da integração roda a sua parte das unidades (caso de layout,
+  idioma) de `DeviceProfiles.layout_cases()` (em blocos contíguos) e das suítes sem layout (repartidas pelo
+  custo medido em `SUITE_MS`, em `tests/integration_tests.gd`). A união das fatias é o conjunto completo:
+  `tests/test_shards.gd` confere a partição para N = 1..16 e cada fatia imprime a linha `COBERTURA`, que o
+  `run_checks` confere (casos de 0 ao total sem buraco e toda suíte rodada em alguma fatia). Também imprime
+  `SUÍTE <nome>: <ms>, <verificações>` por suíte. Para depurar: `-- --suites=A,B` roda só essas suítes.
+- **Isolamento:** cada Godot roda com uma APPDATA própria (Linux: `XDG_DATA_HOME`) numa pasta temporária, então
+  `user://` (save, `settings.cfg`, `runs.csv`, logs) nunca é o perfil real do jogador; a integração confere
+  `OS.get_user_data_dir()` contra a pasta isolada e o `run_checks` confere no fim que o perfil real não mudou.
+- **Tempo de simulação:** a integração roda com `--fixed-fps 60`; as esperas dos testes contam quadros e
+  tempo de simulação (`tests/sim_clock.gd`, `UiClock`), nunca o relógio da parede.
+- **Opções:** `-Shards N` (padrão: núcleos − 4, entre 2 e 12), `-StallMinutes M` (padrão 8: tarefa sem saída
+  nova por M minutos é encerrada à força e rodada de novo uma vez; travou de novo = falha), `-StressAlone` (o
+  estresse sozinho no fim, com os números sem disputa de CPU), `-Only integracao,regras` (só essas tarefas),
+  `-KeepTemp`. Saída de cada tarefa em `build\checks\<data_hora>\<tarefa>.log`.
+- **Linux/CI:** `GODOT=/caminho/godot tools/run_checks.sh` (o mesmo, com `SHARDS`, `STALL_MINUTES` e `ONLY`).
+
+Tempos neste PC (16 núcleos lógicos), do `run_checks.ps1` inteiro: **3322 s (≈ 55 min)** antes (tudo em série, integração
+num processo só, sem `--fixed-fps`) e **320–330 s (≈ 5,5 min)** agora (12 fatias; a integração sozinha de 3149 s para ~310 s). Detalhes por etapa no commit 1.20.3.
+
+Para um relatório completo (resumo por etapa, falhas com o texto inteiro, tempos e logs) em
+`build\test-report\<data_hora>\relatorio.html`:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1
 ```
 
-`-SkipStress` pula o estresse e `-NoOpen` não abre o navegador.
+`-SkipStress` pula o estresse, `-NoOpen` não abre o navegador e `-ListPassed` lista também cada verificação
+que passou (`--verbose`, milhões de linhas). O relatório roda as etapas em sequência, com `user://` isolado.
 
 Habilidades dos guardiões sozinhas (energias, AbilitySystem, primitivas, as 21 habilidades em cenários
 montados, marcadores de estado, partida suspensa e o bot com o mesmo hash na Baixa e na Alta):

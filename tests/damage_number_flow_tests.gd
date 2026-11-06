@@ -64,7 +64,7 @@ func _test_pool() -> void:
 		n.step(0.001)
 		await _host.get_tree().process_frame
 	var grown := Performance.get_monitor(Performance.OBJECT_COUNT) - objects
-	_check.call(grown <= 0.0, "números: nenhum objeto novo por quadro (+%d)" % grown)
+	_check.call(grown <= 0.0, "números: nenhum objeto novo por quadro (+%d)", grown)
 	_check.call(n.get_child_count() == 0 and (n.get("_life") as PackedFloat32Array).size() == DamageNumbers.CAPACITY,
 			"números: sem nós filhos e anel de tamanho fixo")
 	# Baixa: o crítico reduzido desenha sem erro.
@@ -82,7 +82,7 @@ func _test_cap(n: DamageNumbers) -> void:
 	var events := n.events
 	for k: int in range(MAX + 20):
 		n.add(Vector2(k * 13.0, 0.0), 10.0, K.HIT)
-	_check.call(n.live == MAX and n.count() == MAX, "limite: no máximo %d números vivos" % MAX)
+	_check.call(n.live == MAX and n.count() == MAX, "limite: no máximo %d números vivos", MAX)
 	_check.call(n.events - events == MAX, "limite: comum novo descartado com a tela cheia")
 	n.add(Vector2(0.0, 50.0), 30.0, K.CRIT)
 	_check.call(n.live == MAX and n.count(K.CRIT) == 1 and n.count(K.HIT) == MAX - 1,
@@ -108,7 +108,7 @@ func _test_merge(n: DamageNumbers) -> void:
 	for _k: int in range(30):
 		n.add(Vector2.ZERO, 1.0, K.HIT, 10.0, 7)
 	_check.call(String(n.last()["text"]) == "40" and n.live == 1,
-			"soma: 30 golpes no mesmo passo mostram o total (%s)" % n.last()["text"])
+			"soma: 30 golpes no mesmo passo mostram o total (%s)", n.last()["text"])
 	n.add(Vector2.ZERO, 5.0, K.HIT, 10.0, 8)
 	_check.call(n.live == 2, "soma: outro inimigo tem seu número")
 	n.step(DamagePalette.MERGE_WINDOW + 0.05)
@@ -154,7 +154,7 @@ func _test_placement(n: DamageNumbers) -> void:
 	var dense := (n.get("_life") as PackedFloat32Array)[int(n.get("_last_slot"))]
 	n.add(Vector2(500, 300), 50.0, K.CRIT)
 	var crit := (n.get("_life") as PackedFloat32Array)[int(n.get("_last_slot"))]
-	_check.call(dense < calm * 0.75, "vida: mais curta com a tela cheia (%.2f × %.2f)" % [dense, calm])
+	_check.call(dense < calm * 0.75, "vida: mais curta com a tela cheia (%.2f × %.2f)", [dense, calm])
 	_check.call(is_equal_approx(crit, DamagePalette.CRIT_LIFE), "vida: crítico sempre inteiro")
 	_check.call(life.size() == DamageNumbers.CAPACITY, "vida: anel não muda de tamanho")
 	n.reset()
@@ -177,7 +177,7 @@ func _test_placement(n: DamageNumbers) -> void:
 	for k: int in range(10):
 		n.add(Vector2(300, 300), 5.0, K.HIT if k % 2 == 0 else K.DOT, 0.0, 100 + k)
 	_check.call(n.live == DamagePalette.LOCAL_MAX,
-			"densidade: no máximo %d comuns no mesmo lugar" % DamagePalette.LOCAL_MAX)
+			"densidade: no máximo %d comuns no mesmo lugar", DamagePalette.LOCAL_MAX)
 	n.add(Vector2(300, 300), 50.0, K.CRIT)
 	n.add(Vector2(300, 300), 5.0, K.TAKEN)
 	_check.call(n.count(K.CRIT) == 1 and n.count(K.TAKEN) == 1,
@@ -193,7 +193,7 @@ func _test_placement(n: DamageNumbers) -> void:
 		n.add(Vector2(k * 40.0, 0.0), 50.0, K.CRIT)
 		big += 1 if bool(n.last()["big"]) else 0
 	_check.call(big == DamagePalette.CRIT_BIG_MAX,
-			"críticos: só %d com o SLAM grande juntos (%d)" % [DamagePalette.CRIT_BIG_MAX, big])
+			"críticos: só %d com o SLAM grande juntos (%d)", [DamagePalette.CRIT_BIG_MAX, big])
 	n.step(DamagePalette.CRIT_SLAM_END + 0.01)
 	n.add(Vector2(0.0, 100.0), 50.0, K.CRIT)
 	_check.call(bool(n.last()["big"]), "críticos: passado o SLAM, o próximo volta a ser grande")
@@ -201,7 +201,7 @@ func _test_placement(n: DamageNumbers) -> void:
 	for k: int in range(DamagePalette.MAX_CRITS + 6):
 		n.add(Vector2(k * 40.0, 0.0), 50.0, K.CRIT)
 	_check.call(n.count(K.CRIT) == DamagePalette.MAX_CRITS and n.live_kind[K.CRIT] == DamagePalette.MAX_CRITS,
-			"críticos: no máximo %d na tela" % DamagePalette.MAX_CRITS)
+			"críticos: no máximo %d na tela", DamagePalette.MAX_CRITS)
 	n.step(DamagePalette.CRIT_LIFE + 0.01)
 	_check.call(n.live == 0 and n.live_kind[K.CRIT] == 0, "críticos: contadores zeram quando somem")
 
@@ -227,8 +227,7 @@ func _test_toggles() -> void:
 				var seen := _trigger(game, foe, kind)
 				ok = ok and seen == (kind != off)
 				shown += "1" if seen else "0"
-			_check.call(ok, "opções por tipo: %s desligada esconde só o seu tipo (%s)"
-					% [DamagePalette.SETTING_KEYS[off], shown])
+			_check.call(ok, "opções por tipo: %s desligada esconde só o seu tipo (%s)", [DamagePalette.SETTING_KEYS[off], shown])
 			Settings.set_value(DamagePalette.SETTING_KEYS[off], true)
 		var all := true
 		for kind: int in range(K.size()):
@@ -315,12 +314,12 @@ func _test_options_screen() -> void:
 			var toggle := screen.find_child("opt_%s" % key, true, false) as BaseButton
 			var row := toggle.get_parent() if toggle else null
 			var sample := row.find_child("sample_%d" % kind, false, false) as Label if row else null
-			_check.call(toggle != null and toggle.button_pressed and sample != null, "Opções: linha de %s" % key)
+			_check.call(toggle != null and toggle.button_pressed and sample != null, "Opções: linha de %s", key)
 			if sample == null:
 				continue
 			_check.call(sample.text == DamagePalette.text(kind, DamagePalette.SAMPLE_AMOUNTS[kind])
 					and sample.get_theme_color("font_color") == DamagePalette.NORMAL[kind]["fill"],
-					"Opções: amostra de %s na cor do tipo" % key)
+					"Opções: amostra de %s na cor do tipo", key)
 		Settings.set_value("colorblind", true)
 		var sample0 := box.find_child("sample_%d" % K.CRIT, true, false) as Label
 		_check.call(sample0.get_theme_color("font_color") == DamagePalette.COLORBLIND[K.CRIT]["fill"],
@@ -371,7 +370,7 @@ func _test_stress() -> void:
 			worst = maxi(worst, game.fx.numbers.live)
 		crits = maxi(crits, game.fx.numbers.count(K.CRIT))
 		await _host.get_tree().process_frame
-	_check.call(worst <= MAX, "estresse: no máximo %d números vivos com 500 inimigos (pior %d)" % [MAX, worst])
+	_check.call(worst <= MAX, "estresse: no máximo %d números vivos com 500 inimigos (pior %d)", [MAX, worst])
 	_check.call(game.fx.numbers.events - events > MAX, "estresse: os números continuam aparecendo")
 	_check.call(crits > 0, "estresse: críticos aparecem com a tela cheia")
 	game.player.stats.remove_source("test_crit")

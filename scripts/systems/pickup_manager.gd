@@ -212,7 +212,7 @@ func _collect(i: int) -> void:
 	_free.append(i)
 	count_alive -= 1
 	game.add_xp(value[i])
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if now - _last_note_ms > SCALE_RESET_MS:
 		_note = 0
 	_last_note_ms = now

@@ -732,7 +732,7 @@ func _draw_side(tex: Texture2D, offset: Vector2, moving: bool, tint: Color, angl
 	moving = moving and not swing
 	var row := 1 if moving else 0
 	var count := _side_counts.y if moving else _side_counts.x
-	var t := _walk_time * 14.0 if moving else Time.get_ticks_msec() / 110.0
+	var t := _walk_time * 14.0 if moving else UiClock.msec() / 110.0
 	var col := SLASH_FRAME if swing else posmod(int(t), maxi(1, count))
 	var src := Rect2(Vector2(col * _side_size.x, row * _side_size.y), _side_size)
 	var look := visual_facing_x()

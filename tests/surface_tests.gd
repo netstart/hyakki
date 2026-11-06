@@ -54,14 +54,14 @@ func _test_data() -> void:
 	var d := SurfaceField.data()
 	var types: Dictionary = d.get("types", {})
 	for name: String in ["mud", "clay", "swamp", "oil", "tar", "quicksand"]:
-		_check.call(types.has(name), "solo: tipo %s existe" % name)
+		_check.call(types.has(name), "solo: tipo %s existe", name)
 		var p: Dictionary = types.get(name, {})
 		_check.call(float(p.get("slow", 1.0)) < 1.0 and float(p.get("ease_in", 0)) > 0.0
-				and float(p.get("ease_out", 0)) > 0.0, "solo: %s tem slow < 1, ease_in e ease_out" % name)
+				and float(p.get("ease_out", 0)) > 0.0, "solo: %s tem slow < 1, ease_in e ease_out", name)
 	_check.call(float(types["tar"]["ease_out"]) >= float(types["mud"]["ease_out"]), "solo: piche recupera mais devagar")
 	_check.call(float(types["oil"]["accel"]) < 1.0, "solo: óleo escorrega (accel < 1)")
 	for id: StringName in DB.ids("stages"):
-		_check.call((d.get("stages", {}) as Dictionary).has(String(id)), "solo: fase %s tem superfícies" % id)
+		_check.call((d.get("stages", {}) as Dictionary).has(String(id)), "solo: fase %s tem superfícies", id)
 
 
 ## Posição determinística, zona segura do nascimento e limites (Templo e Yomi).
@@ -101,9 +101,9 @@ func _test_placement() -> void:
 			for k: int in range(72):
 				var at := Vector2.from_angle(TAU * k / 72.0) * (f.safe_radius - 1.0) * (0.3 + 0.7 * (k % 3) / 2.0)
 				safe_ok = safe_ok and f.type_at(at, 300.0) < 0
-		_check.call(count > 0, "solo: %s tem manchas (%d)" % [stage_id, count])
-		_check.call(safe_ok, "solo: %s sem superfície na zona do nascimento" % stage_id)
-		_check.call(bounds_ok, "solo: %s com manchas dentro dos limites da fase" % stage_id)
+		_check.call(count > 0, "solo: %s tem manchas (%d)", [stage_id, count])
+		_check.call(safe_ok, "solo: %s sem superfície na zona do nascimento", stage_id)
+		_check.call(bounds_ok, "solo: %s com manchas dentro dos limites da fase", stage_id)
 
 
 ## Caches do passo (desempenho) dão o mesmo resultado bit a bit que a regra sem cache:
@@ -286,7 +286,7 @@ func _spawn(game: HyakkiGame, actor: String, at: Vector2) -> int:
 func _test_actor(game: HyakkiGame, type_name: String, actor: String) -> void:
 	var spot := _spot(game, type_name)
 	var label := "solo %s/%s" % [type_name, actor]
-	_check.call(not spot.is_empty(), "%s: achou mancha do tipo" % label)
+	_check.call(not spot.is_empty(), "%s: achou mancha do tipo", label)
 	if spot.is_empty():
 		return
 	var inside: Vector2 = spot[0]
@@ -296,22 +296,22 @@ func _test_actor(game: HyakkiGame, type_name: String, actor: String) -> void:
 	surfaces.reset()
 	var index := _spawn(game, actor, outside)
 	if actor != "player":
-		_check.call(index >= 0, "%s: ator nasceu" % label)
+		_check.call(index >= 0, "%s: ator nasceu", label)
 		if index < 0:
 			return
 	var p: Dictionary = surfaces.field.types[int(spot[2])]
 	var radius := Player.RADIUS if actor == "player" else game.enemies.radius[index]
 	var target := surfaces.slow_for(int(spot[2]), radius)
 	var first := _step_actor(game, actor, index, inside)
-	_check.call(first < 1.0 and first > target, "%s: entrada suave (1º passo %.3f, alvo %.3f)" % [label, first, target])
+	_check.call(first < 1.0 and first > target, "%s: entrada suave (1º passo %.3f, alvo %.3f)", [label, first, target])
 	var in_steps := int(ceil(float(p["ease_in"]) / STEP)) + 6
 	var m := first
 	for _k: int in range(in_steps):
 		m = _step_actor(game, actor, index, inside)
-	_check.call(is_equal_approx(m, target) and m < 1.0, "%s: (a) reduzida dentro (%.3f)" % [label, m])
+	_check.call(is_equal_approx(m, target) and m < 1.0, "%s: (a) reduzida dentro (%.3f)", [label, m])
 	if actor == "boss":
 		_check.call(target < 1.0 and target >= surfaces.field.slow_of(int(spot[2])),
-				"%s: chefe sempre perde velocidade (%.3f; base %.3f)" % [label, target, surfaces.field.slow_of(int(spot[2]))])
+				"%s: chefe sempre perde velocidade (%.3f; base %.3f)", [label, target, surfaces.field.slow_of(int(spot[2]))])
 	var out_steps := int(ceil(float(p["ease_out"]) / STEP)) + 1
 	var mono := true
 	var prev := m
@@ -323,13 +323,13 @@ func _test_actor(game: HyakkiGame, type_name: String, actor: String) -> void:
 		if v == 1.0 and reached < 0:
 			reached = k + 1
 	_check.call(mono and reached > 0,
-			"%s: (b) recupera monotônica até 1.0 em %d passos (limite %d)" % [label, reached, out_steps])
+			"%s: (b) recupera monotônica até 1.0 em %d passos (limite %d)", [label, reached, out_steps])
 	if type_name == "tar":
-		_check.call(reached * STEP > 0.45, "%s: piche segura a recuperação mais tempo (%.2f s)" % [label, reached * STEP])
+		_check.call(reached * STEP > 0.45, "%s: piche segura a recuperação mais tempo (%.2f s)", [label, reached * STEP])
 	var stays := true
 	for _k: int in range(300):
 		stays = stays and _step_actor(game, actor, index, outside) == 1.0
-	_check.call(stays, "%s: (c) fica em exatamente 1.0 por 300 passos" % label)
+	_check.call(stays, "%s: (c) fica em exatamente 1.0 por 300 passos", label)
 	# (d) entra e sai várias vezes: nunca abaixo do alvo, e no fim volta a 1.0.
 	var lowest := 1.0
 	for cycle: int in range(6):
@@ -341,7 +341,7 @@ func _test_actor(game: HyakkiGame, type_name: String, actor: String) -> void:
 	for _k: int in range(out_steps):
 		final = _step_actor(game, actor, index, outside)
 	_check.call(lowest >= target - 0.0001 and final == 1.0,
-			"%s: (d) entrar/sair não acumula (mínimo %.3f, alvo %.3f, fim %.3f)" % [label, lowest, target, final])
+			"%s: (d) entrar/sair não acumula (mínimo %.3f, alvo %.3f, fim %.3f)", [label, lowest, target, final])
 	game.enemies.reset()
 
 
@@ -350,7 +350,7 @@ func _test_sequence(game: HyakkiGame, actor: String) -> void:
 	var mud := _spot(game, "mud")
 	var clay := _spot(game, "clay")
 	if mud.is_empty() or clay.is_empty():
-		_check.call(false, "solo seq/%s: lama e barro na vila" % actor)
+		_check.call(false, "solo seq/%s: lama e barro na vila", actor)
 		return
 	var surfaces := SurfaceSystem.of(game)
 	game.enemies.reset()
@@ -363,11 +363,11 @@ func _test_sequence(game: HyakkiGame, actor: String) -> void:
 	for _k: int in range(90):
 		m = _step_actor(game, actor, index, clay[0])
 	var clay_target := surfaces.slow_for(int(clay[2]), radius)
-	_check.call(is_equal_approx(m, clay_target), "solo seq/%s: (e) no barro vale o barro (%.3f)" % [actor, m])
+	_check.call(is_equal_approx(m, clay_target), "solo seq/%s: (e) no barro vale o barro (%.3f)", [actor, m])
 	var steps := int(ceil(float(surfaces.field.types[int(clay[2])]["ease_out"]) / STEP)) + 1
 	for _k: int in range(steps):
 		m = _step_actor(game, actor, index, clay[1])
-	_check.call(m == 1.0, "solo seq/%s: (e) depois recupera até 1.0" % actor)
+	_check.call(m == 1.0, "solo seq/%s: (e) depois recupera até 1.0", actor)
 	game.enemies.reset()
 
 
@@ -383,14 +383,14 @@ func _test_oil_slide(game: HyakkiGame) -> void:
 	var player := game.player
 	for _k: int in range(30):
 		_step_actor(game, "player", -1, spot[0])
-	_check.call(surfaces.player_accel() < 0.5, "solo óleo: aceleração cai (%.2f)" % surfaces.player_accel())
+	_check.call(surfaces.player_accel() < 0.5, "solo óleo: aceleração cai (%.2f)", surfaces.player_accel())
 	var gain_in := _first_gain(game, spot[0])
 	for _k: int in range(60):
 		_step_actor(game, "player", -1, spot[1])
 	_check.call(surfaces.player_accel() == 1.0 and surfaces.player_mult == 1.0, "solo óleo: deslize acaba ao recuperar")
 	var gain_out := _first_gain(game, spot[1])
 	_check.call(gain_in < gain_out * 0.5,
-			"solo óleo: escorrega (ganho %.1f vs %.1f px/s no 1º passo)" % [gain_in, gain_out])
+			"solo óleo: escorrega (ganho %.1f vs %.1f px/s no 1º passo)", [gain_in, gain_out])
 	player.velocity = Vector2.ZERO
 
 
@@ -428,7 +428,7 @@ func _test_speed_integration(game: HyakkiGame) -> void:
 		game.step_index += 1
 		player.sim_pos = spot[0]
 		player.step(STEP)
-	_check.call(player.velocity.length() < top * 0.75, "solo: herói no piche anda mais devagar (%.1f de %.1f)" % [
+	_check.call(player.velocity.length() < top * 0.75, "solo: herói no piche anda mais devagar (%.1f de %.1f)", [
 			player.velocity.length(), top])
 	player.move_input = Vector2.ZERO
 	var boss := game.enemies.spawn(&"tanuki", spot[0], 1000.0, 0.0)
@@ -440,7 +440,7 @@ func _test_speed_integration(game: HyakkiGame) -> void:
 			game.step_index += 1
 			slowed = game.bosses._speed(fake)
 		_check.call(slowed < float(data.get("speed", 30)) * game.enemies.speed_mult * 0.9,
-				"solo: BossDirector usa a lentidão no chefe (%.1f)" % slowed)
+				"solo: BossDirector usa a lentidão no chefe (%.1f)", slowed)
 	game.enemies.reset()
 
 
@@ -468,8 +468,8 @@ func _test_hash_low_high() -> void:
 		var summary := game.state_summary("H")
 		hashes.append(summary.get_slice("hash=", 1))
 		summaries.append(summary)
-		_check.call(summary.contains("solo="), "solo: hash da partida inclui as superfícies (%s)" % summary.right(40))
+		_check.call(summary.contains("solo="), "solo: hash da partida inclui as superfícies (%s)", summary.right(40))
 		game.queue_free()
 		await _host.get_tree().process_frame
 	GfxQuality.clear_override()
-	_check.call(hashes.size() == 2 and hashes[0] == hashes[1], "solo: hash igual em Baixa e Alta (%s)" % [summaries])
+	_check.call(hashes.size() == 2 and hashes[0] == hashes[1], "solo: hash igual em Baixa e Alta (%s)", [summaries])

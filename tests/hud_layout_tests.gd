@@ -33,6 +33,8 @@ extends RefCounted
 ## - a HUD refaz o layout quando a tela muda de tamanho e quando o recorte troca de lado.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 const AbilityHudTests := preload("res://tests/ability_hud_tests.gd")
 const EliteBannerTests := preload("res://tests/elite_banner_layout_tests.gd")
 ## Pior caso dos números do topo (nível, tempo e contadores longos) e o começo da partida.
@@ -69,8 +71,9 @@ func run(host: Node, check: Callable) -> void:
 		await _close(hud)
 	DeviceProfiles.clear_insets()
 	Locale.set_language("pt_BR", false)
-	await _check_relayout()
-	await AbilityHudTests.new().run_touch(_host, _check, DeviceProfiles.main_view())
+	if TestShards.runs_rest(&"HudLayoutTests"):
+		await _check_relayout()
+		await AbilityHudTests.new().run_touch(_host, _check, DeviceProfiles.main_view())
 	Settings.set_value("joystick_side", side)
 	Settings.set_value("joystick_mode", mode)
 
@@ -104,26 +107,26 @@ func _check_controls(hud: Hud, safe: Rect2, label: String) -> void:
 		var pause := hud.get("_pause_button") as Button
 		var speed := hud.get("_speed_button") as Button
 		var ult := hud.get("_ult_button") as Button
-		_check.call(speed.visible, "%s: botão de velocidade visível (sem partida)" % state)
+		_check.call(speed.visible, "%s: botão de velocidade visível (sem partida)", state)
 		var rects: Array[Rect2] = []
 		for b: Button in [pause, speed, ult]:
 			var r := b.get_global_rect()
-			_check.call(safe.encloses(r), "%s: botão %s inteiro na área segura (%s em %s)" % [state, b.name, r, safe])
-			_check.call(r.size.y >= 28.0 and r.size.x >= 28.0, "%s: botão %s com alvo de toque (%s)" % [state, b.name, r.size])
+			_check.call(safe.encloses(r), "%s: botão %s inteiro na área segura (%s em %s)", [state, b.name, r, safe])
+			_check.call(r.size.y >= 28.0 and r.size.x >= 28.0, "%s: botão %s com alvo de toque (%s)", [state, b.name, r.size])
 			for o: Rect2 in rects:
-				_check.call(not o.intersects(r), "%s: botão %s sem sobrepor outro" % [state, b.name])
+				_check.call(not o.intersects(r), "%s: botão %s sem sobrepor outro", [state, b.name])
 			rects.append(r)
 		_check_speed_parts(hud, safe, state)
 		var joy := hud.joystick
-		_check.call(joy.fixed and joy.left_side == (side == "left"), "%s: joystick fixo no lado escolhido" % state)
+		_check.call(joy.fixed and joy.left_side == (side == "left"), "%s: joystick fixo no lado escolhido", state)
 		var c := joy.get_global_transform() * joy.fixed_center()
 		var ring := Rect2(c - Vector2.ONE * TouchJoystick.RADIUS, Vector2.ONE * TouchJoystick.RADIUS * 2.0)
-		_check.call(safe.encloses(ring), "%s: joystick fixo inteiro na área segura (%s em %s)" % [state, ring, safe])
+		_check.call(safe.encloses(ring), "%s: joystick fixo inteiro na área segura (%s em %s)", [state, ring, safe])
 		for r: Rect2 in rects:
-			_check.call(not r.intersects(ring), "%s: joystick fixo longe dos botões" % state)
+			_check.call(not r.intersects(ring), "%s: joystick fixo longe dos botões", state)
 		_check.call((ring.get_center().x < safe.get_center().x) == (side == "left")
 				and (ult.get_global_rect().get_center().x < safe.get_center().x) != (side == "left"),
-				"%s: Golpe no lado oposto ao joystick" % state)
+				"%s: Golpe no lado oposto ao joystick", state)
 
 
 ## Conteúdo do botão de velocidade, livre (1x, 2x, 3x) e bloqueado sem a Ampulheta de Fūjin
@@ -139,9 +142,9 @@ func _check_speed_parts(hud: Hud, safe: Rect2, state: String) -> void:
 			GameClock.speed = value
 			hud.refresh_speed()
 			var tag := "%s, velocidade %dx%s" % [state, value, " bloqueada" if locked else ""]
-			_check.call(hud.speed_locked() == locked, "%s: estado do cadeado" % tag)
+			_check.call(hud.speed_locked() == locked, "%s: estado do cadeado", tag)
 			var parts: Dictionary = hud.speed_parts()
-			_check.call(parts.has("lock") == locked, "%s: cadeado só quando bloqueada" % tag)
+			_check.call(parts.has("lock") == locked, "%s: cadeado só quando bloqueada", tag)
 			var origin := button.get_global_rect().position
 			var rects: Array[Rect2] = []
 			for key: String in ["icon", "label", "lock"]:
@@ -149,9 +152,9 @@ func _check_speed_parts(hud: Hud, safe: Rect2, state: String) -> void:
 					continue
 				var r := Rect2((parts[key] as Rect2).position + origin, (parts[key] as Rect2).size)
 				_check.call(button.get_global_rect().grow(0.5).encloses(r) and safe.encloses(r),
-						"%s: %s inteiro no botão e na área segura (%s em %s)" % [tag, key, r, button.get_global_rect()])
+						"%s: %s inteiro no botão e na área segura (%s em %s)", [tag, key, r, button.get_global_rect()])
 				for o: Rect2 in rects:
-					_check.call(not o.grow(-0.5).intersects(r.grow(-0.5)), "%s: %s sem sobrepor" % [tag, key])
+					_check.call(not o.grow(-0.5).intersects(r.grow(-0.5)), "%s: %s sem sobrepor", [tag, key])
 				rects.append(r)
 	GameClock.max_speed = top
 	GameClock.speed = speed
@@ -172,22 +175,22 @@ func _check_top(hud: Hud, safe: Rect2, state: String) -> void:
 		var sub := "%s (%s)" % [state, n[1]]
 		var xp: Rect2 = layout["xp"]
 		_check.call(safe.encloses(xp) and xp.size.x >= safe.size.x - 8.5,
-				"%s: barra de XP de ponta a ponta da área segura (%s em %s)" % [sub, xp, safe])
+				"%s: barra de XP de ponta a ponta da área segura (%s em %s)", [sub, xp, safe])
 		var texts: Array[Rect2] = []
 		for key: String in ["level", "clock", "counters"]:
 			var r: Rect2 = layout[key]
 			_check.call(safe.encloses(r) and r.size.x > 0.0,
-					"%s: texto %s inteiro na área segura (%s em %s)" % [sub, key, r, safe])
+					"%s: texto %s inteiro na área segura (%s em %s)", [sub, key, r, safe])
 			for o: Rect2 in texts + corners:
-				_check.call(not o.grow(1.0).intersects(r), "%s: texto %s sem encostar (%s e %s)" % [sub, key, r, o])
+				_check.call(not o.grow(1.0).intersects(r), "%s: texto %s sem encostar (%s e %s)", [sub, key, r, o])
 			texts.append(r)
 		for key: String in ["weapons_at", "passives_at"]:
 			var r := Rect2(layout[key] as Vector2, row)
-			_check.call(safe.encloses(r), "%s: fileira %s com %d ícones na área segura (%s)" % [sub, key, ICON_SLOTS, r])
+			_check.call(safe.encloses(r), "%s: fileira %s com %d ícones na área segura (%s)", [sub, key, ICON_SLOTS, r])
 			for o: Rect2 in corners:
-				_check.call(not o.intersects(r), "%s: fileira %s longe dos botões do canto" % [sub, key])
-			_check.call(not (layout["counters"] as Rect2).intersects(r), "%s: fileira %s longe dos contadores" % [sub, key])
-			_check.call((layout["level"] as Rect2).end.y <= r.position.y, "%s: fileira %s abaixo do nível" % [sub, key])
+				_check.call(not o.intersects(r), "%s: fileira %s longe dos botões do canto", [sub, key])
+			_check.call(not (layout["counters"] as Rect2).intersects(r), "%s: fileira %s longe dos contadores", [sub, key])
+			_check.call((layout["level"] as Rect2).end.y <= r.position.y, "%s: fileira %s abaixo do nível", [sub, key])
 
 
 ## Aviso, dica do tutorial, contagem e a oferta de reviver: textos inteiros na área segura.
@@ -218,20 +221,20 @@ func _check_labels(hud: Hud, safe: Rect2, state: String) -> void:
 			var b := node as Button
 			var r := b.get_global_rect()
 			_check.call(safe.encloses(r) and b.get_combined_minimum_size().x <= r.size.x + 0.5,
-					"%s: reviver, botão \"%s\" inteiro na área segura (%s em %s)" % [state, b.text, r, safe])
+					"%s: reviver, botão \"%s\" inteiro na área segura (%s em %s)", [state, b.text, r, safe])
 		elif control is VBoxContainer or control is CenterContainer:
-			_check.call(safe.encloses(control.get_global_rect()), "%s: reviver, faixa na área segura" % state)
+			_check.call(safe.encloses(control.get_global_rect()), "%s: reviver, faixa na área segura", state)
 	panel.visible = false
 
 
 func _check_label(l: Label, safe: Rect2, state: String) -> void:
 	var r := l.get_global_rect()
-	_check.call(safe.encloses(r), "%s: \"%s\" na área segura (%s em %s)" % [state, l.text.left(30), r, safe])
+	_check.call(safe.encloses(r), "%s: \"%s\" na área segura (%s em %s)", [state, l.text.left(30), r, safe])
 	if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
-		_check.call(l.get_minimum_size().x <= r.size.x + 0.5, "%s: \"%s\" sem corte" % [state, l.text.left(30)])
+		_check.call(l.get_minimum_size().x <= r.size.x + 0.5, "%s: \"%s\" sem corte", [state, l.text.left(30)])
 	else:
 		_check.call(l.get_line_count() <= l.get_visible_line_count(),
-				"%s: \"%s\" com todas as linhas" % [state, l.text.left(30)])
+				"%s: \"%s\" com todas as linhas", [state, l.text.left(30)])
 
 
 ## Setas de alvos fora da tela, em 16 direções: a seta inteira (ponta e base) na área segura.
@@ -240,7 +243,7 @@ func _check_arrows(hud: Hud, view: Vector2, safe: Rect2, state: String) -> void:
 		var dir := Vector2.RIGHT.rotated(TAU * i / 16.0)
 		var p: Vector2 = hud.arrow_point(dir, view)
 		var arrow := Rect2(p, Vector2.ZERO).grow(8.0)
-		_check.call(safe.encloses(arrow), "%s: seta para %.0f° na área segura (%s)" % [state, rad_to_deg(dir.angle()), p])
+		_check.call(safe.encloses(arrow), "%s: seta para %.0f° na área segura (%s)", [state, rad_to_deg(dir.angle()), p])
 
 
 ## Seta do portal: o vórtice e a ponta no pulso máximo, em 16 direções, na área segura.
@@ -248,8 +251,8 @@ func _check_portal_arrows(hud: Hud, view: Vector2, safe: Rect2, state: String) -
 	for i: int in 16:
 		var dir := Vector2.RIGHT.rotated(TAU * i / 16.0)
 		var r := RiftPortal.arrow_rect(hud.arrow_point(dir, view), dir)
-		_check.call(safe.encloses(r), "%s: seta do portal para %.0f° na área segura (%s)"
-				% [state, rad_to_deg(dir.angle()), r])
+		_check.call(safe.encloses(r), "%s: seta do portal para %.0f° na área segura (%s)",
+				[state, rad_to_deg(dir.angle()), r])
 
 
 ## Título da travessia de cada reino: legenda, kanji e nome inteiros na área segura (com a folga
@@ -267,11 +270,11 @@ func _check_realm_card(hud: Hud, view: Vector2, insets: Vector2, safe: Rect2, st
 		var rects: Array[Rect2] = []
 		for key: String in ["caption", "kanji", "name"]:
 			var r: Rect2 = layout[key]
-			_check.call(r.size.x > 0.0 and room.encloses(r), "%s, %s inteiro na área segura (%s em %s)" % [tag, key, r, room])
+			_check.call(r.size.x > 0.0 and room.encloses(r), "%s, %s inteiro na área segura (%s em %s)", [tag, key, r, room])
 			for o: Rect2 in rects:
-				_check.call(not o.intersects(r) and o.end.y <= r.position.y + 0.5, "%s, %s abaixo e sem sobrepor" % [tag, key])
+				_check.call(not o.intersects(r) and o.end.y <= r.position.y + 0.5, "%s, %s abaixo e sem sobrepor", [tag, key])
 			rects.append(r)
-		_check.call(int(layout["name_size"]) >= 12, "%s, nome legível" % tag)
+		_check.call(int(layout["name_size"]) >= 12, "%s, nome legível", tag)
 
 
 # --- Kami -------------------------------------------------------------------------
@@ -305,11 +308,11 @@ func _check_kami(hud: Hud, room: Rect2, langs: Array, label: String) -> void:
 func check_kami_layout(panel: KamiPanel, room: Rect2, state: String) -> void:
 	var origin := panel.get_global_rect().position
 	var cards := panel.cards()
-	_check.call(cards.size() == panel.offer().size(), "%s: uma placa por Kami" % state)
+	_check.call(cards.size() == panel.offer().size(), "%s: uma placa por Kami", state)
 	var header := panel.header_rects()
 	for r: Rect2 in header:
-		_check.call(room.encloses(r), "%s: título e subtítulo na tela (%s em %s)" % [state, r, room])
-	_check.call(not header[0].intersects(header[1]), "%s: título e subtítulo separados" % state)
+		_check.call(room.encloses(r), "%s: título e subtítulo na tela (%s em %s)", [state, r, room])
+	_check.call(not header[0].intersects(header[1]), "%s: título e subtítulo separados", state)
 	var mode := panel.layout_mode()
 	var rects: Array[Rect2] = []
 	for i: int in range(cards.size()):
@@ -317,31 +320,31 @@ func check_kami_layout(panel: KamiPanel, room: Rect2, state: String) -> void:
 		var r := Rect2(origin + card.base_position, card.size)
 		var cord_top := r.position.y - KamiPanel.CORD
 		_check.call(room.encloses(r) and cord_top >= header[1].end.y,
-				"%s: placa %s na tela, com o cordão abaixo do título (%s em %s)" % [state, card.id, r, room])
-		_check.call(room.grow(4.0).encloses(r.grow(4.0)), "%s: aro de seleção de %s na área segura" % [state, card.id])
-		_check.call(card.fits(), "%s: textos de %s inteiros na placa" % [state, card.id])
+				"%s: placa %s na tela, com o cordão abaixo do título (%s em %s)", [state, card.id, r, room])
+		_check.call(room.grow(4.0).encloses(r.grow(4.0)), "%s: aro de seleção de %s na área segura", [state, card.id])
+		_check.call(card.fits(), "%s: textos de %s inteiros na placa", [state, card.id])
 		_check.call(card.icon_texture() != null and card.icon_scale() == int(mode[0])
 				and card.captions_shown() == bool(mode[1]),
-				"%s: ícone de %s e o mesmo arranjo nas placas" % [state, card.id])
+				"%s: ícone de %s e o mesmo arranjo nas placas", [state, card.id])
 		var texts := card.text_controls()
 		for a: int in range(texts.size()):
 			for b: int in range(a + 1, texts.size()):
 				var ra := Rect2(texts[a].position, texts[a].size).grow(-1.0)
 				var rb := Rect2(texts[b].position, texts[b].size).grow(-1.0)
-				_check.call(not ra.intersects(rb), "%s: textos %d e %d de %s sem se sobrepor" % [state, a, b, card.id])
+				_check.call(not ra.intersects(rb), "%s: textos %d e %d de %s sem se sobrepor", [state, a, b, card.id])
 		for other: Rect2 in rects:
-			_check.call(not other.intersects(r), "%s: placas separadas" % state)
+			_check.call(not other.intersects(r), "%s: placas separadas", state)
 		rects.append(r)
-	_check.call(bool(mode[1]) or room.size.y < 290.0, "%s: legendas Bênção/Preço em tela alta" % state)
+	_check.call(bool(mode[1]) or room.size.y < 290.0, "%s: legendas Bênção/Preço em tela alta", state)
 	var buttons: Array[Button] = [panel.decline_button(), panel.confirm_button()]
 	for b: Button in buttons:
 		var br := b.get_global_rect()
-		_check.call(room.encloses(br), "%s: botão %s na tela (%s em %s)" % [state, b.text, br, room])
+		_check.call(room.encloses(br), "%s: botão %s na tela (%s em %s)", [state, b.text, br, room])
 		var minimum := b.get_combined_minimum_size()
-		_check.call(minimum.x <= br.size.x + 0.5 and minimum.y <= br.size.y + 0.5, "%s: botão %s inteiro" % [state, b.text])
+		_check.call(minimum.x <= br.size.x + 0.5 and minimum.y <= br.size.y + 0.5, "%s: botão %s inteiro", [state, b.text])
 		for r: Rect2 in rects:
-			_check.call(not r.intersects(br), "%s: botão %s longe das placas" % [state, b.text])
-	_check.call(not buttons[0].get_global_rect().intersects(buttons[1].get_global_rect()), "%s: botões separados" % state)
+			_check.call(not r.intersects(br), "%s: botão %s longe das placas", [state, b.text])
+	_check.call(not buttons[0].get_global_rect().intersects(buttons[1].get_global_rect()), "%s: botões separados", state)
 
 
 # --- Diálogo antes do chefe -------------------------------------------------------
@@ -393,37 +396,37 @@ func check_dialogue_layout(panel: DialoguePanel, room: Rect2, texts: Array[Strin
 	for key: String in ["box", "frame", "portrait", "name", "text", "skip"]:
 		var r := Rect2(origin + (layout[key] as Rect2).position, (layout[key] as Rect2).size)
 		rects[key] = r
-		_check.call(r.size.x > 0.0 and room.encloses(r), "%s: %s na área segura (%s em %s)" % [state, key, r, room])
+		_check.call(r.size.x > 0.0 and room.encloses(r), "%s: %s na área segura (%s em %s)", [state, key, r, room])
 	var box: Rect2 = rects["box"]
 	for key: String in ["frame", "name", "text"]:
-		_check.call(box.encloses(rects[key]), "%s: %s dentro da caixa" % [state, key])
+		_check.call(box.encloses(rects[key]), "%s: %s dentro da caixa", [state, key])
 	_check.call((rects["frame"] as Rect2).encloses(rects["portrait"]) and (rects["portrait"] as Rect2).size
-			== Vector2(DialoguePanel.FACE, DialoguePanel.FACE), "%s: retrato 38x38 na moldura" % state)
+			== Vector2(DialoguePanel.FACE, DialoguePanel.FACE), "%s: retrato 38x38 na moldura", state)
 	_check.call(((rects["frame"] as Rect2).get_center().x > box.get_center().x) == (panel.current_side() == "right"),
-			"%s: retrato do lado de quem fala" % state)
+			"%s: retrato do lado de quem fala", state)
 	var parts: Array[String] = ["frame", "name", "text", "skip"]
 	for a: int in parts.size():
 		for b: int in range(a + 1, parts.size()):
 			_check.call(not (rects[parts[a]] as Rect2).intersects(rects[parts[b]]),
-					"%s: %s e %s sem se sobrepor" % [state, parts[a], parts[b]])
-	_check.call(not box.intersects(rects["skip"]), "%s: \"Pular\" fora da caixa" % state)
+					"%s: %s e %s sem se sobrepor", [state, parts[a], parts[b]])
+	_check.call(not box.intersects(rects["skip"]), "%s: \"Pular\" fora da caixa", state)
 	var skip := panel.skip_button()
 	var br := skip.get_global_rect()
 	var minimum := skip.get_combined_minimum_size()
 	_check.call(room.encloses(br) and minimum.x <= br.size.x + 0.5 and minimum.y <= br.size.y + 0.5,
-			"%s: botão \"%s\" inteiro (%s, mínimo %s)" % [state, skip.text, br, minimum])
+			"%s: botão \"%s\" inteiro (%s, mínimo %s)", [state, skip.text, br, minimum])
 	var font := Locale.font
 	var name_w := font.get_string_size(panel.speaker_name(), HORIZONTAL_ALIGNMENT_LEFT, -1,
 			DialoguePanel.FONT_SIZE).x
-	_check.call(name_w <= (rects["name"] as Rect2).size.x, "%s: nome \"%s\" inteiro" % [state, panel.speaker_name()])
+	_check.call(name_w <= (rects["name"] as Rect2).size.x, "%s: nome \"%s\" inteiro", [state, panel.speaker_name()])
 	_check.call(panel.text_label().get_line_count() <= DialoguePanel.TEXT_LINES,
-			"%s: fala aberta com todas as linhas (%d)" % [state, panel.text_label().get_line_count()])
+			"%s: fala aberta com todas as linhas (%d)", [state, panel.text_label().get_line_count()])
 	var width := (rects["text"] as Rect2).size.x
 	var cut: Array[String] = []
 	for text: String in texts:
 		if not DialoguePanel.text_fits(text, width, font):
 			cut.append(text.left(24))
-	_check.call(cut.is_empty(), "%s: todas as falas cabem em %.0f px (não cabem: %s)" % [state, width, cut])
+	_check.call(cut.is_empty(), "%s: todas as falas cabem em %.0f px (não cabem: %s)", [state, width, cut])
 
 
 # --- Relayout ---------------------------------------------------------------------
@@ -458,7 +461,7 @@ func _check_placed(hud: Hud, safe: Rect2, state: String) -> void:
 	var pause := (hud.get("_pause_button") as Control).get_global_rect()
 	var ult := (hud.get("_ult_button") as Control).get_global_rect()
 	var center: Vector2 = hud.joystick.get_global_transform() * hud.joystick.fixed_center()
-	_check.call(is_equal_approx(pause.end.x, safe.end.x - 4.0), "%s: pausa no canto da área segura (%s)" % [state, pause])
-	_check.call(is_equal_approx(ult.end.x, safe.end.x - 10.0), "%s: Golpe no canto da área segura (%s)" % [state, ult])
+	_check.call(is_equal_approx(pause.end.x, safe.end.x - 4.0), "%s: pausa no canto da área segura (%s)", [state, pause])
+	_check.call(is_equal_approx(ult.end.x, safe.end.x - 10.0), "%s: Golpe no canto da área segura (%s)", [state, ult])
 	_check.call(is_equal_approx(center.x - TouchJoystick.RADIUS, safe.position.x + TouchJoystick.FIXED_OFFSET.x
-			- TouchJoystick.RADIUS), "%s: joystick fixo a partir da área segura (%s)" % [state, center])
+			- TouchJoystick.RADIUS), "%s: joystick fixo a partir da área segura (%s)", [state, center])

@@ -11,6 +11,8 @@ extends RefCounted
 
 const RESULTS_SCREEN := "res://scripts/app/screens/results_screen.gd"
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 
 
 ## App de mentira: guarda para onde a tela mandou o jogador, sem abrir partida nem menu.
@@ -65,13 +67,14 @@ func run(host: Node, check: Callable) -> void:
 	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
 	SaveManager.data = SaveManager.default_profile()
-	await _test_scroll()
-	await _test_double()
-	await _test_achievement_sound()
-	await _test_guard_and_count()
-	await _test_record()
-	await _test_calm()
-	await _test_actions()
+	if TestShards.runs_rest(&"ResultsLayoutTests"):
+		await _test_scroll()
+		await _test_double()
+		await _test_achievement_sound()
+		await _test_guard_and_count()
+		await _test_record()
+		await _test_calm()
+		await _test_actions()
 	Settings.set_value("reduce_flashes", flashes)
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
@@ -118,16 +121,16 @@ static func make_result(variant: String, weapons: int) -> Dictionary:
 func check_layout(screen: Control, state: String) -> void:
 	var controls: Array[Control] = []
 	_controls_in(screen, controls)
-	_check.call(controls.size() >= 16, "%s: a tela mostra os controles (%d)" % [state, controls.size()])
+	_check.call(controls.size() >= 16, "%s: a tela mostra os controles (%d)", [state, controls.size()])
 	var columns: Array[Rect2] = []
 	for name: String in ["Left", "Center", "Right"]:
 		var column := screen.get_node(name) as Control
 		var rect := column.get_global_rect()
-		_check.call(_safe.encloses(rect), "%s: coluna %s dentro da tela (%s em %s)" % [state, name, rect, _safe])
+		_check.call(_safe.encloses(rect), "%s: coluna %s dentro da tela (%s em %s)", [state, name, rect, _safe])
 		_check.call(column.get_combined_minimum_size().y <= rect.size.y + 0.5,
-				"%s: coluna %s cabe na altura (%s)" % [state, name, column.get_combined_minimum_size()])
+				"%s: coluna %s cabe na altura (%s)", [state, name, column.get_combined_minimum_size()])
 		for other: Rect2 in columns:
-			_check.call(not other.intersects(rect), "%s: coluna %s não cobre outra" % [state, name])
+			_check.call(not other.intersects(rect), "%s: coluna %s não cobre outra", [state, name])
 		columns.append(rect)
 	for control: Control in controls:
 		var rect := control.get_global_rect()
@@ -138,9 +141,9 @@ func check_layout(screen: Control, state: String) -> void:
 			var local := Rect2(rect.position - content.get_global_rect().position, rect.size)
 			_check.call(local.position.x >= -0.5 and local.end.x <= scroll.size.x + 0.5
 					and local.position.y >= -0.5 and local.end.y <= content.size.y + 0.5,
-					"%s: %s alcançável rolando" % [state, path])
+					"%s: %s alcançável rolando", [state, path])
 		else:
-			_check.call(_safe.encloses(rect), "%s: %s dentro da tela" % [state, path])
+			_check.call(_safe.encloses(rect), "%s: %s dentro da tela", [state, path])
 		_check_text_fits(control, state, path)
 	# Sem sobreposição entre textos e botões da mesma região (fixa ou a mesma rolagem).
 	for i: int in range(controls.size()):
@@ -150,17 +153,17 @@ func check_layout(screen: Control, state: String) -> void:
 			if a.is_ancestor_of(b) or b.is_ancestor_of(a) or _scroll_of(a) != _scroll_of(b):
 				continue
 			var overlap := a.get_global_rect().grow(-0.5).intersects(b.get_global_rect().grow(-0.5))
-			_check.call(not overlap, "%s: \"%s\" e \"%s\" não se sobrepõem (%s, %s)" % [state, _text(a),
+			_check.call(not overlap, "%s: \"%s\" e \"%s\" não se sobrepõem (%s, %s)", [state, _text(a),
 					_text(b), a.get_global_rect(), b.get_global_rect()])
 	# Botões: o principal e o menu visíveis, ativos, inteiros e com os textos esperados.
 	var again := screen.get("_again") as Button
 	var menu := screen.get("_menu") as Button
 	for b: Button in [again, menu]:
 		_check.call(b.is_visible_in_tree() and not b.disabled and _safe.encloses(b.get_global_rect())
-				and b.size.y >= 22.0, "%s: botão \"%s\" visível e ativo" % [state, b.text])
+				and b.size.y >= 22.0, "%s: botão \"%s\" visível e ativo", [state, b.text])
 	_check.call(again.text == tr("results.again") and menu.text == tr("results.menu"),
-			"%s: botões com os textos results.again e results.menu" % state)
-	_check.call(again.size.y > menu.size.y, "%s: o principal é o maior botão" % state)
+			"%s: botões com os textos results.again e results.menu", state)
+	_check.call(again.size.y > menu.size.y, "%s: o principal é o maior botão", state)
 
 
 func _check_text_fits(control: Control, state: String, path: String) -> void:
@@ -169,48 +172,48 @@ func _check_text_fits(control: Control, state: String, path: String) -> void:
 		var font := l.get_theme_font("font")
 		var font_size := l.get_theme_font_size("font_size")
 		var needed := l.get_line_count() * font.get_height(font_size)
-		_check.call(needed <= l.size.y + 0.5, "%s: %s cabe na altura (%.0f de %.0f)" % [state, path, needed, l.size.y])
+		_check.call(needed <= l.size.y + 0.5, "%s: %s cabe na altura (%.0f de %.0f)", [state, path, needed, l.size.y])
 		if l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING:
 			var width := font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-			_check.call(width <= l.size.x + 0.5, "%s: %s cabe na largura (%.0f de %.0f)" % [state, path,
+			_check.call(width <= l.size.x + 0.5, "%s: %s cabe na largura (%.0f de %.0f)", [state, path,
 					width, l.size.x])
 	if control is Button and (control as Button).text != "":
 		var b := control as Button
 		var minimum := b.get_combined_minimum_size()
 		_check.call(minimum.x <= b.size.x + 0.5 and minimum.y <= b.size.y + 0.5,
-				"%s: %s mostra o texto inteiro (%s de %s)" % [state, path, minimum, b.size])
+				"%s: %s mostra o texto inteiro (%s de %s)", [state, path, minimum, b.size])
 
 
 func _check_variant(screen: Control, r: Dictionary, variant: String, state: String) -> void:
 	var title := (screen.get("_title") as Label).text
 	var key: String = {"victory": "results.victory", "defeat": "results.defeat", "gave_up": "results.gave_up"}[variant]
-	_check.call(title == tr(key), "%s: título %s" % [state, key])
+	_check.call(title == tr(key), "%s: título %s", [state, key])
 	var tip := screen.get("_tip_box") as Control
-	_check.call(tip.visible == (variant != "victory"), "%s: dica só fora da vitória" % state)
+	_check.call(tip.visible == (variant != "victory"), "%s: dica só fora da vitória", state)
 	if tip.visible:
 		var card := screen.get("_tip") as TipBalloon.Card
 		_check.call(card.text.text == TipDeck.text(r["tip"]) and not card.text.text.is_empty()
 				and card.category == TipDeck.category_text(r["tip"]) and card.seal.is_visible_in_tree(),
-				"%s: cartão 心得 com selo, dica e categoria" % state)
+				"%s: cartão 心得 com selo, dica e categoria", state)
 	var cause := (screen.get("_cause") as Label).text
 	if variant == "defeat":
-		_check.call(cause == tr("results.final_blow") % tr("enemy.slime_rice.name"), "%s: golpe final" % state)
-		_check.call((screen.get("_cause_icon") as TextureRect).texture != null, "%s: ícone do golpe final" % state)
+		_check.call(cause == tr("results.final_blow") % tr("enemy.slime_rice.name"), "%s: golpe final", state)
+		_check.call((screen.get("_cause_icon") as TextureRect).texture != null, "%s: ícone do golpe final", state)
 	else:
-		_check.call(cause == tr("results.hurt_most") % tr("boss.tanuki.name"), "%s: quem mais feriu" % state)
+		_check.call(cause == tr("results.hurt_most") % tr("boss.tanuki.name"), "%s: quem mais feriu", state)
 	_check_goals(screen, r, state)
 	var cards := 0
 	for child: Node in (screen.get("_achievements") as Node).get_children():
 		if child is PanelContainer:
 			cards += 1
-	_check.call(cards == (r["new_achievements"] as Array).size(), "%s: um cartão por conquista nova" % state)
+	_check.call(cards == (r["new_achievements"] as Array).size(), "%s: um cartão por conquista nova", state)
 	var tiles: Array = screen.get("_tiles")
 	var shown := PackedStringArray()
 	for tile: Dictionary in tiles:
 		shown.append((tile["value"] as Label).text)
 	_check.call(shown[0] == Screen.format_time(float(r["time"])) and shown[1] == str(int(r["level"]))
 			and shown[2] == Locale.format_number(int(r["kills"])) and shown[3] == Locale.format_number(int(r["ryo_earned"])),
-			"%s: números finais depois da contagem (%s)" % [state, shown])
+			"%s: números finais depois da contagem (%s)", [state, shown])
 
 
 ## Próximas metas: uma linha por meta com nome, barra no valor de depois e o "+N" visível.
@@ -218,23 +221,23 @@ func _check_goals(screen: Control, r: Dictionary, state: String) -> void:
 	var goals := screen.get("_goals") as MissionGoals
 	var rows := goals.rows
 	_check.call(goals.is_visible_in_tree() and rows.size() == (r["goals"] as Array).size(),
-			"%s: Próximas metas com %d linhas" % [state, rows.size()])
+			"%s: Próximas metas com %d linhas", [state, rows.size()])
 	for row: Dictionary in rows:
 		var bar := row["bar"] as MissionGoals.GoalBar
 		var delta := row["delta"] as Label
 		_check.call(is_equal_approx(bar.fill, float(row["after"]) / float(row["target"])) and bar.size.x >= 20.0,
-				"%s: barra da meta %s no valor de depois" % [state, row["id"]])
+				"%s: barra da meta %s no valor de depois", [state, row["id"]])
 		_check.call(delta.is_visible_in_tree() and delta.text.begins_with("+") and is_equal_approx(delta.modulate.a, 1.0),
-				"%s: \"+N\" da meta %s (%s)" % [state, row["id"], delta.text])
+				"%s: \"+N\" da meta %s (%s)", [state, row["id"], delta.text])
 
 
 ## Linhas em ordem de dano decrescente, barra proporcional à melhor, MVP só na primeira.
 func _check_weapons(screen: Control, r: Dictionary, state: String) -> void:
 	var rows: Array = screen.get("_rows")
 	var expected := (r["weapons"] as Array).size()
-	_check.call(rows.size() == expected, "%s: uma linha por arma (%d)" % [state, rows.size()])
+	_check.call(rows.size() == expected, "%s: uma linha por arma (%d)", [state, rows.size()])
 	var empty := screen.get("_no_weapons") as Label
-	_check.call(empty.is_visible_in_tree() == (expected == 0), "%s: aviso de sem armas só quando vazio" % state)
+	_check.call(empty.is_visible_in_tree() == (expected == 0), "%s: aviso de sem armas só quando vazio", state)
 	if rows.is_empty():
 		return
 	var top := float(rows[0]["damage"])
@@ -243,14 +246,14 @@ func _check_weapons(screen: Control, r: Dictionary, state: String) -> void:
 	for i: int in range(rows.size()):
 		var row: Dictionary = rows[i]
 		var node := row["row"] as Control
-		_check.call(list.get_child(i) == node, "%s: linha %d na ordem mostrada" % [state, i])
-		_check.call(float(row["damage"]) <= last, "%s: linha %d em ordem de dano" % [state, i])
+		_check.call(list.get_child(i) == node, "%s: linha %d na ordem mostrada", [state, i])
+		_check.call(float(row["damage"]) <= last, "%s: linha %d em ordem de dano", [state, i])
 		last = float(row["damage"])
 		var bar := row["bar"] as Control
 		var want := node.size.x * float(row["damage"]) / top
-		_check.call(absf(bar.size.x - want) <= 1.0, "%s: barra %d proporcional (%.0f, esperado %.0f)" % [state, i,
+		_check.call(absf(bar.size.x - want) <= 1.0, "%s: barra %d proporcional (%.0f, esperado %.0f)", [state, i,
 				bar.size.x, want])
-		_check.call((node.find_child("Mvp", true, false) != null) == (i == 0), "%s: MVP só na melhor arma" % state)
+		_check.call((node.find_child("Mvp", true, false) != null) == (i == 0), "%s: MVP só na melhor arma", state)
 		var pips := node.find_child("Pips", true, false) as Control
 		var lit := 0
 		for pip: Node in pips.get_children():
@@ -258,7 +261,7 @@ func _check_weapons(screen: Control, r: Dictionary, state: String) -> void:
 				lit += 1
 		_check.call(lit == int((r["weapons"] as Array).filter(func(w: Dictionary) -> bool:
 				return is_equal_approx(float(w["damage"]), float(row["damage"])))[0]["level"]),
-				"%s: pips do nível da linha %d" % [state, i])
+				"%s: pips do nível da linha %d", [state, i])
 
 
 func _test_scroll() -> void:
@@ -266,7 +269,7 @@ func _test_scroll() -> void:
 	var scroll := screen.get("_weapon_scroll") as ScrollContainer
 	var content := scroll.get_child(0) as Control
 	_check.call(content.size.y > scroll.size.y and scroll.get_v_scroll_bar().visible,
-			"10 armas: o painel rola (%.0f em %.0f)" % [content.size.y, scroll.size.y])
+			"10 armas: o painel rola (%.0f em %.0f)", [content.size.y, scroll.size.y])
 	scroll.scroll_vertical = int(content.size.y)
 	await _host.get_tree().process_frame
 	await _host.get_tree().process_frame
@@ -349,7 +352,7 @@ func _test_guard_and_count() -> void:
 	_check.call((tiles[3]["value"] as Label).text == "0", "o ryō começa a contar do zero")
 	var ticks := int(AudioManager.request_count.get("paper_fold", 0))
 	await _host.get_tree().create_timer(0.5).timeout
-	_check.call(not again.disabled, "botões liberados depois de %.1f s" % 0.4)
+	_check.call(not again.disabled, "botões liberados depois de %.1f s", 0.4)
 	await _host.get_tree().create_timer(1.2).timeout
 	_check.call((tiles[3]["value"] as Label).text == Locale.format_number(1234), "a contagem termina no valor")
 	_check.call(int(AudioManager.request_count.get("paper_fold", 0)) - ticks >= 3, "tique suave na contagem")
@@ -368,7 +371,7 @@ func _test_record() -> void:
 		r = make_result("defeat", 2)
 		r["prev_best_time"] = prev
 		screen = await _open(r)
-		_check.call(not (screen.get("_record") as Control).visible, "sem selo de recorde (antes %.0f s)" % prev)
+		_check.call(not (screen.get("_record") as Control).visible, "sem selo de recorde (antes %.0f s)", prev)
 		_close(screen)
 
 

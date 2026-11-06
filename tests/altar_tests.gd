@@ -53,7 +53,7 @@ func _test_rules() -> void:
 			rares += 1
 			bags = bags and drop[1][0] == &"ryo_bag"
 	_check.call(chests + rares == 2000 and absf(chests / 2000.0 - AltarSystem.CHEST_CHANCE) < 0.04 and bags,
-			"altar: 1 afixo dá baú comum (%.0f%%) ou item raro + ryō" % (chests / 20.0))
+			"altar: 1 afixo dá baú comum (%.0f%%) ou item raro + ryō", (chests / 20.0))
 
 
 ## Mesma semente → mesmos altares; longe do início, separados, sólidos e com o círculo livre.
@@ -86,18 +86,18 @@ func _test_placement(id: String) -> void:
 							if (s[0] as Vector2) != at and (s[0] as Vector2).distance_to(at) - float(s[1]) < AltarSystem.RADIUS - 6.0:
 								intrusions.append(at)
 			list_c.append_array(c.chunk_data(ch)["altars"])
-	_check.call(same, "altar %s: mesma semente, mesmos altares" % id)
-	_check.call(list_a.size() >= 2, "altar %s: há altares no mapa (%d em 15×15 chunks)" % [id, list_a.size()])
-	_check.call(list_a != list_c, "altar %s: outra semente, outros altares" % id)
+	_check.call(same, "altar %s: mesma semente, mesmos altares", id)
+	_check.call(list_a.size() >= 2, "altar %s: há altares no mapa (%d em 15×15 chunks)", [id, list_a.size()])
+	_check.call(list_a != list_c, "altar %s: outra semente, outros altares", id)
 	var far := list_a.all(func(p: Vector2) -> bool: return p.length() >= AltarSystem.MIN_START_DIST)
-	_check.call(far, "altar %s: nenhum a menos de %.0f px do início" % [id, AltarSystem.MIN_START_DIST])
+	_check.call(far, "altar %s: nenhum a menos de %.0f px do início", [id, AltarSystem.MIN_START_DIST])
 	var gap := INF
 	for i: int in list_a.size():
 		for j: int in range(i + 1, list_a.size()):
 			gap = minf(gap, list_a[i].distance_to(list_a[j]))
-	_check.call(gap >= AltarSystem.MIN_GAP, "altar %s: distância mínima entre altares (%.0f px)" % [id, gap])
-	_check.call(solid_ok, "altar %s: sólido no centro" % id)
-	_check.call(intrusions.is_empty(), "altar %s: círculo do ritual livre de terreno %s" % [id, intrusions.slice(0, 3)])
+	_check.call(gap >= AltarSystem.MIN_GAP, "altar %s: distância mínima entre altares (%.0f px)", [id, gap])
+	_check.call(solid_ok, "altar %s: sólido no centro", id)
+	_check.call(intrusions.is_empty(), "altar %s: círculo do ritual livre de terreno %s", [id, intrusions.slice(0, 3)])
 	var lantern_hits: Array = []
 	for at: Vector2 in list_a:
 		var ch := a.chunk_of(at)
@@ -106,14 +106,14 @@ func _test_placement(id: String) -> void:
 				for l: Vector2 in a.chunk_data(Vector2i(nx, ny))["lanterns"]:
 					if l.distance_to(at) <= AltarSystem.RESERVE_RADIUS + 12.0:
 						lantern_hits.append(at)
-	_check.call(lantern_hits.is_empty(), "altar %s: lanternas (também dos chunks vizinhos) longe do círculo" % id)
+	_check.call(lantern_hits.is_empty(), "altar %s: lanternas (também dos chunks vizinhos) longe do círculo", id)
 	var sites_ok := true
 	for cy: int in range(-3, 4):
 		for cx: int in range(-3, 4):
 			sites_ok = sites_ok and a.hazard_sites(Vector2i(cx, cy))["lanterns"] == a.chunk_data(Vector2i(cx, cy))["lanterns"]
-	_check.call(sites_ok, "altar %s: sorteio das lanternas sem montar o chunk = o do chunk" % id)
+	_check.call(sites_ok, "altar %s: sorteio das lanternas sem montar o chunk = o do chunk", id)
 	var inside := list_a.all(func(p: Vector2) -> bool: return a.clamp_to_bounds(p) == p)
-	_check.call(inside, "altar %s: dentro dos limites da fase" % id)
+	_check.call(inside, "altar %s: dentro dos limites da fase", id)
 	for w: WorldMap in [a, b, c]:
 		w.free()
 
@@ -197,7 +197,7 @@ func _test_ritual() -> void:
 	_check.call(game.altars.state_at(at) == AltarSystem.State.CHANNELING, "altar: entrar no círculo começa o ritual")
 	_tick(game, roundi(AltarSystem.CHANNEL_TIME * 0.55 / STEP), spot)
 	var r: Dictionary = game.altars.runtime[key]
-	_check.call(int(r["runes"]) == 2 and float(r["progress"]) > 0.5, "altar: 2 runas acesas na metade (%d)" % r["runes"])
+	_check.call(int(r["runes"]) == 2 and float(r["progress"]) > 0.5, "altar: 2 runas acesas na metade (%d)", r["runes"])
 	_check.call(game.fx.bolts_alive() >= 0, "altar: raios decorativos não quebram")
 	var before := float(r["progress"])
 	_tick(game, 60, at + Vector2(0, AltarSystem.RADIUS + 30.0))
@@ -265,7 +265,7 @@ func _test_elite() -> void:
 	var base := float(DB.enemies[StringName(spawned[0][1])]["hp"]) * game.enemy_hp_mult() * AltarSystem.ELITE_HP_BONUS \
 			* EnemyManager.ELITE_HP * EliteAffixes.hp_mult(2)
 	_check.call(absf(enemies.max_hp[i] - base) < base * 0.05,
-			"altar: vida do Elite com 2 afixos (%.0f ≈ %.0f)" % [enemies.max_hp[i], base])
+			"altar: vida do Elite com 2 afixos (%.0f ≈ %.0f)", [enemies.max_hp[i], base])
 	_check.call(enemies.shield[i] > 0.0, "altar: escudo do Diamante")
 	_tick(game, roundi((AltarSystem.BREAK_TIME - AltarSystem.RISE_AT) / STEP) + 2, at + Vector2(-30, 30))
 	_check.call(enemies.sealed[i] == 0 and enemies.controlled[i] == 0, "altar: Elite solto depois do rugido")
@@ -312,7 +312,7 @@ func _test_ambush() -> void:
 	_tick(game, 4, at + Vector2(-20, 30))
 	var expected := AltarSystem.ambush_count(GameClock.game_time)
 	_check.call(game.enemies.count_common >= common + expected + 1,
-			"altar: emboscada de %d inimigos (%d → %d)" % [expected, common, game.enemies.count_common])
+			"altar: emboscada de %d inimigos (%d → %d)", [expected, common, game.enemies.count_common])
 	_check.call(game.tracker.altar_ambushes == 1 and String(game.hud.get("_toast").text) ==
 			TranslationServer.translate("altar.ambush"), "altar: aviso e contagem da emboscada")
 	var champ := -1
@@ -324,7 +324,7 @@ func _test_ambush() -> void:
 	if champ >= 0 and game.enemies.alive[champ] == 1:
 		game.deal_damage(&"katana", champ, 999999.0, Vector2.RIGHT, 0.0)
 	var ids := game.pickups.items.map(func(it: Dictionary) -> StringName: return it["id"])
-	_check.call(ids.has(&"ryo_bag") and not ids.has(&"chest"), "altar: campeão deixa ryō, não baú (%s)" % [ids])
+	_check.call(ids.has(&"ryo_bag") and not ids.has(&"chest"), "altar: campeão deixa ryō, não baú (%s)", [ids])
 	await _free(game)
 
 
@@ -343,10 +343,10 @@ func _test_first_and_pity() -> void:
 	altars.since_elite = 0
 	for _k: int in 400:
 		elite += 1 if altars.roll_outcome() == &"elite" else 0
-	_check.call(absf(elite / 400.0 - AltarSystem.ELITE_BASE) < 0.08, "altar: chance base %.0f%%" % (elite / 4.0))
+	_check.call(absf(elite / 400.0 - AltarSystem.ELITE_BASE) < 0.08, "altar: chance base %.0f%%", (elite / 4.0))
 	var type := altars.pick_elite_type()
 	var arch := String(DB.enemies[type].get("archetype", ""))
-	_check.call(arch != "swarm" and arch != "prop", "altar: Elite é um inimigo da fase (%s, %s)" % [type, arch])
+	_check.call(arch != "swarm" and arch != "prop", "altar: Elite é um inimigo da fase (%s, %s)", [type, arch])
 	await _free(game)
 
 
@@ -443,7 +443,7 @@ func _test_bot_visits() -> void:
 		_tick(game, 1)
 		steps += 1
 	_check.call(game.altars.state_at(at) == AltarSystem.State.BREAKING,
-			"bot: anda até o altar e fica até o selo quebrar (%.1f s)" % (steps * STEP))
+			"bot: anda até o altar e fica até o selo quebrar (%.1f s)", (steps * STEP))
 	await _free(game)
 
 
@@ -475,7 +475,7 @@ func _test_escape_windows() -> void:
 	var speed := float(StatBlock.DEFS["speed"][0]) * slowest
 	var run := speed * (EliteAffixes.IWA_WINDUP - Player.ACCEL_TIME)
 	_check.call(run > EliteAffixes.IWA_RADIUS + Player.RADIUS,
-			"afixo iwa: o mais lento (%.0f px/s) sai do anel a tempo (%.0f > %.0f px)" % [speed, run,
+			"afixo iwa: o mais lento (%.0f px/s) sai do anel a tempo (%.0f > %.0f px)", [speed, run,
 			EliteAffixes.IWA_RADIUS + Player.RADIUS])
 	_check.call(EliteAffixes.YOMI_WINDUP >= 0.6 and EliteAffixes.YOMI_BEHIND > 0.0, "afixo yomi: aviso ≥ 0,6 s, no rastro")
 
@@ -495,7 +495,7 @@ func _test_hum_pause() -> void:
 	var back := game.altars.hum_playing() and not game.altars.hum_paused()
 	GameClock.paused = true
 	_check.call(not has_stream or (paused and back),
-			"altar: zumbido pausa com o relógio e volta (%s, %s)" % [paused, back])
+			"altar: zumbido pausa com o relógio e volta (%s, %s)", [paused, back])
 	game.rift.midboss_done = true
 	game.rift.open_portal(game.player.sim_pos + Vector2(120, 0))
 	await _host.get_tree().process_frame
@@ -519,7 +519,7 @@ func _test_purify() -> void:
 	game.pickups.purify_screen()
 	_check.call(game.enemies.alive[i] == 1 and absf(game.enemies.hp[i] - hp * (1.0 - AltarSystem.PURIFY_ELITE)) < 1.0
 			and game.enemies.alive[j] == 0,
-			"sino: Elite com afixos leva %.0f%%, comuns somem (%d, %.0f de %.0f, %d)" % [AltarSystem.PURIFY_ELITE * 100.0,
+			"sino: Elite com afixos leva %.0f%%, comuns somem (%d, %.0f de %.0f, %d)", [AltarSystem.PURIFY_ELITE * 100.0,
 			game.enemies.alive[i], game.enemies.hp[i], hp, game.enemies.alive[j]])
 	await _free(game)
 
@@ -540,7 +540,7 @@ func _test_ambush_rise() -> void:
 			sealed += 1
 			if game.enemies.elite[k] == 1:
 				champ = k
-	_check.call(sealed >= AltarSystem.ambush_count(GameClock.game_time), "altar: emboscada surge selada (%d)" % sealed)
+	_check.call(sealed >= AltarSystem.ambush_count(GameClock.game_time), "altar: emboscada surge selada (%d)", sealed)
 	_check.call(champ >= 0 and game.enemies.pos[champ].distance_to(at) > AltarSystem.RADIUS,
 			"altar: campeão nasce fora do círculo")
 	if champ >= 0:
@@ -570,7 +570,7 @@ func _test_capacity_full() -> void:
 		_tick(game, 1, at + Vector2(-30, 30))
 	var chests := game.pickups.items.filter(func(it: Dictionary) -> bool: return it["id"] == &"chest")
 	_check.call(chests.size() == 1 and game.altars.since_elite == 2 and game.altars.affixes.count() == 0,
-			"altar: sem vaga, baú do Elite no chão e a pena continua (%d)" % game.altars.since_elite)
+			"altar: sem vaga, baú do Elite no chão e a pena continua (%d)", game.altars.since_elite)
 	await _free(game)
 
 

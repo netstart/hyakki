@@ -24,8 +24,8 @@ var _check: Callable
 var _host: Node
 
 
-func _ok(condition: bool, label: String) -> void:
-	_check.call(condition, label)
+func _ok(condition: bool, label: String, args: Variant = null) -> void:
+	_check.call(condition, label, args)
 
 
 # --- Layout ------------------------------------------------------------------------------------
@@ -64,9 +64,9 @@ func check_layout(host: Node, hud: Hud, safe: Rect2, langs: Array, label: String
 					pad.show_caption(slot)
 					var cap := pad.caption_rect()
 					_ok(cap.size.x > 0.0 and safe.grow(-2.0).encloses(cap),
-							"%s: nome da habilidade %d liberada na área segura (%s em %s)" % [sub, slot + 1, cap, safe])
+							"%s: nome da habilidade %d liberada na área segura (%s em %s)", [sub, slot + 1, cap, safe])
 					for r: Rect2 in fixed + _pad_rects(pad):
-						_ok(not r.intersects(cap), "%s: nome da habilidade %d sem sobrepor (%s e %s)" % [sub, slot + 1, cap, r])
+						_ok(not r.intersects(cap), "%s: nome da habilidade %d sem sobrepor (%s e %s)", [sub, slot + 1, cap, r])
 			await _check_center_texts(hud, safe, "%s %s" % [st, lang])
 		pad.caption().visible = false
 	Locale.set_language("pt_BR", false)
@@ -125,11 +125,11 @@ func _check_arc(hud: Hud, safe: Rect2, joystick_left: bool, st: String) -> void:
 	var pad := hud.ability_pad()
 	var ult := (hud.get("_ult_button") as Control).get_global_rect()
 	_ok(pad.ult_center.distance_to(ult.get_center()) < 0.6,
-			"%s: arco em volta do Golpe (%s e %s)" % [st, pad.ult_center, ult])
+			"%s: arco em volta do Golpe (%s e %s)", [st, pad.ult_center, ult])
 	_ok(pad.on_left != joystick_left and (pad.button_center(0).x < safe.get_center().x) != joystick_left,
-			"%s: arco do lado oposto ao joystick" % st)
+			"%s: arco do lado oposto ao joystick", st)
 	_ok((hud.get("_ult_button") as Control).mouse_filter == Control.MOUSE_FILTER_IGNORE,
-			"%s: o toque do Golpe vem do arco (multitoque), não do Button" % st)
+			"%s: o toque do Golpe vem do arco (multitoque), não do Button", st)
 
 
 ## Botões, custo, cadeado e barra num estado.
@@ -140,49 +140,49 @@ func _check_pad(pad: AbilityPad, safe: Rect2, fixed: Array[Rect2], st: String) -
 		var b := buttons[slot]
 		var r := pad.button_rect(slot)
 		_ok(b.visible and safe.encloses(r) and r.size.x >= 28.0 and r.size.y >= 28.0,
-				"%s: botão %d inteiro na área segura com alvo de toque (%s em %s)" % [st, slot + 1, r, safe])
-		_ok(b.get_global_rect().is_equal_approx(r), "%s: botão %d no lugar (%s)" % [st, slot + 1, b.get_global_rect()])
+				"%s: botão %d inteiro na área segura com alvo de toque (%s em %s)", [st, slot + 1, r, safe])
+		_ok(b.get_global_rect().is_equal_approx(r), "%s: botão %d no lugar (%s)", [st, slot + 1, b.get_global_rect()])
 		var c := pad.button_center(slot)
 		_ok(c.distance_to(pad.ult_center) >= ult_r + AbilityPad.HIT - 0.5
 				and c.distance_to(pad.ult_center) <= ult_r + AbilityPad.HIT + 8.0,
-				"%s: botão %d colado no Golpe, sem sobrepor" % [st, slot + 1])
+				"%s: botão %d colado no Golpe, sem sobrepor", [st, slot + 1])
 		for o: int in range(slot):
 			_ok(c.distance_to(pad.button_center(o)) >= AbilityPad.HIT * 2.0,
-					"%s: botões %d e %d sem sobrepor os alvos" % [st, o + 1, slot + 1])
+					"%s: botões %d e %d sem sobrepor os alvos", [st, o + 1, slot + 1])
 		for f: Rect2 in fixed:
-			_ok(not f.intersects(r), "%s: botão %d longe do joystick, cantos e topo (%s e %s)" % [st, slot + 1, r, f])
+			_ok(not f.intersects(r), "%s: botão %d longe do joystick, cantos e topo (%s e %s)", [st, slot + 1, r, f])
 		var state := b.state
-		_ok(not state.is_empty(), "%s: botão %d com estado" % [st, slot + 1])
+		_ok(not state.is_empty(), "%s: botão %d com estado", [st, slot + 1])
 		var box := Rect2(Vector2.ZERO, b.size)
 		if bool(state.get("unlocked", false)):
 			var cost := b.cost_rect()
 			_ok(box.encloses(cost) and cost.position.distance_to(b.center()) <= AbilityPad.RADIUS
 					and (cost.end - Vector2.ONE).distance_to(b.center()) <= AbilityPad.RADIUS + 0.5,
-					"%s: custo %d dentro do botão (%s)" % [st, slot + 1, cost])
+					"%s: custo %d dentro do botão (%s)", [st, slot + 1, cost])
 		else:
 			var parts := b.locked_parts()
 			var pill: Rect2 = parts["pill"]
 			_ok(box.encloses(pill) and box.encloses(parts["lock"] as Rect2) and not pill.intersects(parts["lock"] as Rect2),
-					"%s: cadeado e \"%s\" inteiros no botão %d (%s)" % [st, parts["text"], slot + 1, pill])
+					"%s: cadeado e \"%s\" inteiros no botão %d (%s)", [st, parts["text"], slot + 1, pill])
 	var g := pad.gauge_rect()
 	_ok(pad.gauge().visible and safe.grow(-2.0).encloses(g),
-			"%s: barra de energia na área segura (%s em %s)" % [st, g, safe])
+			"%s: barra de energia na área segura (%s em %s)", [st, g, safe])
 	for slot: int in 3:
-		_ok(not g.intersects(pad.button_rect(slot)), "%s: barra longe do botão %d" % [st, slot + 1])
+		_ok(not g.intersects(pad.button_rect(slot)), "%s: barra longe do botão %d", [st, slot + 1])
 	_ok(g.position.distance_to(pad.ult_center) > ult_r and g.end.y <= pad.ult_center.y - ult_r,
-			"%s: barra acima do Golpe" % st)
+			"%s: barra acima do Golpe", st)
 	for f: Rect2 in fixed:
-		_ok(not f.intersects(g), "%s: barra longe do joystick, cantos e topo (%s e %s)" % [st, g, f])
+		_ok(not f.intersects(g), "%s: barra longe do joystick, cantos e topo (%s e %s)", [st, g, f])
 	var parts := pad.gauge().parts()
 	var local := Rect2(Vector2.ZERO, g.size)
 	var rects: Array[Rect2] = []
 	for key: String in ["glyph", "bar", "value"]:
 		var r: Rect2 = parts[key]
-		_ok(local.grow(0.5).encloses(r), "%s: %s da barra inteiro (%s em %s)" % [st, key, r, local])
+		_ok(local.grow(0.5).encloses(r), "%s: %s da barra inteiro (%s em %s)", [st, key, r, local])
 		for o: Rect2 in rects:
-			_ok(not o.intersects(r), "%s: %s da barra sem sobrepor" % [st, key])
+			_ok(not o.intersects(r), "%s: %s da barra sem sobrepor", [st, key])
 		rects.append(r)
-	_ok(pad.icon(String(pad.source.call("energy_icon"))) != null, "%s: glifo da energia carregado" % st)
+	_ok(pad.icon(String(pad.source.call("energy_icon"))) != null, "%s: glifo da energia carregado", st)
 
 
 ## "Nv 5" / "Nv 10" no idioma (ou só o número, se não couber) dentro do alvo de toque.
@@ -193,7 +193,7 @@ func _check_locked_text(pad: AbilityPad, st: String) -> void:
 		var pill: Rect2 = parts["pill"]
 		var level := str(b.state.get("level", 0))
 		_ok(String(parts["text"]).contains(level) and Rect2(Vector2.ZERO, b.size).encloses(pill),
-				"%s: travada %d com \"%s\" inteiro (%s)" % [st, slot + 1, parts["text"], pill])
+				"%s: travada %d com \"%s\" inteiro (%s)", [st, slot + 1, parts["text"], pill])
 
 
 ## Dica tutorial.abilities e aviso (falta de energia, nível) no centro, sem chegar no arco.
@@ -216,9 +216,9 @@ func _check_center_texts(hud: Hud, safe: Rect2, st: String) -> void:
 		for l: Label in [hint, toast]:
 			var r := l.get_global_rect()
 			_ok(safe.encloses(r) and l.get_line_count() <= l.get_visible_line_count(),
-					"%s: %s \"%s\" inteiro na área segura (%s)" % [st, l.name, text.left(24), r])
+					"%s: %s \"%s\" inteiro na área segura (%s)", [st, l.name, text.left(24), r])
 			for a: Rect2 in avoid:
-				_ok(not a.intersects(r), "%s: %s \"%s\" sem chegar no arco (%s e %s)" % [st, l.name, text.left(24), r, a])
+				_ok(not a.intersects(r), "%s: %s \"%s\" sem chegar no arco (%s e %s)", [st, l.name, text.left(24), r, a])
 	hint.visible = false
 	toast.visible = false
 
@@ -278,7 +278,7 @@ func run_touch(host: Node, check: Callable, view: Vector2) -> void:
 	_touch(hud, 0, pad.button_center(2), true)
 	_touch(hud, 0, pad.button_center(2), false)
 	_ok(notices.size() == 1 and notices[0] == TranslationServer.translate("ability.level_req") % 10
-			and pad.buttons()[2].denying(), "toque: travada avisa \"%s\" e treme" % [notices])
+			and pad.buttons()[2].denying(), "toque: travada avisa \"%s\" e treme", [notices])
 	stub.set("level", 10)
 	stub.set("left", PackedFloat32Array([0.0, 0.0, 0.0]))
 	stub.set("value", 0.0)
@@ -288,7 +288,7 @@ func run_touch(host: Node, check: Callable, view: Vector2) -> void:
 	_touch(hud, 0, pad.button_center(1), false)
 	pad.call("_process", 0.0)
 	_ok(notices.size() == 2 and pad.buttons()[1].denying() and pad.gauge().denying(),
-			"toque: sem energia avisa, treme o botão e a barra (%s)" % [notices])
+			"toque: sem energia avisa, treme o botão e a barra (%s)", [notices])
 	_ok(pad.buttons()[1].get_child(0).material != null, "sem energia: ícone sem cor")
 	stub.set("blood", 10.0)
 	pad.call("_process", 0.0)
@@ -314,12 +314,12 @@ func _check_redraws(pad: AbilityPad, stub: RefCounted) -> void:
 	for _i: int in 10:
 		pad.call("_process", 0.0)
 		await _host.get_tree().process_frame
-	_ok(counts == [0, 0], "desenho: botão parado não redesenha (%s)" % [counts])
+	_ok(counts == [0, 0], "desenho: botão parado não redesenha (%s)", [counts])
 	for i: int in 10:
 		stub.set("left", PackedFloat32Array([3.0 - i * 0.1, 0.0, 0.0]))
 		pad.call("_process", 0.0)
 		await _host.get_tree().process_frame
-	_ok(counts[0] == 0 and counts[1] >= 8, "desenho: recarga redesenha só a camada de cima (%s)" % [counts])
+	_ok(counts[0] == 0 and counts[1] >= 8, "desenho: recarga redesenha só a camada de cima (%s)", [counts])
 
 
 ## Toque de verdade pela janela (o viewport converte para a tela lógica e chama os _input).

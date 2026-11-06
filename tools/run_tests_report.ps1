@@ -7,16 +7,19 @@
 #
 # Etapas: importação (sintaxe), lint, regras puras, textos/i18n, licenças, ficha da loja,
 # integração, determinismo (1x/2x/3x) e estresse (500 inimigos), tudo no Godot do PC. Mesmas de
-# run_checks.ps1, mas com cada verificação listada (testes GDScript rodam com
-# --verbose) e o relatório salvo.
+# run_checks.ps1, em sequência e com o relatório salvo: as falhas saem com o texto completo; as
+# verificações que passaram entram só na contagem (com -ListPassed, cada uma é listada, via
+# --verbose, o que gera milhões de linhas). Cada Godot roda com APPDATA própria (user:// isolado).
 #
 # Opções:
 #   -NoOpen       não abre o relatório no navegador no fim
 #   -SkipStress   pula o teste de estresse (o mais lento)
+#   -ListPassed   lista cada verificação que passou (--verbose; lento e com logs enormes)
 
 param(
     [switch]$NoOpen,
     [switch]$SkipStress,
+    [switch]$ListPassed,
     [string]$Godot = $(if ($env:GODOT) { $env:GODOT } else { 'C:\src\tools\godot\Godot_v4.7.2-stable_win64_console.exe' })
 )
 
@@ -43,16 +46,25 @@ function Invoke-Logged([string]$id, [scriptblock]$command) {
 }
 
 function Add-Result([string]$id, [string]$name, [string]$status, $run, [string]$summary,
-        [string[]]$passed = @(), [string[]]$failures = @()) {
+        [string[]]$passed = @(), [string[]]$failures = @(), [int]$count = -1) {
+    if ($count -lt 0) { $count = $passed.Count + $failures.Count }
     $results.Add([pscustomobject]@{
         Id = $id; Name = $name; Status = $status; Seconds = $run.Seconds; Summary = $summary
-        Passed = $passed; Failures = $failures; Log = $run.Lines })
+        Passed = $passed; Failures = $failures; Log = $run.Lines; Count = $count })
     $color = @{ ok = 'Green'; falhou = 'Red'; pulado = 'Yellow' }[$status]
     Write-Host ("  {0}: {1} ({2}s)" -f $status.ToUpper(), $summary, $run.Seconds) -ForegroundColor $color
     foreach ($f in $failures | Select-Object -First 10) { Write-Host "    $f" -ForegroundColor Red }
 }
 
-function Godot([string[]]$GodotArgs) { & $Godot --headless --path $project @GodotArgs }
+# user:// isolado (APPDATA própria): os testes nunca tocam no save, settings.cfg e runs.csv do jogador.
+$isolated = Join-Path ([IO.Path]::GetTempPath()) "hyakki-report\$stamp"
+New-Item -ItemType Directory -Force $isolated | Out-Null
+function Godot([string[]]$GodotArgs) {
+    $real = $env:APPDATA
+    $env:APPDATA = $isolated
+    try { & $Godot --headless --path $project @GodotArgs } finally { $env:APPDATA = $real }
+}
+$verbose = if ($ListPassed) { @('--', '--verbose') } else { @() }
 
 # Testes GDScript: "ok: x" / "FALHOU: x" por verificação e "N verificações, M falhas" no fim.
 function Add-GodotTests([string]$id, [string]$name, $run) {
@@ -60,8 +72,9 @@ function Add-GodotTests([string]$id, [string]$name, $run) {
     $failures = @($run.Lines | Where-Object { $_ -match 'FALHOU: |SCRIPT ERROR|Parse Error' })
     $total = $run.Lines | Where-Object { $_ -match '^\d+ verificações' } | Select-Object -Last 1
     $ok = $run.Code -eq 0 -and $failures.Count -eq 0 -and $total
+    $count = if ($total -match '^(\d+) verificações') { [int]$Matches[1] } else { $passed.Count + $failures.Count }
     if (-not $total) { $total = 'não chegou ao fim (veja o log)' }
-    Add-Result $id $name $(if ($ok) { 'ok' } else { 'falhou' }) $run $total $passed $failures
+    Add-Result $id $name $(if ($ok) { 'ok' } else { 'falhou' }) $run $total $passed $failures $count
 }
 
 # --- Etapas --------------------------------------------------------------------------
@@ -82,7 +95,7 @@ if (Get-Command gdlint -ErrorAction SilentlyContinue) {
 }
 
 Step '3. Regras puras'
-Add-GodotTests 'regras' 'Regras puras' (Invoke-Logged 'regras' { Godot @('--script', 'res://tests/run_tests.gd', '--', '--verbose') })
+Add-GodotTests 'regras' 'Regras puras' (Invoke-Logged 'regras' { Godot (@('--script', 'res://tests/run_tests.gd') + $verbose) })
 
 foreach ($py in @(
         @{ Id = 'i18n'; Name = 'Textos (i18n)'; Args = @((Join-Path $PSScriptRoot 'build_i18n.py'), '--check') },
@@ -97,7 +110,7 @@ foreach ($py in @(
 }
 
 Step '5. Integração'
-Add-GodotTests 'integracao' 'Integração' (Invoke-Logged 'integracao' { Godot @('res://tests/integration_tests.tscn', '--', '--verbose') })
+Add-GodotTests 'integracao' 'Integração' (Invoke-Logged 'integracao' { Godot (@('--fixed-fps', '60', 'res://tests/integration_tests.tscn') + $verbose) })
 
 Step '6. Determinismo (1x, 2x, 3x)'
 $t0 = Get-Date
@@ -135,7 +148,7 @@ $verdict = if ($failedSteps) { 'FALHOU' } else { 'TUDO OK' }
 $commit = (git -C $project rev-parse --short HEAD 2>$null) -join ''
 $dirty = if ((git -C $project status --porcelain 2>$null)) { ' (com alterações locais)' } else { '' }
 $godotVersion = ((& $Godot --version 2>$null) -join '').Trim()
-$checks = ($results | ForEach-Object { $_.Passed.Count + $_.Failures.Count } | Measure-Object -Sum).Sum
+$checks = ($results | ForEach-Object { $_.Count } | Measure-Object -Sum).Sum
 
 $md = New-Object System.Text.StringBuilder
 [void]$md.AppendLine("# Relatório de testes do Hyakki — $verdict")
@@ -180,7 +193,7 @@ foreach ($r in $results) {
 [void]$html.Append('</table>')
 foreach ($r in $results) {
     $open = if ($r.Status -eq 'falhou') { ' open' } else { '' }
-    [void]$html.Append("<details id=`"$($r.Id)`"$open><summary><span class=`"$($r.Status)`">$($r.Status)</span> · $(Esc $r.Name) · $($r.Passed.Count) ok, $($r.Failures.Count) falha(s)</summary>")
+    [void]$html.Append("<details id=`"$($r.Id)`"$open><summary><span class=`"$($r.Status)`">$($r.Status)</span> · $(Esc $r.Name) · $($r.Count - $r.Failures.Count) ok, $($r.Failures.Count) falha(s)</summary>")
     if ($r.Failures -or $r.Passed) {
         [void]$html.Append('<ul>')
         foreach ($f in $r.Failures) { [void]$html.Append("<li class=`"f`">$(Esc $f)</li>") }

@@ -256,7 +256,7 @@ func _process(_delta: float) -> void:
 		visible = shown
 	if not shown:
 		return
-	var now := Time.get_ticks_msec() / 1000.0
+	var now := UiClock.msec() / 1000.0
 	for b: AbilityButton in _buttons:
 		b.visible = b.slot < int(source.call("slot_count"))
 		if b.visible:
@@ -399,7 +399,7 @@ class AbilityButton extends Control:
 		return _clock() - _deny_at < AbilityPad.SHAKE_TIME
 
 	func _clock() -> float:
-		return Time.get_ticks_msec() / 1000.0
+		return UiClock.msec() / 1000.0
 
 	## Lampejo ativo (0..1, 1 = começou agora) de `at` com duração `time`.
 	func _fade(at: float, time: float) -> float:
@@ -571,7 +571,7 @@ class EnergyGauge extends Control:
 		_sig = []
 
 	func deny() -> void:
-		_deny_at = Time.get_ticks_msec() / 1000.0
+		_deny_at = UiClock.msec() / 1000.0
 
 	func denying() -> bool:
 		return _now - _deny_at < AbilityPad.SHAKE_TIME
@@ -660,7 +660,7 @@ class Caption extends Control:
 	func show_text(p_kanji: String, p_title: String) -> void:
 		kanji = p_kanji
 		title = p_title
-		_at = Time.get_ticks_msec() / 1000.0
+		_at = UiClock.msec() / 1000.0
 		visible = true
 		modulate.a = 1.0
 		relayout()

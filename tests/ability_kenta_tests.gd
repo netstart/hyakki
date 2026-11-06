@@ -105,9 +105,9 @@ func _check_shadow_step(game: HyakkiGame) -> void:
 	_check.call(is_equal_approx(ab.energy_value(), energy - 20.0), "Passo Sombrio: custa 20 de Sombra")
 	var cut := 30.0 * _scale(game)
 	_check.call(absf(_lost(game, a) - cut) < 0.01 and absf(_lost(game, b) - cut) < 0.01,
-			"Passo Sombrio: corta quem cruzou (%.1f, %.1f de %.1f)" % [_lost(game, a), _lost(game, b), cut])
+			"Passo Sombrio: corta quem cruzou (%.1f, %.1f de %.1f)", [_lost(game, a), _lost(game, b), cut])
 	_check.call(_lost(game, off) == 0.0, "Passo Sombrio: quem está fora do caminho fica")
-	_check.call(absf(player.sim_pos.x - 50.0) < 1.0, "Passo Sombrio: teleporte de 110 px (x = %.1f)" % player.sim_pos.x)
+	_check.call(absf(player.sim_pos.x - 50.0) < 1.0, "Passo Sombrio: teleporte de 110 px (x = %.1f)", player.sim_pos.x)
 	_check.call(player.invuln > 0.0, "Passo Sombrio: invencível no instante do teleporte")
 	var enemies := game.enemies
 	_check.call(enemies.slow[smoked] > 0.0 and is_equal_approx(enemies.slow_mult[smoked], 0.5),
@@ -146,7 +146,7 @@ func _check_kawarimi(game: HyakkiGame) -> void:
 	_tick(game, 125)
 	var blast := 80.0 * _scale(game)
 	_check.call(kenta._log_time == 0.0 and _lost(game, near) >= blast - 0.01,
-			"Troca de Corpo: o tronco explode (%.0f de %.0f)" % [_lost(game, near), blast])
+			"Troca de Corpo: o tronco explode (%.0f de %.0f)", [_lost(game, near), blast])
 
 
 func _check_makibishi(game: HyakkiGame) -> void:
@@ -163,14 +163,14 @@ func _check_makibishi(game: HyakkiGame) -> void:
 	_tick(game, 30)
 	var scale := _scale(game)
 	_check.call(kenta._kunai.is_empty() and _lost(game, still) >= 25.0 * scale - 0.01,
-			"Makibishi: a kunai voa até o fim e acerta (%.1f de %.1f)" % [_lost(game, still), 25.0 * scale])
+			"Makibishi: a kunai voa até o fim e acerta (%.1f de %.1f)", [_lost(game, still), 25.0 * scale])
 	# Pisada: um inimigo parado em cima de um estrepe pica a cada 0,4 s e fica lento.
 	var spot: Vector2 = kenta._caltrops[0]["pos"]
 	var stepper := _spawn(game, spot, 0.0)
 	_tick(game, 26)
 	var enemies := game.enemies
 	var pricks := _lost(game, stepper) / (18.0 * scale)
-	_check.call(pricks >= 0.99, "Makibishi: quem pisa leva 18 (%.2f pisadas)" % pricks)
+	_check.call(pricks >= 0.99, "Makibishi: quem pisa leva 18 (%.2f pisadas)", pricks)
 	_check.call(enemies.slow[stepper] > 0.0 and is_equal_approx(enemies.slow_mult[stepper], 0.6),
 			"Makibishi: quem pisa fica −40% mais lento")
 	_check.call(kenta.hash_tag().contains("kenta=0,0.000,12,0"), "Makibishi: no hash")
@@ -195,7 +195,7 @@ func _check_save(game: HyakkiGame) -> void:
 	copy.load_state(JSON.parse_string(saved))
 	_check.call(JSON.stringify(copy.state()) == saved, "Kenta: state/load_state mantém fumaça, tronco, estrepes e kunai")
 	_check.call(copy.hash_tag() == kenta.hash_tag() and kenta.hash_tag().begins_with(" kenta=1,"),
-			"Kenta: mesmo hash depois de retomar (%s)" % kenta.hash_tag())
+			"Kenta: mesmo hash depois de retomar (%s)", kenta.hash_tag())
 	copy.reset()
 	_check.call(not copy.has_visuals() and copy.hash_tag() == " kenta=0,0.000,0,0", "Kenta: reset limpa tudo")
 	game.player.move_input = Vector2.ZERO

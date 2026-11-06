@@ -17,6 +17,8 @@ extends RefCounted
 const CREDITS_SCREEN := "res://scripts/app/screens/credits_screen.gd"
 const MIN_SIDE := 12.0
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 
 var _host: Node
 var _check: Callable
@@ -42,8 +44,9 @@ func run(host: Node, check: Callable) -> void:
 			await close(ctx)
 	use_case(DeviceProfiles.main_view(), Vector2.ZERO)
 	Locale.set_language("pt_BR", false)
-	await _check_scrolling()
-	_check_credits_md()
+	if TestShards.runs_rest(&"CreditsScreenTests"):
+		await _check_scrolling()
+		_check_credits_md()
 
 
 ## Tela lógica e recorte da câmera (esquerda, direita) usados por open_screen e check_layout.
@@ -82,59 +85,59 @@ func close(ctx: Array) -> void:
 ## Toda entrada do índice: cartão na seção certa, nome e autor visíveis, glifos desenháveis.
 func _check_complete(screen: Control, lang: String) -> void:
 	var entries := LicenseIndex.entries()
-	_check.call(entries.size() >= 19, "Créditos %s: índice com todas as entradas (%d)" % [lang, entries.size()])
+	_check.call(entries.size() >= 19, "Créditos %s: índice com todas as entradas (%d)", [lang, entries.size()])
 	var cards := screen.find_children("Entry_*", "PanelContainer", true, false)
 	_check.call(cards.size() == entries.size(),
-			"Créditos %s: um cartão por entrada do índice (%d de %d)" % [lang, cards.size(), entries.size()])
+			"Créditos %s: um cartão por entrada do índice (%d de %d)", [lang, cards.size(), entries.size()])
 	var texts := _visible_texts(screen)
 	var ja := load(String(screen.get("JA_FONT"))) as Font
 	for entry: Dictionary in entries:
 		var id := String(entry["id"])
 		var entry_name := String(entry["name"])
 		var author := String(entry["author"])
-		_check.call(texts.has(entry_name), "Créditos %s: nome de %s visível (\"%s\")" % [lang, id, entry_name])
-		_check.call(texts.has(author), "Créditos %s: autor de %s visível (\"%s\")" % [lang, id, author])
+		_check.call(texts.has(entry_name), "Créditos %s: nome de %s visível (\"%s\")", [lang, id, entry_name])
+		_check.call(texts.has(author), "Créditos %s: autor de %s visível (\"%s\")", [lang, id, author])
 		var card := screen.find_child("Entry_%s" % id, true, false) as Control
 		var section := String(screen.call("section_of", entry))
 		var holder := screen.find_child("Section_%s" % section, true, false) as Control
 		_check.call(card != null and holder != null and holder.is_ancestor_of(card),
-				"Créditos %s: %s na seção %s" % [lang, id, section])
+				"Créditos %s: %s na seção %s", [lang, id, section])
 		if card != null:
 			var badge := card.find_child("License", true, false) as Control
 			_check.call(badge != null and texts.has(String(screen.call("badge_text", entry["license_id"]))),
-					"Créditos %s: selo da licença de %s" % [lang, id])
+					"Créditos %s: selo da licença de %s", [lang, id])
 		for text: String in [entry_name, author]:
 			for i: int in text.length():
 				var c := text.unicode_at(i)
 				if c > 32 and not Locale.font.has_char(c) and not ja.has_char(c):
-					_check.call(false, "Créditos %s: glifo U+%04X de \"%s\" sem fonte" % [lang, c, text])
+					_check.call(false, "Créditos %s: glifo U+%04X de \"%s\" sem fonte", [lang, c, text])
 	for category: String in ["engine", "android", "plugin"]:
 		var found := false
 		for entry: Dictionary in entries:
 			found = found or String(entry["category"]) == category
-		_check.call(found, "Créditos %s: há entradas de %s no índice (e na Tecnologia)" % [lang, category])
+		_check.call(found, "Créditos %s: há entradas de %s no índice (e na Tecnologia)", [lang, category])
 
 
 ## Criador, agradecimento especial e despedida.
 func _check_texts(screen: Control, lang: String) -> void:
 	var texts := _visible_texts(screen)
 	var credit: PackedStringArray = screen.call("split_credit", tr("credits.design"))
-	_check.call(credit[1] == "Clayton K. N. Passos", "Créditos %s: o criador sai do crédito (%s)" % [lang, credit[1]])
+	_check.call(credit[1] == "Clayton K. N. Passos", "Créditos %s: o criador sai do crédito (%s)", [lang, credit[1]])
 	_check.call(texts.has(credit[1]) and (credit[0] == "" or texts.has(credit[0])),
-			"Créditos %s: crédito do criador visível" % lang)
-	_check.call(texts.has(tr("credits.special_thanks")), "Créditos %s: agradecimento especial visível" % lang)
-	_check.call(texts.has(tr("credits.thanks")), "Créditos %s: despedida visível" % lang)
+			"Créditos %s: crédito do criador visível", lang)
+	_check.call(texts.has(tr("credits.special_thanks")), "Créditos %s: agradecimento especial visível", lang)
+	_check.call(texts.has(tr("credits.thanks")), "Créditos %s: despedida visível", lang)
 	_check.call(texts.has(tr("credits.title")) and texts.has(tr("title.subtitle")),
-			"Créditos %s: título e subtítulo" % lang)
+			"Créditos %s: título e subtítulo", lang)
 	for key: String in ["credits.section.art", "credits.section.music", "credits.section.sfx",
 			"credits.section.fonts", "credits.section.tech", "credits.section.thanks"]:
-		_check.call(texts.has(tr(key)), "Créditos %s: cabeçalho %s" % [lang, key])
+		_check.call(texts.has(tr(key)), "Créditos %s: cabeçalho %s", [lang, key])
 	# A despedida é o último texto do conteúdo (o "fim" da noite).
 	var thanks := screen.find_child("Thanks", true, false) as Control
 	var special := screen.find_child("SpecialThanks", true, false) as Control
 	_check.call(thanks != null and special != null
 			and thanks.get_global_rect().position.y > special.get_global_rect().end.y,
-			"Créditos %s: a despedida vem depois do agradecimento especial" % lang)
+			"Créditos %s: a despedida vem depois do agradecimento especial", lang)
 
 
 ## Nada estoura na horizontal; textos inteiros; fixos fora da área rolável.
@@ -146,13 +149,13 @@ func check_layout(screen: Control, state: String) -> void:
 	var visible_right := bar.get_global_rect().position.x if bar.visible else scroll_rect.end.x
 	_check.call(_safe.encloses(scroll_rect) and scroll_rect.position.x >= MIN_SIDE
 			and _safe.end.x - scroll_rect.end.x >= 0.0,
-			"Créditos %s: área rolável na tela (%s em %s)" % [state, scroll_rect, _safe])
+			"Créditos %s: área rolável na tela (%s em %s)", [state, scroll_rect, _safe])
 	_check.call(scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED,
-			"Créditos %s: sem rolagem horizontal" % state)
-	_check.call(bar.visible and bar.max_value > scroll.size.y, "Créditos %s: barra de rolagem visível" % state)
+			"Créditos %s: sem rolagem horizontal", state)
+	_check.call(bar.visible and bar.max_value > scroll.size.y, "Créditos %s: barra de rolagem visível", state)
 	_check.call(content.get_combined_minimum_size().x <= content.size.x + 0.5
 			and content.get_global_rect().end.x <= visible_right + 0.5,
-			"Créditos %s: o conteúdo cabe na largura (%s, mínimo %s)" % [state, content.get_global_rect(),
+			"Créditos %s: o conteúdo cabe na largura (%s, mínimo %s)", [state, content.get_global_rect(),
 			content.get_combined_minimum_size()])
 	var left := scroll_rect.position.x
 	for node: Node in content.find_children("*", "Control", true, false):
@@ -161,7 +164,7 @@ func check_layout(screen: Control, state: String) -> void:
 			continue
 		var rect := control.get_global_rect()
 		_check.call(rect.position.x >= left - 0.5 and rect.end.x <= visible_right + 0.5,
-				"Créditos %s: %s dentro da largura (%s)" % [state, control.name, rect])
+				"Créditos %s: %s dentro da largura (%s)", [state, control.name, rect])
 		if control is Label and (control as Label).text != "":
 			var l := control as Label
 			var font := l.get_theme_font("font")
@@ -169,15 +172,15 @@ func check_layout(screen: Control, state: String) -> void:
 			var lines := l.get_line_count()
 			var needed := lines * font.get_height(size) + (lines - 1) * l.get_theme_constant("line_spacing")
 			_check.call(needed <= l.size.y + 0.5 and l.get_visible_line_count() == l.get_line_count(),
-					"Créditos %s: \"%s\" inteiro (%.0f de %.0f px)" % [state, l.text, needed, l.size.y])
+					"Créditos %s: \"%s\" inteiro (%.0f de %.0f px)", [state, l.text, needed, l.size.y])
 			if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
 				var width := font.get_multiline_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-				_check.call(width <= l.size.x + 0.5, "Créditos %s: \"%s\" cabe na largura" % [state, l.text])
+				_check.call(width <= l.size.x + 0.5, "Créditos %s: \"%s\" cabe na largura", [state, l.text])
 	for child: Node in screen.get_children():
 		if child is Button or child is Label:
 			var fixed := (child as Control).get_global_rect()
 			_check.call(_safe.encloses(fixed) and not fixed.intersects(scroll_rect),
-					"Créditos %s: %s fixo fora da área rolável (%s)" % [state, child.name, fixed])
+					"Créditos %s: %s fixo fora da área rolável (%s)", [state, child.name, fixed])
 
 
 ## Arrasto (toque emulado pelo mouse) e roda num SubViewport do tamanho do jogo.
@@ -204,7 +207,7 @@ func _check_scrolling() -> void:
 		var passive := control is Label or control is TextureRect or control is ColorRect
 		var wanted := Control.MOUSE_FILTER_IGNORE if passive else Control.MOUSE_FILTER_PASS
 		_check.call(control.mouse_filter == wanted,
-				"Créditos: %s (%s) deixa o arrasto passar" % [control.name, control.get_class()])
+				"Créditos: %s (%s) deixa o arrasto passar", [control.name, control.get_class()])
 	_check.call(scroll.scroll_deadzone > 0, "Créditos: zona morta evita rolar com um toque")
 	_check.call(scroll.scroll_vertical == 0, "Créditos: abre no topo")
 	# Um toque qualquer para a rolagem automática.
@@ -237,7 +240,7 @@ func _check_scrolling() -> void:
 	_press(viewport, at, false)
 	await _host.get_tree().process_frame
 	var dragged := scroll.scroll_vertical
-	_check.call(dragged >= 60, "Créditos: arrastar 120 px para cima no meio do conteúdo rola (%d)" % dragged)
+	_check.call(dragged >= 60, "Créditos: arrastar 120 px para cima no meio do conteúdo rola (%d)", dragged)
 	var wheel := InputEventMouseButton.new()
 	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
 	wheel.pressed = true
@@ -246,14 +249,14 @@ func _check_scrolling() -> void:
 	wheel.global_position = middle
 	viewport.push_input(wheel)
 	await _host.get_tree().process_frame
-	_check.call(scroll.scroll_vertical > dragged, "Créditos: a roda do mouse rola (%d → %d)" % [
+	_check.call(scroll.scroll_vertical > dragged, "Créditos: a roda do mouse rola (%d → %d)", [
 			dragged, scroll.scroll_vertical])
 	# Rolando até o fim, o sol nasce e a despedida aparece inteira.
 	scroll.scroll_vertical = int(content.size.y)
 	await _host.get_tree().process_frame
 	await _host.get_tree().process_frame
 	var dawn := screen.get("_dawn") as Control
-	_check.call(float(dawn.get("rise")) > 0.9, "Créditos: no fim o sol nasce (%.2f)" % float(dawn.get("rise")))
+	_check.call(float(dawn.get("rise")) > 0.9, "Créditos: no fim o sol nasce (%.2f)", float(dawn.get("rise")))
 	var thanks := screen.find_child("Thanks", true, false) as Control
 	_check.call(scroll.get_global_rect().grow(0.5).encloses(thanks.get_global_rect()),
 			"Créditos: no fim a despedida aparece inteira")
@@ -264,8 +267,8 @@ func _check_scrolling() -> void:
 		await _host.get_tree().process_frame
 	_check.call(is_equal_approx(float(screen.get("_clock")), clock),
 			"Créditos: lanternas e pétalas esperam enquanto a lista rola pelo dedo")
-	var wait_free := Time.get_ticks_usec()
-	while TouchScroll.busy() and Time.get_ticks_usec() - wait_free < 1000000:
+	var wait_free := UiClock.msec()
+	while TouchScroll.busy() and UiClock.msec() - wait_free < 1000:
 		await _host.get_tree().process_frame
 	await _host.get_tree().process_frame
 	await _host.get_tree().process_frame
@@ -290,7 +293,7 @@ func _check_credits_md() -> void:
 	_check.call(md != "", "CREDITS.md existe")
 	for entry: Dictionary in LicenseIndex.entries():
 		_check.call(md.contains(String(entry["name"])) and md.contains(String(entry["author"])),
-				"CREDITS.md lista %s (nome e autor)" % entry["id"])
+				"CREDITS.md lista %s (nome e autor)", entry["id"])
 	_check.call(md.contains("Clayton K. N. Passos"), "CREDITS.md tem o crédito do criador")
 
 

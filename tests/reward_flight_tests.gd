@@ -39,8 +39,8 @@ func run(host: Node, check: Callable) -> void:
 
 func _test_rules() -> void:
 	_check.call(RewardFlight.total_time(1) <= 1.0 and RewardFlight.total_time(1) >= 0.6,
-			"voo de 1 item entre 0,6 e 1 s (%.2f)" % RewardFlight.total_time(1))
-	_check.call(RewardFlight.total_time(6) <= 1.15, "baú cheio (6 ícones) em ~1 s (%.2f)" % RewardFlight.total_time(6))
+			"voo de 1 item entre 0,6 e 1 s (%.2f)", RewardFlight.total_time(1))
+	_check.call(RewardFlight.total_time(6) <= 1.15, "baú cheio (6 ícones) em ~1 s (%.2f)", RewardFlight.total_time(6))
 	_check.call(LevelUpPanel.slot_key({"kind": "weapon_new", "id": &"kunai"}) == "w:kunai"
 			and LevelUpPanel.slot_key({"kind": "passive", "id": &"sake"}) == "p:sake"
 			and LevelUpPanel.slot_key({"kind": "evolution", "id": &"dawn_blade"}) == "w:dawn_blade"
@@ -53,9 +53,9 @@ func _test_rules() -> void:
 	for id: StringName in DB.ids("kami"):
 		var data: Dictionary = DB.kami[id]
 		_check.call(not KamiPanel.blessing_lines(id).is_empty() and not KamiPanel.cost_lines(id).is_empty(),
-				"Kami %s tem bênção e preço" % id)
+				"Kami %s tem bênção e preço", id)
 		_check.call(not String(data.get("kanji", "")).is_empty() and tr("kami.%s.domain" % id) != "kami.%s.domain" % id,
-				"Kami %s tem kanji e domínio" % id)
+				"Kami %s tem kanji e domínio", id)
 
 
 # --- Voo ---------------------------------------------------------------------------------
@@ -90,11 +90,11 @@ func _test_flight_unit() -> void:
 		flight.clear()
 		var name := GfxQuality.level_name(level)
 		flight.launch(_items(4, Vector2(500, 60)))
-		_check.call(flight.active() and flight.visible and flight.flyer_count() == 4, "%s: 4 ícones no ar" % name)
-		_check.call(flight.mouse_filter == Control.MOUSE_FILTER_IGNORE, "%s: o voo não pega toques" % name)
+		_check.call(flight.active() and flight.visible and flight.flyer_count() == 4, "%s: 4 ícones no ar", name)
+		_check.call(flight.mouse_filter == Control.MOUSE_FILTER_IGNORE, "%s: o voo não pega toques", name)
 		flight.step(0.05)
 		_check.call(flight.flyer_position(0).y < 60.0 and flight.flyer_position(3) == Vector2(500, 150),
-				"%s: o primeiro já sobe, o último espera a vez no lugar" % name)
+				"%s: o primeiro já sobe, o último espera a vez no lugar", name)
 		var sparks := 0
 		var t := 0.05
 		var moved_goal := false
@@ -108,20 +108,20 @@ func _test_flight_unit() -> void:
 			sparks = maxi(sparks, flight.spark_count())
 			t += dt
 		_check.call(not flight.active() and t <= RewardFlight.total_time(4) + 0.6,
-				"%s: o voo acaba sozinho (%.2f s)" % [name, t])
+				"%s: o voo acaba sozinho (%.2f s)", [name, t])
 		_check.call(landed.size() == 4 and flight.landed_count() == 4 and finished[0] == 1,
-				"%s: um pouso por ícone e um fim (%d, %d)" % [name, landed.size(), finished[0]])
+				"%s: um pouso por ícone e um fim (%d, %d)", [name, landed.size(), finished[0]])
 		_check.call(flight.burst_count() == 0 and flight.spark_count() == 0 and flight.flyer_count() == 0
-				and flight.get_child_count() == 0 and not flight.visible, "%s: nada sobra (sem nós, faíscas ou anéis)" % name)
+				and flight.get_child_count() == 0 and not flight.visible, "%s: nada sobra (sem nós, faíscas ou anéis)", name)
 		if level == GfxQuality.LOW:
 			_check.call(sparks == 0, "Baixa: sem faíscas")
 		else:
-			_check.call(sparks > 0 and sparks <= RewardFlight.MAX_SPARKS, "Alta: faíscas no orçamento (%d)" % sparks)
+			_check.call(sparks > 0 and sparks <= RewardFlight.MAX_SPARKS, "Alta: faíscas no orçamento (%d)", sparks)
 		goal[0] = Vector2(339, 160)
 	# O fim do caminho é a guardiã de AGORA.
 	var f := {"from": Vector2(600, 40), "side": 1.0}
 	var end := flight.path_point(f, RewardFlight.LIFT_TIME + RewardFlight.FLY_TIME, Vector2(100, 250))
-	_check.call(end.distance_to(Vector2(100, 250)) < 0.5, "o arco termina na guardiã (%s)" % end)
+	_check.call(end.distance_to(Vector2(100, 250)) < 0.5, "o arco termina na guardiã (%s)", end)
 	var top := flight.path_point(f, RewardFlight.LIFT_TIME, Vector2(100, 250))
 	_check.call(top.y < 40.0 and absf(top.x - 600.0) < 0.5, "pulinho para cima antes do arco")
 	_check.call(flight.flyer_scale({"scale": 2.0}, RewardFlight.LIFT_TIME) > 2.0
@@ -175,7 +175,7 @@ func _test_simulation_untouched() -> void:
 		var summary := game.state_summary("")
 		summaries.append(summary.substr(summary.find("hash=")))
 		await _free(game)
-	_check.call(summaries[0] == summaries[1], "mesmo estado com e sem o voo (%s / %s)" % summaries)
+	_check.call(summaries[0] == summaries[1], "mesmo estado com e sem o voo (%s / %s)", summaries)
 
 
 # --- Quem solta o voo --------------------------------------------------------------------
@@ -204,16 +204,16 @@ func _test_sources() -> void:
 	_check.call(not flight.active(), "o voo do baú só sai no Continuar")
 	panel.button().pressed.emit()
 	_check.call(flight.flyer_count() == panel.lines_total() and not hud.chest_open(),
-			"Continuar: %d ícones voam (%d cartões + ryō)" % [flight.flyer_count(), panel.lines_total()])
-	var t0 := Time.get_ticks_msec()
+			"Continuar: %d ícones voam (%d cartões + ryō)", [flight.flyer_count(), panel.lines_total()])
+	var t0 := UiClock.msec()
 	_check.call(await _wait(func() -> bool: return not flight.active(), 3.0), "o voo do baú acaba sozinho")
-	_check.call((Time.get_ticks_msec() - t0) / 1000.0 <= RewardFlight.total_time(6) + 0.4,
-			"voo do baú em ~1 s (%.2f s)" % ((Time.get_ticks_msec() - t0) / 1000.0))
+	_check.call((UiClock.msec() - t0) / 1000.0 <= RewardFlight.total_time(6) + 0.4,
+			"voo do baú em ~1 s (%.2f s)", ((UiClock.msec() - t0) / 1000.0))
 	# O encaixe da arma acende quando o ícone chega.
 	var painter := hud.get("_skill_icons") as SkillIconPainter
 	var key := "w:%s" % game.weapons[0].id
 	flight.landed.emit({"key": key})
-	_check.call(painter.flash(key, Time.get_ticks_msec() / 1000.0) > 0.5 or SkillIconPainter.fx() == 0,
+	_check.call(painter.flash(key, UiClock.msec() / 1000.0) > 0.5 or SkillIconPainter.fx() == 0,
 			"o encaixe da HUD acende com a chegada")
 	# Bot: sem voo.
 	hud.show_chest(LevelChestTests.sample_rewards(3))
@@ -260,7 +260,7 @@ func _test_kami_flow() -> void:
 	card.pressed.emit()
 	await _seconds(KamiPanel.STAMP_TIME + 0.25)
 	_check.call(chosen.size() == 1 and chosen[0] == id and game.kami.accepted.has(id) and game.tracker.kami.has(id),
-			"pacto selado uma vez e aplicado (%s)" % [chosen])
+			"pacto selado uma vez e aplicado (%s)", [chosen])
 	_check.call(not hud.kami_open() and not hud.overlay_open() and not GameClock.paused, "a luta volta na hora")
 	_check.call(flight.active() and panel.outro_playing(), "o ícone do Kami voa enquanto as placas saem")
 	_check.call(await _wait(func() -> bool: return not flight.active() and not panel.visible, 2.0),
@@ -300,7 +300,7 @@ func _test_kami_flow() -> void:
 			and not hud.get("_chest_panel").call("is_open"), "só o pacto aberto antes da resposta do bot")
 	hud.bot_answer()
 	_check.call(chosen.back() == offered and not panel.visible and flight.flyer_count() == 0,
-			"bot aceita o primeiro, sem voo (%s/%s, tela %s, voo %d)" % [chosen.back(), offered, panel.visible,
+			"bot aceita o primeiro, sem voo (%s/%s, tela %s, voo %d)", [chosen.back(), offered, panel.visible,
 			flight.flyer_count()])
 	game.apply_scenario("kami")
 	hud.start_run()
@@ -314,9 +314,9 @@ func _test_kami_flow() -> void:
 		_check.call(panel.cards().size() == 2, "oferta de 2 Kami (Lua V)")
 		_check.call(panel.fx_level() == GfxQuality.budget("ui_fx") and panel.petal_count() == KamiPanel.PETALS[level]
 				and panel.smoke_count() == KamiPanel.SMOKE[level],
-				"%s: pétalas e incenso no orçamento" % GfxQuality.level_name(level))
+				"%s: pétalas e incenso no orçamento", GfxQuality.level_name(level))
 		_check.call(panel.overlay().blur_on() == (level == GfxQuality.HIGH) or panel.overlay().power == 0.0,
-				"%s: desfoque só em Alta" % GfxQuality.level_name(level))
+				"%s: desfoque só em Alta", GfxQuality.level_name(level))
 		panel.close_now()
 	GfxQuality.clear_override()
 	await _free(game)
@@ -355,8 +355,8 @@ func _seconds(value: float) -> void:
 
 
 func _wait(condition: Callable, timeout: float) -> bool:
-	var until := Time.get_ticks_msec() + int(timeout * 1000.0)
-	while Time.get_ticks_msec() < until:
+	var until := UiClock.msec() + int(timeout * 1000.0)
+	while UiClock.msec() < until:
 		if condition.call():
 			return true
 		await _host.get_tree().process_frame

@@ -133,12 +133,12 @@ static func _add_drag(control: Control) -> void:
 static func busy() -> bool:
 	if not throttle:
 		return false
-	return _dragging > 0 or Time.get_ticks_msec() - _last_move_ms < BUSY_GRACE_MS
+	return _dragging > 0 or UiClock.msec() - _last_move_ms < BUSY_GRACE_MS
 
 
 ## Avisa que o dedo mexeu numa lista agora.
 static func mark_moving() -> void:
-	_last_move_ms = Time.get_ticks_msec()
+	_last_move_ms = UiClock.msec()
 
 
 static func _watch(scroll: ScrollContainer) -> void:

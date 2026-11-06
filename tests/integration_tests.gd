@@ -94,106 +94,265 @@ const DamageNumberDensityTests := preload("res://tests/damage_number_density_tes
 const MissionTests := preload("res://tests/mission_tests.gd")
 ## Aparelhos-alvo dos testes de layout (Redmi Note 14 Pro+, Galaxy M55, Pixel 7) e o furo da câmera.
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração (--shard=k/N): quais suítes cada processo roda e a prova da união.
+const TestShards := preload("res://tests/test_shards.gd")
+const SimClock := preload("res://tests/sim_clock.gd")
+## Custo medido de cada suíte sem layout e da parte sem layout ("<nome>.resto") das de layout (ms,
+## com --fixed-fps 60 e 12 fatias em paralelo), para repartir as fatias por igual; abaixo de 100 ms
+## ficam de fora (contam TestShards.DEFAULT_MS, como uma suíte nova sem medida).
+const SUITE_MS := {
+	&"AbilityTests": 84990,
+	&"RealmTests": 49503,
+	&"LevelChestTests.resto": 27000,
+	&"OmikujiTests": 16141,
+	&"ResultsLayoutTests.resto": 10000,
+	&"_test_revive_by_ad": 9974,
+	&"DamageNumberFlowTests": 9758,
+	&"MissionTests": 9624,
+	&"DeathSequenceTests": 9470,
+	&"AltarTests": 8571,
+	&"MenusLayoutTests.resto": 8000,
+	&"DialogueTests": 7478,
+	&"WeaponFxTests": 6505,
+	&"ReviveAdTests": 5150,
+	&"EliteAffixTests": 4963,
+	&"EnemyFxTests": 4624,
+	&"PauseMenuTests.resto": 3500,
+	&"DamageNumberDensityTests": 3263,
+	&"SurfaceTests": 3186,
+	&"WeaponAudioTests": 2947,
+	&"terrain_tests": 2453,
+	&"SpeedUnlockTests": 2366,
+	&"RedMoonTests": 2291,
+	&"ChestBurstTests": 1723,
+	&"GuideTests": 1706,
+	&"perf_tests": 1545,
+	&"SupportPackTests": 1520,
+	&"_test_raijin_bolts": 1504,
+	&"HudLayoutTests.resto": 1500,
+	&"AdsOffTests.resto": 1500,
+	&"InsetFlipTests.resto": 1500,
+	&"GuideTests.run_data": 1292,
+	&"_test_suspended_run": 1171,
+	&"_test_glyphs": 936,
+	&"_test_hero_hand": 839,
+	&"TipTests": 778,
+	&"WeatherTests": 765,
+	&"_test_sound_options.resto": 700,
+	&"_test_i18n": 666,
+	&"OnikiriTests": 662,
+	&"CreditsScreenTests.resto": 500,
+	&"_test_thunder_weapons": 486,
+	&"SkillIconTests": 403,
+	&"_test_assets_exist": 322,
+	&"DamageNumberTests": 282,
+	&"GfxQualityTests": 173,
+	&"MenuBackdropTests": 125,
+	&"_test_shop_scroll": 106,
+}
 
 var _count: int = 0
+## Relógio e contagem da última suíte (_lap imprime ms e verificações de cada uma).
+var _lap_ms: int = 0
+var _lap_count: int = 0
+## Anúncios ligados no começo (debug ou IDs reais; --ads-off desliga): o _reset_state volta a ele.
+var _ads_enabled: bool = true
 var _failures: int = 0
+## Lista também as verificações que passaram (-- --verbose).
+var _verbose: bool = "--verbose" in OS.get_cmdline_user_args()
 ## md5 do save e das opções do jogador antes dos testes ("" = não existia).
 var _real_files: Dictionary = {}
 
 
 func _ready() -> void:
 	_use_test_files()
-	DeviceProfiles.check_scaler(self, _check)
-	_test_data_integrity()
-	_test_assets_exist()
-	_test_i18n()
-	_test_glyphs()
-	_test_stat_block()
-	_test_descriptions()
-	_test_save_migration()
-	AchievementRewardTests.new().run(_check)
-	await MissionTests.new().run(self, _check)
-	_test_sanctuary()
-	_test_shop_clock()
-	_test_shop_coin_items()
-	_test_unscathed_achievement()
-	_test_frozen_tint()
-	await _test_suspended_run()
-	await _test_revive_by_ad()
-	await DeathSequenceTests.new().run(self, _check)
-	await ReviveAdTests.new().run(self, _check)
-	await AdsOffTests.new().run(self, _check)
-	await SupportPackTests.new().run(self, _check)
-	await SpeedUnlockTests.new().run(self, _check)
-	await _test_thunder_weapons()
-	await _test_raijin_bolts()
-	await OnikiriTests.new().run(self, _check)
-	await _test_hero_hand()
-	await AbilityTests.new().run(self, _check)
-	await WeaponAudioTests.new().run(self, _check)
-	await WeaponFxTests.new().run(self, _check)
-	await _test_sound_options()
-	await HudLayoutTests.new().run(self, _check)
-	await ChestBurstTests.new().run(self, _check)
-	await LevelChestTests.new().run(self, _check)
-	await OmikujiTests.new().run(self, _check)
-	await MenusLayoutTests.new().run(self, _check)
-	await SanctuaryLayoutTests.new().run(self, _check)
-	await ResultsLayoutTests.new().run(self, _check)
-	await TitleLayoutTests.new().run(self, _check)
-	await StageMapLayoutTests.new().run(self, _check)
-	await MenuBackdropTests.new().run(self, _check)
-	await PauseMenuTests.new().run(self, _check)
-	await GfxQualityTests.new().run(self, _check)
-	await (load("res://tests/terrain_tests.gd") as GDScript).new().run(self, _check)
-	await (load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run(self, _check)
-	await RealmTests.new().run(self, _check)
-	await AltarTests.new().run(self, _check)
-	await EliteAffixTests.new().run(self, _check)
-	RedMoonTests.new().run_unit(_check)
-	await RedMoonTests.new().run(self, _check)
-	DialogueTests.new().run_unit(_check)
-	await DialogueTests.new().run(self, _check)
-	TipTests.new().run_unit(_check)
-	await TipTests.new().run(self, _check)
-	GuideTests.new().run_data(_check)
-	await GuideTests.new().run(self, _check)
-	await EnemyFxTests.new().run(self, _check)
-	await DamageNumberTests.new().run(self, _check)
-	await DamageNumberFlowTests.new().run(self, _check)
-	await DamageNumberDensityTests.new().run(self, _check)
-	await WeatherTests.new().run(self, _check)
-	await SurfaceTests.new().run(self, _check)
-	await SkillIconTests.new().run(self, _check)
-	await CreditsScreenTests.new().run(self, _check)
-	await InsetFlipTests.new().run(self, _check)
-	await _test_shop_layout()
-	await _test_shop_scroll()
-	# Por último: liga o TouchScroll na árvore (como o App faz no jogo).
-	await (load("res://tests/perf_tests.gd") as GDScript).new().run(self, _check)
+	_check(DeviceProfiles.shard_error().is_empty(), "integração: %s", DeviceProfiles.shard_error())
+	_test_isolation()
+	var names := _suite_names()
+	var flags := _layout_flags()
+	TestShards.check_partition(names, flags, SUITE_MS, DeviceProfiles.layout_units(), _check)
+	var shard := DeviceProfiles.resolve_shard(Vector2i.ZERO)
+	var mine := TestShards.assign(names, flags, SUITE_MS, shard)
+	# Depuração: "-- --suites=A,B" roda só essas suítes (inteiras); o run_checks nunca usa.
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--suites="):
+			mine.clear()
+			for name: String in arg.trim_prefix("--suites=").split(",", false):
+				mine[StringName(name)] = true
+	TestShards.set_rest(mine, names)
+	print(TestShards.coverage_line(shard, mine, names, DeviceProfiles.layout_units()))
+	_lap_ms = Time.get_ticks_msec()
+	_lap_count = _count
+	for suite: Array in _suites():
+		if mine.has(suite[0]):
+			_reset_state()
+			await (suite[2] as Callable).call()
+			_lap(String(suite[0]))
 	_remove_test_files()
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
 
 
-func _check(condition: bool, label: String) -> void:
+## Suítes na ordem: [nome, percorre layout_cases(), corpo]. As de layout rodam em toda fatia (cada
+## uma com a sua parte dos casos); as demais vão inteiras para uma fatia só (TestShards.assign, pelo
+## custo de SUITE_MS). A última liga o TouchScroll na árvore (como o App faz no jogo) e fica por
+## último em qualquer fatia.
+func _suites() -> Array[Array]:
+	return [
+		[&"check_scaler", false, func() -> void: DeviceProfiles.check_scaler(self, _check)],
+		[&"_test_data_integrity", false, func() -> void: _test_data_integrity()],
+		[&"_test_assets_exist", false, func() -> void: _test_assets_exist()],
+		[&"_test_i18n", false, func() -> void: _test_i18n()],
+		[&"_test_glyphs", false, func() -> void: _test_glyphs()],
+		[&"_test_stat_block", false, func() -> void: _test_stat_block()],
+		[&"_test_descriptions", false, func() -> void: _test_descriptions()],
+		[&"_test_save_migration", false, func() -> void: _test_save_migration()],
+		[&"AchievementRewardTests", false, func() -> void: AchievementRewardTests.new().run(_check)],
+		[&"MissionTests", false, func() -> void: await MissionTests.new().run(self, _check)],
+		[&"_test_sanctuary", false, func() -> void: _test_sanctuary()],
+		[&"_test_shop_clock", false, func() -> void: _test_shop_clock()],
+		[&"_test_shop_coin_items", false, func() -> void: _test_shop_coin_items()],
+		[&"_test_unscathed_achievement", false, func() -> void: _test_unscathed_achievement()],
+		[&"_test_frozen_tint", false, func() -> void: _test_frozen_tint()],
+		[&"_test_suspended_run", false, func() -> void: await _test_suspended_run()],
+		[&"_test_revive_by_ad", false, func() -> void: await _test_revive_by_ad()],
+		[&"DeathSequenceTests", false, func() -> void: await DeathSequenceTests.new().run(self, _check)],
+		[&"ReviveAdTests", false, func() -> void: await ReviveAdTests.new().run(self, _check)],
+		[&"AdsOffTests", true, func() -> void: await AdsOffTests.new().run(self, _check)],
+		[&"SupportPackTests", false, func() -> void: await SupportPackTests.new().run(self, _check)],
+		[&"SpeedUnlockTests", false, func() -> void: await SpeedUnlockTests.new().run(self, _check)],
+		[&"_test_thunder_weapons", false, func() -> void: await _test_thunder_weapons()],
+		[&"_test_raijin_bolts", false, func() -> void: await _test_raijin_bolts()],
+		[&"OnikiriTests", false, func() -> void: await OnikiriTests.new().run(self, _check)],
+		[&"_test_hero_hand", false, func() -> void: await _test_hero_hand()],
+		[&"AbilityTests", false, func() -> void: await AbilityTests.new().run(self, _check)],
+		[&"WeaponAudioTests", false, func() -> void: await WeaponAudioTests.new().run(self, _check)],
+		[&"WeaponFxTests", false, func() -> void: await WeaponFxTests.new().run(self, _check)],
+		[&"_test_sound_options", true, func() -> void: await _test_sound_options()],
+		[&"HudLayoutTests", true, func() -> void: await HudLayoutTests.new().run(self, _check)],
+		[&"ChestBurstTests", false, func() -> void: await ChestBurstTests.new().run(self, _check)],
+		[&"LevelChestTests", true, func() -> void: await LevelChestTests.new().run(self, _check)],
+		[&"OmikujiTests", false, func() -> void: await OmikujiTests.new().run(self, _check)],
+		[&"MenusLayoutTests", true, func() -> void: await MenusLayoutTests.new().run(self, _check)],
+		[&"SanctuaryLayoutTests", true, func() -> void: await SanctuaryLayoutTests.new().run(self, _check)],
+		[&"ResultsLayoutTests", true, func() -> void: await ResultsLayoutTests.new().run(self, _check)],
+		[&"TitleLayoutTests", true, func() -> void: await TitleLayoutTests.new().run(self, _check)],
+		[&"StageMapLayoutTests", true, func() -> void: await StageMapLayoutTests.new().run(self, _check)],
+		[&"MenuBackdropTests", false, func() -> void: await MenuBackdropTests.new().run(self, _check)],
+		[&"PauseMenuTests", true, func() -> void: await PauseMenuTests.new().run(self, _check)],
+		[&"GfxQualityTests", false, func() -> void: await GfxQualityTests.new().run(self, _check)],
+		[&"terrain_tests", false, func() -> void: await _run_file("res://tests/terrain_tests.gd")],
+		[&"pickup_spawn_tests", false, func() -> void: await _run_file("res://tests/pickup_spawn_tests.gd")],
+		[&"RealmTests", false, func() -> void: await RealmTests.new().run(self, _check)],
+		[&"AltarTests", false, func() -> void: await AltarTests.new().run(self, _check)],
+		[&"EliteAffixTests", false, func() -> void: await EliteAffixTests.new().run(self, _check)],
+		[&"RedMoonTests.run_unit", false, func() -> void: RedMoonTests.new().run_unit(_check)],
+		[&"RedMoonTests", false, func() -> void: await RedMoonTests.new().run(self, _check)],
+		[&"DialogueTests", false, func() -> void: await DialogueTests.new().run(self, _check)],
+		[&"TipTests", false, func() -> void: await TipTests.new().run(self, _check)],
+		[&"GuideTests.run_data", false, func() -> void: GuideTests.new().run_data(_check)],
+		[&"GuideTests", false, func() -> void: await GuideTests.new().run(self, _check)],
+		[&"EnemyFxTests", false, func() -> void: await EnemyFxTests.new().run(self, _check)],
+		[&"DamageNumberTests", false, func() -> void: await DamageNumberTests.new().run(self, _check)],
+		[&"DamageNumberFlowTests", false, func() -> void: await DamageNumberFlowTests.new().run(self, _check)],
+		[&"DamageNumberDensityTests", false, func() -> void: await DamageNumberDensityTests.new().run(self, _check)],
+		[&"WeatherTests", false, func() -> void: await WeatherTests.new().run(self, _check)],
+		[&"SurfaceTests", false, func() -> void: await SurfaceTests.new().run(self, _check)],
+		[&"SkillIconTests", false, func() -> void: await SkillIconTests.new().run(self, _check)],
+		[&"CreditsScreenTests", true, func() -> void: await CreditsScreenTests.new().run(self, _check)],
+		[&"InsetFlipTests", true, func() -> void: await InsetFlipTests.new().run(self, _check)],
+		[&"_test_shop_layout", true, func() -> void: await _test_shop_layout()],
+		[&"_test_shop_scroll", false, func() -> void: await _test_shop_scroll()],
+		[&"perf_tests", false, func() -> void: await _run_file("res://tests/perf_tests.gd")],
+	]
+
+
+## Nomes repartidos entre as fatias: cada suíte e, para as de layout, a parte sem layout dela
+## ("<nome>.resto", TestShards.runs_rest), que vai para uma fatia só.
+func _suite_names() -> Array[StringName]:
+	var names: Array[StringName] = []
+	for suite: Array in _suites():
+		names.append(suite[0])
+		if bool(suite[1]):
+			names.append(StringName(String(suite[0]) + TestShards.REST))
+	return names
+
+
+## Suíte num arquivo carregado só na hora (load, não preload).
+func _run_file(path: String) -> void:
+	await (load(path) as GDScript).new().run(self, _check)
+
+
+func _layout_flags() -> Array[bool]:
+	var flags: Array[bool] = []
+	for suite: Array in _suites():
+		flags.append(bool(suite[1]))
+		if bool(suite[1]):
+			flags.append(false)
+	return flags
+
+
+## Fim de uma suíte: imprime o tempo dela e quantas verificações fez (linha SUÍTE do run_checks).
+func _lap(suite: String) -> void:
+	var now := Time.get_ticks_msec()
+	print("SUÍTE %s: %d ms, %d verificações" % [suite, now - _lap_ms, _count - _lap_count])
+	_lap_ms = now
+	_lap_count = _count
+
+
+## Estado de partida igual para toda suíte (perfil e opções padrão dos testes, pt_BR, sem recorte,
+## relógio parado em 1x, anúncios simulados com preenchimento, qualidade gráfica sem forçar): numa
+## fatia a suíte anterior é outra, e o que uma suíte deixa não pode mudar o que a seguinte confere.
+func _reset_state() -> void:
+	SaveManager.data = SaveManager.default_profile()
+	Settings.use_test_file()
+	Locale.set_language("pt_BR", false)
+	DeviceProfiles.clear_insets()
+	GameClock.speed = 1
+	GameClock.paused = true
+	AdsManager.ads_enabled = _ads_enabled
+	AdsManager.mock_fill = true
+	AdsManager.auto_answer = false
+	GfxQuality.clear_override()
+	GfxQuality.reset_session()
+
+
+## Isolamento do tools/run_checks: com HYAKKI_CHECKS_APPDATA, o user:// fica dentro dessa pasta
+## (APPDATA/XDG_DATA_HOME própria do processo), nunca no perfil real do jogador.
+func _test_isolation() -> void:
+	var expected := OS.get_environment("HYAKKI_CHECKS_APPDATA").replace("\\", "/").to_lower()
+	if expected.is_empty():
+		return
+	var dir := OS.get_user_data_dir().replace("\\", "/").to_lower()
+	_check(dir.begins_with(expected), "integração isolada: user:// em %s (fora do perfil real: %s)", [expected, dir])
+
+
+## `args` (opcional): valores do rótulo, que só é formatado (`label % args`) na falha ou com --verbose.
+func _check(condition: bool, label: String, args: Variant = null) -> void:
 	_count += 1
 	if not condition:
 		_failures += 1
-		printerr("FALHOU: " + label)
-	elif "--verbose" in OS.get_cmdline_user_args():
-		print("ok: " + label)
+		printerr("FALHOU: " + (label if args == null else label % args))
+	elif _verbose:
+		print("ok: " + (label if args == null else label % args))
 
 
 func _use_test_files() -> void:
 	for path: String in [SaveManager.PATH, SaveManager.BACKUP_PATH, Settings.PATH]:
 		_real_files[path] = FileAccess.get_md5(path) if FileAccess.file_exists(path) else ""
+	_ads_enabled = AdsManager.ads_enabled
 	SaveManager.use_test_files()
 	Settings.use_test_file()
+	# Anúncio simulado com resposta automática: o mesmo fluxo (tela, botões, sinais), sem os 0,5 s.
+	AdsManager.auto_answer_wait = 0.0
+	# Relógio da interface pelo tempo de simulação (UiClock), como os timers e as animações.
+	var clock := SimClock.new()
+	clock.drive_ui = true
+	get_tree().root.add_child.call_deferred(clock)
 	_check(SaveManager.path not in _real_files and Settings.path not in _real_files,
 			"testes usam arquivos próprios de save e opções")
 	for key: String in ["damage_numbers", "damage_sounds", "hurt_sounds"]:
-		_check(Settings.get_value(key) == true, "arquivo de opções dos testes começa com %s ligado" % key)
+		_check(Settings.get_value(key) == true, "arquivo de opções dos testes começa com %s ligado", key)
 
 
 ## Apaga os arquivos dos testes e volta aos do jogador (lidos de novo, sem gravar).
@@ -203,7 +362,7 @@ func _remove_test_files() -> void:
 			DirAccess.remove_absolute(path)
 	for path: String in _real_files:
 		var now := FileAccess.get_md5(path) if FileAccess.file_exists(path) else ""
-		_check(now == _real_files[path], "testes não mexeram em %s do jogador" % path)
+		_check(now == _real_files[path], "testes não mexeram em %s do jogador", path)
 	SaveManager.path = SaveManager.PATH
 	SaveManager.backup_path = SaveManager.BACKUP_PATH
 	SaveManager.temp_path = SaveManager.TEMP_PATH
@@ -228,14 +387,14 @@ func _test_shop_coin_items() -> void:
 	_check(ShopManager.coin_items().size() == 6, "Loja: 6 reforços por ryō")
 	_check(ShopManager.ad_slots().size() == 6, "Loja: as 6 vagas por anúncio continuam")
 	for id: StringName in ShopManager.coin_items():
-		_check(ShopManager.coin_price(id) > 0, "reforço %s tem preço" % id)
+		_check(ShopManager.coin_price(id) > 0, "reforço %s tem preço", id)
 		var effect := ShopManager.coin_effect(id)
-		_check(effect != "" and not effect.contains("%s"), "reforço %s descreve o efeito: %s" % [id, effect])
-		_check(not DB.powerups.has(id), "reforço %s não é power-up do Santuário" % id)
+		_check(effect != "" and not effect.contains("%s"), "reforço %s descreve o efeito: %s", [id, effect])
+		_check(not DB.powerups.has(id), "reforço %s não é power-up do Santuário", id)
 	SaveManager.data["ryo"] = 1000
 	var price := ShopManager.coin_price(&"coin_scroll")
 	_check(ShopManager.buy_coin(&"coin_scroll"), "compra reforço com ryō suficiente")
-	_check(SaveManager.ryo() == 1000 - price, "a compra desconta o preço (%d)" % price)
+	_check(SaveManager.ryo() == 1000 - price, "a compra desconta o preço (%d)", price)
 	_check(ShopManager.is_queued(&"coin_scroll") and ShopManager.pending_next_run().has("coin_scroll"),
 			"o reforço fica guardado para a próxima partida")
 	_check(not ShopManager.buy_coin(&"coin_scroll") and SaveManager.ryo() == 1000 - price,
@@ -271,43 +430,43 @@ func _test_shop_scroll() -> void:
 # --- Dados ------------------------------------------------------------------------
 
 func _test_data_integrity() -> void:
-	_check(DB.errors.is_empty(), "DB carregou sem erros: %s" % ", ".join(DB.errors))
+	_check(DB.errors.is_empty(), "DB carregou sem erros: %s", ", ".join(DB.errors))
 	for id: StringName in DB.ids("weapons"):
 		var w: Dictionary = DB.weapons[id]
 		if String(w.get("evolution", "")) != "":
-			_check(DB.weapons.has(StringName(w["evolution"])), "%s evolui para arma existente" % id)
-			_check(DB.passives.has(StringName(w.get("evolves_with", ""))), "%s evolui com passiva existente" % id)
+			_check(DB.weapons.has(StringName(w["evolution"])), "%s evolui para arma existente", id)
+			_check(DB.passives.has(StringName(w.get("evolves_with", ""))), "%s evolui com passiva existente", id)
 		for part: Variant in w.get("requires", []):
-			_check(DB.weapons.has(StringName(part)), "%s: união pede arma existente %s" % [id, part])
+			_check(DB.weapons.has(StringName(part)), "%s: união pede arma existente %s", [id, part])
 	for id: StringName in DB.ids("heroes"):
-		_check(DB.weapons.has(StringName(DB.heroes[id]["weapon"])), "herói %s tem arma existente" % id)
+		_check(DB.weapons.has(StringName(DB.heroes[id]["weapon"])), "herói %s tem arma existente", id)
 		var unlock := String(DB.heroes[id].get("unlock", ""))
 		_check(unlock.is_empty() or DB.achievements.has(StringName(unlock)),
-				"herói %s: conquista de desbloqueio existe" % id)
+				"herói %s: conquista de desbloqueio existe", id)
 	for id: StringName in DB.ids("stages"):
 		var s: Dictionary = DB.stages[id]
 		for wave: Variant in s.get("waves", []):
 			for enemy: String in (wave as Dictionary)["mix"]:
-				_check(DB.enemies.has(StringName(enemy)), "fase %s: inimigo %s existe" % [id, enemy])
+				_check(DB.enemies.has(StringName(enemy)), "fase %s: inimigo %s existe", [id, enemy])
 		for b: Variant in s.get("bosses", []):
-			_check(DB.bosses.has(StringName((b as Dictionary)["id"])), "fase %s: chefe existe" % id)
+			_check(DB.bosses.has(StringName((b as Dictionary)["id"])), "fase %s: chefe existe", id)
 		for e: Variant in s.get("events", []):
 			var enemy := String((e as Dictionary).get("enemy", ""))
 			_check(enemy.is_empty() or DB.enemies.has(StringName(enemy)),
-					"fase %s: evento usa inimigo existente %s" % [id, enemy])
+					"fase %s: evento usa inimigo existente %s", [id, enemy])
 	var kinds := {"hero": DB.heroes, "weapon": DB.weapons, "passive": DB.passives, "stage": DB.stages}
 	for id: StringName in DB.ids("achievements"):
 		for part: String in String(DB.achievements[id].get("reward", "")).split(",", false):
 			var kv := part.split(":")
 			if kinds.has(kv[0]):
-				_check((kinds[kv[0]] as Dictionary).has(StringName(kv[1])), "conquista %s: recompensa %s existe" % [id, part])
+				_check((kinds[kv[0]] as Dictionary).has(StringName(kv[1])), "conquista %s: recompensa %s existe", [id, part])
 			else:
-				_check(kv[0] in ["ryo", "cosmetic"], "conquista %s: tipo de recompensa conhecido %s" % [id, kv[0]])
+				_check(kv[0] in ["ryo", "cosmetic"], "conquista %s: tipo de recompensa conhecido %s", [id, kv[0]])
 	for id: StringName in DB.ids("powerups"):
-		_check(StatBlock.DEFS.has(String(DB.powerups[id]["stat"])), "power-up %s usa atributo existente" % id)
+		_check(StatBlock.DEFS.has(String(DB.powerups[id]["stat"])), "power-up %s usa atributo existente", id)
 	for id: StringName in DB.ids("passives"):
 		for stat: String in DB.passives[id]["per_level"]:
-			_check(StatBlock.DEFS.has(stat), "passiva %s usa atributo existente %s" % [id, stat])
+			_check(StatBlock.DEFS.has(stat), "passiva %s usa atributo existente %s", [id, stat])
 
 
 func _test_assets_exist() -> void:
@@ -323,23 +482,23 @@ func _test_assets_exist() -> void:
 	for path: String in paths:
 		if not ResourceLoader.exists(path):
 			missing.append(path)
-	_check(missing.is_empty(), "todos os sprites/ícones existem (%d): faltam %s" % [paths.size(), missing])
+	_check(missing.is_empty(), "todos os sprites/ícones existem (%d): faltam %s", [paths.size(), missing])
 	# Todo Kami tem ícone, e o arquivo carrega como textura (não só existe no disco).
 	for id: StringName in DB.ids("kami"):
 		var icon_path := String(DB.kami[id].get("icon", ""))
 		_check(icon_path.begins_with("res://") and load(icon_path) is Texture2D,
-				"Kami %s tem ícone que carrega (%s)" % [id, icon_path])
+				"Kami %s tem ícone que carrega (%s)", [id, icon_path])
 	for id: StringName in DB.ids("stages"):
 		var music := "res://assets/audio/music/%s" % DB.stages[id].get("music", "")
 		_check(ResourceLoader.exists(music + ".ogg") or ResourceLoader.exists(music + ".mp3"),
-				"música da fase %s existe" % id)
+				"música da fase %s existe", id)
 	# Toda música tocada pelo código ou pelos chefes também precisa existir.
 	var ids: Array[String] = ["title", "dawn", "defeat", "endless", "sanctuary", "story", "credits", "codex"]
 	for boss: StringName in DB.ids("bosses"):
 		ids.append(String(DB.bosses[boss].get("music", "boss_a")))
 	for mid: String in ids:
 		var base := "res://assets/audio/music/" + mid
-		_check(ResourceLoader.exists(base + ".ogg") or ResourceLoader.exists(base + ".mp3"), "música %s existe" % mid)
+		_check(ResourceLoader.exists(base + ".ogg") or ResourceLoader.exists(base + ".mp3"), "música %s existe", mid)
 	_test_sfx_variants_exist()
 
 
@@ -349,17 +508,17 @@ func _test_sfx_variants_exist() -> void:
 	var total := 0
 	for group: String in AudioManager.VARIANTS:
 		var files: Array = AudioManager.VARIANTS[group]
-		_check(not files.is_empty(), "grupo de som %s tem arquivos" % group)
+		_check(not files.is_empty(), "grupo de som %s tem arquivos", group)
 		for file: String in files:
 			total += 1
 			var base := AudioManager.SFX_DIR + file
 			if not (ResourceLoader.exists(base + ".wav") or ResourceLoader.exists(base + ".ogg")
 					or ResourceLoader.exists(base + ".mp3")):
 				missing.append("%s/%s" % [group, file])
-	_check(missing.is_empty(), "todos os sons dos grupos existem (%d): faltam %s" % [total, missing])
+	_check(missing.is_empty(), "todos os sons dos grupos existem (%d): faltam %s", [total, missing])
 	for group: String in ["thunder", "zap", "chain_zap", "hit_blade", "hit_projectile", "hit_fire",
 			"hit_thunder", "hit_wind", "hit_area", "hit_orbit", "hit_poison", "ofuda_cast", "incense_pulse", "chest_open"]:
-		_check(AudioManager.VARIANTS.has(group), "grupo de som %s registrado" % group)
+		_check(AudioManager.VARIANTS.has(group), "grupo de som %s registrado", group)
 
 
 # --- Idiomas ----------------------------------------------------------------------
@@ -369,16 +528,16 @@ func _test_i18n() -> void:
 	for lang: String in Locale.SUPPORTED:
 		var table: Dictionary = Locale.table.get(lang, {})
 		_check(table.size() == Locale.keys.size() and table.size() > 600,
-				"%s tem todas as %d chaves" % [lang, Locale.keys.size()])
+				"%s tem todas as %d chaves", [lang, Locale.keys.size()])
 	var formats := {"hud.level": [7], "results.summary": ["12:00", 30, "1.234", "500"],
 			"codex.kill_more": [3, 100], "licenses.dates": ["2026-10-21", "2026-10-21"],
 			"stat.might": ["+10%"], "shop.support": ["US$ 2,99"]}
 	for lang: String in Locale.SUPPORTED:
 		Locale.set_language(lang, false)
-		_check(tr("title.play") != "title.play", "%s traduz title.play" % lang)
+		_check(tr("title.play") != "title.play", "%s traduz title.play", lang)
 		for key: String in formats:
 			var text := tr(key) % formats[key]
-			_check(not (text.contains("%s") or text.contains("%d")), "%s: %s formata sem sobras" % [lang, key])
+			_check(not (text.contains("%s") or text.contains("%d")), "%s: %s formata sem sobras", [lang, key])
 	Locale.set_language("pt_BR", false)
 	_check(tr("title.play") == "Jogar", "pt_BR: Jogar")
 	_check(Locale.format_number(1234567) == "1.234.567", "pt_BR separa milhar com ponto")
@@ -400,7 +559,7 @@ func _test_glyphs() -> void:
 				if code > 32 and code != 0x200B and not font.has_char(code):
 					missing[text[i]] = true
 		var absent := "".join(PackedStringArray(missing.keys()))
-		_check(missing.is_empty(), "%s: fonte cobre todos os caracteres (faltam %s)" % [lang, absent])
+		_check(missing.is_empty(), "%s: fonte cobre todos os caracteres (faltam %s)", [lang, absent])
 	Locale.set_language("pt_BR", false)
 
 
@@ -446,7 +605,7 @@ func _test_save_migration() -> void:
 	SaveManager.data["unlocked"]["heroes"] = ["aki"]
 	_check(SaveManager.unlock_all_heroes(), "libera guardiões que faltam no perfil de desenvolvimento")
 	for id: StringName in DB.ids("heroes"):
-		_check(SaveManager.is_unlocked("heroes", id), "guardião %s fica liberado" % id)
+		_check(SaveManager.is_unlocked("heroes", id), "guardião %s fica liberado", id)
 	_check(not SaveManager.unlock_all_heroes(), "não altera perfil que já tem todos os guardiões")
 	SaveManager.data = original_data
 
@@ -521,7 +680,7 @@ func _test_suspended_run() -> void:
 	second.restore_snapshot(json_round)
 	var again := second.snapshot()
 	for key: String in ["level", "xp", "weapons", "passives", "kami", "hp"]:
-		_check(JSON.stringify(again[key]) == JSON.stringify(snap[key]), "partida retomada mantém %s" % key)
+		_check(JSON.stringify(again[key]) == JSON.stringify(snap[key]), "partida retomada mantém %s", key)
 	_check(is_equal_approx(GameClock.game_time, 333.0), "partida retomada mantém o tempo")
 	_check(is_equal_approx(second.player.stats.get_stat("might"), 1.0 + 0.2 + 0.25),
 			"retomada reaplica passivas e Kami no StatBlock")
@@ -534,10 +693,10 @@ func _test_suspended_run() -> void:
 ## de Opções (alcançável pela rolagem em cada tela de tests/device_profiles.gd) e cada uma respeitada no jogo. As
 ## opções vão para o arquivo dos testes (Settings.use_test_file), nunca o do jogador.
 func _test_sound_options() -> void:
-	_check(Settings.path == Settings.TEST_PATH, "Opções: os testes gravam em %s" % Settings.TEST_PATH)
+	_check(Settings.path == Settings.TEST_PATH, "Opções: os testes gravam em %s", Settings.TEST_PATH)
 	var keys := ["damage_numbers", "damage_sounds", "hurt_sounds"]
 	for key: String in keys:
-		_check(Settings.DEFAULTS.get(key) == true, "opção %s existe e vem ligada" % key)
+		_check(Settings.DEFAULTS.get(key) == true, "opção %s existe e vem ligada", key)
 		Settings.set_value(key, true)
 
 	# Tela de Opções: CheckButton "opt_<chave>" com o rótulo, visível depois de rolar até ele,
@@ -548,6 +707,8 @@ func _test_sound_options() -> void:
 		var safe := DeviceProfiles.safe_rect(c["view"], c["insets"])
 		await _sound_options_screen(c["view"], safe, String(c["label"]), keys)
 	DeviceProfiles.clear_insets()
+	if not TestShards.runs_rest(&"_test_sound_options"):
+		return
 
 	# No jogo: som do golpe por arma, som de dano no herói e números de dano.
 	var scene := load(GAME_SCENE) as PackedScene
@@ -570,10 +731,10 @@ func _test_sound_options() -> void:
 		var crits := game.hit_sounds.crit_played
 		for _k: int in range(40):
 			game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0, true)
-		_check(game.hit_sounds.played - sounds == 1, "40 golpes da katana no mesmo passo: um som só (%d)"
-				% (game.hit_sounds.played - sounds))
-		_check(game.hit_sounds.crit_played - crits == 1, "40 críticos no mesmo passo: um crit só (%d)"
-				% (game.hit_sounds.crit_played - crits))
+		_check(game.hit_sounds.played - sounds == 1, "40 golpes da katana no mesmo passo: um som só (%d)",
+				(game.hit_sounds.played - sounds))
+		_check(game.hit_sounds.crit_played - crits == 1, "40 críticos no mesmo passo: um crit só (%d)",
+				(game.hit_sounds.crit_played - crits))
 		_check(game.last_hit_sound == "hit_blade", "golpe agrupado ainda marca hit_blade")
 		for _k: int in range(10):
 			game.deal_damage(&"raijin", enemy, 0.1, Vector2.RIGHT, 0.0)
@@ -594,14 +755,14 @@ func _test_sound_options() -> void:
 		var alive := game.fx.particles_alive()
 		game.fx.impact(&"katana", Vector2(10, 10), Vector2.RIGHT)
 		var one := game.fx.particles_alive() - alive
-		_check(one == int(FxLayer.IMPACT_COUNT[FxLayer.wfx]), "impacto sozinho completo (%d faíscas)" % one)
+		_check(one == int(FxLayer.IMPACT_COUNT[FxLayer.wfx]), "impacto sozinho completo (%d faíscas)", one)
 		alive = game.fx.particles_alive()
 		for _k: int in range(200):
 			game.fx.impact(&"katana", Vector2(10, 10), Vector2.RIGHT)
 		var many := game.fx.particles_alive() - alive
 		var budget := (FxLayer.IMPACTS_PER_STEP - 1) * int(FxLayer.IMPACT_COUNT[FxLayer.wfx]) \
 				+ 200 - (FxLayer.IMPACTS_PER_STEP - 1)
-		_check(many <= budget, "200 impactos no mesmo passo ficam na cota (%d <= %d)" % [many, budget])
+		_check(many <= budget, "200 impactos no mesmo passo ficam na cota (%d <= %d)", [many, budget])
 		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
 		_check(game.last_hit_sound == "", "damage_sounds desligado silencia o golpe")
 		var n_before := int(game.fx.get("_n_next"))
@@ -659,15 +820,15 @@ func _test_revive_by_ad() -> void:
 		game.player.invuln = 0.0
 		var weapons_before := game.weapons.size()
 		game.player.take_damage(99999.0)
-		_check(GameClock.paused, "%s: a morte pausa o tempo" % label)
+		_check(GameClock.paused, "%s: a morte pausa o tempo", label)
 		_check(not game.hud.revive_open() and game.death.is_active(),
-				"%s: a oferta espera o corpo cair (sequência de morte)" % label)
+				"%s: a oferta espera o corpo cair (sequência de morte)", label)
 		var time_at_death := GameClock.game_time
 		var snap := game.snapshot()
 		await _wait_until(func() -> bool: return game.hud.revive_open(), 3.0)
-		_check(game.hud.revive_open(), "%s: morrer abre a oferta de reviver" % label)
+		_check(game.hud.revive_open(), "%s: morrer abre a oferta de reviver", label)
 		_check(bool(snap["dead"]) and not bool(snap["ad_revive_used"]),
-				"%s: partida salva na morte guarda a morte" % label)
+				"%s: partida salva na morte guarda a morte", label)
 
 		# Aceitar (o painel fecha antes de emitir, como no botão).
 		game.hud._revive_panel.visible = false
@@ -676,24 +837,24 @@ func _test_revive_by_ad() -> void:
 		while GameClock.paused and waited < 8.0:
 			await get_tree().create_timer(0.1).timeout
 			waited += 0.1
-		_check(game.running and game.player.is_alive, "%s: depois do anúncio a partida segue viva" % label)
+		_check(game.running and game.player.is_alive, "%s: depois do anúncio a partida segue viva", label)
 		_check(GameClock.game_time >= time_at_death and GameClock.game_time < time_at_death + 1.0,
-				"%s: o tempo de jogo continua de onde parou" % label)
+				"%s: o tempo de jogo continua de onde parou", label)
 		_check(game.tracker.kills == 7 and game.level == 4 and game.weapons.size() == weapons_before,
-				"%s: abates, nível e armas são mantidos" % label)
-		_check(game.tracker.revived_by_ad, "%s: o resultado marca o reviver por anúncio" % label)
+				"%s: abates, nível e armas são mantidos", label)
+		_check(game.tracker.revived_by_ad, "%s: o resultado marca o reviver por anúncio", label)
 		var later := GameClock.game_time
 		await get_tree().create_timer(0.5).timeout
-		_check(GameClock.game_time > later, "%s: o tempo volta a correr" % label)
+		_check(GameClock.game_time > later, "%s: o tempo volta a correr", label)
 
 		# Um segundo reviver não é oferecido.
 		game.player.invuln = 0.0
 		game.player.take_damage(99999.0)
 		await _wait_until(func() -> bool: return game.death.can_skip(), 4.0)
 		_check(not game.hud.revive_open() and game.death.notice_open(),
-				"%s: só um reviver por partida (direto ao aviso da morte)" % label)
+				"%s: só um reviver por partida (direto ao aviso da morte)", label)
 		game.death.skip()
-		_check(not game.running, "%s: tocar no aviso encerra a partida" % label)
+		_check(not game.running, "%s: tocar no aviso encerra a partida", label)
 
 		if label == "campanha":
 			# App fechado durante o anúncio: a partida salva volta à morte, com a oferta.
@@ -725,23 +886,23 @@ func _sound_options_screen(size: Vector2, view: Rect2, label: String, keys: Arra
 	var scroll := screen.get("_scroll") as ScrollContainer
 	for key: String in keys:
 		var found := screen.find_child("opt_%s" % key, true, false) as CheckButton
-		_check(found != null, "Opções: CheckButton de %s" % key)
+		_check(found != null, "Opções: CheckButton de %s", key)
 		if found == null:
 			continue
 		var cell_label := found.get_parent().get_child(0) as Label
 		_check(cell_label != null and cell_label.text == tr("options.%s" % key),
-				"Opções: %s tem o rótulo na mesma célula" % key)
-		_check(found.button_pressed, "Opções: %s aparece ligado" % key)
-		_check(scroll != null and scroll.is_ancestor_of(found), "Opções: %s fica dentro da rolagem" % key)
+				"Opções: %s tem o rótulo na mesma célula", key)
+		_check(found.button_pressed, "Opções: %s aparece ligado", key)
+		_check(scroll != null and scroll.is_ancestor_of(found), "Opções: %s fica dentro da rolagem", key)
 		if scroll != null:
 			scroll.ensure_control_visible(found)
 			await get_tree().process_frame
 			await get_tree().process_frame
 			_check(found.is_visible_in_tree() and view.encloses(found.get_global_rect())
 					and scroll.get_global_rect().encloses(found.get_global_rect()),
-					"Opções: %s alcançável na tela de celular [%s]" % [key, label])
+					"Opções: %s alcançável na tela de celular [%s]", [key, label])
 		found.button_pressed = false
-		_check(Settings.get_value(key) == false, "Opções: desligar %s grava a opção" % key)
+		_check(Settings.get_value(key) == false, "Opções: desligar %s grava a opção", key)
 		found.button_pressed = true
 	host.queue_free()
 	await get_tree().process_frame
@@ -788,15 +949,15 @@ func _test_thunder_weapons() -> void:
 			&"takemikazuchi": "Kaminari", &"raikiri": "Inazuma"}
 	for id: StringName in expected:
 		var data := DB.weapon(id)
-		_check(not data.is_empty(), "%s existe no DB" % id)
-		_check((data.get("tags", []) as Array).has("thunder"), "%s tem a tag thunder" % id)
-		_check(tr("weapon.%s.name" % id) != "weapon.%s.name" % id, "%s tem nome traduzido" % id)
+		_check(not data.is_empty(), "%s existe no DB", id)
+		_check((data.get("tags", []) as Array).has("thunder"), "%s tem a tag thunder", id)
+		_check(tr("weapon.%s.name" % id) != "weapon.%s.name" % id, "%s tem nome traduzido", id)
 	for id: StringName in [&"kaminari", &"inazuma"]:
 		var data := DB.weapon(id)
-		_check((data["levels"] as Array).size() == 8, "%s tem 8 níveis" % id)
-		_check(String(data.get("unlock", "x")) == "", "%s vem liberada" % id)
+		_check((data["levels"] as Array).size() == 8, "%s tem 8 níveis", id)
+		_check(String(data.get("unlock", "x")) == "", "%s vem liberada", id)
 		_check(DB.weapon(StringName(data["evolution"])).get("from", "") == String(id),
-				"%s evolui para uma arma que aponta de volta" % id)
+				"%s evolui para uma arma que aponta de volta", id)
 
 	var scene := load(GAME_SCENE) as PackedScene
 	var game := scene.instantiate() as HyakkiGame
@@ -812,19 +973,19 @@ func _test_thunder_weapons() -> void:
 	for id: StringName in expected:
 		var weapon := game._make_weapon(id)
 		_check(weapon != null and weapon.get_script().get_global_name() == StringName(expected[id]),
-				"%s nasce com o comportamento %s" % [id, expected[id]])
+				"%s nasce com o comportamento %s", [id, expected[id]])
 		if weapon == null:
 			continue
 		if not weapon.is_evolved():
 			var first_damage := weapon.damage()
 			while weapon.level < weapon.max_level:
 				weapon.level_up()
-			_check(weapon.level == 8 and weapon.damage() > first_damage, "%s sobe até o nível 8 e ganha dano" % id)
+			_check(weapon.level == 8 and weapon.damage() > first_damage, "%s sobe até o nível 8 e ganha dano", id)
 		# Inimigos em fila, longe dos outros: alvo, e dois para o raio saltar.
 		var targets: Array[int] = []
 		for k: int in range(3):
 			targets.append(game.enemies.spawn(&"slime_rice", origin + Vector2(50 + 35 * k, 0), 1000.0, 1.0))
-		_check(not targets.has(-1), "%s: inimigos de teste nasceram" % id)
+		_check(not targets.has(-1), "%s: inimigos de teste nasceram", id)
 		if targets.has(-1):
 			continue
 		# O hash espacial só é refeito no passo dos inimigos; sem passo, a área (query_circle)
@@ -838,25 +999,25 @@ func _test_thunder_weapons() -> void:
 		weapon.fire(origin)
 		if weapon is Kaminari:
 			var kaminari := weapon as Kaminari
-			_check(not kaminari.strikes.is_empty(), "%s marca o chão antes de cair" % id)
-			_check(game.enemies.hp[targets[0]] == hp_before, "%s não fere durante o aviso" % id)
+			_check(not kaminari.strikes.is_empty(), "%s marca o chão antes de cair", id)
+			_check(game.enemies.hp[targets[0]] == hp_before, "%s não fere durante o aviso", id)
 			for _t: int in range(10):
 				kaminari.step(0.1)
-			_check(not kaminari.bolts.is_empty() or kaminari.strikes.is_empty(), "%s desenha o raio do céu" % id)
+			_check(not kaminari.bolts.is_empty() or kaminari.strikes.is_empty(), "%s desenha o raio do céu", id)
 			var hits := 0
 			for j: int in targets:
 				if game.enemies.hp[j] < game.enemies.max_hp[j]:
 					hits += 1
-			_check(hits >= 2, "%s fere em área (%d de 3 inimigos)" % [id, hits])
+			_check(hits >= 2, "%s fere em área (%d de 3 inimigos)", [id, hits])
 		else:
 			var inazuma := weapon as Inazuma
-			_check(not inazuma.bolts.is_empty(), "%s desenha o raio a partir do herói" % id)
+			_check(not inazuma.bolts.is_empty(), "%s desenha o raio a partir do herói", id)
 			var chained := true
 			for j: int in targets:
 				chained = chained and game.enemies.hp[j] < game.enemies.max_hp[j]
-			_check(chained, "%s salta para os 3 inimigos em fila" % id)
-		_check(game.enemies.hp[targets[0]] < hp_before, "%s fere o inimigo" % id)
-		_check(float(game.tracker.damage_by_weapon.get(id, 0.0)) > dealt_before, "%s conta o dano da arma" % id)
+			_check(chained, "%s salta para os 3 inimigos em fila", id)
+		_check(game.enemies.hp[targets[0]] < hp_before, "%s fere o inimigo", id)
+		_check(float(game.tracker.damage_by_weapon.get(id, 0.0)) > dealt_before, "%s conta o dano da arma", id)
 		for j: int in targets:
 			game.enemies.despawn(j)
 	# Kami Raijin: +2 raios em armas de trovão, nas duas novas.

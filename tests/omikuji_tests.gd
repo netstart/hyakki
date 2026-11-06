@@ -69,7 +69,7 @@ func _test_stream() -> void:
 		if Omikuji.fortune_for(1, rng.randf()) == Omikuji.KYO:
 			kyo += 1
 	var rate := float(kyo) / total
-	_check.call(rate > 0.065 and rate < 0.095, "omikuji: 凶 em ~8%% dos baús de 1 item (%.3f)" % rate)
+	_check.call(rate > 0.065 and rate < 0.095, "omikuji: 凶 em ~8%% dos baús de 1 item (%.3f)", rate)
 
 
 func _sequence(run_seed: int, n: int) -> PackedStringArray:
@@ -164,10 +164,10 @@ func _test_generous_game() -> void:
 	var fortunes: Array[StringName] = []
 	for _i: int in range(Omikuji.GENEROUS_CHESTS):
 		var rewards := game.chests.open(false)
-		_check.call(rewards.size() - 1 >= 3, "baú generoso com 3 ou mais itens (%d)" % (rewards.size() - 1))
+		_check.call(rewards.size() - 1 >= 3, "baú generoso com 3 ou mais itens (%d)", (rewards.size() - 1))
 		fortunes.append(game.chests.last_fortune)
 	_check.call(fortunes.all(func(f: StringName) -> bool: return f == Omikuji.CHUKICHI or f == Omikuji.DAIKICHI),
-			"3 primeiros baús com 中吉 ou melhor (%s)" % [fortunes])
+			"3 primeiros baús com 中吉 ou melhor (%s)", [fortunes])
 	_check.call(Omikuji.generous_left(SaveManager.data) == 0, "os 3 generosos gastos no save")
 	# Chefe não gasta generoso.
 	SaveManager.data = SaveManager.default_profile()
@@ -200,8 +200,8 @@ func _test_kyo_consolation() -> void:
 			ok = ok and ryo == ChestSystem.RYO_PER_ITEM + Omikuji.KYO_RYO
 		else:
 			ok = ok and game.chests.last_fortune == Omikuji.KICHI and ryo == ChestSystem.RYO_PER_ITEM
-	_check.call(kyo > 0, "凶 aparece em baús de 1 item (%d)" % kyo)
-	_check.call(ok, "凶 entrega o item e +%d ryō de consolo; 吉 sem consolo" % Omikuji.KYO_RYO)
+	_check.call(kyo > 0, "凶 aparece em baús de 1 item (%d)", kyo)
+	_check.call(ok, "凶 entrega o item e +%d ryō de consolo; 吉 sem consolo", Omikuji.KYO_RYO)
 	await _free(game)
 
 
@@ -219,9 +219,9 @@ func _test_speeds() -> void:
 		tags.append(game.chests.fortune_tag())
 		items.append(",".join(ids))
 		_check.call(game.state_summary("T").contains("sorte=" + game.chests.fortune_tag()),
-				"%dx: sorte dos baús no hash da partida" % speed)
+				"%dx: sorte dos baús no hash da partida", speed)
 		await _free(game)
-	_check.call(tags[0] == tags[1] and tags[1] == tags[2], "mesma semente: mesmas sortes em 1x, 2x e 3x (%s)" % tags[0])
+	_check.call(tags[0] == tags[1] and tags[1] == tags[2], "mesma semente: mesmas sortes em 1x, 2x e 3x (%s)", tags[0])
 	_check.call(items[0] == items[1] and items[1] == items[2], "mesma semente: mesmos itens em 1x, 2x e 3x")
 	_check.call(tags[0].length() == 40, "uma sorte por baú")
 	var other := await _new_game({"seed": 78, "speed": 1})
@@ -241,7 +241,7 @@ func _test_panel() -> void:
 	# Sorte pela contagem quando ninguém informa.
 	for pair: Array in [[1, Omikuji.KICHI], [3, Omikuji.CHUKICHI], [5, Omikuji.DAIKICHI]]:
 		hud.show_chest(LevelChestTests.sample_rewards(int(pair[0])))
-		_check.call(panel.fortune() == pair[1], "tela: %d itens = %s" % [pair[0], pair[1]])
+		_check.call(panel.fortune() == pair[1], "tela: %d itens = %s", [pair[0], pair[1]])
 		panel.skip()
 	# 大吉: omikuji antes do baú, clarão dourado e chuva de moedas na revelação.
 	hud.show_chest(LevelChestTests.sample_rewards(5), Omikuji.DAIKICHI)
@@ -262,7 +262,7 @@ func _test_panel() -> void:
 		ok = ok and panel.reel_target(i) == rows[i].icon
 	_check.call(ok, "roleta de cada cartão termina no item do cartão")
 	_check.call(await _wait(func() -> bool: return panel.lines_shown() >= 1, 3.0), "item sai da roleta e pousa no cartão")
-	_check.call(panel.reel_ticks() >= ChestPanel.REEL_SPINS[0], "estalos a cada ícone que passa (%d)" % panel.reel_ticks())
+	_check.call(panel.reel_ticks() >= ChestPanel.REEL_SPINS[0], "estalos a cada ícone que passa (%d)", panel.reel_ticks())
 	_check.call(absf(panel.reel_offset(0) - float(ChestPanel.REEL_SPINS[0] + ChestPanel.REEL_SPINS[2])) < 0.01,
 			"roleta parada exatamente no item")
 	_check.call(panel.reel_global_rect().get_center().distance_to(panel.chest().get_global_rect().get_center()) < 80.0,
@@ -318,12 +318,12 @@ func _test_panel() -> void:
 	hud.show_chest(LevelChestTests.sample_rewards(3), Omikuji.CHUKICHI)
 	_check.call(panel.pace() == ChestPanel.SHORT_PACE
 			and is_equal_approx(panel.real_duration() * ChestPanel.SHORT_PACE, full),
-			"animação curta: metade do tempo (%.2f s de %.2f s)" % [panel.real_duration(), full])
-	var t0 := Time.get_ticks_msec()
+			"animação curta: metade do tempo (%.2f s de %.2f s)", [panel.real_duration(), full])
+	var t0 := UiClock.msec()
 	await _wait(func() -> bool: return not panel.animating(), full)
-	var took := (Time.get_ticks_msec() - t0) / 1000.0
+	var took := (UiClock.msec() - t0) / 1000.0
 	_check.call(not panel.animating() and took < full * 0.75,
-			"animação curta acaba antes (%.2f s < %.2f s)" % [took, full])
+			"animação curta acaba antes (%.2f s < %.2f s)", [took, full])
 	_check.call(panel.lines_shown() == panel.lines_total() and panel.fortune_sealed(), "animação curta mostra tudo")
 	panel.button().pressed.emit()
 	Settings.set_value("chest_short", false)
@@ -345,7 +345,7 @@ func _test_full_open() -> void:
 	_check.call(hud.chest_open() and GameClock.paused and panel.phase() == "omikuji",
 			"partida: baú abre pelo omikuji e pausa")
 	_check.call(panel.fortune() == game.chests.last_fortune and game.chests.fortunes.size() == 1,
-			"partida: a tela mostra a sorte sorteada (%s)" % panel.fortune())
+			"partida: a tela mostra a sorte sorteada (%s)", panel.fortune())
 	_check.call(panel.fortune() == Omikuji.CHUKICHI or panel.fortune() == Omikuji.DAIKICHI,
 			"partida: 1º baú do save é generoso")
 	_check.call(game.tracker.ryo > ryo_before and game.tracker.chests == 1, "partida: ryō e baú contados")
@@ -387,8 +387,8 @@ func _seconds(value: float) -> void:
 
 
 func _wait(condition: Callable, timeout: float) -> bool:
-	var until := Time.get_ticks_msec() + int(timeout * 1000.0)
-	while Time.get_ticks_msec() < until:
+	var until := UiClock.msec() + int(timeout * 1000.0)
+	while UiClock.msec() < until:
 		if condition.call():
 			return true
 		await _host.get_tree().process_frame

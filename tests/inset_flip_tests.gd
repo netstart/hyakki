@@ -9,6 +9,8 @@ extends RefCounted
 ## Chamado por tests/integration_tests.gd ou sozinho por tests/inset_flip_tests.tscn.
 
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
+## Fatias da integração: a parte sem layout roda numa fatia só (TestShards.runs_rest).
+const TestShards := preload("res://tests/test_shards.gd")
 const ResultsLayoutTests := preload("res://tests/results_layout_tests.gd")
 const PauseMenuTests := preload("res://tests/pause_menu_tests.gd")
 const LevelChestTests := preload("res://tests/level_chest_tests.gd")
@@ -28,8 +30,10 @@ func run(host: Node, check: Callable) -> void:
 	_check = check
 	var original := SaveManager.data
 	Locale.set_language("pt_BR", false)
-	await _check_signal()
-	for r: Dictionary in DeviceProfiles.RESOLUTIONS:
+	if TestShards.runs_rest(&"InsetFlipTests"):
+		await _check_signal()
+	# Com --shard=k/N, só as resoluções desta fatia (a união das fatias é a tabela inteira).
+	for r: Dictionary in DeviceProfiles.shard_resolutions():
 		var view: Vector2 = r["view"]
 		var cut := DeviceProfiles.cutout_logical(r)
 		for name: StringName in SCREENS:
@@ -58,30 +62,30 @@ func _check_signal() -> void:
 	var count := func() -> void: emitted[0] += 1
 	scaler.connect("safe_insets_changed", count)
 	DeviceProfiles.simulate_insets(Vector2(30, 0))
-	_check.call(emitted[0] == 1, "Recorte: trocar o furo emite safe_insets_changed na hora (%d)" % emitted[0])
+	_check.call(emitted[0] == 1, "Recorte: trocar o furo emite safe_insets_changed na hora (%d)", emitted[0])
 	DeviceProfiles.simulate_insets(Vector2(30, 0))
-	_check.call(emitted[0] == 1, "Recorte: o mesmo furo não emite de novo (%d)" % emitted[0])
+	_check.call(emitted[0] == 1, "Recorte: o mesmo furo não emite de novo (%d)", emitted[0])
 	DeviceProfiles.simulate_insets(Vector2(0, 30))
-	_check.call(emitted[0] == 2, "Recorte: furo do outro lado emite (%d)" % emitted[0])
+	_check.call(emitted[0] == 2, "Recorte: furo do outro lado emite (%d)", emitted[0])
 	DeviceProfiles.clear_insets()
-	_check.call(emitted[0] == 3, "Recorte: tirar o furo emite (%d)" % emitted[0])
+	_check.call(emitted[0] == 3, "Recorte: tirar o furo emite (%d)", emitted[0])
 	scaler.disconnect("safe_insets_changed", count)
 	var node := Control.new()
 	_host.add_child(node)
 	var calls: Array[int] = [0]
 	MenuKit.on_insets_change(node, func() -> void: calls[0] += 1)
 	DeviceProfiles.simulate_insets(Vector2(30, 0))
-	_check.call(calls[0] == 1, "Recorte: on_insets_change chama o nó na árvore (%d)" % calls[0])
+	_check.call(calls[0] == 1, "Recorte: on_insets_change chama o nó na árvore (%d)", calls[0])
 	_host.remove_child(node)
 	DeviceProfiles.simulate_insets(Vector2(0, 30))
-	_check.call(calls[0] == 1, "Recorte: fora da árvore o nó não é chamado (%d)" % calls[0])
+	_check.call(calls[0] == 1, "Recorte: fora da árvore o nó não é chamado (%d)", calls[0])
 	_host.add_child(node)
 	DeviceProfiles.simulate_insets(Vector2(30, 0))
-	_check.call(calls[0] == 2, "Recorte: de volta à árvore o nó volta a ser chamado (%d)" % calls[0])
+	_check.call(calls[0] == 2, "Recorte: de volta à árvore o nó volta a ser chamado (%d)", calls[0])
 	node.queue_free()
 	await _host.get_tree().process_frame
 	DeviceProfiles.simulate_insets(Vector2(0, 30))
-	_check.call(calls[0] == 2, "Recorte: nó liberado não é chamado (%d)" % calls[0])
+	_check.call(calls[0] == 2, "Recorte: nó liberado não é chamado (%d)", calls[0])
 	DeviceProfiles.clear_insets()
 
 
@@ -152,12 +156,12 @@ func _flip_hud(view: Vector2, cut: float, label: String) -> void:
 			for b: Control in [hud.get("_pause_button"), hud.get("_speed_button"), hud.get("_ult_button")]:
 				var r := b.get_global_rect()
 				_check.call(not b.is_visible_in_tree() or _encloses(safe, r),
-						"%s: botão %s fora do furo (%s em %s)" % [state, b.name, r, safe])
+						"%s: botão %s fora do furo (%s em %s)", [state, b.name, r, safe])
 			var joy := hud.joystick
 			var center: Vector2 = joy.get_global_transform() * joy.fixed_center()
 			_check.call(center.x - TouchJoystick.RADIUS >= safe.position.x - EPS
 					and center.x + TouchJoystick.RADIUS <= safe.end.x + EPS,
-					"%s: joystick fixo fora do furo (%s em %s)" % [state, center, safe])
+					"%s: joystick fixo fora do furo (%s em %s)", [state, center, safe])
 			_check_inside(root, view, flips[i], state, false)
 		hud.queue_free()
 		await _host.get_tree().process_frame
@@ -197,7 +201,8 @@ func _flip_level_chest(view: Vector2, cut: float, label: String) -> void:
 	var panel := LevelUpPanel.new()
 	area.add_child(panel)
 	panel.show_cards(LevelChestTests.sample_cards(), 2, 1, 3, 27)
-	await _host.get_tree().create_timer(0.75).timeout
+	panel.finish_intro()
+	await _host.get_tree().process_frame
 	for i: int in flips.size():
 		if i > 0:
 			t.set("_insets", flips[i])
@@ -229,11 +234,11 @@ func _check_inside(screen: Control, view: Vector2, insets: Vector2, state: Strin
 	for node: Node in screen.find_children("*", "Button", true, false):
 		if node is MenuKit.BackButton:
 			back = node as Button
-	_check.call(back != null or not has_back, "%s: tem o voltar" % state)
+	_check.call(back != null or not has_back, "%s: tem o voltar", state)
 	if back != null:
 		var r := back.get_global_rect()
 		_check.call(_encloses(safe, r) and is_equal_approx(r.position.x, 4.0 + insets.x),
-				"%s: voltar fora do furo (%s em %s)" % [state, r, safe])
+				"%s: voltar fora do furo (%s em %s)", [state, r, safe])
 	var touched := 0
 	for node: Node in screen.find_children("*", "Control", true, false):
 		var c := node as Control
@@ -244,8 +249,8 @@ func _check_inside(screen: Control, view: Vector2, insets: Vector2, state: Strin
 			continue
 		touched += 1
 		_check.call(r.position.x >= safe.position.x - EPS and r.end.x <= safe.end.x + EPS,
-				"%s: %s \"%s\" fora do furo (%s em %s)" % [state, c.get_class(), c.name, r, safe])
-	_check.call(touched > 0, "%s: a tela tem elementos de toque à vista (%d)" % [state, touched])
+				"%s: %s \"%s\" fora do furo (%s em %s)", [state, c.get_class(), c.name, r, safe])
+	_check.call(touched > 0, "%s: a tela tem elementos de toque à vista (%d)", [state, touched])
 
 
 static func _interactive(c: Control) -> bool:

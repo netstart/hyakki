@@ -262,7 +262,7 @@ func play(id: String, pitch: float = 1.0, pitch_jitter: float = 0.0, volume_db: 
 	var hit := is_hit(id)
 	last_requested = id
 	request_count[id] = int(request_count.get(id, 0)) + 1
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if not priority:
 		if now - int(_last_play_ms.get(id, -1000)) < SOUND_COOLDOWN_MS:
 			return

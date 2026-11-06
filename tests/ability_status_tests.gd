@@ -61,7 +61,7 @@ func _check_flags(game: HyakkiGame) -> void:
 	var left := 0
 	for i: int in [slow, rooted, scared, lured, stunned]:
 		left += 1 if look.status_flags(i) != 0 else 0
-	_check.call(left == 0, "estado: os indicadores somem quando o efeito acaba (%d)" % left)
+	_check.call(left == 0, "estado: os indicadores somem quando o efeito acaba (%d)", left)
 	_t._clear(game)
 
 
@@ -83,8 +83,8 @@ func _check_drawn(host: Node, game: HyakkiGame) -> void:
 	for k: int in range(4):
 		_t._spawn(game, Vector2(-45 + k * 30, 30))
 	await _frames(host, 3)
-	_check.call(look.visible_count() >= 8, "estado: inimigos na tela (%d)" % look.visible_count())
-	_check.call(look.status_drawn == 4, "estado: um indicador por inimigo afetado (%d)" % look.status_drawn)
+	_check.call(look.visible_count() >= 8, "estado: inimigos na tela (%d)", look.visible_count())
+	_check.call(look.status_drawn == 4, "estado: um indicador por inimigo afetado (%d)", look.status_drawn)
 	# Horda: 500 inimigos na tela, metade com algum estado.
 	_t._clear(game)
 	var count := 0
@@ -105,9 +105,9 @@ func _check_drawn(host: Node, game: HyakkiGame) -> void:
 	await _frames(host, 3)
 	var shown := look.visible_count()
 	_check.call(look.status_drawn <= EnemyLook.MAX_STATUS_MARKS,
-			"estado: no máximo %d marcas por quadro na horda (%d)" % [EnemyLook.MAX_STATUS_MARKS, look.status_drawn])
+			"estado: no máximo %d marcas por quadro na horda (%d)", [EnemyLook.MAX_STATUS_MARKS, look.status_drawn])
 	_check.call(shown > 100 and look.status_drawn > 0 and look.status_drawn <= count,
-			"estado: horda de 500 desenhada com indicadores (%d na tela, %d indicadores, %s)" % [shown, look.status_drawn,
+			"estado: horda de 500 desenhada com indicadores (%d na tela, %d indicadores, %s)", [shown, look.status_drawn,
 				enemies.view_rect])
 	_t._clear(game)
 	GameClock.paused = false

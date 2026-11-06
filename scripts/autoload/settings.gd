@@ -93,8 +93,11 @@ func get_value(key: String) -> Variant:
 
 
 func set_value(key: String, value: Variant) -> void:
+	# Mesmo valor (e tipo) já gravado: não regrava o arquivo (o sinal e o motor seguem iguais).
+	var same: bool = _values.has(key) and typeof(_values[key]) == typeof(value) and _values[key] == value
 	_values[key] = value
-	save_settings()
+	if not same:
+		save_settings()
 	apply_engine_settings()
 	changed.emit(key)
 
@@ -108,7 +111,7 @@ func apply_engine_settings() -> void:
 func vibrate(duration_ms: int, amplitude: float = -1.0) -> void:
 	if not bool(get_value("vibration")):
 		return
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if now - _last_vibration_ms < 80:
 		return
 	_last_vibration_ms = now

@@ -509,7 +509,7 @@ func open(offer: Array[StringName]) -> void:
 	_open = true
 	_busy = false
 	_selected = -1
-	_opened_at = Time.get_ticks_msec()
+	_opened_at = UiClock.msec()
 	visible = true
 	modulate.a = 1.0
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -724,7 +724,7 @@ func bot_choose() -> StringName:
 # --- Toque -------------------------------------------------------------------------------
 
 func _accepting() -> bool:
-	return _open and not _busy and Time.get_ticks_msec() - _opened_at >= LOCK_MS
+	return _open and not _busy and UiClock.msec() - _opened_at >= LOCK_MS
 
 
 func _on_card(index: int) -> void:

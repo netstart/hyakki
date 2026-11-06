@@ -45,15 +45,15 @@ func run_unit(check: Callable) -> void:
 
 func _test_biomes_data() -> void:
 	var sprites: Dictionary = TerrainArt.data().get("sprites", {})
-	_check.call(sprites.size() > 100, "terreno: catálogo de sprites carregado (%d)" % sprites.size())
+	_check.call(sprites.size() > 100, "terreno: catálogo de sprites carregado (%d)", sprites.size())
 	for id: String in STAGES:
 		var b := TerrainArt.biome(id)
-		_check.call(String(b.get("layout", "")) == id, "terreno: bioma %s com layout próprio" % id)
-		_check.call((b.get("materials", []) as Array).size() == 6, "terreno: %s tem 6 materiais" % id)
+		_check.call(String(b.get("layout", "")) == id, "terreno: bioma %s com layout próprio", id)
+		_check.call((b.get("materials", []) as Array).size() == 6, "terreno: %s tem 6 materiais", id)
 		for s: Dictionary in b.get("scatter", []):
 			for e: Array in s["sprites"]:
 				var n := String(e[0])
-				_check.call(sprites.has(n) or n.begins_with("gen_"), "terreno: %s usa sprite existente %s" % [id, n])
+				_check.call(sprites.has(n) or n.begins_with("gen_"), "terreno: %s usa sprite existente %s", [id, n])
 
 
 func _test_noise() -> void:
@@ -86,14 +86,14 @@ func _test_determinism(id: String) -> void:
 			same = same and var_to_str(a[key]) == var_to_str(b[key])
 		same = same and (a["items"] as Array).size() == (b["items"] as Array).size()
 		differs = differs or var_to_str(a["solids"]) != var_to_str(other.chunk_data(c)["solids"])
-	_check.call(same, "terreno %s: obstáculos e estruturas iguais na Baixa e na Alta" % id)
-	_check.call(differs, "terreno %s: outra semente muda o mapa" % id)
+	_check.call(same, "terreno %s: obstáculos e estruturas iguais na Baixa e na Alta", id)
+	_check.call(differs, "terreno %s: outra semente muda o mapa", id)
 	var solids_near := false
 	for c: Vector2i in [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(0, -1), Vector2i(-1, -1)]:
 		for s: Array in low.chunk_data(c)["solids"]:
 			if (s[0] as Vector2).length() < 40.0:
 				solids_near = true
-	_check.call(not solids_near, "terreno %s: área do início livre de obstáculos" % id)
+	_check.call(not solids_near, "terreno %s: área do início livre de obstáculos", id)
 
 
 ## Decoração sem colisão: Baixa ⊂ Média ⊂ Alta, e nada do espalhado tem colisão.
@@ -115,12 +115,12 @@ func _test_density(id: String) -> void:
 		prev = keys
 		counts.append(total)
 	_check.call(counts[0] < counts[1] and counts[1] < counts[2],
-			"terreno %s: decoração cresce Baixa < Média < Alta (%s)" % [id, counts])
-	_check.call(subset, "terreno %s: decoração da Baixa está toda na Alta" % id)
+			"terreno %s: decoração cresce Baixa < Média < Alta (%s)", [id, counts])
+	_check.call(subset, "terreno %s: decoração da Baixa está toda na Alta", id)
 	var solid_scatter := false
 	for it: Dictionary in w.layout.scatter(Vector2i(1, 1), w.chunk_data(Vector2i(1, 1))):
 		solid_scatter = solid_scatter or float(it["solid"]) > 0.0 or float(it["rank"]) < 0.0
-	_check.call(not solid_scatter, "terreno %s: espalhados não têm colisão" % id)
+	_check.call(not solid_scatter, "terreno %s: espalhados não têm colisão", id)
 
 
 ## Vila: ruas pintadas atravessam a borda do chunk e nenhuma casa fica em cima delas.
@@ -143,7 +143,7 @@ func _test_village_streets() -> void:
 					for k: Rect2 in d["keepout"]:
 						if k.has_point(it["p"]):
 							blocked = true
-	_check.call(streets >= 4 and houses >= 6, "vila: ruas (%d) e casas (%d) agrupadas" % [streets, houses])
+	_check.call(streets >= 4 and houses >= 6, "vila: ruas (%d) e casas (%d) agrupadas", [streets, houses])
 	_check.call(not blocked, "vila: nenhuma casa em cima da rua")
 
 
@@ -170,25 +170,25 @@ func run(host: Node, check: Callable) -> void:
 		for _k: int in range(3):
 			await host.get_tree().process_frame
 		var views := game.world.built_views()
-		_check.call(views.size() >= 4, "terreno %s: chunks da tela montados (%d)" % [id, views.size()])
+		_check.call(views.size() >= 4, "terreno %s: chunks da tela montados (%d)", [id, views.size()])
 		var low_items := _count(views)
 		var first: ChunkView = views.values()[0]
-		_check.call(first.get_node_or_null(^"Ground") is Sprite2D, "terreno %s: chunk com chão" % id)
-		_check.call(low_items > 0, "terreno %s: chunk com decoração" % id)
+		_check.call(first.get_node_or_null(^"Ground") is Sprite2D, "terreno %s: chunk com chão", id)
+		_check.call(low_items > 0, "terreno %s: chunk com decoração", id)
 		_test_fade(game, views)
 		var low_glow: bool = game.lantern._halos.visible
 		Settings.set_value(GfxQuality.KEY, "high")
 		await host.get_tree().process_frame
 		var high_views := game.world.built_views()
 		var rebuilt := high_views.size() > 0 and not high_views.values().has(first)
-		_check.call(rebuilt, "terreno %s: troca ao vivo remonta os chunks" % id)
-		_check.call(_count(high_views) > low_items, "terreno %s: Alta tem mais decoração que a Baixa" % id)
-		_check.call(not low_glow and game.lantern._halos.visible, "luz %s: halos só na Alta" % id)
+		_check.call(rebuilt, "terreno %s: troca ao vivo remonta os chunks", id)
+		_check.call(_count(high_views) > low_items, "terreno %s: Alta tem mais decoração que a Baixa", id)
+		_check.call(not low_glow and game.lantern._halos.visible, "luz %s: halos só na Alta", id)
 		_check.call(game.lantern.frame_lights.size() <= int(GfxQuality.budget("lights_max")) - 1,
-				"luz %s: respeita lights_max" % id)
+				"luz %s: respeita lights_max", id)
 		Settings.set_value(GfxQuality.KEY, "low")
 		await host.get_tree().process_frame
-		_check.call(_count(game.world.built_views()) == low_items, "terreno %s: volta à Baixa igual" % id)
+		_check.call(_count(game.world.built_views()) == low_items, "terreno %s: volta à Baixa igual", id)
 		game.queue_free()
 		await host.get_tree().process_frame
 	Settings.set_value(GfxQuality.KEY, saved)

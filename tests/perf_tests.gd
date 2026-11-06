@@ -79,7 +79,7 @@ func _test_motion(check: Callable) -> void:
 	stats.frames_us = _us(frames)
 	stats.scroll = PackedFloat32Array(positions)
 	var s := stats.motion_summary(1)
-	check.call(int(s["frames"]) == 8, "FrameStats: só o movimento conta (6 quadros + 1 de cada lado; %d)" % s["frames"])
+	check.call(int(s["frames"]) == 8, "FrameStats: só o movimento conta (6 quadros + 1 de cada lado; %d)", s["frames"])
 	check.call(is_equal_approx(float(s["distance"]), 48.0), "FrameStats: distância do movimento (48 px)")
 	check.call(int(FrameStats.new().motion_summary()["frames"]) == 0, "FrameStats: sem medição, resumo vazio")
 
@@ -93,7 +93,7 @@ func _test_order_key(check: Callable) -> void:
 	var order: Array[int] = []
 	for key: int in keys:
 		order.append(key & EnemyManager.ORDER_INDEX_MASK)
-	check.call(order == [1, 4, 5, 0, 2, 6, 3], "Inimigos: ordem de desenho por Y, empate pelo índice (%s)" % [order])
+	check.call(order == [1, 4, 5, 0, 2, 6, 3], "Inimigos: ordem de desenho por Y, empate pelo índice (%s)", [order])
 	check.call(EnemyManager.CAPACITY <= EnemyManager.ORDER_INDEX_MASK + 1, "Inimigos: índice cabe na chave da ordem")
 	check.call(EnemyManager.order_key(1e12, 639) > EnemyManager.order_key(-1e12, 0),
 			"Inimigos: Y extremo não estoura a chave")
@@ -128,7 +128,7 @@ func _test_silhouette(check: Callable) -> void:
 		var slow := _silhouette_reference(src, fill, rim)
 		var t2 := Time.get_ticks_usec()
 		check.call(fast[0].get_data() == slow[0].get_data() and fast[1].get_data() == slow[1].get_data(),
-				"Silhueta: igual ao método antigo em %s (%.1f ms × %.1f ms)" % [path.get_base_dir().get_file(),
+				"Silhueta: igual ao método antigo em %s (%.1f ms × %.1f ms)", [path.get_base_dir().get_file(),
 				(t1 - t0) / 1000.0, (t2 - t1) / 1000.0])
 
 
@@ -222,8 +222,8 @@ func _test_sheet_masks(check: Callable) -> void:
 		else:
 			failed.append(path.get_base_dir().get_file())
 	check.call(failed.is_empty() and same >= 40,
-			"Folhas: silhueta, contorno e silhueta do Diário iguais ao laço em %d folhas %s" % [same, failed])
-	check.call(fast_us * 4 < slow_us, "Folhas: atalho nativo mais rápido que o laço (%.0f ms × %.0f ms)" % [
+			"Folhas: silhueta, contorno e silhueta do Diário iguais ao laço em %d folhas %s", [same, failed])
+	check.call(fast_us * 4 < slow_us, "Folhas: atalho nativo mais rápido que o laço (%.0f ms × %.0f ms)", [
 			fast_us / 1000.0, slow_us / 1000.0])
 
 
@@ -296,21 +296,21 @@ func run(host: Node, check: Callable) -> void:
 	var start := buttons[1].get_global_rect().get_center()
 	await _drag(host, start, start + Vector2(0, -70), 8)
 	check.call(scroll.scroll_vertical > 20,
-			"Rolagem pelo dedo: arrastar sobre um botão rola a lista (%d px)" % scroll.scroll_vertical)
+			"Rolagem pelo dedo: arrastar sobre um botão rola a lista (%d px)", scroll.scroll_vertical)
 	check.call(presses[0] == 0, "Rolagem pelo dedo: arrastar não aperta o botão de baixo do dedo")
 	# Toque parado num botão ainda aperta.
 	var tap := buttons[4].get_global_rect().get_center()
 	await _drag(host, tap, tap, 1)
-	check.call(presses[0] == 1, "Rolagem pelo dedo: toque parado no botão aperta (%d)" % presses[0])
+	check.call(presses[0] == 1, "Rolagem pelo dedo: toque parado no botão aperta (%d)", presses[0])
 	# Reamostragem: um quadro sem posição nova no meio do arrasto anda meio passo, e a posição
 	# seguinte é a exata (igual ao arrasto sem reamostragem).
 	var with_gap := await _gap_drag(host, scroll, buttons[2].get_global_rect().get_center(), true)
 	var raw := await _gap_drag(host, scroll, buttons[2].get_global_rect().get_center(), false)
 	check.call(raw[1] == raw[0] and with_gap[1] > with_gap[0] and with_gap[1] - with_gap[0] <= with_gap[0] - with_gap[3],
-			"Rolagem pelo dedo: quadro sem toque novo no meio do arrasto anda meio passo (%.1f → %.1f; cru %.1f → %.1f)" % [
+			"Rolagem pelo dedo: quadro sem toque novo no meio do arrasto anda meio passo (%.1f → %.1f; cru %.1f → %.1f)", [
 				with_gap[0], with_gap[1], raw[0], raw[1]])
 	check.call(is_equal_approx(with_gap[2], raw[2]),
-			"Rolagem pelo dedo: o toque seguinte volta à posição exata do dedo (%.1f = %.1f)" % [with_gap[2], raw[2]])
+			"Rolagem pelo dedo: o toque seguinte volta à posição exata do dedo (%.1f = %.1f)", [with_gap[2], raw[2]])
 	scroll.queue_free()
 	await host.get_tree().process_frame
 

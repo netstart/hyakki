@@ -178,7 +178,7 @@ func _draw_pillar() -> void:
 func _draw_aura() -> void:
 	if player == null or player.down > 0.0 or not player.is_alive:
 		return
-	var time := Time.get_ticks_msec() / 1000.0
+	var time := UiClock.msec() / 1000.0
 	var c := aura_color()
 	var breath := 0.75 + 0.25 * sin(time * 2.2)
 	match detail:

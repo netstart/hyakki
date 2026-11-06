@@ -55,8 +55,8 @@ func run(host: Node, check: Callable) -> void:
 
 ## Espera a condição por até `timeout` segundos reais, quadro a quadro.
 func _wait(host: Node, condition: Callable, timeout: float) -> bool:
-	var until := Time.get_ticks_msec() + int(timeout * 1000.0)
-	while Time.get_ticks_msec() < until:
+	var until := UiClock.msec() + int(timeout * 1000.0)
+	while UiClock.msec() < until:
 		if condition.call():
 			return true
 		await host.get_tree().process_frame

@@ -60,7 +60,7 @@ func run_unit(check: Callable) -> void:
 
 
 func _near(a: float, b: float, label: String) -> void:
-	_check.call(absf(a - b) < 0.001, "%s (esperado %.3f, veio %.3f)" % [label, b, a])
+	_check.call(absf(a - b) < 0.001, "%s (esperado %.3f, veio %.3f)", [label, b, a])
 
 
 func _unit_aki(e: HeroEnergy) -> void:
@@ -210,28 +210,28 @@ func _check_data() -> void:
 	for hero: String in SPEC:
 		var ids: Array = SPEC[hero]
 		var data := DB.hero_abilities(StringName(hero))
-		_check.call(DB.heroes.has(StringName(hero)), "habilidades: herói %s existe" % hero)
+		_check.call(DB.heroes.has(StringName(hero)), "habilidades: herói %s existe", hero)
 		var energy: Dictionary = data.get("energy", {})
-		_check.call(String(energy.get("id", "")) == ids[0], "%s: energia %s" % [hero, ids[0]])
+		_check.call(String(energy.get("id", "")) == ids[0], "%s: energia %s", [hero, ids[0]])
 		_check.call(Color.html_is_valid(String(energy.get("color", ""))) and float(energy.get("max", 0)) > 0.0,
-				"%s: energia com cor e máximo" % hero)
-		_check.call(String(energy.get("icon", "")) == icons + "energy_%s.png" % ids[0], "%s: ícone da energia" % hero)
+				"%s: energia com cor e máximo", hero)
+		_check.call(String(energy.get("icon", "")) == icons + "energy_%s.png" % ids[0], "%s: ícone da energia", hero)
 		var list: Array = data.get("abilities", [])
-		_check.call(list.size() == 3, "%s: 3 habilidades" % hero)
+		_check.call(list.size() == 3, "%s: 3 habilidades", hero)
 		for k: int in range(mini(3, list.size())):
 			var a: Dictionary = list[k]
 			var id := String(a["id"])
-			_check.call(id == ids[k + 1], "%s: habilidade %d é %s" % [hero, k + 1, ids[k + 1]])
-			_check.call(int(a.get("level", 0)) == [1, 5, 10][k], "%s: nível %d" % [id, [1, 5, 10][k]])
-			_check.call(float(a.get("cost", 0)) > 0.0 and float(a.get("cooldown", 0)) > 0.0, "%s: custo e recarga" % id)
-			_check.call(float(a["cost"]) <= float(energy.get("max", 0)), "%s: custo cabe na energia" % id)
-			_check.call(not String(a.get("kanji", "")).is_empty(), "%s: kanji" % id)
-			_check.call(String(a.get("icon", "")) == icons + id + ".png", "%s: caminho do ícone" % id)
-			_check.call(String(a.get("voice", "")) == "%s_%d" % [hero, k + 1], "%s: voz %s_%d" % [id, hero, k + 1])
-			_check.call(String(a.get("sfx", "")) == "ab_" + id, "%s: som ab_%s" % [id, id])
-			_check.call(not DB.weapons.has(StringName(id)), "%s: id não colide com arma" % id)
-			_check.call(DB.ability(StringName(id)) == a, "DB.ability(%s)" % id)
-			_check.call((a.get("bot", {}) as Dictionary).has("near"), "%s: regra do bot" % id)
+			_check.call(id == ids[k + 1], "%s: habilidade %d é %s", [hero, k + 1, ids[k + 1]])
+			_check.call(int(a.get("level", 0)) == [1, 5, 10][k], "%s: nível %d", [id, [1, 5, 10][k]])
+			_check.call(float(a.get("cost", 0)) > 0.0 and float(a.get("cooldown", 0)) > 0.0, "%s: custo e recarga", id)
+			_check.call(float(a["cost"]) <= float(energy.get("max", 0)), "%s: custo cabe na energia", id)
+			_check.call(not String(a.get("kanji", "")).is_empty(), "%s: kanji", id)
+			_check.call(String(a.get("icon", "")) == icons + id + ".png", "%s: caminho do ícone", id)
+			_check.call(String(a.get("voice", "")) == "%s_%d" % [hero, k + 1], "%s: voz %s_%d", [id, hero, k + 1])
+			_check.call(String(a.get("sfx", "")) == "ab_" + id, "%s: som ab_%s", [id, id])
+			_check.call(not DB.weapons.has(StringName(id)), "%s: id não colide com arma", id)
+			_check.call(DB.ability(StringName(id)) == a, "DB.ability(%s)", id)
+			_check.call((a.get("bot", {}) as Dictionary).has("near"), "%s: regra do bot", id)
 	var aki: Array = DB.hero_abilities(&"aki")["abilities"]
 	_check.call(HeroAbilities.param(aki[0], "distance") == 90.0 and HeroAbilities.param(aki[0], "damage") == 40.0
 			and float(aki[0]["cost"]) == 25.0 and float(aki[0]["cooldown"]) == 4.0, "Passo da Aurora: 90 px, 40, 25, 4 s")
@@ -241,14 +241,14 @@ func _check_data() -> void:
 	_check.call(HeroAbilities.param(aki[2], "damage") == 120.0 and HeroAbilities.param(aki[2], "ground_damage") == 15.0
 			and HeroAbilities.param(aki[2], "reach") == 160.0, "Chama de Cem Anos: 120, brasa 15, alcance 160")
 	for slot: int in range(3):
-		_check.call(InputMap.has_action(AbilitySystem.ACTIONS[slot]), "entrada %s existe" % AbilitySystem.ACTIONS[slot])
+		_check.call(InputMap.has_action(AbilitySystem.ACTIONS[slot]), "entrada %s existe", AbilitySystem.ACTIONS[slot])
 	_check.call(_has_key(&"ability_1", KEY_1) and _has_key(&"ability_1", KEY_J) and _has_key(&"ability_3", KEY_L),
 			"habilidades nas teclas 1/2/3 e J/K/L")
 	for action: StringName in [&"move_left", &"move_right", &"move_up", &"move_down", &"pause", &"speed", &"ultimate"]:
 		for slot: int in range(3):
 			for event: InputEvent in InputMap.action_get_events(AbilitySystem.ACTIONS[slot]):
 				_check.call(not InputMap.action_has_event(action, event),
-						"%s não conflita com %s" % [AbilitySystem.ACTIONS[slot], action])
+						"%s não conflita com %s", [AbilitySystem.ACTIONS[slot], action])
 
 
 func _has_key(action: StringName, key: Key) -> bool:
@@ -428,7 +428,7 @@ func _check_primitives(game: HyakkiGame) -> void:
 	var moved_control := enemies.pos[control].distance_to(c0)
 	var moved_slowed := enemies.pos[slowed].distance_to(s0)
 	_check.call(moved_slowed < moved_control * 0.7 and moved_slowed > 0.0,
-			"lentidão −50%% anda menos (%.1f × %.1f)" % [moved_slowed, moved_control])
+			"lentidão −50%% anda menos (%.1f × %.1f)", [moved_slowed, moved_control])
 	enemies.apply_slow(slowed, 0.8, 1.0)
 	_check.call(is_equal_approx(enemies.slow_mult[slowed], 0.5), "lentidão: vale a mais forte em curso")
 	_clear(game)
@@ -444,20 +444,20 @@ func _check_primitives(game: HyakkiGame) -> void:
 	var scared := _spawn(game, Vector2(30, 0))
 	_check.call(enemies.fear_circle(Vector2.ZERO, 50.0, 1.0) == 1, "fear_circle")
 	_tick(game, 30)
-	_check.call(enemies.pos[scared].x > 35.0, "medo: foge do ponto (x=%.1f)" % enemies.pos[scared].x)
+	_check.call(enemies.pos[scared].x > 35.0, "medo: foge do ponto (x=%.1f)", enemies.pos[scared].x)
 	_clear(game)
 	var lured := _spawn(game, Vector2(30, 0))
 	enemies.lure_circle(Vector2.ZERO, 50.0, Vector2(30, 60), 2.0)
 	_tick(game, 60)
 	_check.call(enemies.pos[lured].y > 15.0 and enemies.pos[lured].distance_to(Vector2(30, 60)) < 45.0,
-			"isca: persegue o ponto e não o herói (%s)" % enemies.pos[lured])
+			"isca: persegue o ponto e não o herói (%s)", enemies.pos[lured])
 	_clear(game)
 	game.player.sim_pos = Vector2(0, 80)
 	var pulled := _spawn(game, Vector2(70, 0))
 	enemies.pull_to(Vector2.ZERO, 100.0, 12.0)
 	_tick(game, 24)
 	_check.call(enemies.pos[pulled].length() < 22.0,
-			"pull_to arrasta até perto do ponto (%.1f)" % enemies.pos[pulled].length())
+			"pull_to arrasta até perto do ponto (%.1f)", enemies.pos[pulled].length())
 	_clear(game)
 	_check_boss_resist(game)
 	_check_queries(game)
@@ -478,7 +478,7 @@ func _check_boss_resist(game: HyakkiGame) -> void:
 	enemies.stun_circle(Vector2.ZERO, 60.0, 2.0)
 	_check.call(is_equal_approx(enemies.stun[boss], 2.0 * EnemyManager.BOSS_STUN)
 			and is_equal_approx(enemies.stun[common], 2.0),
-			"atordoamento em área: chefe só %d%%" % roundi(EnemyManager.BOSS_STUN * 100.0))
+			"atordoamento em área: chefe só %d%%", roundi(EnemyManager.BOSS_STUN * 100.0))
 	enemies.stun_one(boss, 2.5)
 	_check.call(is_equal_approx(enemies.stun[boss], 2.5), "stun_one atordoa o chefe pelo tempo cheio")
 	var at := enemies.pos[boss]
@@ -507,7 +507,7 @@ func _check_queries(game: HyakkiGame) -> void:
 		_spawn(game, Vector2(60, 30) + Vector2.from_angle(k * 1.6) * 4.0)
 	_spawn(game, Vector2(-50, 0))
 	var best := enemies.densest_point(Vector2.ZERO, 160.0, 20.0)
-	_check.call(best.distance_to(Vector2(60, 30)) < 8.0, "densest_point acha o maior grupo (%s)" % best)
+	_check.call(best.distance_to(Vector2(60, 30)) < 8.0, "densest_point acha o maior grupo (%s)", best)
 	_check.call(enemies.densest_point(Vector2(500, 500), 50.0, 20.0) == Vector2.INF, "densest_point sem ninguém: INF")
 	_clear(game)
 	var inside := _spawn(game, Vector2(10, 0))
@@ -552,7 +552,7 @@ func _check_player(game: HyakkiGame) -> void:
 	var contact := game.enemies.dmg[biter]
 	_tick(game, 1)
 	_check.call(is_equal_approx(_lost(game, biter), contact * 0.5),
-			"espinhos devolvem 50%% do contato (%.2f)" % _lost(game, biter))
+			"espinhos devolvem 50%% do contato (%.2f)", _lost(game, biter))
 	_check.call(game.tracker.damage_by_weapon.has(&"diamond_body"), "espinhos registrados pela fonte")
 	player.thorns_time = 0.0
 	_clear(game)
@@ -569,7 +569,7 @@ func _check_player(game: HyakkiGame) -> void:
 	_check.call(player.take_damage(10.0) == 0.0, "nada fere durante o avanço")
 	_tick(game, 12)
 	_check.call(absf(player.sim_pos.x - 45.0) < 1.5 and not player.is_dashing(),
-			"avanço de 90 px (x=%.1f)" % player.sim_pos.x)
+			"avanço de 90 px (x=%.1f)", player.sim_pos.x)
 	player.sim_pos = Vector2.ZERO
 	_check.call(player.blink(Vector2.LEFT, 30.0).distance_to(Vector2(-30, 0)) < 0.01, "teleporte instantâneo")
 	var bounds := game.world.bounds
@@ -604,7 +604,7 @@ func _check_aki(game: HyakkiGame) -> void:
 	_tick(game, 14)
 	var cut := 40.0 * might * power
 	_check.call(absf(_lost(game, a) - cut) < 0.01 and absf(_lost(game, b) - cut) < 0.01,
-			"Passo da Aurora: corta todos no caminho uma vez (%.1f, %.1f de %.1f)" % [_lost(game, a), _lost(game, b), cut])
+			"Passo da Aurora: corta todos no caminho uma vez (%.1f, %.1f de %.1f)", [_lost(game, a), _lost(game, b), cut])
 	_check.call(_lost(game, off) == 0.0, "Passo da Aurora: quem está fora do caminho fica")
 	_check.call(game.player.sim_pos.x > 40.0, "Passo da Aurora: avança 90 px")
 	_check.call(game.tracker.damage_by_weapon.has(&"dawn_step"), "dano registrado pela habilidade")
@@ -645,7 +645,7 @@ func _check_aki(game: HyakkiGame) -> void:
 	var all_hit := true
 	for i: int in group:
 		all_hit = all_hit and _lost(game, i) >= column - 0.01
-	_check.call(all_hit and _lost(game, lone) == 0.0, "Chama: coluna de fogo (%.0f) só no grupo" % column)
+	_check.call(all_hit and _lost(game, lone) == 0.0, "Chama: coluna de fogo (%.0f) só no grupo", column)
 	_check.call(aki._grounds.size() == 1, "Chama: chão em brasa")
 	var before := _lost(game, group[0])
 	_tick(game, 62)
@@ -740,8 +740,8 @@ func _check_other_heroes(host: Node) -> void:
 			ab.energy.value = ab.energy_max()
 			ok = ab.activate(slot) and ok
 		_tick(game, 30)
-		_check.call(ok and ab.uses == 3 and game.tracker.abilities == 3, "%s: as 3 habilidades saem e contam" % hero)
-		_check.call(ab.state().has("behavior") and not ab.hash_tag().is_empty(), "%s: state e hash" % hero)
+		_check.call(ok and ab.uses == 3 and game.tracker.abilities == 3, "%s: as 3 habilidades saem e contam", hero)
+		_check.call(ab.state().has("behavior") and not ab.hash_tag().is_empty(), "%s: state e hash", hero)
 		game.queue_free()
 		await host.get_tree().process_frame
 	GameClock.paused = true
@@ -768,13 +768,13 @@ func _check_bot_determinism(host: Node) -> void:
 		uses.append(game.abilities.uses_by_slot[0] * 10000 + game.abilities.uses_by_slot[1] * 100
 				+ game.abilities.uses_by_slot[2])
 		_check.call(game.abilities.uses_by_slot[1] > 0 and game.abilities.uses_by_slot[2] > 0,
-				"bot usa as habilidades (%s)" % [Array(game.abilities.uses_by_slot)])
+				"bot usa as habilidades (%s)", [Array(game.abilities.uses_by_slot)])
 		game.queue_free()
 		await host.get_tree().process_frame
 	GfxQuality.clear_override()
 	FxLayer.refresh_quality()
 	_check.call(summaries[0] == summaries[1] and uses[0] == uses[1],
-			"bot com habilidades: mesmo estado na Baixa e na Alta (%s | %s)" % summaries)
+			"bot com habilidades: mesmo estado na Baixa e na Alta (%s | %s)", summaries)
 	GameClock.paused = true
 
 
@@ -798,14 +798,14 @@ func _check_bot_every_hero(host: Node) -> void:
 			game._on_tick(DT)
 		var used := game.abilities.uses_by_slot
 		_check.call(used[0] > 0 and used[1] > 0 and used[2] > 0,
-				"bot (%s, nível 10) usa as 3 habilidades %s" % [hero, Array(used)])
+				"bot (%s, nível 10) usa as 3 habilidades %s", [hero, Array(used)])
 		# Reserva: com energia só para a 1ª e a 3ª fora da recarga, a 1ª espera.
 		var ab := game.abilities
 		ab.cooldowns.fill(0.0)
 		ab.energy.value = ab.cost(0) + 1.0
 		game.step_index = BotPilot.ABILITY_EVERY * 1000
 		_check.call(ab.cost(2) <= ab.cost(0) + 1.0 or BotPilot.ability_slot(game) != 0,
-				"bot (%s) guarda energia para a 3ª habilidade" % hero)
+				"bot (%s) guarda energia para a 3ª habilidade", hero)
 		game.queue_free()
 		await host.get_tree().process_frame
 	GameClock.paused = true

@@ -43,8 +43,8 @@ func _check_files(check: Callable) -> void:
 			# Moldura: canto (0,0) transparente; aro do topo e meio do ícone opacos.
 			if img.get_pixel(0, 0).a > 0.01 or img.get_pixel(6, 0).a < 0.99 or img.get_pixel(12, 12).a < 0.99:
 				bad.append("%s/%s: moldura fora do padrão" % [table, id])
-	check.call(total >= 70, "há ícones para todas as habilidades (%d)" % total)
-	check.call(bad.is_empty(), "todo ícone de habilidade existe, carrega, 24x24 com moldura (%s)" % [bad])
+	check.call(total >= 70, "há ícones para todas as habilidades (%d)", total)
+	check.call(bad.is_empty(), "todo ícone de habilidade existe, carrega, 24x24 com moldura (%s)", [bad])
 	check.call(UiIcons.skill_icon("weapons", "katana") != null and UiIcons.skill_icon("weapons", "nada") == null,
 			"UiIcons.skill_icon acha a katana e devolve null para id inexistente")
 
@@ -53,19 +53,19 @@ func _check_painter(check: Callable) -> void:
 	check.call(SkillIconPainter.glow_alpha(0, 0.3) == 0.0, "Baixa: evoluída sem halo pulsante")
 	var a1 := SkillIconPainter.glow_alpha(1, 0.0)
 	var b1 := SkillIconPainter.glow_alpha(1, SkillIconPainter.PULSE_SECONDS * 0.25)
-	check.call(a1 > 0.0 and b1 > a1, "Média: halo pulsa (%.2f → %.2f)" % [a1, b1])
+	check.call(a1 > 0.0 and b1 > a1, "Média: halo pulsa (%.2f → %.2f)", [a1, b1])
 	check.call(SkillIconPainter.glow_alpha(2, 0.4) > SkillIconPainter.glow_alpha(1, 0.4),
 			"Alta: halo mais forte que na Média")
 	for lvl: int in [GfxQuality.LOW, GfxQuality.MEDIUM, GfxQuality.HIGH]:
 		GfxQuality.set_override(lvl)
 		var p := SkillIconPainter.new()
-		check.call(not p.note("w:katana", 1, 10.0), "nível %d: primeira vez não conta como subida" % lvl)
-		check.call(p.note("w:katana", 2, 10.5), "nível %d: 1 → 2 conta como subida" % lvl)
+		check.call(not p.note("w:katana", 1, 10.0), "nível %d: primeira vez não conta como subida", lvl)
+		check.call(p.note("w:katana", 2, 10.5), "nível %d: 1 → 2 conta como subida", lvl)
 		var f := p.flash("w:katana", 10.6)
 		if lvl == GfxQuality.LOW:
 			check.call(f == 0.0, "Baixa: sem lampejo ao subir de nível")
 		else:
-			check.call(f > 0.0 and p.flash("w:katana", 12.0) == 0.0, "nível %d: lampejo curto ao subir" % lvl)
+			check.call(f > 0.0 and p.flash("w:katana", 12.0) == 0.0, "nível %d: lampejo curto ao subir", lvl)
 	GfxQuality.clear_override()
 	var digits_ok := true
 	for d: Array in SkillIconPainter.DIGITS:
@@ -98,10 +98,10 @@ func _check_hud(host: Node, check: Callable) -> void:
 		top.queue_redraw()
 		await host.get_tree().process_frame
 		await host.get_tree().process_frame
-		var now := Time.get_ticks_msec() / 1000.0
+		var now := UiClock.msec() / 1000.0
 		var flashing := painter.flash("w:shuriken", now) > 0.0
 		check.call(flashing == (lvl != GfxQuality.LOW),
-				"HUD nível %d: arma subiu de nível %s lampejo" % [lvl, "com" if lvl != GfxQuality.LOW else "sem"])
+				"HUD nível %d: arma subiu de nível %s lampejo", [lvl, "com" if lvl != GfxQuality.LOW else "sem"])
 	check.call(game.hud.get("_skill_icons") == painter, "troca ao vivo do nível não recria a HUD")
 	game.queue_free()
 	GameClock.paused = false

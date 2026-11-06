@@ -30,15 +30,22 @@ func run(host: Node, check: Callable) -> void:
 		DeviceProfiles.simulate_insets(c["insets"])
 		for lang: String in c["langs"]:
 			Locale.set_language(lang, false)
+			# Um App por (caso, idioma): o estado 0 é a 1ª aparição do título; os outros voltam a ele
+			# de um submenu, com o perfil trocado (o título relê o estado ao reaparecer).
+			var app: App = null
 			for state: int in 4:
 				# bit 0: Loja pronta; bit 1: Desafio Diário feito e partida suspensa.
 				var shop_ready := state & 1 == 1
 				var done := state & 2 == 2
 				_setup(shop_ready, done)
-				var app := App.new()
-				host.add_child(app)
-				await host.get_tree().process_frame
-				_fit_game_view(app, _view.size)
+				if app == null:
+					app = App.new()
+					host.add_child(app)
+					await host.get_tree().process_frame
+					_fit_game_view(app, _view.size)
+				else:
+					app.go(&"options")
+					await host.get_tree().process_frame
 				app.go(&"title")
 				var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
 				await _settle(host, screen)
@@ -53,8 +60,8 @@ func run(host: Node, check: Callable) -> void:
 					await _check_back(host, app, screen, check, tag)
 					if c["insets"] == Vector2.ZERO:
 						await _check_cold_intro(host, c["view"], check, tag)
-				app.queue_free()
-				await host.get_tree().process_frame
+			app.queue_free()
+			await host.get_tree().process_frame
 	DeviceProfiles.clear_insets()
 	SaveManager.data = original
 	Locale.set_language("pt_BR", false)
@@ -99,43 +106,43 @@ func _buttons(screen: Control) -> Array[Button]:
 func _check_layout(screen: Control, check: Callable, tag: String) -> void:
 	var buttons := _buttons(screen)
 	var expected := 8 if (screen.get("_continue") as Button).visible else 7
-	check.call(buttons.size() == expected, "%s: %d botões visíveis (%d)" % [tag, expected, buttons.size()])
+	check.call(buttons.size() == expected, "%s: %d botões visíveis (%d)", [tag, expected, buttons.size()])
 	var rects: Array[Rect2] = []
 	for b: Button in buttons:
 		var rect := b.get_global_rect()
-		check.call(_safe.encloses(rect), "%s: '%s' inteiro na tela (%s em %s)" % [tag, b.text, rect, _safe])
-		check.call(rect.size.y >= 30, "%s: '%s' com alvo de toque ≥ 30 (%.0f)" % [tag, b.text, rect.size.y])
-		check.call(is_equal_approx(b.modulate.a, 1.0), "%s: '%s' terminou de aparecer" % [tag, b.text])
+		check.call(_safe.encloses(rect), "%s: '%s' inteiro na tela (%s em %s)", [tag, b.text, rect, _safe])
+		check.call(rect.size.y >= 30, "%s: '%s' com alvo de toque ≥ 30 (%.0f)", [tag, b.text, rect.size.y])
+		check.call(is_equal_approx(b.modulate.a, 1.0), "%s: '%s' terminou de aparecer", [tag, b.text])
 		var font := b.get_theme_font("font")
 		var font_size := b.get_theme_font_size("font_size")
 		var box := b.get_theme_stylebox("normal")
 		var need := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + box.get_margin(SIDE_LEFT) \
 				+ box.get_margin(SIDE_RIGHT)
 		check.call(need <= rect.size.x + 0.5 and b.get_minimum_size().x <= rect.size.x + 0.5,
-				"%s: texto '%s' cabe no botão (%.0f > %.0f)" % [tag, b.text, need, rect.size.x])
+				"%s: texto '%s' cabe no botão (%.0f > %.0f)", [tag, b.text, need, rect.size.x])
 		for other: Rect2 in rects:
-			check.call(not other.intersects(rect), "%s: '%s' não encosta em outro botão" % [tag, b.text])
+			check.call(not other.intersects(rect), "%s: '%s' não encosta em outro botão", [tag, b.text])
 		rects.append(rect)
 	var rows: Array = screen.get("_rows")
 	for row: Button in rows:
 		var icon := row.get_node("Icon") as TextureRect
 		check.call(icon.texture != null and row.get_global_rect().encloses(icon.get_global_rect()),
-				"%s: ícone de '%s' dentro da linha" % [tag, row.text])
+				"%s: ícone de '%s' dentro da linha", [tag, row.text])
 		var box := row.get_theme_stylebox("normal")
 		check.call(icon.get_global_rect().end.x <= row.get_global_rect().position.x + box.get_margin(SIDE_LEFT),
-				"%s: ícone de '%s' antes do texto" % [tag, row.text])
+				"%s: ícone de '%s' antes do texto", [tag, row.text])
 	var title := (screen.get("_title_box") as Control).get_global_rect()
-	check.call(_safe.encloses(title), "%s: título inteiro na tela (%s em %s)" % [tag, title, _safe])
+	check.call(_safe.encloses(title), "%s: título inteiro na tela (%s em %s)", [tag, title, _safe])
 	for row: Button in rows:
-		check.call(not title.intersects(row.get_global_rect()), "%s: título não cobre '%s'" % [tag, row.text])
+		check.call(not title.intersects(row.get_global_rect()), "%s: título não cobre '%s'", [tag, row.text])
 	var chip := (screen.get("_chip") as Control).get_global_rect()
 	check.call(_safe.encloses(chip) and not title.intersects(chip),
-			"%s: saldo inteiro e longe do título (%s em %s)" % [tag, chip, _safe])
+			"%s: saldo inteiro e longe do título (%s em %s)", [tag, chip, _safe])
 	var ryo := screen.get("_ryo") as Label
 	check.call(ryo.text == Locale.format_number(1234567) and chip.encloses(ryo.get_global_rect()),
-			"%s: saldo mostra o ryō dentro do selo" % tag)
+			"%s: saldo mostra o ryō dentro do selo", tag)
 	for rect: Rect2 in rects:
-		check.call(not rect.intersects(chip), "%s: saldo não encosta em botão" % tag)
+		check.call(not rect.intersects(chip), "%s: saldo não encosta em botão", tag)
 
 
 ## Próximas metas: ao menos uma meta (as 3 quando cabem), dentro da área segura, sem encostar no
@@ -144,17 +151,17 @@ func _check_goals(screen: Control, check: Callable, tag: String) -> void:
 	var goals := screen.call("goals") as MissionGoals
 	var shown := goals.visible_rows()
 	check.call(goals.is_visible_in_tree() and shown >= 1 and goals.rows.size() == 3,
-			"%s: Próximas metas visíveis (%d de %d)" % [tag, shown, goals.rows.size()])
+			"%s: Próximas metas visíveis (%d de %d)", [tag, shown, goals.rows.size()])
 	if not goals.is_visible_in_tree():
 		return
 	var rect := goals.get_global_rect()
-	check.call(_safe.encloses(rect), "%s: metas inteiras na tela (%s em %s)" % [tag, rect, _safe])
-	check.call(rect.size.x >= 112.0 and is_equal_approx(goals.modulate.a, 1.0), "%s: metas com largura e opacas" % tag)
+	check.call(_safe.encloses(rect), "%s: metas inteiras na tela (%s em %s)", [tag, rect, _safe])
+	check.call(rect.size.x >= 112.0 and is_equal_approx(goals.modulate.a, 1.0), "%s: metas com largura e opacas", tag)
 	var others: Array[Control] = [screen.get("_title_box") as Control, screen.get("_chip") as Control,
 			screen.get("_version") as Control]
 	others.append_array(_buttons(screen))
 	for c: Control in others:
-		check.call(not rect.intersects(c.get_global_rect()), "%s: metas não encostam em '%s'" % [tag, c.name])
+		check.call(not rect.intersects(c.get_global_rect()), "%s: metas não encostam em '%s'", [tag, c.name])
 	for node: Node in goals.find_children("*", "Label", true, false):
 		var l := node as Label
 		if not l.is_visible_in_tree():
@@ -162,34 +169,34 @@ func _check_goals(screen: Control, check: Callable, tag: String) -> void:
 		var font := l.get_theme_font("font")
 		var font_size := l.get_theme_font_size("font_size")
 		check.call(l.get_line_count() * font.get_height(font_size) <= l.size.y + 0.5 and rect.encloses(l.get_global_rect()),
-				"%s: texto '%s' das metas inteiro na altura" % [tag, l.text.left(24)])
+				"%s: texto '%s' das metas inteiro na altura", [tag, l.text.left(24)])
 		if l.autowrap_mode == TextServer.AUTOWRAP_OFF and l.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING:
 			check.call(font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= l.size.x + 0.5,
-					"%s: texto '%s' das metas sem corte" % [tag, l.text])
+					"%s: texto '%s' das metas sem corte", [tag, l.text])
 
 
 func _check_states(app: App, screen: Control, check: Callable, tag: String, shop_ready: bool, done: bool) -> void:
 	var shop := screen.get("_shop_button") as Button
-	check.call(shop.text == TranslationServer.translate("title.shop"), "%s: Loja sem sufixo de texto" % tag)
+	check.call(shop.text == TranslationServer.translate("title.shop"), "%s: Loja sem sufixo de texto", tag)
 	var badge := screen.get("_shop_badge") as Control
 	check.call(badge.is_visible_in_tree() == ShopManager.any_ready() and badge.visible == shop_ready,
-			"%s: selo da Loja só com vaga pronta" % tag)
-	check.call(shop.get_global_rect().encloses(badge.get_global_rect()), "%s: selo dentro da linha da Loja" % tag)
+			"%s: selo da Loja só com vaga pronta", tag)
+	check.call(shop.get_global_rect().encloses(badge.get_global_rect()), "%s: selo dentro da linha da Loja", tag)
 	var daily := screen.get("_daily") as Button
-	check.call(daily.text == TranslationServer.translate("title.daily"), "%s: Desafio sem sufixo de texto" % tag)
+	check.call(daily.text == TranslationServer.translate("title.daily"), "%s: Desafio sem sufixo de texto", tag)
 	check.call((screen.get("_daily_done") as Control).is_visible_in_tree() == done,
-			"%s: visto do Desafio Diário só quando feito hoje" % tag)
+			"%s: visto do Desafio Diário só quando feito hoje", tag)
 	check.call((screen.get("_daily_new") as Control).is_visible_in_tree() != done,
-			"%s: ponto de novo no Desafio Diário só quando falta" % tag)
+			"%s: ponto de novo no Desafio Diário só quando falta", tag)
 	var cont := screen.get("_continue") as Button
 	check.call(cont.is_visible_in_tree() == app.has_suspended_run() and cont.visible == done,
-			"%s: Continuar só com partida suspensa" % tag)
+			"%s: Continuar só com partida suspensa", tag)
 	var primary := cont if done else screen.get("_play") as Button
-	check.call(screen.get_viewport().gui_get_focus_owner() == primary, "%s: foco no botão principal" % tag)
-	check.call(primary.get_global_rect().size.y >= 44, "%s: botão principal grande" % tag)
+	check.call(screen.get_viewport().gui_get_focus_owner() == primary, "%s: foco no botão principal", tag)
+	check.call(primary.get_global_rect().size.y >= 44, "%s: botão principal grande", tag)
 	for b: Button in _buttons(screen):
 		check.call(b == primary or b.get_global_rect().size.y < primary.get_global_rect().size.y,
-				"%s: '%s' menor que o principal" % [tag, b.text])
+				"%s: '%s' menor que o principal", [tag, b.text])
 
 
 ## Balão de dicas com a dica mais longa do idioma: dentro da área segura, sem cobrir título,
@@ -204,31 +211,31 @@ func _check_tip(screen: Control, check: Callable, tag: String) -> void:
 	balloon.reveal()
 	var rects := balloon.layout_rects()
 	var name := String(tip.get("id", ""))
-	check.call(bool(rects.get("ok", false)) and balloon.visible, "%s: balão cabe com a dica mais longa (%s)" % [tag, name])
+	check.call(bool(rects.get("ok", false)) and balloon.visible, "%s: balão cabe com a dica mais longa (%s)", [tag, name])
 	if not bool(rects.get("ok", false)):
 		return
 	var xf := screen.get_global_transform()
 	var box: Rect2 = xf * (rects["box"] as Rect2)
-	check.call(_safe.encloses(box), "%s: balão inteiro na área segura (%s em %s)" % [tag, box, _safe])
+	check.call(_safe.encloses(box), "%s: balão inteiro na área segura (%s em %s)", [tag, box, _safe])
 	var blockers: Array[Control] = [screen.get("_title_box") as Control, screen.get("_chip") as Control,
 			screen.get("_version") as Control]
 	var goals := screen.call("goals") as MissionGoals
 	if goals.is_visible_in_tree():
 		blockers.append(goals)
 	check.call(goals.is_visible_in_tree() != balloon.covers_soft(),
-			"%s: metas escondidas só quando o balão precisa do lugar delas" % tag)
+			"%s: metas escondidas só quando o balão precisa do lugar delas", tag)
 	for b: Button in _buttons(screen):
 		blockers.append(b)
 	for c: Control in blockers:
-		check.call(not box.intersects(c.get_global_rect()), "%s: balão não cobre '%s'" % [tag, c.name])
+		check.call(not box.intersects(c.get_global_rect()), "%s: balão não cobre '%s'", [tag, c.name])
 	var app := screen.get("app") as App
 	var backdrop := app.backdrop()
 	var hero := backdrop.get_global_transform() * backdrop.hero_rect()
-	check.call(not box.intersects(hero), "%s: balão não cobre a guardiã" % tag)
+	check.call(not box.intersects(hero), "%s: balão não cobre a guardiã", tag)
 	var tail: PackedVector2Array = rects["tail"]
 	var tip_at := xf * tail[2]
 	check.call(tip_at.distance_to(Vector2(hero.get_center().x, hero.position.y)) <= 16.0 + hero.size.y * 0.5,
-			"%s: rabicho aponta para a guardiã (%s, %s)" % [tag, tip_at, hero])
+			"%s: rabicho aponta para a guardiã (%s, %s)", [tag, tip_at, hero])
 	# "×": desenho dentro do papel (sem a moldura de 6 px), da área assada e da área de toque, sem
 	# encostar nos ícones da receita nem no texto.
 	var glyph: Rect2 = xf * (rects["close_glyph"] as Rect2)
@@ -236,15 +243,15 @@ func _check_tip(screen: Control, check: Callable, tag: String) -> void:
 	var baked := bake.get_global_rect() if bake != null else balloon.get_global_rect()
 	check.call(box.grow(-6.0).encloses(glyph) and baked.encloses(glyph) and baked.size == balloon.size
 			and (xf * (rects["close"] as Rect2)).encloses(glyph),
-			"%s: × do balão inteiro no papel e na área assada (%s em %s, %s)" % [tag, glyph, box, baked])
+			"%s: × do balão inteiro no papel e na área assada (%s em %s, %s)", [tag, glyph, box, baked])
 	var chain: Rect2 = xf * (rects["chain"] as Rect2)
-	check.call(chain.size.x <= 0.0 or not chain.intersects(glyph), "%s: × não encosta nos ícones" % tag)
+	check.call(chain.size.x <= 0.0 or not chain.intersects(glyph), "%s: × não encosta nos ícones", tag)
 	var label := balloon.text_label()
 	var text := label.get_global_rect()
-	check.call(not text.intersects(glyph), "%s: × não encosta no texto" % tag)
+	check.call(not text.intersects(glyph), "%s: × não encosta no texto", tag)
 	check.call(box.encloses(text) and int(rects["lines"]) <= TipBalloon.MAX_LINES
 			and label.get_line_count() <= int(rects["lines"]) and TipBalloon.words_fit(label.text, text.size.x, font),
-			"%s: dica '%s' inteira no balão (%d linhas)" % [tag, name, label.get_line_count()])
+			"%s: dica '%s' inteira no balão (%d linhas)", [tag, name, label.get_line_count()])
 	balloon.show_tip({})
 
 
@@ -255,9 +262,9 @@ func _check_repeat(host: Node, app: App, screen: Control, check: Callable, tag: 
 	app.go(&"title")
 	screen.call("on_show")
 	await _settle(host, screen)
-	check.call(_positions(screen) == before, "%s: mostrar de novo não desloca nada" % tag)
+	check.call(_positions(screen) == before, "%s: mostrar de novo não desloca nada", tag)
 	await host.get_tree().create_timer(0.6).timeout
-	check.call(_positions(screen) == before, "%s: entrada termina nas mesmas posições" % tag)
+	check.call(_positions(screen) == before, "%s: entrada termina nas mesmas posições", tag)
 
 
 func _positions(screen: Control) -> Array[Vector2]:
@@ -286,10 +293,10 @@ func _check_back(host: Node, app: App, screen: Control, check: Callable, tag: St
 			samples.append(NavProbe.sample(screen, nodes))
 		var r := NavProbe.summarize(nodes, samples)
 		check.call(app.current == &"title" and int(r["flickers"]) == 0 and int(r["unsettled_frames"]) == 0,
-				"%s: voltar de %s deixa o título parado (piscadas %d, quadros fora do lugar %d, %s)" % [tag, sub,
+				"%s: voltar de %s deixa o título parado (piscadas %d, quadros fora do lugar %d, %s)", [tag, sub,
 				r["flickers"], r["unsettled_frames"], r["flicker_nodes"]])
 	check.call(row != null and not goals.rows.is_empty() and goals.rows[0]["row"] == row,
-			"%s: voltar ao título mantém as linhas das metas" % tag)
+			"%s: voltar ao título mantém as linhas das metas", tag)
 
 
 ## 1ª aparição do título (App novo): a entrada começa já no 1º quadro no começo (nada aparece pronto
@@ -304,15 +311,15 @@ func _check_cold_intro(host: Node, view: Vector2, check: Callable, tag: String) 
 	var screen := (app.get("_screens") as Dictionary)[&"title"] as Control
 	var nodes := NavProbe.title_nodes(screen)
 	var samples: Array[PackedFloat32Array] = []
-	var start := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - start < INTRO_WATCH * 1000.0:
+	var start := UiClock.msec()
+	while UiClock.msec() - start < INTRO_WATCH * 1000.0:
 		await host.get_tree().process_frame
 		samples.append(NavProbe.sample(screen, nodes))
 	var r := NavProbe.summarize(nodes, samples)
 	var last := samples[-1]
 	var settled := Array(last).all(func(v: float) -> bool: return v <= NavProbe.SETTLED)
 	check.call(float(r["first_min"]) >= 0.2 and int(r["flickers"]) == 0 and settled,
-			"%s: entrada do título sem piscar (1º quadro %.2f, piscadas %d %s, terminou %s)" % [tag, r["first_min"],
+			"%s: entrada do título sem piscar (1º quadro %.2f, piscadas %d %s, terminou %s)", [tag, r["first_min"],
 			r["flickers"], r["flicker_nodes"], settled])
 	app.queue_free()
 	await host.get_tree().process_frame

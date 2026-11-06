@@ -218,7 +218,7 @@ func show_cards(cards: Array[Dictionary], rerolls: int, skips: int, banishes: in
 	_level = level
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_opened_at = Time.get_ticks_msec()
+	_opened_at = UiClock.msec()
 	_set_banish(false)
 	_kill_tweens()
 	_apply_quality()
@@ -311,6 +311,14 @@ func settle_now() -> void:
 		card.position = card.base_position
 		card.modulate.a = 1.0
 		card.settled = true
+
+
+## Testes: avança as animações em curso até o fim na hora (mesmo estado final da entrada natural,
+## com os callbacks: cartas pousadas, sons e botões acesos), sem esperar o tempo delas.
+func finish_intro() -> void:
+	for t: Tween in _tweens.duplicate():
+		if t.is_valid() and t.is_running():
+			t.custom_step(60.0)
 
 
 ## A saída (cartas caindo, fundo sumindo) ainda está tocando.
@@ -483,7 +491,7 @@ static func _load(path: String) -> Texture2D:
 # --- Toque -------------------------------------------------------------------------------
 
 func _accepting() -> bool:
-	return _open and not _busy and Time.get_ticks_msec() - _opened_at >= CARD_LOCK_MS
+	return _open and not _busy and UiClock.msec() - _opened_at >= CARD_LOCK_MS
 
 
 ## Rerrolar: sem ryō para a rolagem paga, só o som de negado e a tremida (as cartas ficam).

@@ -243,7 +243,7 @@ func death(at: Vector2, style: String, tint: Color, size: float = 1.0, elite: bo
 
 
 func _death_sound(style: String) -> void:
-	var now := Time.get_ticks_msec()
+	var now := UiClock.msec()
 	if now - _last_sound_ms < SOUND_GAP_MS:
 		return
 	_last_sound_ms = now

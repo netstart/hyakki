@@ -320,7 +320,7 @@ func _draw_top() -> void:
 	_text(layout["clock_at"], clock, Color("ffd166") if game.endless_phase else Color.WHITE)
 	_text(layout["counters_at"], counters)
 	# Armas na 1ª fileira, passivas na 2ª: ícones 24x24 sem escala (pixel perfeito).
-	var now := Time.get_ticks_msec() / 1000.0
+	var now := UiClock.msec() / 1000.0
 	var step := SkillIconPainter.ICON + 3.0
 	var at: Vector2 = layout["weapons_at"]
 	for weapon: Weapon in game.weapons:
@@ -400,7 +400,7 @@ func _draw_offscreen_arrows() -> void:
 	if game.rift != null and game.rift.is_open():
 		var to: Vector2 = game.rift.portal_pos - game.player.position
 		if absf(to.x) >= view.x * 0.5 - 10.0 or absf(to.y) >= view.y * 0.5 - 10.0:
-			RiftPortal.draw_arrow(_top, arrow_point(to.normalized(), view), to.normalized(), Time.get_ticks_msec() / 1000.0)
+			RiftPortal.draw_arrow(_top, arrow_point(to.normalized(), view), to.normalized(), UiClock.msec() / 1000.0)
 	# Altar do Selo dormente mais perto (AltarSystem.ARROW_RANGE), fora da tela.
 	if game.altars != null:
 		var altar := game.altars.arrow_target()
@@ -408,7 +408,7 @@ func _draw_offscreen_arrows() -> void:
 			var rel := altar - game.player.position
 			if absf(rel.x) >= view.x * 0.5 - 10.0 or absf(rel.y) >= view.y * 0.5 - 10.0:
 				AltarSystem.draw_arrow(_top, arrow_point(rel.normalized(), view), rel.normalized(),
-						Time.get_ticks_msec() / 1000.0)
+						UiClock.msec() / 1000.0)
 
 
 ## Base da seta que aponta na direção `dir`: na borda da tela, com 18 px de folga, e do lado
@@ -566,7 +566,7 @@ func _build_flight() -> void:
 	# Com a pausa aberta o voo congela e some; volta de onde parou.
 	_flight.hold = func() -> bool: return _pause.is_open()
 	_flight.landed.connect(func(item: Dictionary) -> void:
-		_skill_icons.pulse(String(item.get("key", "")), Time.get_ticks_msec() / 1000.0))
+		_skill_icons.pulse(String(item.get("key", "")), UiClock.msec() / 1000.0))
 	_root.add_child(_flight)
 
 
@@ -923,7 +923,7 @@ func _draw_speed() -> void:
 	var label := "%dx" % _speed_shown
 	if fast:
 		var calm := bool(Settings.get_value("reduce_flashes"))
-		var pulse := 1.0 if calm else 0.65 + 0.35 * sin(Time.get_ticks_msec() * 0.006)
+		var pulse := 1.0 if calm else 0.65 + 0.35 * sin(UiClock.msec() * 0.006)
 		var cy := floorf(b.size.y * 0.5)
 		var chip := Rect2(icon_at.x - 3.0, cy - 8.0, label_rect.end.x - icon_at.x + 6.0, 16.0)
 		b.draw_rect(chip, Color(0.14, 0.05, 0.03, 0.92))
