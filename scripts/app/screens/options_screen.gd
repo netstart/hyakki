@@ -44,6 +44,8 @@ var _headers: Array[Control] = []
 var _sized: Array[Control] = []
 var _language: GridContainer
 var _quality: OptionButton
+## Escolha automática da mão de comida/moedas (LevelUpSystem.AUTO_SETTING).
+var _auto_pick: MenuKit.Segmented
 var _preview: QualityPreview
 var _current := -1
 ## Linhas dos números por tipo (_damage_type_rows).
@@ -99,6 +101,7 @@ func _ready() -> void:
 func on_show() -> void:
 	_layout()
 	_refresh_quality()
+	_sync_auto_pick()
 	if _restore_section >= 0:
 		var section := _restore_section
 		_restore_section = -1
@@ -152,19 +155,8 @@ func _build_display(card: VBoxContainer) -> void:
 	card.add_child(_preview)
 	var hints := {30: tr("options.fps30"), 60: tr("options.fps60"), 120: tr("options.fps120")}
 	var fps := _segment_row("fps", tr("options.fps"), [[30, "30"], [60, "60"], [120, "120"]])
-	var hint := MenuKit.text(String(hints.get(int(Settings.get_value("fps")), "")), 12, ThemeFactory.MUTED)
-	hint.name = "opt_fps_hint"
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var label_col := VBoxContainer.new()
-	label_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	label_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	label_col.add_theme_constant_override("separation", 0)
-	var first := fps.get_child(0)
-	fps.remove_child(first)
-	label_col.add_child(first)
-	label_col.add_child(hint)
-	fps.add_child(label_col)
-	fps.move_child(label_col, 0)
+	_with_hint(fps, String(hints.get(int(Settings.get_value("fps")), "")), "opt_fps_hint")
+	var hint := fps.find_child("opt_fps_hint", true, false) as Label
 	(fps.find_child("opt_fps", false, false) as MenuKit.Segmented).value_changed.connect(func(v: Variant) -> void:
 		hint.text = String(hints.get(int(v), "")))
 	card.add_child(fps)
@@ -204,6 +196,17 @@ func _damage_type_rows() -> VBoxContainer:
 	_refresh_damage_types()
 	Settings.changed.connect(_on_setting_changed)
 	return box
+
+
+## A escolha automática também muda na tela do nível ("Não perguntar mais"), com esta tela guardada:
+## o segmento acompanha ao abrir (e só restiliza se o valor mudou).
+func _sync_auto_pick() -> void:
+	if _auto_pick == null:
+		return
+	var current := String(Settings.get_value(LevelUpSystem.AUTO_SETTING))
+	var index := _auto_pick.values.find(current)
+	if index >= 0 and _auto_pick.selected_index() != index:
+		_auto_pick.set_value(current)
 
 
 func _on_setting_changed(key: String) -> void:
@@ -268,6 +271,12 @@ func _build_other(card: VBoxContainer) -> void:
 	card.add_child(_toggle_row("tips", tr("options.tips")))
 	# Baú: omikuji, abertura e roleta na metade do tempo (tocar ainda pula para o fim).
 	card.add_child(_toggle_row("chest_short", tr("options.chest_short")))
+	# Nível com tudo no máximo (só comida ou ryō): perguntar ou escolher sozinho (LevelUpSystem.auto_card;
+	# com a vida cheia, "Comida" pega as moedas, como diz a dica).
+	card.add_child(_with_hint(_segment_row(LevelUpSystem.AUTO_SETTING, tr("options.levelup_auto"),
+			[["", tr("options.levelup_auto_ask")], ["heal", tr("options.levelup_auto_heal")],
+			["ryo", tr("options.levelup_auto_ryo")]]), tr("options.levelup_auto_hint"), "opt_levelup_auto_hint"))
+	_auto_pick = card.find_child("opt_%s" % LevelUpSystem.AUTO_SETTING, true, false) as MenuKit.Segmented
 	# Sem anúncios (AdsManager.ads_enabled = false) não há consentimento a rever. "Restaurar
 	# compras" fica sempre que há loja de dinheiro (Play Billing ou o simulado): a Ampulheta de
 	# Fūjin (velocidade 2x/3x) é vendida com ou sem anúncios.
@@ -315,6 +324,24 @@ func _section(index: int, title: String) -> VBoxContainer:
 	rows.add_theme_constant_override("separation", ROW_GAP)
 	card.add_child(rows)
 	return rows
+
+
+## Põe uma dica pequena (`hint_name`) sob o rótulo da linha, na mesma coluna. Devolve a linha.
+func _with_hint(row: HBoxContainer, text: String, hint_name: String) -> HBoxContainer:
+	var hint := MenuKit.text(text, 12, ThemeFactory.MUTED)
+	hint.name = hint_name
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var label_col := VBoxContainer.new()
+	label_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	label_col.add_theme_constant_override("separation", 0)
+	var first := row.get_child(0)
+	row.remove_child(first)
+	label_col.add_child(first)
+	label_col.add_child(hint)
+	row.add_child(label_col)
+	row.move_child(label_col, 0)
+	return row
 
 
 func _row(text: String) -> HBoxContainer:

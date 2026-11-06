@@ -18,6 +18,7 @@ const GAME_SCENE := "res://scenes/game/Game.tscn"
 const CONFIG := {"hero": "aki", "stage": "village", "moon": 2, "mode": "normal", "seed": 5, "speed": 1}
 const DeviceProfiles := preload("res://tests/device_profiles.gd")
 const RewardFlightTests := preload("res://tests/reward_flight_tests.gd")
+const LevelRerollTests := preload("res://tests/level_reroll_tests.gd")
 ## Espera até o baú pousar e começar a tremer.
 const DROP_WAIT := 0.6
 
@@ -37,6 +38,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_quality()
 	await _test_layouts()
 	await RewardFlightTests.new().run(host, check)
+	await LevelRerollTests.new().run(host, check)
 	GfxQuality.clear_override()
 	Locale.set_language("pt_BR", false)
 	GameClock.paused = true
@@ -439,6 +441,20 @@ func _test_layouts() -> void:
 			panel.show_cards(sample_cards(), 2, 1, 3, 27)
 			await _seconds(0.75)
 			check_level_layout(panel, view, state)
+			# Rerrolar pago com um preço longo (e sem ryō, apagado).
+			panel.show_cards(sample_cards(), 0, 1, 3, 27, null, 9990, 0)
+			panel.settle_now()
+			await _host.get_tree().process_frame
+			_check.call(panel.action_buttons()[0].visible and panel.action_buttons()[0].price == 9990,
+					"%s: Rerrolar pago com o preço" % state)
+			check_level_layout(panel, view, state + " pago")
+			# Mão de comida/moedas com a caixa "Não perguntar mais" (e Pular).
+			panel.show_cards(LevelUpSystem.fallback_cards(), 0, 1, 3, 27, null, 10, 100)
+			panel.settle_now()
+			await _host.get_tree().process_frame
+			_check.call(panel.auto_toggle().visible and not panel.action_buttons()[0].visible,
+					"%s: comida/moedas com a caixa e sem Rerrolar" % state)
+			check_level_layout(panel, view, state + " comida/moedas", 2)
 			var chest := ChestPanel.new()
 			area.add_child(chest)
 			panel.close_now()
@@ -453,10 +469,11 @@ func _test_layouts() -> void:
 	Locale.set_language("pt_BR", false)
 
 
-func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String) -> void:
+## `expected`: 4 cartas de sample_cards() ou 2 da mão de comida/moedas.
+func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String, expected: int = 4) -> void:
 	var screen := DeviceProfiles.safe_rect(view, _insets)
 	var cards := panel.level_cards()
-	_check.call(cards.size() == 4, "%s: 4 cartas" % state)
+	_check.call(cards.size() == expected, "%s: %d cartas" % [state, expected])
 	if cards.size() == 4:
 		_check.call(cards[0].combos.size() == 2 and cards[2].combos.size() == 1
 				and (cards[2].combos[0]["names"] as Array).size() == 2,
@@ -479,7 +496,12 @@ func check_level_layout(panel: LevelUpPanel, view: Vector2, state: String) -> vo
 	_check.call(title <= screen.size.x - 16.0, "%s: título cabe" % state)
 	_check.call(UiPaint.text_width(tr("levelup.banish_hint")) <= screen.size.x - 16.0, "%s: dica de banir cabe" % state)
 	var last := Rect2()
-	for b: Button in panel.action_buttons():
+	var buttons: Array[Button] = []
+	buttons.assign(panel.action_buttons())
+	buttons.push_front(panel.auto_toggle())
+	for b: Button in buttons:
+		if not b.visible:
+			continue
 		var r := b.get_global_rect()
 		_check.call(screen.encloses(r), "%s: botão %s na tela (%s em %s)" % [state, b.text, r, screen])
 		_check.call(b.get_combined_minimum_size().x <= r.size.x + 0.5, "%s: botão %s inteiro" % [state, b.text])

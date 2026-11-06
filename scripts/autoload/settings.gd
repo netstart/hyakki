@@ -42,6 +42,9 @@ const DEFAULTS := {
 	"tips": true,
 	## Baú com a sequência curta (omikuji, abertura e roleta duas vezes mais rápidas).
 	"chest_short": false,
+	## Nível com tudo no máximo (só comida ou ryō): "" pergunta; "heal" ou "ryo" escolhe sozinho, sem
+	## parar a luta (com a vida cheia, "heal" pega o ryō). Ver LevelUpSystem.auto_card.
+	"levelup_auto_fallback": "",
 	## Qualidade gráfica (GfxQuality): "auto" | "low" | "medium" | "high".
 	"graphics_quality": "auto",
 }

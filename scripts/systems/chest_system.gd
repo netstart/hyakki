@@ -100,6 +100,10 @@ func _next_reward() -> Dictionary:
 	var choices := levels.build_choices(game.rng)
 	if choices.is_empty():
 		return {}
-	var card := choices[0]
+	# Mão de comida/moedas: a mesma escolha automática do nível (com o toque da vida cheia), se o
+	# jogador marcou uma; senão (e no bot), a primeira carta.
+	var card := levels.auto_card(choices)
+	if card.is_empty():
+		card = choices[0]
 	levels.apply(card)
 	return card

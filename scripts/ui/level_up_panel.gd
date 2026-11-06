@@ -9,7 +9,10 @@ extends Control
 ##   na luz e o ícone dela voa até a guardiã (`claimed` -> RewardFlight da HUD); bloqueio contra
 ##   toque acidental (CARD_LOCK_MS depois de abrir e só com a carta já no lugar);
 ## - Rerrolar / Pular / Banir com glifo e contador; no modo banir as cartas ficam com borda
-##   vermelha e o carimbo 封 cai na escolhida.
+##   vermelha e o carimbo 封 cai na escolhida. Rerrolar aparece sempre: sem carga grátis mostra o
+##   preço em ryō (moeda + valor) e, sem ryō para pagar, fica apagado e treme com o som de negado;
+## - mão de comida/moedas (tudo no máximo): sem Rerrolar nem Banir, com a caixa "Não perguntar
+##   mais", que grava a carta escolhida como escolha automática (LevelUpSystem.auto_card).
 ## Cabe em 678x305 e 480x270 em todos os idiomas (tests/level_up_panel_tests.gd).
 ## Quem decide o jogo é o HyakkiGame: a tela só emite os sinais (a HUD repassa).
 
@@ -47,14 +50,37 @@ const ELEMENTS := [
 const PASSIVE_GLOW := Color("8ff0c8")
 const HEAL_GLOW := Color("ff9db0")
 const RYO_GLOW := Color("ffd166")
+## Margem direita do botão: com o selo do contador, com a caixa de marcar e a folga do preço (a
+## moeda e o espaço até o texto somam PRICE_ICON).
+const COUNT_RIGHT := 20.0
+const CHECK_RIGHT := 8.0
+const PRICE_PAD := 6.0
+const PRICE_ICON := 18.0
+## Tremida do Rerrolar sem ryō para pagar.
+const DENY_SHAKE := 3.0
+const DENY_TIME := 0.32
 
-## Botão de ação com glifo de pixel à esquerda e contador num selo dourado.
+## Botão de ação com glifo de pixel à esquerda e contador num selo dourado; com `price` >= 0, a
+## moeda e o preço no lugar do selo (`poor`: sem ryō para pagar); com `check`, uma caixa de marcar.
 class ActionButton:
 	extends Button
 	var glyph: String = ""
 	var count: int = 0
 	var active: bool = false
+	var price: int = -1
+	var poor: bool = false
+	var check: bool = false
+	## Caixas de estilo do botão (a margem direita acompanha o selo ou o preço).
+	var boxes: Array[StyleBoxFlat] = []
 	var _t: float = 0.0
+
+	## Margem direita das caixas, trocada só quando muda (cada troca refaz o layout).
+	func fit_right(margin: float) -> void:
+		if boxes.is_empty() or is_equal_approx(boxes[0].content_margin_right, margin):
+			return
+		for box: StyleBoxFlat in boxes:
+			box.content_margin_right = margin
+		update_minimum_size()
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -67,7 +93,24 @@ class ActionButton:
 		if active:
 			var pulse := 0.5 + 0.5 * sin(_t * 6.0)
 			draw_rect(Rect2(Vector2.ZERO, size).grow(1.0), Color(1, 0.4, 0.3, 0.25 + 0.4 * pulse), false, 1.0)
-		UiPaint.glyph(self, glyph, Vector2(7, floorf((size.y - 12.0) * 0.5)), color)
+		var top := floorf((size.y - 12.0) * 0.5)
+		if check:
+			var box := Rect2(Vector2(6, top), Vector2(12, 12))
+			draw_rect(box, Color("3b2416"))
+			draw_rect(box, ThemeFactory.ACCENT if button_pressed else color, false, 1.0)
+			if button_pressed:
+				draw_line(Vector2(8.5, top + 6.5), Vector2(11, top + 9), UiPaint.JADE, 2.0)
+				draw_line(Vector2(11, top + 9), Vector2(16, top + 3), UiPaint.JADE, 2.0)
+			return
+		UiPaint.glyph(self, glyph, Vector2(7, top), color)
+		if price >= 0:
+			# Preço: moeda e valor no canto direito (vermelho sem ryō para pagar).
+			var value := str(price)
+			var x := size.x - LevelUpPanel.PRICE_PAD - UiPaint.text_width(value)
+			UiPaint.glyph(self, "coin", Vector2(x - 14.0, top), Color.WHITE)
+			UiPaint.text(self, Vector2(x, floorf(size.y * 0.5) + 4.0), value, 12,
+					Color("ff8a7a") if poor else ThemeFactory.ACCENT, HORIZONTAL_ALIGNMENT_LEFT, -1, 3, Color("3b2416"))
+			return
 		# Contador: selo redondo dourado no canto direito.
 		var c := Vector2(size.x - 9.0, floorf(size.y * 0.5))
 		draw_circle(c, 7.0, Color("3b2416"))
@@ -99,6 +142,14 @@ var _actions: HBoxContainer
 var _reroll: ActionButton
 var _skip: ActionButton
 var _banish: ActionButton
+## "Não perguntar mais" (só na mão de comida/moedas).
+var _auto: ActionButton
+## Mão atual só de comida/moedas.
+var _fallback: bool = false
+var _deny_tween: Tween
+## Posição do Rerrolar na fileira antes da tremida.
+var _deny_x: float = 0.0
+var _denied: int = 0
 var _time: float = 0.0
 
 
@@ -130,10 +181,7 @@ func _ready() -> void:
 	_actions.add_theme_constant_override("separation", 8)
 	_actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_actions)
-	_reroll = _action("reroll", func() -> void:
-		if _accepting():
-			_set_banish(false)
-			reroll_pressed.emit())
+	_reroll = _action("reroll", _on_reroll, false)
 	_skip = _action("skip", func() -> void:
 		if _accepting():
 			_set_banish(false)
@@ -142,6 +190,11 @@ func _ready() -> void:
 	_banish = _action("banish", func() -> void:
 		if _accepting():
 			_set_banish(not _banish_mode))
+	_auto = _action("", func() -> void: _auto.queue_redraw())
+	_auto.check = true
+	_auto.toggle_mode = true
+	_auto.fit_right(CHECK_RIGHT)
+	_actions.move_child(_auto, 0)
 	resized.connect(_layout)
 	# Furo da câmera que troca de lado com a tela aberta (giro de 180°).
 	MenuKit.on_insets_change(self, _layout)
@@ -154,9 +207,10 @@ func _ready() -> void:
 # --- API ---------------------------------------------------------------------------------
 
 ## Mostra as cartas. Na primeira vez, com a entrada completa; depois (rerrolar, banir ou
-## outro nível em seguida), só troca as cartas.
+## outro nível em seguida), só troca as cartas. Sem carga grátis (`rerolls` 0), Rerrolar mostra
+## `reroll_cost` em ryō, apagado se `ryo` não pagar; `reroll_cost` -1 esconde o botão.
 func show_cards(cards: Array[Dictionary], rerolls: int, skips: int, banishes: int, level: int = 0,
-		game: HyakkiGame = null) -> void:
+		game: HyakkiGame = null, reroll_cost: int = -1, ryo: int = 0) -> void:
 	var first := not _open
 	_open = true
 	_chosen = -1
@@ -177,9 +231,20 @@ func show_cards(cards: Array[Dictionary], rerolls: int, skips: int, banishes: in
 		card.modulate = Color.WHITE
 		if card.visible:
 			card.setup(cards[i], card_info(cards[i], game))
+	_fallback = LevelUpSystem.is_fallback(cards)
 	_set_action(_reroll, tr("lvchest.reroll"), rerolls)
+	_reroll.price = -1 if rerolls > 0 else reroll_cost
+	_reroll.poor = _reroll.price >= 0 and ryo < _reroll.price
+	_reroll.visible = not _fallback and (rerolls > 0 or reroll_cost >= 0)
+	_reroll.modulate.a = 0.55 if _reroll.poor else 1.0
+	_reroll.fit_right(price_margin(_reroll.price) if _reroll.price >= 0 else COUNT_RIGHT)
 	_set_action(_skip, tr("lvchest.skip"), skips)
 	_set_action(_banish, tr("lvchest.banish"), banishes)
+	_banish.visible = _banish.visible and not _fallback
+	_auto.text = tr("levelup.auto_pick")
+	_auto.tooltip_text = _auto.text
+	_auto.visible = _fallback
+	_auto.set_pressed_no_signal(false)
 	_layout()
 	if first:
 		_intro = 0.0
@@ -237,6 +302,17 @@ func is_open() -> bool:
 	return _open
 
 
+## Testes de layout: termina a entrada na hora (cartas pousadas e botões acesos).
+func settle_now() -> void:
+	_kill_tweens()
+	_intro = 1.0
+	_fx.power = 1.0
+	for card: LevelCard in level_cards():
+		card.position = card.base_position
+		card.modulate.a = 1.0
+		card.settled = true
+
+
 ## A saída (cartas caindo, fundo sumindo) ainda está tocando.
 func outro_playing() -> bool:
 	return not _open and visible
@@ -264,6 +340,21 @@ func overlay() -> OverlayFx:
 
 func action_buttons() -> Array[ActionButton]:
 	return [_reroll, _skip, _banish]
+
+
+## Caixa "Não perguntar mais" da mão de comida/moedas.
+func auto_toggle() -> ActionButton:
+	return _auto
+
+
+## Toques no Rerrolar negados por falta de ryō (testes).
+func reroll_denied() -> int:
+	return _denied
+
+
+## Margem direita do Rerrolar pago: moeda, preço e folga.
+static func price_margin(price: int) -> float:
+	return PRICE_ICON + UiPaint.text_width(str(price)) + PRICE_PAD
 
 
 func title_text() -> String:
@@ -395,6 +486,35 @@ func _accepting() -> bool:
 	return _open and not _busy and Time.get_ticks_msec() - _opened_at >= CARD_LOCK_MS
 
 
+## Rerrolar: sem ryō para a rolagem paga, só o som de negado e a tremida (as cartas ficam).
+func _on_reroll() -> void:
+	if not _accepting():
+		return
+	if _reroll.poor:
+		_denied += 1
+		AudioManager.play_ui("ui_cancel")
+		_shake(_reroll)
+		return
+	AudioManager.play_ui("ui_accept")
+	_set_banish(false)
+	reroll_pressed.emit()
+
+
+## Tremida curta de "negado" em volta da posição do botão na fileira.
+func _shake(b: Control) -> void:
+	if _deny_tween != null and _deny_tween.is_valid():
+		_deny_tween.kill()
+		b.position.x = _deny_x
+	else:
+		_deny_x = b.position.x
+	var x := _deny_x
+	_deny_tween = create_tween()
+	for i: int in 4:
+		var side := DENY_SHAKE * (1.0 - i / 4.0) * (1.0 if i % 2 == 0 else -1.0)
+		_deny_tween.tween_property(b, "position:x", x + roundf(side), DENY_TIME / 5.0)
+	_deny_tween.tween_property(b, "position:x", x, DENY_TIME / 5.0)
+
+
 func _on_card(index: int) -> void:
 	var card := _cards[index]
 	if not _accepting() or not card.settled:
@@ -424,6 +544,9 @@ func _choose(index: int) -> void:
 	var item := {"from": card.get_global_transform_with_canvas() * card.icon_center(), "icon": card.icon_texture(),
 			"color": card.element, "scale": card.icon_scale(), "key": slot_key(card.data)}
 	AudioManager.play("magic1", 1.3, 0.0, -6.0)
+	# "Não perguntar mais" marcado: a carta escolhida (comida ou ryō) vira a escolha automática.
+	if _auto.visible and _auto.button_pressed:
+		Settings.set_value(LevelUpSystem.AUTO_SETTING, String(card.data.get("kind", "")))
 	card_chosen.emit(index)
 	var items: Array[Dictionary] = [item]
 	claimed.emit(items)
@@ -553,7 +676,7 @@ func _layout() -> void:
 	var width := view.x - left - MARGIN - insets.y
 	var visible_cards := level_cards()
 	var n := maxi(visible_cards.size(), 1)
-	var has_actions := _reroll.visible or _skip.visible or _banish.visible
+	var has_actions := _reroll.visible or _skip.visible or _banish.visible or _auto.visible
 	var bottom := (ACTIONS_H + 6.0) if has_actions else 0.0
 	var avail := view.y - MARGIN * 2.0 - HEADER_H - bottom - 2.0
 	var card_size := Vector2(clampf(floorf((width - GAP * (n - 1)) / n), CARD_MIN.x, CARD_MAX.x),
@@ -587,7 +710,7 @@ func fx_level() -> int:
 	return _fx_level
 
 
-func _action(glyph: String, on_press: Callable) -> ActionButton:
+func _action(glyph: String, on_press: Callable, accept_sound: bool = true) -> ActionButton:
 	var b := ActionButton.new()
 	b.glyph = glyph
 	b.focus_mode = Control.FOCUS_NONE
@@ -597,7 +720,8 @@ func _action(glyph: String, on_press: Callable) -> ActionButton:
 	var pressed := _flat(Color(0.02, 0.015, 0.04, 0.95), ThemeFactory.ACCENT)
 	for box: StyleBoxFlat in [normal, hover, pressed]:
 		box.content_margin_left = 22.0
-		box.content_margin_right = 20.0
+		box.content_margin_right = COUNT_RIGHT
+		b.boxes.append(box)
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", pressed)
@@ -605,7 +729,8 @@ func _action(glyph: String, on_press: Callable) -> ActionButton:
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.add_theme_color_override("font_color", UiPaint.PAPER)
 	b.pressed.connect(on_press)
-	b.pressed.connect(func() -> void: AudioManager.play_ui("ui_accept"))
+	if accept_sound:
+		b.pressed.connect(func() -> void: AudioManager.play_ui("ui_accept"))
 	_actions.add_child(b)
 	return b
 

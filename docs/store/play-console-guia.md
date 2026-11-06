@@ -555,6 +555,18 @@ New: every guardian now has 3 abilities tied to their story, unlocked at run lev
 </en-US>
 ```
 
+### 9.5.4 Notas da versão 1.19.0 (versionCode 38)
+Para o envio com o Rerrolar sempre à mão e a escolha automática (1.19.0):
+
+```
+<pt-BR>
+Novidades: na tela de nível, Rerrolar agora está sempre disponível. As cargas grátis do Santuário vêm primeiro e, sem elas, cada nova rolagem custa ryō da partida e traz cartas novas. No fim da partida, quando só sobram comida ou moedas, marque "Não perguntar mais" e o jogo escolhe sozinho, sem pausar a luta (com a vida cheia, a comida vira moedas). Dá para mudar em Opções e no menu de pausa.
+</pt-BR>
+<en-US>
+New: Reroll is now always available on the level-up screen. Free Sanctuary rerolls come first; after that, each reroll costs run ryō and brings new cards. Late in a run, when only food or coins are left, tick "Don't ask again" and the game picks for you without pausing the fight (at full health, food turns into coins). Change it any time in Options or the pause menu.
+</en-US>
+```
+
 ### 9.6 Relatório de pré-lançamento (*Pre-launch report*)
 Roda sozinho em aparelhos reais do Google sempre que um AAB entra num teste (interno, fechado ou
 aberto). Abra em **Testar e lançar › Relatório de pré-lançamento** e confira:

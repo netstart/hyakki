@@ -5,8 +5,9 @@ extends Control
 ## noite até o amanhecer, tempo/nível/abates/ryō e as ações — "Continuar" em destaque,
 ## velocidade e música em botões compactos que mostram o estado atual, a qualidade gráfica
 ## (ciclo Auto → Baixa → Média → Alta, com o nível efetivo em Auto) e "Desistir" discreto,
-## com confirmação. À direita, o equipamento: armas e itens com ícone e nível em marcas, e os
-## atributos numa grade alinhada (acima da base em verde-jade, abaixo em brasa).
+## com confirmação. À direita, a escolha automática da comida/moedas (AutoPickRow) e o equipamento:
+## armas e itens com ícone e nível em marcas, e os atributos numa grade alinhada (acima da base em
+## verde-jade, abaixo em brasa).
 ## Se ajusta a 20:9 e 16:9 e às bordas seguras do aparelho; o painel rola se não couber.
 ## GameClock.paused não pausa a SceneTree: as animações e tweens seguem rodando aqui.
 
@@ -133,6 +134,7 @@ var _panel: Control
 var _scroll: ScrollContainer
 var _build: VBoxContainer
 var _fade: Control
+var _auto_pick: AutoPickRow
 var _weapons_head: Label
 var _weapons_count: Label
 var _weapons_grid: GridContainer
@@ -180,6 +182,7 @@ func open(snapshot: Dictionary) -> void:
 	set_speed(int(snapshot.get("speed", GameClock.speed)), bool(snapshot.get("speed_locked", false)))
 	_refresh_music()
 	_refresh_quality()
+	_auto_pick.refresh()
 	_confirm.visible = false
 	if not visible:
 		_intro = 0.0
@@ -662,14 +665,10 @@ func _build_left() -> void:
 	_title.add_theme_constant_override("outline_size", 4)
 	_title.add_theme_color_override("font_outline_color", Color(0.12, 0.03, 0.03))
 	_menu.add_child(_title)
-	var ornament := Control.new()
-	ornament.custom_minimum_size = Vector2(0, 7)
-	ornament.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ornament := _gap(7)
 	ornament.draw.connect(_draw_ornament.bind(ornament))
 	_menu.add_child(ornament)
-	_night = Control.new()
-	_night.custom_minimum_size = Vector2(0, 9)
-	_night.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_night = _gap(9)
 	_night.draw.connect(_draw_night)
 	_menu.add_child(_night)
 	_run_grid = GridContainer.new()
@@ -680,9 +679,8 @@ func _build_left() -> void:
 	for kind: String in ["time", "level", "kills", "ryo"]:
 		_run_grid.add_child(_run_tile(kind))
 	_menu.add_child(_run_grid)
-	var spacer := Control.new()
+	var spacer := _gap(0)
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_menu.add_child(spacer)
 	_resume = _button("", _on_resume, Vector2(0, RESUME_HEIGHT))
 	_style_resume()
@@ -843,6 +841,9 @@ func _build_panel() -> void:
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.add_child(_build)
 	_scroll.add_child(pad)
+	_auto_pick = AutoPickRow.new()
+	_build.add_child(_auto_pick)
+	_build.add_child(_gap(4))
 	var weapons := _section()
 	_weapons_head = weapons[0]
 	_weapons_count = weapons[1]
@@ -869,10 +870,7 @@ func _build_panel() -> void:
 	_build.add_child(_stats_grid)
 	# Indica que há mais embaixo quando o conteúdo rola.
 	_fade = Control.new()
-	_fade.anchor_left = 0.0
-	_fade.anchor_right = 1.0
-	_fade.anchor_top = 1.0
-	_fade.anchor_bottom = 1.0
+	_fade.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_fade.offset_left = 2.0
 	_fade.offset_right = -2.0
 	_fade.offset_top = -PANEL_PAD.y - 14.0

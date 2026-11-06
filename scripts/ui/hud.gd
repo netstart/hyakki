@@ -448,9 +448,17 @@ func _draw_ultimate() -> void:
 
 # --- Nova habilidade e baú (as telas ficam em level_up_panel.gd e chest_panel.gd) ------
 
-func show_level_up(cards: Array[Dictionary], rerolls: int, skips: int, banishes: int) -> void:
+## `reroll_cost`/`ryo`: preço da rolagem paga e o ryō da partida (-1 = sem rolagem paga).
+func show_level_up(cards: Array[Dictionary], rerolls: int, skips: int, banishes: int, reroll_cost: int = -1,
+		ryo: int = 0) -> void:
 	joystick.release()
-	_level_panel.show_cards(cards, rerolls, skips, banishes, game.level if game else 0, game)
+	_level_panel.show_cards(cards, rerolls, skips, banishes, game.level if game else 0, game, reroll_cost, ryo)
+
+
+## Mão do nível com as cargas e o preço do Rerrolar desta partida.
+func show_level_choices(cards: Array[Dictionary]) -> void:
+	var lu := game.level_up
+	show_level_up(cards, lu.rerolls, lu.skips, lu.banishes, lu.reroll_cost(), game.tracker.ryo)
 
 
 func hide_level_up() -> void:

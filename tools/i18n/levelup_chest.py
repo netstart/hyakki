@@ -13,6 +13,7 @@ STRINGS = {
     "lvchest.level_short": ["Nv %d", "Lv %d", "Nv %d", "St. %d", "Niv %d", "Ур. %d", "Lv %d", "Lv %d", "Lv %d", "Lv %d", "Lv %d"],
     "lvchest.evolves_with": ["Evolui com", "Evolves with", "Evoluciona con", "Entwickelt mit", "Évolue avec", "Эволюция с", "Evolusi dengan", "進化の鍵", "진화 재료", "進化需要", "进化需要"],
     "lvchest.evolves": ["Evolui", "Evolves", "Evoluciona", "Entwickelt", "Fait évoluer", "Развивает", "Evolusi", "進化させる", "진화시킴", "可進化", "可进化"],
+    "levelup.auto_pick": ["Não perguntar mais", "Don't ask again", "No preguntar más", "Nicht mehr fragen", "Ne plus demander", "Не спрашивать", "Jangan tanya lagi", "次から自動", "다음부터 자동", "之後自動選", "之后自动选"],
     "lvchest.unites_with": ["Une com", "Unites with", "Se une con", "Vereint mit", "S'unit à", "Союз с", "Bersatu dengan", "合体相手", "합체 상대", "合體對象", "合体对象"],
     "lvchest.reroll": ["Rerrolar", "Reroll", "Volver a tirar", "Neu würfeln", "Relancer", "Перебросить", "Acak ulang", "引き直し", "다시 뽑기", "重抽", "重抽"],
     "lvchest.skip": ["Pular", "Skip", "Saltar", "Überspringen", "Passer", "Пропустить", "Lewati", "スキップ", "건너뛰기", "跳過", "跳过"],

@@ -208,7 +208,7 @@ func snapshot() -> Dictionary:
 		"rerolls": level_up.rerolls, "skips": level_up.skips, "banishes": level_up.banishes,
 		"kami": Array(kami.accepted).map(func(k: StringName) -> String: return String(k)),
 		"ult_charge": ultimate.charge, "abilities": abilities.state(), "kills": tracker.kills,
-		"ryo_run": tracker.ryo,
+		"ryo_run": tracker.ryo, "paid_rerolls": level_up.paid_rerolls,
 		"evolutions": Array(tracker.evolutions).map(func(e: StringName) -> String: return String(e)),
 		"unions": Array(tracker.unions).map(func(u: StringName) -> String: return String(u)),
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
@@ -240,6 +240,7 @@ func restore_snapshot(s: Dictionary) -> void:
 	level_up.rerolls = int(s.get("rerolls", level_up.rerolls))
 	level_up.skips = int(s.get("skips", level_up.skips))
 	level_up.banishes = int(s.get("banishes", level_up.banishes))
+	level_up.paid_rerolls = int(s.get("paid_rerolls", 0))
 	level = int(s.get("level", 1))
 	xp = int(s.get("xp", 0))
 	xp_needed = Progression.xp_to_next(level)
@@ -834,9 +835,11 @@ func on_boss_defeated(id: StringName, at: Vector2) -> void:
 # --- Telas sobrepostas --------------------------------------------------------
 
 func _open_level_up() -> void:
-	GameClock.paused = true
 	_choices = level_up.build_choices(rng)
-	hud.show_level_up(_choices, level_up.rerolls, level_up.skips, level_up.banishes)
+	if _auto_level_choices():
+		return
+	GameClock.paused = true
+	hud.show_level_choices(_choices)
 	AudioManager.play("jingle_levelup", 1.0, 0.0, -4.0)
 	AudioManager.duck(6.0, 1.2)
 	Settings.vibrate(20)
@@ -857,18 +860,32 @@ func _after_level_choice() -> void:
 	AudioManager.play("ui_accept")
 	if _pending_levels > 0:
 		_choices = level_up.build_choices(rng)
-		hud.show_level_up(_choices, level_up.rerolls, level_up.skips, level_up.banishes)
-		return
+		if not _auto_level_choices():
+			hud.show_level_choices(_choices)
+			return
 	hud.hide_level_up()
 	_resume_if_clear(false)
 
 
+## Escolha automática da mão de comida/moedas (LevelUpSystem.auto_resolve; o bot ignora): sem pausa,
+## tela, fanfarra nem vibração, os pendentes no mesmo quadro, um "magic1" só. false = sobrou mão.
+func _auto_level_choices() -> bool:
+	var done := level_up.auto_resolve(_choices, _pending_levels)
+	if done == 0:
+		return false
+	_pending_levels -= done
+	enemies.push_from(player.sim_pos, LEVEL_UP_PUSH_RADIUS, LEVEL_UP_PUSH_FORCE)
+	fx.add_ring(player.sim_pos, LEVEL_UP_PUSH_RADIUS)
+	AudioManager.play("magic1", 1.3, 0.0, -6.0)
+	return _pending_levels <= 0
+
+
+## Rerrolar: carga grátis, senão ryō; a mão nova evita as cartas da mesa enquanto houver outras.
 func _on_reroll() -> void:
-	if level_up.rerolls <= 0:
+	if LevelUpSystem.is_fallback(_choices) or not level_up.spend_reroll():
 		return
-	level_up.rerolls -= 1
-	_choices = level_up.build_choices(rng)
-	hud.show_level_up(_choices, level_up.rerolls, level_up.skips, level_up.banishes)
+	_choices = level_up.build_choices(rng, _choices)
+	hud.show_level_choices(_choices)
 
 
 func _on_skip() -> void:
@@ -879,11 +896,11 @@ func _on_skip() -> void:
 
 
 func _on_banish(index: int) -> void:
-	if level_up.banishes <= 0 or index < 0 or index >= _choices.size():
+	if level_up.banishes <= 0 or index < 0 or index >= _choices.size() or LevelUpSystem.is_fallback(_choices):
 		return
 	level_up.banish(_choices[index])
 	_choices = level_up.build_choices(rng)
-	hud.show_level_up(_choices, level_up.rerolls, level_up.skips, level_up.banishes)
+	hud.show_level_choices(_choices)
 
 
 func _open_chest(from_boss: bool) -> void:

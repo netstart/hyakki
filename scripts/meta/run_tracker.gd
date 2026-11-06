@@ -17,7 +17,10 @@ var unions: Array[StringName] = []
 var bosses: Array[StringName] = []
 var kami: Array[StringName] = []
 var items: Dictionary = {}
+## Saldo de ryō da partida (o que vai para o perfil no fim) e o que já saiu dele na própria
+## partida (Rerrolar pago): o gasto conta como ganho no total da vida (MetaProgress.apply_run).
 var ryo: int = 0
+var ryo_spent: int = 0
 var max_level: int = 1
 var dark_seconds: float = 0.0
 var max_dark_streak: float = 0.0
@@ -45,6 +48,12 @@ func on_kill(enemy_id: StringName, time: float, dark: bool = false) -> void:
 	while not _kill_times.is_empty() and time - _kill_times[0] > 10.0:
 		_kill_times.remove_at(0)
 	max_kills_10s = maxi(max_kills_10s, _kill_times.size())
+
+
+## Gasta ryō da partida (o HUD lê `ryo` a cada quadro).
+func spend_ryo(amount: int) -> void:
+	ryo -= amount
+	ryo_spent += amount
 
 
 ## Uma habilidade saiu (AbilitySystem.activate).
@@ -84,7 +93,7 @@ func snapshot() -> Dictionary:
 	return {"dark_kills": dark_kills, "items": items_out, "boss_fights": _str_keys(boss_fights),
 			"boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
 			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
-			"abilities": abilities, "ability_uses": uses_out,
+			"abilities": abilities, "ability_uses": uses_out, "ryo_spent": ryo_spent,
 			"kami": Array(kami).map(func(k: StringName) -> String: return String(k))}
 
 
@@ -103,6 +112,7 @@ func restore(s: Dictionary) -> void:
 	for id: String in (s.get("ability_uses", {}) as Dictionary):
 		ability_uses[StringName(id)] = int(s["ability_uses"][id])
 	chests = int(s.get("chests", 0))
+	ryo_spent = int(s.get("ryo_spent", 0))
 	for k: Variant in s.get("kami", []):
 		kami.append(StringName(String(k)))
 

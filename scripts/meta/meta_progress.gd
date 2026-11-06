@@ -86,6 +86,9 @@ static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 	if tracker.doubled_ryo:
 		ryo *= 2
 	SaveManager.add_ryo(ryo)
+	# O ryō gasto na própria partida (Rerrolar pago) foi ganho: conta no total da vida, como o
+	# gasto no Santuário e na Loja (o saldo levado para casa já veio sem ele).
+	data["ryo_total"] = int(data["ryo_total"]) + tracker.ryo_spent
 	stats["runs"] = int(stats["runs"]) + 1
 	stats["kills"] = int(stats["kills"]) + tracker.kills
 	stats["time_played"] = float(stats["time_played"]) + float(result["time"])

@@ -2,7 +2,10 @@ class_name LevelUpSystem
 extends RefCounted
 ## Escolhas de level-up (plano 4.4): 3 cartas (4 com sorte) sorteadas com peso, sem repetir.
 ## Pesos: item possuído ×1,5; novo ×1,0; possuído com evolução pronta ×1,2 a mais.
-## Rerolar, Pular e Banir vêm do Santuário. O texto de cada nível é montado dos dados.
+## Pular e Banir vêm do Santuário. Rerrolar está sempre à mão: as cargas grátis do Santuário vão
+## primeiro e, sem elas, cada rolagem custa ryō da partida (reroll_cost). O texto de cada nível é
+## montado dos dados. Com tudo no máximo a mão vira comida ou ryō (is_fallback), que a opção
+## "levelup_auto_fallback" pode escolher sozinha (auto_card).
 
 const MAX_WEAPONS := 6
 const MAX_PASSIVES := 6
@@ -11,6 +14,15 @@ const WEIGHT_NEW := 1.0
 const WEIGHT_READY := 1.2
 const BASE_CARDS := 3
 const MAX_LUCK_CHANCE := 0.4
+## Rolagem paga (sem carga grátis): REROLL_BASE_COST ryō na 1ª da partida e +REROLL_STEP a cada
+## outra (10, 20, 30...). O bot (sem Santuário nem ganância) junta ~15 ryō aos 3 min e ~45 aos
+## 5 min, fora os 100 de cada chefe: a 1ª ou a 2ª paga cabem no meio da partida, rolar sem parar
+## não (5 seguidas custam 150).
+const REROLL_BASE_COST := 10
+const REROLL_STEP := 10
+## Opção da escolha automática da mão de comida/moedas: "" (perguntar) | "heal" | "ryo".
+const AUTO_SETTING := "levelup_auto_fallback"
+const FALLBACK_KINDS: Array[String] = ["heal", "ryo"]
 
 var game: HyakkiGame
 var passive_levels: Dictionary = {}
@@ -18,6 +30,8 @@ var banished: Array[StringName] = []
 var rerolls: int = 0
 var skips: int = 0
 var banishes: int = 0
+## Rolagens pagas com ryō nesta partida (o preço da próxima sobe com elas).
+var paid_rerolls: int = 0
 
 
 func _init(p_game: HyakkiGame) -> void:
@@ -32,6 +46,7 @@ func reset() -> void:
 	rerolls = int(stats.get_stat("reroll"))
 	skips = int(stats.get_stat("skip"))
 	banishes = int(stats.get_stat("banish"))
+	paid_rerolls = 0
 
 
 func card_count() -> int:
@@ -42,7 +57,9 @@ func card_count() -> int:
 	return count
 
 
-func build_choices(rng: RandomNumberGenerator) -> Array[Dictionary]:
+## `exclude`: cartas que já estão na mesa (rerrolar). Elas só voltam se o resto do sorteio não
+## bastar para encher a mão.
+func build_choices(rng: RandomNumberGenerator, exclude: Array[Dictionary] = []) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	var weights: Array[float] = []
 	for weapon: Weapon in game.weapons:
@@ -69,21 +86,39 @@ func build_choices(rng: RandomNumberGenerator) -> Array[Dictionary]:
 			continue
 		pool.append(passive_card(id, lv + 1))
 		weights.append(WEIGHT_OWNED if lv > 0 else WEIGHT_NEW)
+	var reserve: Array[Dictionary] = []
+	var reserve_weights: Array[float] = []
+	if not exclude.is_empty():
+		var shown := {}
+		for card: Dictionary in exclude:
+			shown[_card_key(card)] = true
+		for i: int in range(pool.size() - 1, -1, -1):
+			if shown.has(_card_key(pool[i])):
+				reserve.push_front(pool[i])
+				reserve_weights.push_front(weights[i])
+				pool.remove_at(i)
+				weights.remove_at(i)
 	var picks: Array[Dictionary] = []
 	var wanted := card_count()
-	while picks.size() < wanted and not pool.is_empty():
-		var index := _weighted_index(weights, rng)
-		picks.append(pool[index])
-		pool.remove_at(index)
-		weights.remove_at(index)
+	_draw_into(picks, wanted, pool, weights, rng)
+	_draw_into(picks, wanted, reserve, reserve_weights, rng)
 	if picks.is_empty():
-		picks.append({"kind": "heal", "id": &"onigiri", "level": 0, "tag": "",
-				"title": tr("item.onigiri.name"), "text": tr("levelup.fallback_heal"),
-				"icon": "res://assets/art/items/food/Onigiri.png"})
-		picks.append({"kind": "ryo", "id": &"ryo_bag", "level": 0, "tag": "",
-				"title": tr("item.ryo_bag.name"), "text": tr("levelup.fallback_ryo"),
-				"icon": "res://assets/art/items/object/MoneyBag.png"})
+		picks = fallback_cards()
 	return picks
+
+
+## Mão de quem já tem tudo no máximo: comida (cura) ou um saco de ryō.
+static func fallback_cards() -> Array[Dictionary]:
+	return [
+		{"kind": "heal", "id": &"onigiri", "level": 0, "tag": "",
+				"title": TranslationServer.translate("item.onigiri.name"),
+				"text": TranslationServer.translate("levelup.fallback_heal"),
+				"icon": "res://assets/art/items/food/Onigiri.png"},
+		{"kind": "ryo", "id": &"ryo_bag", "level": 0, "tag": "",
+				"title": TranslationServer.translate("item.ryo_bag.name"),
+				"text": TranslationServer.translate("levelup.fallback_ryo"),
+				"icon": "res://assets/art/items/object/MoneyBag.png"},
+	]
 
 
 func apply(card: Dictionary) -> void:
@@ -100,6 +135,73 @@ func apply(card: Dictionary) -> void:
 			game.player.heal(30.0, true)
 		"ryo":
 			game.add_run_ryo(25)
+
+
+## Preço da próxima rolagem: 0 enquanto houver carga grátis.
+func reroll_cost() -> int:
+	return 0 if rerolls > 0 else REROLL_BASE_COST + REROLL_STEP * paid_rerolls
+
+
+func can_reroll() -> bool:
+	return rerolls > 0 or game.tracker.ryo >= reroll_cost()
+
+
+## Gasta uma rolagem: a carga grátis primeiro, senão o ryō da partida (e conta a paga).
+## false, sem mexer em nada, se não houver carga nem ryō para pagar.
+func spend_reroll() -> bool:
+	if rerolls > 0:
+		rerolls -= 1
+		return true
+	var cost := reroll_cost()
+	if game.tracker.ryo < cost:
+		return false
+	game.tracker.spend_ryo(cost)
+	paid_rerolls += 1
+	return true
+
+
+## Mão de quem já tem tudo no máximo: só comida e ryō (rerrolar e banir não mudam nada).
+static func is_fallback(cards: Array[Dictionary]) -> bool:
+	if cards.is_empty():
+		return false
+	for card: Dictionary in cards:
+		if not FALLBACK_KINDS.has(String(card.get("kind", ""))):
+			return false
+	return true
+
+
+## Carta que a escolha automática pega nesta mão, ou {} para perguntar (mão normal, opção em
+## "Perguntar" ou o bot, que ignora a opção para não mudar o determinismo). Toque esperto: com a
+## vida cheia a comida seria desperdiçada, então "Comida" pega o ryō.
+func auto_card(cards: Array[Dictionary]) -> Dictionary:
+	if game.is_bot() or not is_fallback(cards):
+		return {}
+	var kind := String(Settings.get_value(AUTO_SETTING))
+	if not FALLBACK_KINDS.has(kind):
+		return {}
+	if kind == "heal" and game.player.hp >= game.player.max_hp():
+		kind = "ryo"
+	for card: Dictionary in cards:
+		if String(card["kind"]) == kind:
+			return card
+	return {}
+
+
+## Escolha automática de níveis seguidos a partir de `hand` (`pending` pendentes, ao menos 1):
+## aplica a carta de cada um e monta a mão do próximo com build_choices, gastando o rng como a
+## escolha manual, até acabar os níveis ou a mão não sair sozinha. Devolve quantos resolveu; `hand`
+## fica com a mão que sobrou para escolher.
+func auto_resolve(hand: Array[Dictionary], pending: int) -> int:
+	var done := 0
+	var card := auto_card(hand)
+	while not card.is_empty():
+		apply(card)
+		done += 1
+		if done >= pending:
+			break
+		hand.assign(build_choices(game.rng))
+		card = auto_card(hand)
+	return done
 
 
 func banish(card: Dictionary) -> void:
@@ -214,6 +316,20 @@ static func _signed(value: float) -> String:
 
 static func _signed_pct(value: float) -> String:
 	return ("+" if value >= 0.0 else "") + str(roundi(value * 100.0)) + "%"
+
+
+static func _card_key(card: Dictionary) -> String:
+	return "%s:%s" % [card.get("kind", ""), card.get("id", "")]
+
+
+## Tira cartas de `pool` (com peso) até `picks` ter `wanted`.
+static func _draw_into(picks: Array[Dictionary], wanted: int, pool: Array[Dictionary], weights: Array[float],
+		rng: RandomNumberGenerator) -> void:
+	while picks.size() < wanted and not pool.is_empty():
+		var index := _weighted_index(weights, rng)
+		picks.append(pool[index])
+		pool.remove_at(index)
+		weights.remove_at(index)
 
 
 static func _weighted_index(weights: Array[float], rng: RandomNumberGenerator) -> int:

@@ -227,6 +227,9 @@ func _levels() -> Array[Dictionary]:
 		_h(tr("guide.levels.tools_h")),
 		_p(tr("guide.levels.tools"), [tr("title.sanctuary")]),
 		_rich(tools),
+		# Rerrolar pago com ryō e a escolha automática da mão de comida/moedas.
+		_p(tr("guide.levels.reroll_paid"), [str(LevelUpSystem.REROLL_BASE_COST), str(LevelUpSystem.REROLL_STEP),
+				tr("levelup.auto_pick")]),
 	]
 
 

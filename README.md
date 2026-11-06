@@ -18,6 +18,10 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   e às vezes 凶 com consolo em ryō, amarrado no galho) e uma roleta para em cada item. A sorte só mostra a
   contagem já sorteada; os 3 primeiros baús comuns do save saem com 中吉 garantido (o bot não usa nem gasta
   esses baús, então os testes de determinismo não dependem do save). Opção "Animação curta do baú".
+- Tela de nível: **Rerrolar sempre à mão** (cargas grátis do Santuário primeiro; sem elas, 10 ryō da partida
+  na 1ª rolagem paga e +10 a cada outra, com cartas novas sempre que o sorteio tiver outras) e, com tudo no
+  máximo, a mão comida/moedas com "Não perguntar mais": a escolha vira automática, sem pausar a luta, só com
+  o som (com a vida cheia, "Comida" pega as moedas); muda em Opções e no menu de pausa.
 - Santuário (18 power-ups, reembolso total), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
   e mais 131 missões em 10 categorias, cada uma com recompensa e barra de progresso no Diário, e as
   Próximas 3 metas no título e nos Resultados), Diário do Guardião

@@ -7,8 +7,11 @@ extends RefCounted
 ## - música liga/desliga mostrando o estado (ícone e texto) com o mesmo efeito de antes;
 ## - "Desistir" pede confirmação ("voltar" cancela) e só então encerra a partida;
 ## - layout em cada resolução de tests/device_profiles.gd, sem e com o furo da câmera de cada
-##   lado, e também em 640x360 (EXTRA_SIZES), em pt_BR, de, ru e ja: tudo dentro da área segura,
-##   sem sobreposição, textos inteiros e o painel alcançável rolando.
+##   lado, e também em 640x360 (EXTRA_SIZES), nos 11 idiomas com o painel cheio (e em pt_BR, de,
+##   ru e ja sem itens): tudo dentro da área segura, sem sobreposição, textos inteiros e o painel
+##   alcançável rolando;
+## - escolha automática da comida/moedas (AutoPickRow) no painel: grava a opção pelo segmento,
+##   acompanha a opção mudada na tela do nível e desfaz o "Não perguntar mais" no meio da partida.
 ## Chamado por tests/pause_menu_runner.gd (ou pelo integration_tests.gd).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
@@ -34,6 +37,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_corner_buttons()
 	await _test_open_close()
 	await _test_music()
+	await _test_auto_pick()
 	await _test_give_up()
 	await _test_layouts()
 	Settings.set_value("music_volume", music)
@@ -139,6 +143,26 @@ func _test_music() -> void:
 	await _free(game)
 
 
+## Desfazer a escolha automática sem sair da partida: a pausa mostra a opção gravada e o segmento
+## "Perguntar" volta a perguntar.
+func _test_auto_pick() -> void:
+	var game := await _new_game()
+	Settings.set_value(LevelUpSystem.AUTO_SETTING, "ryo")
+	game.open_pause()
+	var row := game.hud.pause_menu().find_child("PauseAutoPick", true, false) as AutoPickRow
+	_check.call(row != null and row.is_visible_in_tree() and row.segments.selected_index() == 2
+			and row.segments.buttons[2].text == tr("options.levelup_auto_ryo"), "pausa mostra a escolha automática (Moedas)")
+	row.segments.buttons[0].pressed.emit()
+	_check.call(String(Settings.get_value(LevelUpSystem.AUTO_SETTING)) == "" and row.segments.selected_index() == 0,
+			"pausa: \"Perguntar\" desfaz a escolha automática")
+	row.segments.buttons[1].pressed.emit()
+	_check.call(String(Settings.get_value(LevelUpSystem.AUTO_SETTING)) == "heal", "pausa: segmento Comida grava a opção")
+	Settings.set_value(LevelUpSystem.AUTO_SETTING, "ryo")
+	_check.call(row.segments.selected_index() == 2, "pausa acompanha a opção mudada em outro lugar")
+	Settings.set_value(LevelUpSystem.AUTO_SETTING, "")
+	await _free(game)
+
+
 func _test_give_up() -> void:
 	var game := await _new_game()
 	var results: Array[Dictionary] = []
@@ -225,11 +249,13 @@ func _test_layouts() -> void:
 	for c: Dictionary in cases:
 		use_insets(c["insets"])
 		var view: Vector2 = c["view"]
-		for lang: String in LANGS:
+		for lang: String in Locale.SUPPORTED:
 			if lang not in c["langs"]:
 				continue
 			Locale.set_language(lang, false)
 			for full: bool in [true, false]:
+				if not full and lang not in LANGS:
+					continue
 				var snapshot := make_snapshot(full)
 				# Sem itens, a velocidade bloqueada (sem a Ampulheta de Fūjin): cadeado e aviso.
 				snapshot["speed_locked"] = not full
@@ -309,6 +335,11 @@ func check_layout(menu: PauseMenu, view: Vector2, state: String) -> void:
 				"%s: %s \"%s\" com folga da barra de rolagem (%.0f até %.0f)" % [state, c.get_class(), _text(c),
 				c.get_global_rect().end.x, limit])
 		_check_text_fits(c, state, "%s \"%s\"" % [c.get_class(), _text(c)])
+	var auto := menu.get("_auto_pick") as AutoPickRow
+	var segments_ok := auto.is_visible_in_tree() and auto.segments.buttons.size() == 3
+	for b: Button in auto.segments.buttons:
+		segments_ok = segments_ok and b.is_visible_in_tree() and b.size.y >= 22.0 and not b.text.is_empty()
+	_check.call(segments_ok, "%s: escolha automática com os 3 segmentos no painel" % state)
 	var stats := menu.get("_stats_grid") as GridContainer
 	_check.call(stats.get_child_count() == PauseMenu.STATS.size(), "%s: todos os atributos na grade" % state)
 	var might := stats.find_child("Value_might", true, false) as Label
