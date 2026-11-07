@@ -7,7 +7,9 @@ extends RefCounted
 ##   - kunai: quem está atrás do obstáculo não leva dano e o kunai acaba no contato; quem está entre
 ##     a mão e o obstáculo leva, no mesmo passo;
 ##   - tiro inimigo pela casa se desfaz e a guardiã não leva dano (sem a casa, leva);
-##   - tiro da estátua nasce no centro dela e sai voando.
+##   - tiro da estátua nasce no centro dela e sai voando;
+##   - mira (enemy_manager.gd nearest_in_sight e strongest com sight): prefere quem está à vista e
+##     só fica com o de trás da parede quando é o único.
 ## run_unit() roda sem autoloads (tests/run_tests.gd); run() precisa da árvore
 ## (tests/integration_tests.gd).
 
@@ -72,6 +74,7 @@ func run(host: Node, check: Callable) -> void:
 	_check.call(a._lost(game, front) > 0.0, "kunai: quem está antes do obstáculo leva dano no mesmo passo")
 	_check.call(a._lost(game, behind) == 0.0, "kunai: quem está atrás do obstáculo não leva dano")
 	a._clear(game)
+	_aim(game, a)
 	# Tiro inimigo de cima para a guardiã em (0, 0), com uma casa no meio (god_mode só segura a vida em 1).
 	var player := game.player
 	world_with(game.world, [[Vector2(0, -40), 10.0]])
@@ -101,3 +104,24 @@ func run(host: Node, check: Callable) -> void:
 	game.queue_free()
 	GameClock.paused = false
 	await host.get_tree().process_frame
+
+
+## Mira: o mais próximo atrás de uma casa perde para o visível mais longe; sozinho, ele ainda é o alvo.
+func _aim(game: HyakkiGame, a: AbilityTests) -> void:
+	var em := game.enemies
+	world_with(game.world, [[Vector2(40, 0), 10.0]])
+	var hidden := a._spawn(game, Vector2(80, 0))
+	var seen := a._spawn(game, Vector2(0, 120))
+	_check.call(em.nearest(Vector2.ZERO, 300.0) == hidden, "mira: o mais próximo é o de trás da casa")
+	_check.call(em.nearest_in_sight(Vector2.ZERO, 300.0) == seen,
+			"nearest_in_sight: escolhe o visível mais longe")
+	em.hp[hidden] = em.hp[seen] * 3.0
+	_check.call(em.strongest(Vector2.ZERO, 300.0) == hidden, "strongest sem sight: o mais forte atrás da casa")
+	_check.call(em.strongest(Vector2.ZERO, 300.0, true) == seen, "strongest com sight: prefere o visível")
+	em.despawn(seen)
+	a._reindex(game)
+	_check.call(em.nearest_in_sight(Vector2.ZERO, 300.0) == hidden,
+			"nearest_in_sight: só o bloqueado, devolve ele")
+	_check.call(em.strongest(Vector2.ZERO, 300.0, true) == hidden,
+			"strongest com sight: só o bloqueado, devolve ele")
+	a._clear(game)

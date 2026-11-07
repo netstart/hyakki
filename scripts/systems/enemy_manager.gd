@@ -52,6 +52,7 @@ const SHATTER_CHILL := 1
 ## Reações em cadeia (Estilhaçar, chamas do Kagutsuchi) por passo: na horda congelada ou em brasa,
 ## uma morte puxa a outra e um passo só fazia centenas de explosões (pico de 140 ms no estresse).
 const CASCADES_PER_STEP := 12
+const SIGHT_TRIES := 6
 ## Choque Térmico (温度衝撃): fogo em congelado ou gelo em quem queima consome o estado e soma
 ## THERMAL_SHOCK_MULT × o dano do acerto; recarga por inimigo.
 const THERMAL_SHOCK_MULT := 1.0
@@ -584,10 +585,24 @@ func nearest(center: Vector2, max_dist: float, skip: Array[int] = []) -> int:
 	return best
 
 
-## Inimigo com mais vida no alcance (Hitodama mira nele, plano 4.5).
-func strongest(center: Vector2, max_dist: float) -> int:
+## Mais próximo com a linha livre de sólidos (até SIGHT_TRIES candidatos); sem nenhum à vista, o mais próximo.
+func nearest_in_sight(center: Vector2, max_dist: float) -> int:
+	var first := nearest(center, max_dist)
+	var skip: Array[int] = []
+	var i := first
+	while i >= 0 and skip.size() < SIGHT_TRIES and game != null and game.world != null:
+		if game.world.solid_hit(center, pos[i], 0.0) < 0.0:
+			return i
+		skip.append(i)
+		i = nearest(center, max_dist, skip)
+	return first
+
+
+## Inimigo com mais vida no alcance (Hitodama mira nele, plano 4.5); com sight, o mais forte à vista, se houver.
+func strongest(center: Vector2, max_dist: float, sight: bool = false) -> int:
 	var best := -1
 	var best_hp := -1.0
+	var seen := -1
 	var max_d2 := max_dist * max_dist
 	for i: int in range(CAPACITY):
 		if alive[i] == 0 or is_prop(i):
@@ -597,7 +612,9 @@ func strongest(center: Vector2, max_dist: float) -> int:
 		if hp[i] > best_hp:
 			best_hp = hp[i]
 			best = i
-	return best
+		if sight and (seen < 0 or hp[i] > hp[seen]) and game.world.solid_hit(center, pos[i], 0.0) < 0.0:
+			seen = i
+	return seen if seen >= 0 else best
 
 
 func random_alive(center: Vector2, max_dist: float) -> int:

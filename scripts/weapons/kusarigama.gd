@@ -6,7 +6,7 @@ extends Weapon
 
 func fire(origin: Vector2) -> void:
 	var count := amount()
-	var target := game.enemies.nearest(origin, raw("range") * 1.5)
+	var target := game.enemies.nearest_in_sight(origin, raw("range") * 1.5)
 	var aim := game.player.facing
 	if target >= 0:
 		aim = (game.enemies.pos[target] - origin).normalized()

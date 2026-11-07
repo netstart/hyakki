@@ -183,7 +183,7 @@ func step(dt: float) -> void:
 			Move.HOMING:
 				var t := target[i]
 				if t < 0 or enemies.alive[t] == 0:
-					t = enemies.strongest(pos[i], 260.0)
+					t = enemies.strongest(pos[i], 260.0, true)
 					target[i] = t
 				if t >= 0:
 					var wanted := (enemies.pos[t] - pos[i]).normalized() * v.length()

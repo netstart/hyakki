@@ -13,7 +13,7 @@ const ICICLE_RADIUS := 3.0
 
 
 func fire(origin: Vector2) -> void:
-	var target := game.enemies.nearest(origin, RANGE)
+	var target := game.enemies.nearest_in_sight(origin, RANGE)
 	var aim := game.player.facing
 	if target >= 0:
 		aim = (game.enemies.pos[target] - origin).normalized()
