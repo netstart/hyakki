@@ -156,6 +156,12 @@ func on_removed() -> void:
 		game.elements.unregister(self)
 
 
+## Troca de mundo (RiftPortal.clear_field, ao cruzar para o Kakuriyo ou o Tokoyo, e na retomada):
+## o que a arma tem em voo com coordenadas do mundo velho sai junto com os projéteis e as áreas.
+func on_realm_change() -> void:
+	pass
+
+
 ## Gancho de abate (HyakkiGame._on_enemy_killed), chamado para toda arma da guardiã a cada inimigo
 ## comum morto em `at` (`j` = índice que ele ocupava). O estado dele na hora da morte (queimava,
 ## congelado, quem matou) está em EnemyManager.dying_*().

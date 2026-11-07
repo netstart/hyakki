@@ -33,6 +33,8 @@ const IMPACTS_PER_STEP := 16
 ## Impactos de dano contínuo (tiques da Queimadura, do incenso...) por passo: além disto o tique
 ## solta só uma brasa (centenas de yōkai queimando juntos não enchem o pool de partículas).
 const DOT_IMPACTS_PER_STEP := 4
+## Folga (px) em volta da área visível dos inimigos: impactos mais longe não soltam partículas.
+const IMPACT_VIEW_MARGIN := 24.0
 ## "X" do crítico por passo (o resto dos críticos do mesmo passo fica só com o número e as faíscas).
 const CRIT_ANIMS_PER_STEP := 4
 ## Faíscas por acerto em cada nível gráfico.
@@ -542,6 +544,10 @@ func on_hit(weapon_id: StringName, at: Vector2, amount: float, crit: bool, dir: 
 	var kind := DamagePalette.classify_hit(amount, crit, dot, _hit_mean)
 	add_number(at, amount, kind, _hit_mean, enemy)
 	_hit_mean = DamagePalette.next_mean(_hit_mean, amount, kind)
+	# Fora da tela (com folga) o impacto não se vê: centenas de yōkai queimando longe da guardiã
+	# enchiam o anel de partículas e o passo e o desenho delas (o número segue as regras de sempre).
+	if game != null and game.enemies != null and not game.enemies.view_rect.grow(IMPACT_VIEW_MARGIN).has_point(at):
+		return
 	if dot:
 		_dot_impacts_this_step += 1
 		if _dot_impacts_this_step > DOT_IMPACTS_PER_STEP:
@@ -770,12 +776,30 @@ func _view_rect() -> Rect2:
 
 func _draw() -> void:
 	var additive_particles := glow
+	# Brasas e pontos (retângulos, a maioria das partículas) desenhados aqui mesmo, com referências
+	# locais (só leitura): a mesma conta do _draw_particle sem uma chamada de função por partícula.
+	var life_l := _p_life
+	var kind_l := _p_kind
+	var max_l := _p_max
+	var pos_l := _p_pos
+	var color_l := _p_color
+	var size_l := _p_size
 	for span: Vector2i in _particle_spans():
 		for i: int in range(span.x, span.y):
-			if _p_life[i] <= 0.0:
+			var life := life_l[i]
+			if life <= 0.0:
 				continue
-			var kind := _p_kind[i]
-			if additive_particles and (kind == P.STREAK or kind == P.GLOW):
+			var kind := kind_l[i]
+			if kind == P.EMBER or kind == P.DOT:
+				var k := life / maxf(max_l[i], 0.001)
+				var c := color_l[i]
+				var s := size_l[i]
+				var a := c.a * minf(1.0, k * 2.0)
+				if kind == P.EMBER:
+					a = c.a * minf(1.0, k * 1.6) * (0.65 + 0.35 * sin(life * 40.0 + i))
+				draw_rect(Rect2(pos_l[i].round(), Vector2(s, s)), Color(c.r, c.g, c.b, a))
+				continue
+			if additive_particles:
 				continue
 			_draw_particle(self, i, 1.0)
 	for i: int in range(MAX_WISPS):
@@ -854,16 +878,29 @@ func _draw_ring(ring: Dictionary) -> void:
 
 
 ## Camada aditiva: partículas que brilham, clarões, animações de luz e o brilho das armas.
+## Na soma (BLEND_MODE_ADD) a ordem não muda a imagem, então o desenho vai agrupado por tipo: todos
+## os brilhos suaves (a mesma textura: um lote só), depois os riscos e por fim as texturas próprias.
+## Na ordem antiga, brilho, risco e animação se alternavam e cada troca era uma chamada de desenho.
 func _draw_glow() -> void:
 	var gain := 0.45 if _calm else 1.0
-	for span: Vector2i in _particle_spans():
+	var spans := _particle_spans()
+	for span: Vector2i in spans:
 		for i: int in range(span.x, span.y):
-			if _p_life[i] > 0.0 and (_p_kind[i] == P.STREAK or _p_kind[i] == P.GLOW):
+			if _p_life[i] > 0.0 and _p_kind[i] == P.GLOW:
 				_draw_particle(_glow_layer, i, gain)
 	for f: Dictionary in _flashes:
 		var k := float(f["life"]) / float(f["max"])
 		var c: Color = f["color"]
 		draw_soft(_glow_layer, f["pos"], float(f["r"]) * (1.15 - 0.15 * k), Color(c.r, c.g, c.b, c.a * k * gain))
+	if game:
+		for weapon: Weapon in game.weapons:
+			weapon.draw_glow(_glow_layer)
+		if game.projectiles:
+			game.projectiles.draw_glow(_glow_layer)
+	for span: Vector2i in spans:
+		for i: int in range(span.x, span.y):
+			if _p_life[i] > 0.0 and _p_kind[i] == P.STREAK:
+				_draw_particle(_glow_layer, i, gain)
 	for anim: Dictionary in _anims:
 		if bool(anim["add"]):
 			_draw_anim(_glow_layer, anim)
@@ -872,11 +909,6 @@ func _draw_glow() -> void:
 		_draw_pillar(_glow_layer, pillar, gain)
 	for bolt: Dictionary in _bolts:
 		_draw_bolt(_glow_layer, bolt, true)
-	if game:
-		for weapon: Weapon in game.weapons:
-			weapon.draw_glow(_glow_layer)
-		if game.projectiles:
-			game.projectiles.draw_glow(_glow_layer)
 
 
 func _draw_waves() -> void:

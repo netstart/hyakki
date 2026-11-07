@@ -34,9 +34,10 @@ const MICRO_ROWS := [
 const MICRO_CELL := Vector2i(5, 7)
 const MICRO_ADVANCE := 4
 
-## Atlas dos dígitos 3×5 (preenchimento e contorno, brancos: a cor vem na hora do desenho).
-static var _micro_fill: ImageTexture
-static var _micro_line: ImageTexture
+## Atlas dos dígitos 3×5, brancos (a cor vem na hora do desenho): contornos na faixa de cima e
+## preenchimentos na de baixo, numa textura só (contorno e preenchimento alternados no mesmo lote
+## de desenho; em texturas separadas cada troca era uma chamada).
+static var _micro_atlas: ImageTexture
 ## Código do caractere (0..127) → índice do glifo (-1 = sem glifo).
 static var _micro_map := PackedInt32Array()
 
@@ -102,6 +103,12 @@ var _dirty_list := PackedInt32Array()
 var _dirty_count: int = 0
 ## Prioridade anti-poluição por tipo (DamagePalette.priority), sem ler o dicionário a cada vaga.
 var _prio := PackedInt32Array()
+## Números do quadro (desenho em passadas): vaga, posição, tamanho, movimento e cor.
+var _shown := PackedInt32Array()
+var _shown_at := PackedVector2Array()
+var _shown_size := PackedInt32Array()
+var _shown_motion := PackedVector4Array()
+var _shown_fill := PackedColorArray()
 
 
 func _ready() -> void:
@@ -443,13 +450,26 @@ func _draw() -> void:
 	# Faixa da HUD em coordenadas do mundo (a camada segue a câmera).
 	var ct := get_viewport().get_canvas_transform()
 	var hud_y := (ct.affine_inverse() * Vector2(0.0, DamagePalette.HUD_TOP)).y
+	# Três passadas: os efeitos do crítico (atrás de todos os números), os dígitos 3×5 (uma textura) e
+	# os números na fonte. Número a número, dígito, fonte e retângulo se alternavam e cada troca era
+	# uma chamada de desenho (centenas de tiques da Queimadura enchem a tela de números pequenos).
+	_shown.clear()
+	_shown_at.clear()
+	_shown_size.clear()
+	_shown_motion.clear()
+	_shown_fill.clear()
 	for i: int in range(CAPACITY):
 		if _life[i] > 0.0:
-			_draw_number(i, hud_y)
+			_place_number(i, hud_y)
+	for n: int in range(_shown.size()):
+		_draw_number(n, true)
+	for n: int in range(_shown.size()):
+		_draw_number(n, false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-func _draw_number(i: int, hud_y: float) -> void:
+## Onde e como o número `i` sai neste quadro (guardado para as passadas); desenha os efeitos do crítico.
+func _place_number(i: int, hud_y: float) -> void:
 	var kind := int(_kind[i])
 	var s: Dictionary = _palette[kind]
 	var age := _age[i]
@@ -474,16 +494,38 @@ func _draw_number(i: int, hud_y: float) -> void:
 		fill = fill.lerp(Color.WHITE, DamagePalette.crit_flash(age))
 		if m.x <= 0.0:
 			return
+	fill.a = m.w
+	_shown.append(i)
+	_shown_at.append(at)
+	_shown_size.append(size)
+	_shown_motion.append(m)
+	_shown_fill.append(fill)
+
+
+## Número `n` da lista do quadro: só os dígitos 3×5 (`micro`, também o "×N") ou só a fonte.
+func _draw_number(n: int, micro: bool) -> void:
+	var i := _shown[n]
+	var s: Dictionary = _palette[int(_kind[i])]
+	var at := _shown_at[n]
+	var size := _shown_size[n]
+	var m := _shown_motion[n]
+	var fill := _shown_fill[n]
 	var alpha := m.w
 	var outline := Color(s["outline"], alpha)
-	fill.a = alpha
+	var base := int(_size[i])
 	if base == 0:
-		var left := Vector2(at.x - roundf(_half[i]), at.y - 3.0)
-		var right := _draw_micro(_text[i], -1, left, fill, outline)
-		if _count[i] > 1:
-			_draw_micro("x", _count[i], right + Vector2(1.0, 0.0), Color(fill, alpha * 0.85), outline)
+		if micro:
+			var left := Vector2(at.x - roundf(_half[i]), at.y - 3.0)
+			var right := _draw_micro(_text[i], -1, left, fill, outline)
+			if _count[i] > 1:
+				_draw_micro("x", _count[i], right + Vector2(1.0, 0.0), Color(fill, alpha * 0.85), outline)
 		return
 	var half := _half[i] * float(size) / float(base)
+	if micro:
+		if _count[i] > 1:
+			_draw_micro("x", _count[i], Vector2(at.x + roundf(half) + 2.0, at.y + roundf(size * 0.35) - 5.0),
+					Color(fill, alpha * 0.85), outline)
+		return
 	draw_set_transform(at, m.y, Vector2(m.x, m.x))
 	var origin := Vector2(-roundf(half), roundf(size * 0.35))
 	var px := int(s["outline_px"])
@@ -493,9 +535,6 @@ func _draw_number(i: int, hud_y: float) -> void:
 		draw_string(_font, origin + Vector2.RIGHT, _text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, size, fill)
 	draw_string(_font, origin, _text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, size, fill)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if _count[i] > 1:
-		_draw_micro("x", _count[i], Vector2(at.x + roundf(half) + 2.0, at.y + roundf(size * 0.35) - 5.0),
-				Color(fill, alpha * 0.85), outline)
 
 
 ## Texto em dígitos 3×5 com o canto de cima à esquerda em `left` (depois, `number` em dígitos,
@@ -524,9 +563,8 @@ func _draw_micro(text: String, number: int, left: Vector2, fill: Color, outline:
 func _micro_glyph(code: int, at: Vector2, color: Color, fill: bool) -> float:
 	var g := _micro_map[code] if code >= 0 and code < _micro_map.size() else -1
 	if g >= 0:
-		var src := Rect2(g * MICRO_CELL.x, 0, MICRO_CELL.x, MICRO_CELL.y)
-		draw_texture_rect_region(_micro_fill if fill else _micro_line,
-				Rect2(at - Vector2.ONE, Vector2(MICRO_CELL)), src, color)
+		var src := Rect2(g * MICRO_CELL.x, MICRO_CELL.y if fill else 0, MICRO_CELL.x, MICRO_CELL.y)
+		draw_texture_rect_region(_micro_atlas, Rect2(at - Vector2.ONE, Vector2(MICRO_CELL)), src, color)
 	return at.x + MICRO_ADVANCE
 
 
@@ -570,11 +608,10 @@ func _draw_crit_fx(i: int, at: Vector2, age: float, size: int) -> void:
 
 ## Monta uma vez o atlas dos dígitos 3×5 (preenchimento e contorno de 1 px, brancos).
 static func _build_micro() -> void:
-	if _micro_fill != null:
+	if _micro_atlas != null:
 		return
 	var n := MICRO_CHARS.length()
-	var fill := Image.create_empty(MICRO_CELL.x * n, MICRO_CELL.y, false, Image.FORMAT_RGBA8)
-	var line := Image.create_empty(MICRO_CELL.x * n, MICRO_CELL.y, false, Image.FORMAT_RGBA8)
+	var atlas := Image.create_empty(MICRO_CELL.x * n, MICRO_CELL.y * 2, false, Image.FORMAT_RGBA8)
 	_micro_map.resize(128)
 	_micro_map.fill(-1)
 	for g: int in range(n):
@@ -585,9 +622,8 @@ static func _build_micro() -> void:
 				if (int(rows[r]) >> (2 - c)) & 1 == 0:
 					continue
 				var x := g * MICRO_CELL.x + 1 + c
-				fill.set_pixel(x, 1 + r, Color.WHITE)
+				atlas.set_pixel(x, MICRO_CELL.y + 1 + r, Color.WHITE)
 				for dy: int in range(-1, 2):
 					for dx: int in range(-1, 2):
-						line.set_pixel(x + dx, 1 + r + dy, Color.WHITE)
-	_micro_fill = ImageTexture.create_from_image(fill)
-	_micro_line = ImageTexture.create_from_image(line)
+						atlas.set_pixel(x + dx, 1 + r + dy, Color.WHITE)
+	_micro_atlas = ImageTexture.create_from_image(atlas)

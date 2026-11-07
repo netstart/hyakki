@@ -95,6 +95,13 @@ var _marks := PackedInt32Array()
 var _mark_body := PackedVector2Array()
 var _mark_top := PackedFloat32Array()
 var _mark_feet := PackedFloat32Array()
+var _mark_status := PackedInt32Array()
+## Clarões do golpe deste quadro (desenhados depois de todos os corpos): onde, o quê e a cor.
+var _flash_xf: Array[Transform2D] = []
+var _flash_rect: Array[Rect2] = []
+var _flash_src: Array[Rect2] = []
+var _flash_color := PackedColorArray()
+var _flash_tex: Array[Texture2D] = []
 
 
 func _init(manager: EnemyManager) -> void:
@@ -152,10 +159,14 @@ func apply_quality() -> void:
 func collect(view: Rect2) -> void:
 	_visible.clear()
 	var a := GameClock.alpha
+	var alive_l := m.alive
+	var submerged_l := m.submerged
+	var prev_l := m.prev
+	var pos_l := m.pos
 	for i: int in m._order:
-		if m.alive[i] == 0 or m.submerged[i] == 1:
+		if alive_l[i] == 0 or submerged_l[i] == 1:
 			continue
-		if view.has_point(m.prev[i].lerp(m.pos[i], a)):
+		if view.has_point(prev_l[i].lerp(pos_l[i], a)):
 			_visible.append(i)
 
 
@@ -184,20 +195,34 @@ func process(delta: float) -> void:
 		_emit_left = [0.3, 0.16, 0.1][detail]
 	var player := m.game.player.position
 	var game_dt := minf(delta, 0.1) * GameClock.speed
+	# Referências locais (só leitura), com as contas de anim_rate, body_scale, foot_of e walk_frame.
+	var kind_l := m.kind
+	var elite_l := m.elite
+	var vel_l := m.vel
+	var controlled_l := m.controlled
+	var speed_l := m.speed
+	var prev_l := m.prev
+	var pos_l := m.pos
+	var radius_l := m.radius
+	var scale_l := m.type_scale
+	var phase_l := m.phase
+	var a := GameClock.alpha
 	for i: int in _visible:
-		var t := m.kind[i]
-		_anim[i] += game_dt * 8.0 * anim_rate(i)
-		var s := body_scale(i)
-		var foot := foot_of(i)
+		var t := kind_l[i]
+		var speed := vel_l[i].length()
+		var rate := 1.0 if controlled_l[i] == 1 else clampf(speed / maxf(speed_l[i], 1.0), 0.35, 1.4)
+		_anim[i] += game_dt * 8.0 * rate
+		var s := scale_l[t] * (EnemyManager.ELITE_SCALE if elite_l[i] == 1 else 1.0)
+		var foot := (prev_l[i].lerp(pos_l[i], a) + Vector2(0.0, radius_l[i] * 0.6)).round()
 		if composite[t] == "dragon":
 			_record_trail(i, foot)
-		if emit_now and m.elite[i] == 1:
+		if emit_now and elite_l[i] == 1:
 			fx.spark(foot + Vector2(_look.randf_range(-6.0, 6.0) * s, -_look.randf_range(4.0, 14.0) * s), ELITE_AURA)
 		if oni[t] == 1 and detail >= 1:
 			if emit_now and _look.randf() < 0.5:
 				fx.steam(foot + Vector2(_look.randf_range(-4.0, 4.0) * s, -9.0 * s))
-		if heavy[t] == 1 and detail >= 1 and m.vel[i].length() > 3.0:
-			var frame := walk_frame(i)
+		if heavy[t] == 1 and detail >= 1 and speed > 3.0:
+			var frame := int(_anim[i] + phase_l[i])
 			if frame != _step_frame[i] and frame % 2 == 0:
 				fx.stomp(foot, s * (1.6 if m.is_boss(i) else 1.0))
 				if detail >= 2 and _shake_left <= 0.0 and foot.distance_to(player) < STEP_SHAKE_RANGE * s:
@@ -241,20 +266,61 @@ func draw(canvas: CanvasItem) -> void:
 	var player_pos := m.game.player.position
 	var frozen := m.freeze_time > 0.0
 	status_drawn = 0
+	# Referências locais (só leitura) aos arrays do EnemyManager: com a horda na tela, ler m.<array>
+	# dezenas de vezes por inimigo custava mais que o próprio desenho. As contas são as mesmas de
+	# foot_of, body_scale, status_flags, _squash, _born_progress, walk_frame e _sink.
+	var kind_l := m.kind
+	var ai_l := m.type_ai
+	var prev_l := m.prev
+	var pos_l := m.pos
+	var radius_l := m.radius
+	var elite_l := m.elite
+	var flying_l := m.type_flying
+	var phase_l := m.phase
+	var vel_l := m.vel
+	var hit_l := m.hit_at
+	var born_l := m.born
+	var pose_l := m.pose
+	var flash_l := m.flash
+	var slow_l := m.slow
+	var root_l := m.root
+	var fear_l := m.fear
+	var lure_l := m.lure
+	var frozen_l := m.frozen
+	var stun_l := m.stun
+	var burn_l := m.burn_time
+	var a := GameClock.alpha
+	var surfaces := SurfaceSystem.of(m.game)
 	for i: int in _visible:
-		var t := m.kind[i]
+		var t := kind_l[i]
 		if composite[t] == "dragon" and not _dragon.is_empty():
 			_draw_dragon(canvas, i, reduce_flash)
 			continue
-		var sheet := _sheet_for(i)
-		var s := body_scale(i)
-		var foot := foot_of(i)
+		var boss := ai_l[t] == EnemyManager.AI.BOSS
+		var sheet: SpriteSheet = _sheet_for(i) if boss else m.type_sheets[t]
+		var s := m.type_scale[t] * (EnemyManager.ELITE_SCALE if elite_l[i] == 1 else 1.0)
+		var foot := (prev_l[i].lerp(pos_l[i], a) + Vector2(0.0, radius_l[i] * 0.6)).round()
 		var color := m.type_tint[t]
-		if m.type_ai[t] == EnemyManager.AI.SHADE and foot.distance_to(player_pos) > light_r:
+		if ai_l[t] == EnemyManager.AI.SHADE and foot.distance_to(player_pos) > light_r:
 			color.a = EnemyManager.SHADE_DARK_ALPHA
 		if m.decoy[i] == 1:
 			color.a = 0.85
-		var status := status_flags(i)
+		# status_flags(i), com as referências locais.
+		var status := 0
+		if slow_l[i] > 0.0:
+			status |= STATUS_SLOW
+		if root_l[i] > 0.0:
+			status |= STATUS_ROOT
+		if fear_l[i] > 0.0:
+			status |= STATUS_FEAR
+		elif lure_l[i] > 0.0:
+			status |= STATUS_LURE
+		if frozen_l[i] > 0.0:
+			status |= STATUS_FROZEN
+		elif stun_l[i] > 0.0:
+			status |= STATUS_STUN
+		if burn_l[i] > 0.0:
+			status |= STATUS_BURN
 		color = EnemyManager.frozen_tint(color, frozen or status & STATUS_FROZEN)
 		if status & STATUS_SLOW and not status & STATUS_FROZEN:
 			color = slow_tint(color)
@@ -262,54 +328,92 @@ func draw(canvas: CanvasItem) -> void:
 			color = burn_tint(color)
 		var src: Rect2
 		var flip := false
+		var speed := vel_l[i].length()
 		if sheet.layout == "region":
 			src = sheet.get_meta("region")
 		else:
-			var moving := m.vel[i].length() > 3.0 or m.controlled[i] == 1
-			src = sheet.region(walk_frame(i) if moving else 0, m.facing[i])
-			flip = sheet.needs_flip(m.facing[i])
+			var moving := speed > 3.0 or m.controlled[i] == 1
+			var facing := m.facing[i]
+			src = sheet.region(int(_anim[i] + phase_l[i]) if moving else 0, facing)
+			flip = sheet.needs_flip(facing)
 		var size := src.size
-		var squash := _squash(i, time)
+		# _squash: passo, golpe, "respiro" do chefe e pose.
+		var squash := Vector2.ONE
+		if detail >= 1 and speed > 3.0 and flying_l[t] == 0:
+			var w := sin((_anim[i] + phase_l[i]) * PI) * WALK_SQUASH
+			squash.y += w
+			squash.x -= w * 0.5
+		var age := time - hit_l[i]
+		if age >= 0.0 and age < HIT_SQUASH:
+			var k := sin(age / HIT_SQUASH * PI) * (0.6 if boss else 1.0)
+			squash.x += 0.22 * k
+			squash.y -= 0.18 * k
+		var b := breathe[t]
+		if b > 0.0:
+			var r := sin(time * 2.6 + phase_l[i])
+			squash.y += r * b
+			squash.x -= r * b * 0.6
+		if pose_l[i] == 1:
+			var pp := 0.5 + 0.5 * sin(time * 18.0)
+			squash.x += 0.05 * pp
+			squash.y -= 0.05 * pp
 		var bob := 0.0
-		if m.type_flying[t] == 1:
-			bob = roundf(sin(time * 6.0 + m.phase[i]) * 1.5) - 4.0
-		var born := _born_progress(i, time)
+		if flying_l[t] == 1:
+			bob = roundf(sin(time * 6.0 + phase_l[i]) * 1.5) - 4.0
+		var born := clampf((time - born_l[i]) / (BOSS_SPAWN_TIME if boss else SPAWN_TIME), 0.0, 1.0)
 		color.a *= born
 		# Elite com afixos (EliteAffixes): surgindo do altar (escala com sobre-salto e silhueta na cor
 		# do afixo) ou sumindo na Miragem (transparente).
 		# Selados da emboscada (sem afixos) piscam claros e meio transparentes até serem soltos.
 		var rise := Vector3(1.0, 0.0, 1.0)
-		if (m.elite[i] == 1 or m.sealed[i] == 1) and m.game.altars != null:
+		if (elite_l[i] == 1 or m.sealed[i] == 1) and m.game.altars != null:
 			rise = m.game.altars.affixes.body_look(i)
 			if m.sealed[i] == 1 and rise == Vector3(1.0, 0.0, 1.0):
 				rise = Vector3(1.0, 0.45 + 0.25 * sin(time * 30.0), 0.85)
 			s *= rise.x
 			color.a *= rise.z
 		# Atolado numa superfície lenta: desce 1–2 px (SurfaceSystem), volta ao recuperar.
-		var body := foot + Vector2(0.0, bob * s + _sink(i))
+		var sink := 0.0 if surfaces == null or flying_l[t] == 1 else surfaces.enemy_sink(i)
+		var body := foot + Vector2(0.0, bob * s + sink)
 		if status & STATUS_FEAR:
 			# Com medo: treme de um lado para o outro (1 px).
 			body.x += roundf(sin(time * 47.0 + i * 1.3) * 0.8)
 		canvas.draw_set_transform(body, 0.0, Vector2((-s if flip else s) * squash.x, s * squash.y * (0.4 + 0.6 * born)))
 		var rect := Rect2(Vector2(-size.x * 0.5, -size.y + 2.0), size)
-		var tex: Texture2D = sheet.outline_texture if m.elite[i] == 1 else sheet.texture
+		var tex: Texture2D = sheet.outline_texture if elite_l[i] == 1 else sheet.texture
 		canvas.draw_texture_rect_region(tex, rect, src, color)
 		if rise.y > 0.0:
 			var tint := m.game.altars.affixes.silhouette_color(i)
 			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, Color(tint, rise.y * color.a))
-		if breathe[t] > 0.0 and m.pose[i] == 1 and not reduce_flash:
+		if b > 0.0 and pose_l[i] == 1 and not reduce_flash:
 			var glow := 0.25 + 0.25 * sin(time * 16.0)
 			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, Color(aura[t], glow * color.a))
-		if m.flash[i] > 0.0:
+		if flash_l[i] > 0.0:
 			# Chefes levam golpe o tempo todo: clarão mais leve para o corpo continuar legível.
-			var f := clampf(m.flash[i] / 0.08, 0.0, 1.0) * (0.55 if m.is_boss(i) else 1.0)
+			var f := clampf(flash_l[i] / 0.08, 0.0, 1.0) * (0.55 if boss else 1.0)
 			var flash_color := Color(1.0, 0.35, 0.3, 0.5 * f) if reduce_flash else Color(1, 1, 1, f * color.a)
-			canvas.draw_texture_rect_region(sheet.flash_texture, rect, src, flash_color)
-		if status != 0 or m.elite[i] == 1 or m.state[i] == EnemyManager.State.WINDUP:
+			# Clarão do golpe numa passada depois dos corpos (a Queimadura e o frio acertam centenas
+			# de yōkai: corpo e clarão alternando a textura quebravam o lote a cada inimigo).
+			_flash_xf.append(Transform2D(0.0, Vector2((-s if flip else s) * squash.x,
+					s * squash.y * (0.4 + 0.6 * born)), 0.0, body))
+			_flash_rect.append(rect)
+			_flash_src.append(src)
+			_flash_color.append(flash_color)
+			_flash_tex.append(sheet.flash_texture)
+		if status != 0 or elite_l[i] == 1 or m.state[i] == EnemyManager.State.WINDUP:
 			_marks.append(i)
+			_mark_status.append(status)
 			_mark_body.append(body)
 			_mark_top.append(-(size.y - 2.0) * s * squash.y)
 			_mark_feet.append(-bob * s)
+	for k: int in range(_flash_xf.size()):
+		canvas.draw_set_transform_matrix(_flash_xf[k])
+		canvas.draw_texture_rect_region(_flash_tex[k], _flash_rect[k], _flash_src[k], _flash_color[k])
+	_flash_xf.clear()
+	_flash_rect.clear()
+	_flash_src.clear()
+	_flash_color.clear()
+	_flash_tex.clear()
 	# Marcas (coroa, estrelas, alerta e estados das habilidades) numa 2ª passada, por cima de todos
 	# os corpos: retângulos no meio dos sprites quebravam o lote de desenho a cada inimigo marcado
 	# (centenas de chamadas com a horda atordoada), e por cima elas leem no meio da multidão.
@@ -317,14 +421,16 @@ func draw(canvas: CanvasItem) -> void:
 	for k: int in range(_marks.size()):
 		var i := _marks[k]
 		var top := _mark_top[k]
-		canvas.draw_set_transform(_mark_body[k], 0.0, Vector2.ONE)
-		var status := status_flags(i)
+		var status := _mark_status[k]
 		# Teto de marcas de estado por quadro (horda inteira atordoada ou presa): o resto do bando
 		# já lê pelo efeito da habilidade, e cada marca custa várias chamadas em GDScript.
 		if status != 0:
 			shown += 1
 			if shown > MAX_STATUS_MARKS:
 				status = 0
+				if m.elite[i] == 0 and m.state[i] != EnemyManager.State.WINDUP:
+					continue
+		canvas.draw_set_transform(_mark_body[k], 0.0, Vector2.ONE)
 		# Elites com afixos têm brasão e barra próprios (EliteAffixes.draw_over).
 		if m.elite[i] == 1 and (m.game.altars == null or not m.game.altars.affixes.has(i)):
 			_draw_crown(canvas, Vector2(0, top - 4.0 + sin(time * 4.0 + i) * 1.0))
@@ -335,6 +441,7 @@ func draw(canvas: CanvasItem) -> void:
 		if status & ~STATUS_STUN:
 			_draw_status(canvas, i, status, Vector2(0.0, _mark_feet[k]), top, time)
 	_marks.clear()
+	_mark_status.clear()
 	_mark_body.clear()
 	_mark_top.clear()
 	_mark_feet.clear()
@@ -496,15 +603,29 @@ func _born_progress(i: int, time: float) -> float:
 
 func _draw_shadows(canvas: CanvasItem) -> void:
 	var a := 0.42
+	# Referências locais (só leitura), com as contas de body_scale, foot_of e _born_progress.
+	var kind_l := m.kind
+	var ai_l := m.type_ai
+	var radius_l := m.radius
+	var elite_l := m.elite
+	var prev_l := m.prev
+	var pos_l := m.pos
+	var born_l := m.born
+	var scale_l := m.type_scale
+	var flying_l := m.type_flying
+	var lerp_a := GameClock.alpha
+	var time := GameClock.game_time
 	for i: int in _visible:
-		var t := m.kind[i]
-		var s := body_scale(i)
-		var foot := foot_of(i)
-		var w := maxf(8.0, m.radius[i] * 2.4 / (EnemyManager.ELITE_SCALE if m.elite[i] == 1 else 1.0)) * s
-		if m.type_ai[t] == EnemyManager.AI.BOSS:
-			w = m.radius[i] * 2.6
-		var alpha := a * _born_progress(i, GameClock.game_time)
-		if m.type_flying[t] == 1:
+		var t := kind_l[i]
+		var elite := elite_l[i] == 1
+		var s := scale_l[t] * (EnemyManager.ELITE_SCALE if elite else 1.0)
+		var foot := (prev_l[i].lerp(pos_l[i], lerp_a) + Vector2(0.0, radius_l[i] * 0.6)).round()
+		var w := maxf(8.0, radius_l[i] * 2.4 / (EnemyManager.ELITE_SCALE if elite else 1.0)) * s
+		var boss := ai_l[t] == EnemyManager.AI.BOSS
+		if boss:
+			w = radius_l[i] * 2.6
+		var alpha := a * clampf((time - born_l[i]) / (BOSS_SPAWN_TIME if boss else SPAWN_TIME), 0.0, 1.0)
+		if flying_l[t] == 1:
 			w *= 0.7
 			alpha *= 0.6
 		if composite[t] == "dragon":

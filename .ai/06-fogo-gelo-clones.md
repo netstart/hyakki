@@ -329,10 +329,61 @@ Onde o código divergiu ou detalhou o design acima:
   `integration_tests.gd`. As 9 juntas não acontecem numa partida (as uniões consomem as evoluções);
   o realista é uma união + uma evolução (+1,5 a 3,5 ms na média, p95 35-44 ms). Pendente: chamadas de
   desenho (152 → 230-480: poças de brasa, clones e marcas alternando textura e retângulo quebram o lote)
-  e o p95 sob 500 inimigos.
+  e o p95 sob 500 inimigos (tratados na 1.23.1: seção "Desempenho (1.23.1)" no fim).
 - **Docs**: README (contagens reais: 41 armas = 18 base + 18 evoluções + 5 uniões e 15 passivos; o README
   dizia 26/12, desatualizado desde Kaminari/Inazuma/Onikiri; 153 missões novas depois de integrar a main com os Altares e o Tokoyo), seção "Fogo, gelo e
   sombra" e o `--arsenal` nas verificações; guia da Play Console com as notas da 1.23.0 (9.5.8) e a
   versão atual; ficha da loja nos 11 idiomas com o tópico novo, 41 armas/15 passivos e 194 missões (41 conquistas + 153).
 - **Versão**: MENOR 1.22.0 → 1.23.0, versionCode 47 → 48 (`project.godot` e os 3 presets), ao integrar a
   main (1.22.0: Tokoyo, economia, testes em fatias); feito sobre a 1.18.0 como 1.19.0, que nunca saiu.
+
+## Desempenho (1.23.1)
+
+Medido como na fase 2 (`tests/game_bench.tscn` com janela, Alta, `-- --bot --seed=7 --stress=500
+--bench-seconds=20`, 3 rodadas por arsenal, faixa mín–máx, neste PC; antes = 1.23.0 medido no mesmo dia):
+
+| Arsenal | média antes → depois | p95 antes → depois | pior antes → depois | chamadas de desenho |
+|---|---|---|---|---|
+| padrão (katana) | 15,1-15,7 → 11,7-12,0 ms | 27,1-28,0 → 17,1-17,6 | 33-82 → 26-33 | 173 → 172 |
+| Casamento da Raposa + Sopro da Yuki-onna | 25,4-26,6 → 18,4-18,8 | 52,0-54,4 → 32,9-37,5 | 71-84 → 48-63 | 302 → 180 |
+| Espelho de Gelo + Kagutsuchi | 24,3-25,1 → 16,2-16,9 | 47,8-48,1 → 29,2-30,3 | 68-72 → 42-46 | 323 → 173 |
+| Taikyoku + Mil Sombras | 17,5-18,7 → 13,7-13,8 | 31,1-32,3 → 20,1-22,6 | 36-46 → 29-48 | 239 → 196 |
+| as 9 armas novas juntas | 26,5-27,3 → 18,7-19,4 | 49,3-50,6 → 32,2-34,2 | 64-65 → 46-51 | 386 → 211 |
+
+Perfil (instrumentação temporária, removida): sem ponto quente único nas armas; o que pesava era o
+desenho em GDScript e as trocas de textura. O que mudou (imagem igual ou quase, simulação igual):
+
+- **Desenho dos inimigos** (`EnemyLook.draw`, `_draw_shadows`, `process`, `collect`): referências locais
+  (só leitura) aos arrays do `EnemyManager` em vez de `m.<array>[i]` dezenas de vezes por inimigo (ler
+  propriedade de outro objeto em GDScript custa caro), com as contas de `foot_of`, `body_scale`,
+  `status_flags`, `_squash`, `_born_progress`, `walk_frame` e `_sink` em linha: 3,3 → 1,4 ms por quadro no
+  padrão e 5,3 → 2,5 com o Casamento da Raposa (que segura ~45% mais yōkai na tela). Vale para toda partida.
+- **Lotes de desenho**: clarão do golpe dos inimigos numa passada depois dos corpos (a Queimadura acerta
+  centenas e corpo/clarão alternavam a textura); marcas de estado com o estado guardado da 1ª passada e sem
+  transformação para quem passou do teto; números de dano em passadas (efeitos do crítico, dígitos 3×5,
+  fonte) e os dígitos 3×5 num atlas só (contorno e preenchimento eram duas texturas); camada aditiva do
+  `FxLayer` agrupada por tipo (na soma a ordem não muda a imagem); poças (`AreaEffects._draw_pools`) em
+  passadas (discos, borda, fumaça, brasas) antes dos outros efeitos; clones (sombras, rabos, bordas,
+  corpos, brilhos; `Player.draw_silhouette_rim`), potes do Hōroku-biya (sombras, potes, pavios), rastros
+  dos projéteis antes dos corpos e discos do Taikyoku e das poças por `Stroke.disc` (textura de 1024 px
+  LA8 no lugar do `draw_circle`, que é um polígono e uma chamada por disco; conferido pixel a pixel contra
+  o motor em `tests/stroke_pixel_tests.tscn`, igual em raio inteiro e até 4 pixels de borda em raio
+  quebrado). Onde dois objetos do mesmo tipo se cobrem, a ordem entre as partes de um e do outro pode
+  trocar (borda de um clone sob o corpo do vizinho, clarão sobre um yōkai da frente por 0,08 s).
+- **Partículas**: impactos fora da tela (área visível dos inimigos + `FxLayer.IMPACT_VIEW_MARGIN`) não
+  soltam partículas (o número de dano segue as regras de sempre); brasas e pontos desenhados em linha no
+  `FxLayer._draw`; pontos de luz do vapor do Choque Térmico no máximo a cada
+  `ElementSystem.STEAM_MOTES_GAP` s (a fumaça e o clarão de cada nuvem ficam).
+- **`EnemyManager.nearest`**: mesma escolha (o primeiro índice com a menor distância), com referências
+  locais e a distância antes do tipo e da lista (os clones procuram alvo várias vezes por passo).
+
+Pendente: o Casamento da Raposa com o Sopro ainda fica em p95 33-37 ms (o resto do quadro é a horda: passo
+dos inimigos ~6 ms e o chão com o clima ~0,7 ms, iguais no padrão).
+
+## Troca de mundo (1.23.1)
+
+Potes do Hōroku-biya no ar ao cruzar o portal (Kakuriyo/Tokoyo) caíam nas coordenadas do mundo velho:
+`RiftPortal.clear_field` chama `Weapon.on_realm_change()` em toda arma, e o Hōroku-biya tira os potes no ar
+(o chão em brasa já saía no `AreaEffects.reset`; os clones voltam ao lado da guardiã pelo `LEASH`). Teste
+em `tests/elements_tests.gd`.
+

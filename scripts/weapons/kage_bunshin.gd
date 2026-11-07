@@ -344,6 +344,8 @@ func _rim_color() -> Color:
 
 ## Clones: sombra no chão, silhueta da guardiã com borda clara, rabos de raposa (fogo) ou brilho
 ## que corre (gelo). Entram e saem esmaecendo; o corte puxa o corpo 1 px para a frente.
+## Em passadas por textura (sombras, rabos, bordas, corpos, brilhos) para todos os clones: clone por
+## clone, retângulo, borda e corpo se alternavam e cada clone custava 4 ou 5 chamadas de desenho.
 func draw(canvas: CanvasItem) -> void:
 	if c_pos.is_empty():
 		return
@@ -352,6 +354,11 @@ func draw(canvas: CanvasItem) -> void:
 	var player := game.player
 	var fire := bool(flags.get("fire_clone", false))
 	var ice := bool(flags.get("ice_clone", false))
+	var body := _body_color()
+	var rim := _rim_color()
+	var shown := PackedInt32Array()
+	var spots := PackedVector2Array()
+	var fades := PackedFloat32Array()
 	for k: int in range(c_pos.size()):
 		if c_state[k] == State.GONE:
 			continue
@@ -359,20 +366,32 @@ func draw(canvas: CanvasItem) -> void:
 		var fade := clampf((time - c_born[k]) / 0.15, 0.0, 1.0)
 		if c_perm[k] == 0:
 			fade *= clampf(c_life[k] / 0.3, 0.0, 1.0)
-		var moving := c_prev[k].distance_squared_to(c_pos[k]) > 0.01
 		if time - c_cut[k] < 0.12:
 			at.x += c_face[k]
-		canvas.draw_rect(Rect2(at + Vector2(-4, 2), Vector2(8, 2)), Color(0.0, 0.0, 0.0, 0.3 * fade))
-		if fire:
-			_draw_tails(canvas, at, k, time, fade)
-		var body := _body_color()
-		var rim := _rim_color()
-		player.draw_silhouette(canvas, at, Color(body, body.a * fade), Color(rim, rim.a * fade), c_face[k] < 0.0,
-				int(time * 8.0 + k) if moving else -1)
-		if ice:
-			var glint := fmod(time * 1.3 + k * 0.29, 1.0)
-			canvas.draw_rect(Rect2(at + Vector2(-3.0 + roundf(glint * 6.0), -11.0 + roundf(glint * 8.0)), Vector2(1, 1)),
-					Color(1, 1, 1, 0.9 * fade))
+		shown.append(k)
+		spots.append(at)
+		fades.append(fade)
+	for n: int in range(shown.size()):
+		canvas.draw_rect(Rect2(spots[n] + Vector2(-4, 2), Vector2(8, 2)), Color(0.0, 0.0, 0.0, 0.3 * fades[n]))
+	if fire:
+		for n: int in range(shown.size()):
+			_draw_tails(canvas, spots[n], shown[n], time, fades[n])
+	for rim_pass: bool in [true, false]:
+		for n: int in range(shown.size()):
+			var k := shown[n]
+			var moving := c_prev[k].distance_squared_to(c_pos[k]) > 0.01
+			var frame := int(time * 8.0 + k) if moving else -1
+			var face_left := c_face[k] < 0.0
+			if rim_pass:
+				player.draw_silhouette_rim(canvas, spots[n], Color(rim, rim.a * fades[n]), face_left, frame)
+			else:
+				player.draw_silhouette(canvas, spots[n], Color(body, body.a * fades[n]), Color(0, 0, 0, 0), face_left,
+						frame)
+	if ice:
+		for n: int in range(shown.size()):
+			var glint := fmod(time * 1.3 + shown[n] * 0.29, 1.0)
+			canvas.draw_rect(Rect2(spots[n] + Vector2(-3.0 + roundf(glint * 6.0), -11.0 + roundf(glint * 8.0)),
+					Vector2(1, 1)), Color(1, 1, 1, 0.9 * fades[n]))
 
 
 ## Três rabos de raposa de luz atrás do clone de fogo, ondulando (Stroke, sem polígono do motor).

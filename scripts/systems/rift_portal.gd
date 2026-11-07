@@ -601,6 +601,8 @@ func clear_field() -> void:
 	game.enemy_shots.clear_all()
 	game.projectiles.reset()
 	game.areas.reset()
+	for weapon: Weapon in game.weapons:
+		weapon.on_realm_change()
 	game.fx.reset()
 
 

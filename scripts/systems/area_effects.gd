@@ -355,11 +355,10 @@ func _draw_bolts() -> void:
 
 func _draw() -> void:
 	var time := GameClock.game_time
+	_draw_pools(time)
 	for e: Dictionary in effects:
 		var at: Vector2 = (e["pos"] as Vector2).round()
 		match int(e["kind"]):
-			Kind.POOL:
-				_draw_pool(e, at, time)
 			Kind.RING:
 				if float(e["delay"]) <= 0.0:
 					_draw_ring(e, at)
@@ -392,23 +391,63 @@ func _draw() -> void:
 				draw_circle(at, float(e["radius"]) * 0.6, Color(1.0, 0.7, 0.2, 0.35 + 0.2 * pulse))
 
 
-## Poça de fumaça (Bomba de Fumaça) ou névoa venenosa: base translúcida, borda pontilhada que
-## gira e vários tufos do pacote espalhados pela área (sempre em tamanho próximo do original,
-## sem ampliar um tufo só), mais tufos na Alta. A névoa venenosa solta bolhas (Média/Alta).
-## O chão eletrificado do Takemikazuchi não é fumaça: faíscas e arcos curtos piscando.
-func _draw_pool(e: Dictionary, at: Vector2, time: float) -> void:
+## Poças (Bomba de Fumaça, névoa venenosa, chão eletrificado e chão em brasa), no chão, antes dos
+## outros efeitos e em passadas por tipo de desenho: os discos de base de todas (uma textura só), os
+## pontos da borda e as faíscas, os tufos de fumaça e por fim as brasas. Poça por poça, disco,
+## retângulo e textura se alternavam e cada poça custava 4 ou 5 chamadas de desenho (o Kagutsuchi
+## deixa várias ao mesmo tempo).
+func _draw_pools(time: float) -> void:
+	var pools: Array[Dictionary] = []
+	for e: Dictionary in effects:
+		if int(e["kind"]) == Kind.POOL:
+			pools.append(e)
+	if pools.is_empty():
+		return
+	for e: Dictionary in pools:
+		var tint: Color = e["tint"]
+		var fade := _pool_fade(e)
+		var at: Vector2 = (e["pos"] as Vector2).round()
+		Stroke.disc(self, at, float(e["radius"]), Color(tint.r, tint.g, tint.b, 0.14 * fade))
+		Stroke.disc(self, at, float(e["radius"]) * 0.55, Color(tint.r, tint.g, tint.b, 0.08 * fade))
+	for e: Dictionary in pools:
+		_draw_pool_ring(e, time)
+	for e: Dictionary in pools:
+		_draw_pool_smoke(e, time)
+	for e: Dictionary in pools:
+		_draw_pool_embers(e, time)
+
+
+func _pool_fade(e: Dictionary) -> float:
+	return clampf(float(e["life"]) / 0.4, 0.0, 1.0)
+
+
+func _is_field(e: Dictionary) -> bool:
+	return game.fx != null and String(game.fx.style(e["weapon"])["impact"]) == "hit_thunder"
+
+
+## Borda pontilhada que gira; no chão eletrificado do Takemikazuchi, faíscas e arcos curtos piscando.
+func _draw_pool_ring(e: Dictionary, time: float) -> void:
+	var at: Vector2 = (e["pos"] as Vector2).round()
 	var r := float(e["radius"])
 	var tint: Color = e["tint"]
-	var fade := clampf(float(e["life"]) / 0.4, 0.0, 1.0)
-	draw_circle(at, r, Color(tint.r, tint.g, tint.b, 0.14 * fade))
-	draw_circle(at, r * 0.55, Color(tint.r, tint.g, tint.b, 0.08 * fade))
+	var fade := _pool_fade(e)
 	var dots := clampi(int(r * 0.5), 8, 28)
 	for k: int in range(dots):
 		var a := TAU * k / float(dots) + time * 0.6
 		draw_rect(Rect2((at + Vector2.from_angle(a) * r).round(), Vector2.ONE), Color(tint, 0.55 * fade))
-	if game.fx and String(game.fx.style(e["weapon"])["impact"]) == "hit_thunder":
+	if _is_field(e):
 		_draw_field(at, r, tint, fade)
+
+
+## Vários tufos do pacote espalhados pela área (sempre em tamanho próximo do original, sem ampliar
+## um tufo só), mais tufos na Alta. A névoa venenosa solta bolhas (Média/Alta).
+func _draw_pool_smoke(e: Dictionary, time: float) -> void:
+	if _is_field(e):
 		return
+	var at: Vector2 = (e["pos"] as Vector2).round()
+	var r := float(e["radius"])
+	var tint: Color = e["tint"]
+	var fade := _pool_fade(e)
 	var puffs := clampi(int(r * r / 260.0), 2, 12) * (2 + FxLayer.wfx) / 4
 	var size := clampf(r / 24.0, 0.7, 1.3)
 	for k: int in range(maxi(puffs, 2)):
@@ -425,15 +464,22 @@ func _draw_pool(e: Dictionary, at: Vector2, time: float) -> void:
 	if poison and FxLayer.wfx > 0 and _look.randf() < 0.15 * FxLayer.wfx:
 		var p := at + Vector2.from_angle(_look.randf() * TAU) * r * _look.randf()
 		game.fx.embers(p, Color(0.7, 1.0, 0.45), 1, 1.0)
-	if e.has("burn_dps"):
-		# Chão em brasa: pontos de brasa piscando por cima da fumaça e brasas subindo (Média/Alta).
-		for k: int in range(clampi(int(r * 0.4), 4, 14)):
-			var u := fmod(k * 0.618 + 0.13, 1.0)
-			var p := at + Vector2(cos(k * 2.39996), sin(k * 2.39996) * 0.7) * r * sqrt(u) * 0.85
-			var glow := 0.5 + 0.5 * sin(time * 9.0 + k * 1.3)
-			draw_rect(Rect2(p.round(), Vector2.ONE), Color(1.0, 0.55 + 0.35 * glow, 0.2, (0.5 + 0.5 * glow) * fade))
-		if FxLayer.wfx > 0 and _look.randf() < 0.2 * FxLayer.wfx:
-			game.fx.embers(at + Vector2.from_angle(_look.randf() * TAU) * r * _look.randf(), Color(1.0, 0.6, 0.25), 1, 1.0)
+
+
+## Chão em brasa: pontos de brasa piscando por cima da fumaça e brasas subindo (Média/Alta).
+func _draw_pool_embers(e: Dictionary, time: float) -> void:
+	if not e.has("burn_dps") or _is_field(e):
+		return
+	var at: Vector2 = (e["pos"] as Vector2).round()
+	var r := float(e["radius"])
+	var fade := _pool_fade(e)
+	for k: int in range(clampi(int(r * 0.4), 4, 14)):
+		var u := fmod(k * 0.618 + 0.13, 1.0)
+		var p := at + Vector2(cos(k * 2.39996), sin(k * 2.39996) * 0.7) * r * sqrt(u) * 0.85
+		var glow := 0.5 + 0.5 * sin(time * 9.0 + k * 1.3)
+		draw_rect(Rect2(p.round(), Vector2.ONE), Color(1.0, 0.55 + 0.35 * glow, 0.2, (0.5 + 0.5 * glow) * fade))
+	if FxLayer.wfx > 0 and _look.randf() < 0.2 * FxLayer.wfx:
+		game.fx.embers(at + Vector2.from_angle(_look.randf() * TAU) * r * _look.randf(), Color(1.0, 0.6, 0.25), 1, 1.0)
 
 
 ## Chão eletrificado: arcos quebrados curtos que piscam em pontos sorteados (só desenho).

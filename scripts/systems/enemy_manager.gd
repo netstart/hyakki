@@ -566,15 +566,21 @@ func query_circle(center: Vector2, r: float, out: Array[int]) -> void:
 func nearest(center: Vector2, max_dist: float, skip: Array[int] = []) -> int:
 	var best := -1
 	var best_d2 := max_dist * max_dist
+	# Mesmo resultado da varredura antiga (o primeiro índice com a menor distância), com referências
+	# locais e a distância antes do tipo e da lista: os clones procuram alvo várias vezes por passo.
+	var alive_l := alive
+	var pos_l := pos
+	var kind_l := kind
+	var ai_l := type_ai
+	var skipping := not skip.is_empty()
 	for i: int in range(CAPACITY):
-		if alive[i] == 0 or is_prop(i):
+		if alive_l[i] == 0:
 			continue
-		if not skip.is_empty() and skip.has(i):
+		var d2 := center.distance_squared_to(pos_l[i])
+		if d2 >= best_d2 or ai_l[kind_l[i]] == AI.PROP or (skipping and skip.has(i)):
 			continue
-		var d2 := center.distance_squared_to(pos[i])
-		if d2 < best_d2:
-			best_d2 = d2
-			best = i
+		best_d2 = d2
+		best = i
 	return best
 
 

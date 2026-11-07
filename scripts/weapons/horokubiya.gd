@@ -87,12 +87,20 @@ func on_removed() -> void:
 	super()
 
 
-## Potes no ar: sombra no chão seguindo a reta e o pote no arco, girando, com pavio aceso.
+## Troca de mundo: os potes no ar cairiam nas coordenadas do mundo velho (o chão em brasa já sai
+## com o AreaEffects.reset do RiftPortal.clear_field).
+func on_realm_change() -> void:
+	pots.clear()
+
+
+## Potes no ar: sombra no chão seguindo a reta e o pote no arco, girando, com pavio aceso. Em três
+## passadas (sombras, potes, pavios): pote a pote, retângulo e textura se alternavam.
 func draw(canvas: CanvasItem) -> void:
 	if pots.is_empty() or _tex == null:
 		return
 	var lead := GameClock.alpha * GameClock.STEP
 	var size := _tex.get_size()
+	var spots := PackedVector2Array()
 	for pot: Dictionary in pots:
 		var u := clampf((float(pot["t"]) + lead) / maxf(float(pot["time"]), 0.001), 0.0, 1.0)
 		var ground := (pot["from"] as Vector2).lerp(pot["to"], u)
@@ -100,11 +108,13 @@ func draw(canvas: CanvasItem) -> void:
 		var shadow := 1.0 - 0.5 * lift / ARC_HEIGHT
 		canvas.draw_rect(Rect2((ground + Vector2(-3.0 * shadow, -1.0)).round(), Vector2(roundf(6.0 * shadow), 2)),
 				Color(0.0, 0.0, 0.0, 0.3))
-		var at := (ground - Vector2(0.0, lift)).round()
-		canvas.draw_set_transform(at, float(pot["t"]) * SPIN, Vector2.ONE)
+		spots.append((ground - Vector2(0.0, lift)).round())
+	for k: int in range(pots.size()):
+		canvas.draw_set_transform(spots[k], float(pots[k]["t"]) * SPIN, Vector2.ONE)
 		canvas.draw_texture(_tex, -size * 0.5)
-		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		var spark := at + Vector2.from_angle(float(pot["t"]) * SPIN - PI * 0.5) * (size.y * 0.5)
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	for k: int in range(pots.size()):
+		var spark := spots[k] + Vector2.from_angle(float(pots[k]["t"]) * SPIN - PI * 0.5) * (size.y * 0.5)
 		canvas.draw_rect(Rect2(spark.round(), Vector2(1, 1)), fx_hot())
 
 

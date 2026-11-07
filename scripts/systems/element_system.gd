@@ -19,6 +19,10 @@ const FIRE_JAR := &"fire_jar"
 const MIRROR_SHARD := &"mirror_shard"
 const FIRE_JAR_STYLE := {"fx": {"color": "#ff7a3a", "hot": "#ffe0b0"}, "sfx": {"impact": "hit_fire"}}
 const MIRROR_STYLE := {"fx": {"color": "#9a7cff", "hot": "#e8e0ff"}, "sfx": {"impact": "hit_blade"}}
+## Intervalo mínimo (s de jogo) entre os pontos de luz de duas nuvens de vapor: fogo e gelo na mesma
+## horda dão dezenas de Choques Térmicos por segundo e os pontos enchiam o anel de partículas (cada
+## nuvem continua com a fumaça e o clarão).
+const STEAM_MOTES_GAP := 0.1
 
 var game: HyakkiGame
 ## > 0 desliga element_hit/apply_status (estilhaços: o dano sai sem os estados da arma).
@@ -27,6 +31,7 @@ var mute: int = 0
 var item_clones: KageBunshin
 
 var _weapons: Dictionary = {}
+var _motes_at: float = -INF
 
 
 func _init(p_game: HyakkiGame) -> void:
@@ -56,6 +61,7 @@ func before_hit(weapon_id: StringName, skip: bool) -> Weapon:
 func start(cfg: Dictionary) -> void:
 	mute = 0
 	item_clones = null
+	_motes_at = -INF
 	add_arsenal(cfg.get("arsenal", []))
 
 
@@ -148,5 +154,7 @@ func steam(at: Vector2) -> void:
 	if game.enemies.view_rect.has_point(at):
 		game.fx.play_anim("smoke", at, 0.8, 0.0, Color(1.0, 1.0, 1.0, 0.85), 18.0)
 		game.fx.flash(at, 14.0, Color(1.0, 1.0, 1.0, 0.7), 0.1)
-		game.fx.motes(at, Color(0.95, 0.97, 1.0), 2 + 2 * FxLayer.wfx, 6.0, 24.0)
+		if GameClock.game_time - _motes_at >= STEAM_MOTES_GAP or GameClock.game_time < _motes_at:
+			_motes_at = GameClock.game_time
+			game.fx.motes(at, Color(0.95, 0.97, 1.0), 2 + 2 * FxLayer.wfx, 6.0, 24.0)
 	WeaponSfx.play("thermal_shock")

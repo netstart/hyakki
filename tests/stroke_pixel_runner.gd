@@ -1,6 +1,6 @@
 extends Node
 ## Confere pixel a pixel que os traços do Stroke (primitivas, sem buffer de polígono) saem iguais
-## aos do Godot (draw_arc, draw_polyline, draw_polyline_colors, draw_colored_polygon), nos mesmos
+## aos do Godot (draw_arc, draw_polyline, draw_polyline_colors, draw_colored_polygon, draw_circle), nos mesmos
 ## tamanhos e cores usados pelos efeitos da partida. Precisa desenhar de verdade: rodar SEM
 ## --headless:
 ##   godot --path . res://tests/stroke_pixel_tests.tscn
@@ -11,12 +11,17 @@ const CELL := Vector2(72, 72)
 const TOLERANCE := 2
 ## Pixels que podem diferir além da tolerância por caso (diagonal do quadrilátero em cantos).
 const MAX_OFF_PIXELS := 2
+## Discos (Stroke.disc, textura de 1024 px): o pixel lê o texel mais perto, a até 1/32 px do centro
+## dele, então em raios quebrados alguns pixels da borda (que o círculo do motor corta quase no
+## centro) podem trocar de lado. Raios inteiros saem iguais.
+const MAX_OFF_DISC := 6
 
 var _count := 0
 var _failures := 0
 ## Lista também as verificações que passaram (-- --verbose).
 var _verbose: bool = "--verbose" in OS.get_cmdline_user_args()
 var _cases: Array[Callable] = []
+var _first_disc: int = 0
 
 
 func _ready() -> void:
@@ -66,7 +71,8 @@ func _ready() -> void:
 			worst = maxi(worst, d)
 			if d > TOLERANCE:
 				off += 1
-		_check(off <= MAX_OFF_PIXELS, "Stroke caso %d igual ao Godot (%d pixels fora, maior diferença %d)", [i, off, worst])
+		var allowed := MAX_OFF_DISC if i >= _first_disc else MAX_OFF_PIXELS
+		_check(off <= allowed, "Stroke caso %d igual ao Godot (%d pixels fora, maior diferença %d)", [i, off, worst])
 	print("%d verificações, %d falhas" % [_count, _failures])
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -141,6 +147,17 @@ func _build_cases() -> void:
 				Stroke.band(ci, outer, inner, col)
 			else:
 				ci.draw_colored_polygon(closed, col))
+	# Discos chapados (Stroke.disc, textura): base das poças (chão em brasa, fumaça) e os orbes do
+	# Taikyoku, no centro inteiro (as poças e os orbes arredondam o centro) e o "olho" do yin-yang.
+	_first_disc = _cases.size()
+	for spec: Array in [[33.0, Vector2.ZERO], [18.15, Vector2.ZERO], [6.0, Vector2.ZERO], [5.0, Vector2.ZERO],
+			[3.0, Vector2.ZERO], [1.2, Vector2(1.41, -1.41)], [24.5, Vector2.ZERO]]:
+		_cases.append(func(ci: CanvasItem, mine: bool) -> void:
+			var col := Color(1.0, 0.48, 0.18, 0.7)
+			if mine:
+				Stroke.disc(ci, c + spec[1], spec[0], col)
+			else:
+				ci.draw_circle(c + spec[1], spec[0], col))
 
 
 ## `args` (opcional): valores do rótulo, que só é formatado (`label % args`) na falha ou com --verbose.

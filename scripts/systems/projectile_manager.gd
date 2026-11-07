@@ -300,13 +300,19 @@ func _draw() -> void:
 	var points := FxLayer.trail_points
 	if count_alive > 0 and game and game.player:
 		_draw_chains(a)
+	# Rastros de todos primeiro e depois os corpos: projétil a projétil, traço e textura se alternavam
+	# e cada projétil custava duas chamadas de desenho (um anel de pingentes são 15 de uma vez).
+	if points > 0:
+		for i: int in range(CAPACITY):
+			if alive[i] == 1 and _trail_n[i] > 1:
+				var k := kind[i]
+				_draw_trail(i, prev[i].lerp(pos[i], a).round(), mini(points, _trail_n[i]), _kind_trail[k],
+						_kind_width[k] * size[i])
 	for i: int in range(CAPACITY):
 		if alive[i] == 0:
 			continue
 		var k := kind[i]
 		var at := prev[i].lerp(pos[i], a).round()
-		if points > 0 and _trail_n[i] > 1:
-			_draw_trail(i, at, mini(points, _trail_n[i]), _kind_trail[k], _kind_width[k] * size[i])
 		var sheet := _kind_sheets[k]
 		var src := sheet.region(frame, 0)
 		draw_set_transform(at, rot[i], Vector2.ONE * (_kind_scale[k] * size[i]))

@@ -353,6 +353,18 @@ func _check_horokubiya(game: HyakkiGame) -> void:
 	_check.call(game.areas.effects.filter(func(fx: Dictionary) -> bool: return fx.has("burn_dps")).is_empty(),
 			"Hōroku-biya: o chão em brasa apaga em %.1f s" % w.duration())
 	game.areas.reset()
+	# Troca de mundo (portal do Kakuriyo/Tokoyo): potes no ar e chão em brasa não atravessam (antes
+	# caíam no mundo novo nas coordenadas do velho).
+	_still(game, origin + Vector2(60, 0))
+	w.fire(origin)
+	_step_weapon(game, w, 0.1)
+	game.areas.fire_pool(w.id, origin, 20.0, 5.0, 1.0, 1.0)
+	_check.call(not w.pots.is_empty(), "Hōroku-biya: potes no ar antes da troca de mundo")
+	game.rift.clear_field()
+	_check.call(w.pots.is_empty(), "Hōroku-biya: a troca de mundo tira os potes no ar")
+	_step_weapon(game, w, Horokubiya.FLIGHT * 2.0)
+	_check.call(game.areas.effects.filter(func(fx: Dictionary) -> bool: return fx.has("burn_dps")).is_empty(),
+			"Hōroku-biya: nenhum chão em brasa no mundo novo depois da troca")
 	# Kagutsuchi: quem morre queimando passa as chamas a quem está a burn_spread px.
 	_drop_weapons(game)
 	_t._clear(game)

@@ -100,23 +100,28 @@ func apply_status(j: int) -> void:
 		game.enemies.chill_one(j, int(raw("chill")))
 
 
-## Orbes com rastro curto (arco do Stroke), núcleo e o "olho" da cor oposta (yin-yang).
+## Orbes com rastro curto (arco do Stroke), núcleo e o "olho" da cor oposta (yin-yang). Primeiro os
+## rastros dos dois e depois os discos (Stroke.disc, uma textura só): sem trocar de tipo de
+## desenho a cada orbe (os dois ficam em lados opostos, nunca se cobrem).
 func draw(canvas: CanvasItem) -> void:
 	var center := game.player.position
 	var r := orbit_radius()
 	var dir := signf(raw("speed")) if raw("speed") != 0.0 else 1.0
+	if FxLayer.trail_points > 0:
+		for k: int in range(2):
+			var color := FIRE_CORE if k == 0 else ICE_CORE
+			var angle := _angle + PI * k
+			Stroke.arc(canvas, center, r, angle - dir * TRAIL_ARC, angle, 10, Color(color, 0.35), 4.0)
+			Stroke.arc(canvas, center, r, angle - dir * TRAIL_ARC * 0.5, angle, 6, Color(color.lerp(Color.WHITE, 0.4), 0.5), 1.0)
 	for k: int in range(2):
 		var color := FIRE_CORE if k == 0 else ICE_CORE
 		var other := ICE_CORE if k == 0 else FIRE_CORE
 		var angle := _angle + PI * k
-		if FxLayer.trail_points > 0:
-			Stroke.arc(canvas, center, r, angle - dir * TRAIL_ARC, angle, 10, Color(color, 0.35), 4.0)
-			Stroke.arc(canvas, center, r, angle - dir * TRAIL_ARC * 0.5, angle, 6, Color(color.lerp(Color.WHITE, 0.4), 0.5), 1.0)
 		var at := (center + Vector2.from_angle(angle) * r).round()
-		canvas.draw_circle(at, 6.0, Color(0.05, 0.03, 0.08, 0.6))
-		canvas.draw_circle(at, 5.0, color)
-		canvas.draw_circle(at, 3.0, color.lerp(Color.WHITE, 0.55))
-		canvas.draw_circle(at + Vector2.from_angle(angle + PI * 0.5) * 2.0, 1.2, other)
+		Stroke.disc(canvas, at, 6.0, Color(0.05, 0.03, 0.08, 0.6))
+		Stroke.disc(canvas, at, 5.0, color)
+		Stroke.disc(canvas, at, 3.0, color.lerp(Color.WHITE, 0.55))
+		Stroke.disc(canvas, at + Vector2.from_angle(angle + PI * 0.5) * 2.0, 1.2, other)
 
 
 func draw_glow(canvas: CanvasItem) -> void:

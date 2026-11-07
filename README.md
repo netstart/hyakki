@@ -7,7 +7,7 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 ## O que tem
 
 - 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 41 armas (18 base, 18 evoluções, 5 uniões), 15 passivos (relíquias),
-  37 yōkai, 12 chefes, 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
+  37 yōkai, 24 chefes (18 + 6 Sombras do Guardião 影), 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
 - **Fogo, gelo e sombra** ([.ai/06-fogo-gelo-clones.md](.ai/06-fogo-gelo-clones.md), 1.23.0): três linhas
   novas sem desbloqueio, cada uma arma base → relíquia → evolução:
   Hōroku-biya 焙烙火矢 (pote de pólvora em arco, explosão e chão em brasa) + Pedra de Fogo → Kagutsuchi
@@ -105,7 +105,7 @@ furo dos dois lados), os testes de regras, o determinismo (bot em 1x, 2x, 3x e 3
 novo com o arsenal de fogo, gelo e clones, `arsenal_*`), a
 jornada pelos três níveis (1x, 2x e 3x, mesmo hash), o estresse com 500 inimigos, o `gdlint` em partes, os
 checks em Python (textos, chaves × 11 idiomas e marcadores `%s/%d`; licenças; ficha da loja; site irmão) e, com
-janela (sem `--headless`), os traços do `Stroke` iguais aos do motor pixel a pixel
+janela (sem `--headless`), os traços e discos do `Stroke` iguais aos do motor pixel a pixel
 (`tests/stroke_pixel_tests.tscn`), o mesmo quadro de uma partida pelos dois caminhos (`tests/game_bench.tscn
 --compare-shots --strict`) e a navegação entre os menus sem piscar (`tests/nav_bench.tscn --strict-flicker`, em 3
 processos). No fim, um resumo por tarefa, as 5 mais lentas e o pico de processos e de memória; qualquer falha,

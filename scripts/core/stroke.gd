@@ -1,7 +1,8 @@
 class_name Stroke
 extends RefCounted
 ## Traços (arcos, polilinhas e polígonos convexos) desenhados como primitivas de 3 ou 4 pontos,
-## com a mesma geometria do draw_arc / draw_polyline / draw_colored_polygon do Godot.
+## com a mesma geometria do draw_arc / draw_polyline / draw_colored_polygon do Godot, e discos
+## chapados (disc, no lugar do draw_circle) como uma textura só.
 ##
 ## Por quê: no Godot 4 cada draw_polyline, draw_arc ou draw_colored_polygon vira um polígono com
 ## buffers de vértices próprios na GPU, criados e destruídos a cada redesenho. Nos efeitos da
@@ -15,6 +16,10 @@ extends RefCounted
 ## os pixels cobertos e as cores interpolam igual. Só para traços sem antialiasing (como todos os
 ## do jogo); largura negativa (linha fina) cai no desenho do motor.
 
+## Lado da textura do disco (disc): com 1024 a borda sai igual à do draw_circle até nas poças grandes
+## (com 128, um disco de raio 33 tinha 44 pixels de borda diferentes). LA8: 2 MB.
+const DISC_SIZE := 1024
+
 static var _no_uv := PackedVector2Array()
 ## Testes e benchmark: true desenha pelo caminho antigo do motor (draw_arc, draw_polyline,
 ## draw_colored_polygon), para comparar pixels e custo no mesmo quadro.
@@ -22,6 +27,39 @@ static var native := false
 ## Traços desenhados (cada um seria um polígono com buffer próprio no caminho do motor); o
 ## benchmark da partida lê e zera por quadro.
 static var drawn: int = 0
+static var _disc: Texture2D
+
+
+## Igual a CanvasItem.draw_circle (cheio, sem antialiasing, centro em pixel inteiro), como textura:
+## um disco branco de DISC_SIZE px (o texel entra se o centro dele está no círculo). Fica igual ao
+## motor menos alguns pixels da borda em raios quebrados (o pixel lê o texel mais perto, até 1/32 px
+## do centro dele). Discos seguidos saem num lote só; cada draw_circle é um
+## polígono e uma chamada de desenho própria.
+static func disc(ci: CanvasItem, at: Vector2, radius: float, color: Color) -> void:
+	drawn += 1
+	if native:
+		ci.draw_circle(at, radius, color)
+		return
+	if radius < 0.5:
+		return
+	ci.draw_texture_rect(disc_texture(), Rect2(at - Vector2(radius, radius), Vector2(radius, radius) * 2.0), false,
+			color)
+
+
+static func disc_texture() -> Texture2D:
+	if _disc == null:
+		var img := Image.create_empty(DISC_SIZE, DISC_SIZE, false, Image.FORMAT_LA8)
+		var r := DISC_SIZE * 0.5
+		# Uma linha de cada vez (fill_rect nativo), sem laço por pixel.
+		for y: int in range(DISC_SIZE):
+			var dy := y + 0.5 - r
+			var half := sqrt(maxf(0.0, r * r - dy * dy))
+			var x0 := ceili(r - half - 0.5)
+			var x1 := floori(r + half - 0.5)
+			if x1 >= x0:
+				img.fill_rect(Rect2i(x0, y, x1 - x0 + 1, 1), Color.WHITE)
+		_disc = ImageTexture.create_from_image(img)
+	return _disc
 
 
 ## Igual a CanvasItem.draw_arc (sem antialiasing).
