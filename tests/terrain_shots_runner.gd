@@ -10,6 +10,7 @@ extends Node
 ##   --gfx=low|medium|high qualidade gráfica (padrão high)
 ##   --res=WxH            tela lógica (padrão 678x305), janela 2x
 ##   --shot=<arquivo.png> captura; grava também <arquivo>_b.png 0,5 s depois (água animada)
+##   --day                sem a escuridão da lanterna e sem o tom da noite (para ver a arte de dia)
 ## Sem inimigos e sem HUD: só o terreno, a decoração e a guardiã parada.
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
@@ -20,6 +21,7 @@ var _shot := "user://terrain.png"
 var _frames := 0
 var _at := Vector2.INF
 var _ready_done := false
+var _day := false
 
 
 func _ready() -> void:
@@ -44,6 +46,8 @@ func _ready() -> void:
 			res = Vector2(value.get_slice("x", 0).to_float(), value.get_slice("x", 1).to_float())
 		elif arg.begins_with("--shot="):
 			_shot = value
+		elif arg == "--day":
+			_day = true
 	GfxQuality.set_override(int(GfxQuality.MODE_LEVEL.get(gfx, GfxQuality.HIGH)))
 	await DeviceProfiles.set_window_view(self, res)
 	_game = (load(GAME_SCENE) as PackedScene).instantiate() as HyakkiGame
@@ -60,6 +64,9 @@ func _ready() -> void:
 				if level >= 2 else Vector2.ZERO
 	_place()
 	_game.hud.visible = false
+	if _day:
+		_game.stage["tint"] = "#ffffff"
+		_game.lantern.visible = false
 	_ready_done = true
 
 
@@ -86,5 +93,9 @@ func _process(_delta: float) -> void:
 		var path := _shot if _frames < 90 else _shot.get_basename() + "_b.png"
 		img.save_png(path)
 		print("SCREENSHOT %s" % path)
+		# Cena parada (sem inimigos nem HUD): as chamadas de desenho do terreno, para comparar antes/depois.
+		print("DRAWCALLS %d primitivas %d" % [
+				int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
+				int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))])
 		if _frames >= 90:
 			get_tree().quit()

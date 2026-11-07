@@ -3,7 +3,8 @@
 // G = calçamento, B = especial (lava/água). A água espelhada (water_slot, Tokoyo) usa os tiles do
 // TilesetWater (miolo, brilho, peixes, pedrinhas, folha), as ondulações animadas do pacote (Water
 // Ripples, 4 quadros) numa fração das células, o reflexo do céu em faixas largas, brilhos que correm
-// devagar e a espuma branca na margem; tudo parado na Baixa. Os materiais vêm de um atlas montado com
+// devagar e a margem do autotile do pacote (barranco de terra, espuma branca e faixa rasa); tudo
+// parado na Baixa. Os materiais vêm de um atlas montado com
 // os tiles do Ninja Adventure (terrain_art.gd): 6 linhas de 16 variações (ou um bloco de até 5x5 tiles).
 // Manchas orgânicas (grama alta, folhas, terra batida) saem de dois campos de ruído em
 // coordenadas do mundo, iguais aos de terrain_noise.gd. Bordas com contorno de pixel, como os
@@ -37,6 +38,8 @@ uniform float water_slot = -1.0;
 uniform vec4 water_glint : source_color = vec4(1.0);
 // Fração das células da água com ondulação (0 = nenhuma).
 uniform float water_ripple = 0.0;
+// Barranco de 2 px por fora da água (rgb: cor, a: força; 0 = sem barranco).
+uniform vec4 water_bank = vec4(0.0);
 // 0 = Baixa, 1 = Média, 2 = Alta.
 uniform float detail = 2.0;
 
@@ -97,11 +100,17 @@ vec3 tile(int k, vec2 cell, vec2 inpx) {
 // sombra em volta dela, com o dobro do contraste (os detalhes do pacote são só 12% mais escuros).
 const float WATER_LUM = 0.747;
 const float WATER_CONTRAST = 2.0;
+// Margem do autotile do TilesetWater, de fora para dentro: barranco de terra (water_bank), espuma
+// branca e água rasa (#79b8ce, mais escura que o miolo), cada faixa com 2 px. A distância em px sai
+// da máscara: paint_mask sobe 0,5 a cada 16 px (0,5 + d/16) e o w das camadas é (v - 0,5) * 0,35.
+const float MASK_W_PX = 0.021875;
+const float WATER_EDGE_PX = 2.0;
+const float WATER_SHALLOW = 0.76;
 
 // Espelho d'água: o tile do material (ou, numa fração das células, um quadro da ondulação do
 // pacote, cada célula com a sua fase) com o reflexo do céu (faixas largas de luz, em degraus de pixel
-// art), brilhos curtos que deslizam com o tempo, a espuma clara de 1 px na margem e uma faixa clara
-// logo por dentro, como as lagoas do TilesetWater.
+// art), brilhos curtos que deslizam com o tempo e, na margem, a espuma e a faixa rasa do autotile de
+// margem do TilesetWater (o barranco por fora fica no fragment).
 vec3 water(int k, vec2 cell, vec2 inpx, vec2 p, float w) {
 	float t = detail > 0.5 ? weather_time : 0.0;
 	vec3 raw;
@@ -121,10 +130,11 @@ vec3 water(int k, vec2 cell, vec2 inpx, vec2 p, float w) {
 	if (wave > 0.9 && hash2(floor(q / vec2(6.0, 1.0))) > 0.55) {
 		col = mix(col, water_glint.rgb, 0.65);
 	}
-	if (w < 0.02) {
-		col = mix(col, water_glint.rgb, 0.8);
-	} else if (w < 0.045) {
-		col = mix(col, water_glint.rgb, 0.3);
+	float d = w / MASK_W_PX;
+	if (d < WATER_EDGE_PX) {
+		col = mix(col, water_glint.rgb, 0.85);
+	} else if (d < WATER_EDGE_PX * 2.0) {
+		col *= WATER_SHALLOW;
 	}
 	return col;
 }
@@ -180,8 +190,14 @@ void fragment() {
 					col *= 1.06;
 				}
 			}
-		} else if (w > -0.016 && rims[k].a > 0.0) {
-			col = mix(col, rims[k].rgb, rims[k].a);
+		} else {
+			// Água com barranco: a terra nos 2 px de fora e o contorno do bioma logo depois.
+			float bank = float(k) == water_slot && water_bank.a > 0.0 ? WATER_EDGE_PX * MASK_W_PX : 0.0;
+			if (bank > 0.0 && w > -bank) {
+				col = mix(col, water_bank.rgb, water_bank.a);
+			} else if (w > -0.016 - bank && rims[k].a > 0.0) {
+				col = mix(col, rims[k].rgb, rims[k].a);
+			}
 		}
 	}
 	// Variação larga de luz: quebra a repetição sem mexer no pixel art.

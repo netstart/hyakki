@@ -157,6 +157,7 @@ func _ensure_art() -> void:
 	ground.set_shader_parameter("water_slot", float(art.water_slot))
 	ground.set_shader_parameter("water_glint", art.water_glint)
 	ground.set_shader_parameter("water_ripple", art.water_ripple)
+	ground.set_shader_parameter("water_bank", art.water_bank)
 	if art.water_ripple > 0.0:
 		ground.set_shader_parameter("ripples", TerrainArt.ripples_texture())
 	var decor_shader := load("res://shaders/terrain_decor.gdshader") as Shader

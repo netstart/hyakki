@@ -10,7 +10,9 @@ extends RefCounted
 ##     Kakuriyo; praça do meio livre, tōrō e torii, espelhos d'água sem colisão, moldura que não
 ##     fecha a borda, determinismo e custo de geração na ordem dos outros layouts;
 ##   - partida de verdade nas 6 fases: chunks montados com chão e decoração, troca ao vivo
-##     Baixa → Alta → Baixa remontando os chunks, luzes do cenário dentro de lights_max.
+##     Baixa → Alta → Baixa remontando os chunks, luzes do cenário dentro de lights_max;
+##   - arte: bambu emendado do TilesetNature (grosso e fino, raminhos, pegada do layout), torii de
+##     lado e barranco da água na paleta do pacote, terra marrom com o TilesetField recolorido.
 ## run_unit() roda sem autoloads (tests/run_tests.gd); run() precisa da árvore
 ## (tests/integration_tests.gd).
 
@@ -428,6 +430,8 @@ func run(host: Node, check: Callable) -> void:
 	Settings.set_value(GfxQuality.KEY, saved)
 	GameClock.paused = false
 	await _test_tokoyo_mount(host)
+	_test_bamboo_art()
+	_test_recolor()
 
 
 ## Tokoyo montado de verdade (arte e chão): chunks da praça com chão, decoração e luzes, a água
@@ -462,8 +466,143 @@ func _test_tokoyo_mount(host: Node) -> void:
 		_check.call(w.art.materials_texture.get_width() == TerrainArt.SLOT_W
 				and w.art.mat_info[5].y == float(TerrainArt.VARIATIONS),
 				"tokoyo %s: água com %d variações do TilesetWater", [id, TerrainArt.VARIATIONS])
+		var bank: Variant = mat.get_shader_parameter("water_bank")
+		_check.call(w.art.water_bank.a > 0.5 and bank is Color and (bank as Color).is_equal_approx(w.art.water_bank),
+				"tokoyo %s: barranco da margem da água no shader (%s)", [id, w.art.water_bank])
+		var torii := _region_image(w.art, "gen_torii_side")
+		_check.call(_has_color(torii, Color("#e0394c")) and _has_color(torii, Color("#965340"))
+				and _has_color(torii, Color("#141b1b")),
+				"tokoyo %s: torii de lado na paleta do torii do TilesetHouse", id)
 		w.queue_free()
 		await host.get_tree().process_frame
+
+
+## Recorte `sprite_name` do atlas de decoração.
+static func _region_image(art: TerrainArt, sprite_name: String) -> Image:
+	var r: Rect2 = art.regions.get(sprite_name, Rect2())
+	var atlas := art.decor_texture.get_image()
+	return atlas.get_region(Rect2i(r))
+
+
+static func _has_color(img: Image, c: Color) -> bool:
+	for y: int in range(img.get_height()):
+		for x: int in range(img.get_width()):
+			var p := img.get_pixel(x, y)
+			if p.a > 0.0 and Color(p.r, p.g, p.b).to_rgba32() == Color(c.r, c.g, c.b).to_rgba32():
+				return true
+	return false
+
+
+## Largura opaca da linha `y` (px entre o primeiro e o último pixel visível).
+static func _row_span(img: Image, y: int) -> int:
+	var lo := -1
+	var hi := -1
+	for x: int in range(img.get_width()):
+		if img.get_pixel(x, y).a > 0.0:
+			if lo < 0:
+				lo = x
+			hi = x
+	return 0 if lo < 0 else hi - lo + 1
+
+
+## Menor largura opaca do colmo entre a copa e o pé (um entrenó sem raminho).
+static func _min_span(img: Image) -> int:
+	var best := 1 << 20
+	for y: int in range(16, img.get_height() - 12):
+		var s := _row_span(img, y)
+		if s > 0:
+			best = mini(best, s)
+	return best
+
+
+## Bambu emendado do TilesetNature: alturas das três variações, colmo grosso (a) com as linhas do
+## recorte do pacote, colmos finos (b, c) mais estreitos, raminhos com folhas, pé no chão e a mesma
+## pegada do layout (a posição e a colisão das touceiras não mudam). Mesma imagem a cada montagem.
+func _test_bamboo_art() -> void:
+	var art := TerrainArt.new()
+	art.build(TerrainArt.biome("bamboo"))
+	var nature := TerrainArt.tileset_image("nature")
+	var heights := {"gen_bamboo_a": 76, "gen_bamboo_b": 62, "gen_bamboo_c": 88}
+	for sprite_name: String in heights:
+		var img := _region_image(art, sprite_name)
+		_check.call(img.get_height() == int(heights[sprite_name]) and img.get_width() <= TerrainArt.BAMBOO_W,
+				"bambu %s: %dx%d (altura do desenho antigo)", [sprite_name, img.get_width(), img.get_height()])
+		_check.call(_has_color(img, Color("#adbc3a")) and _has_color(img, Color("#4a7f4b"))
+				and _has_color(img, Color("#141b1b")),
+				"bambu %s: cores do bambu do TilesetNature (luz, sombra e contorno)", sprite_name)
+		_check.call(TerrainArt.sprite_size(sprite_name) == Vector2(15, 60),
+				"bambu %s: pegada do layout inalterada", sprite_name)
+	# O colmo grosso começa com a copa do pacote, linha a linha (os raminhos ficam fora do miolo).
+	var fat := TerrainArt._bamboo(76, 3)
+	var dx := (TerrainArt.BAMBOO_W - TerrainArt.TILE) / 2
+	var same := true
+	for y: int in range(6):
+		for x: int in range(4, 12):
+			var want := nature.get_pixel(TerrainArt.BAMBOO_SRC.x + x, TerrainArt.BAMBOO_SRC.y + y)
+			var got := fat.get_pixel(dx + x, y)
+			same = same and (got.is_equal_approx(want) if want.a > 0.0 else got.a == 0.0)
+	_check.call(same, "bambu: copa do colmo grosso recortada do TilesetNature")
+	var slim := TerrainArt._bamboo(62, 7, true)
+	var mid_fat := _min_span(fat)
+	var mid_slim := _min_span(slim)
+	_check.call(mid_slim > 0 and mid_slim < mid_fat,
+			"bambu: colmo fino mais estreito que o grosso no meio (%d < %d px, fora os raminhos)",
+			[mid_slim, mid_fat])
+	_check.call(_row_span(fat, 75) > 0 and _row_span(slim, 61) > 0, "bambu: pé dos colmos na última linha")
+	var leaves := 0
+	for img: Image in [fat, slim]:
+		for y: int in range(img.get_height()):
+			if _row_span(img, y) > TerrainArt.TILE:
+				leaves += 1
+	_check.call(leaves >= 6, "bambu: raminhos com folhas para os lados (%d linhas mais largas que o colmo)", leaves)
+	var again := TerrainArt.new()
+	again.build(TerrainArt.biome("bamboo"))
+	_check.call(_region_image(again, "gen_bamboo_c").get_data() == _region_image(art, "gen_bamboo_c").get_data(),
+			"bambu: mesma imagem a cada montagem")
+
+
+## Recolorir: o desenho do TilesetField nas cores do 1º tile do material (terra marrom), mantendo
+## as posições de cada tom; os materiais com tile "recolor" saem só com as cores da terra.
+func _test_recolor() -> void:
+	var field := TerrainArt.tileset_image("field").get_region(Rect2i(16, 16, 16, 16))
+	var dirt := TerrainArt.tileset_image("floor").get_region(Rect2i(12 * 16, 8 * 16, 16, 16))
+	var out := TerrainArt.recolored(field, dirt)
+	var dirt_colors: Dictionary = {}
+	for c: Color in TerrainArt._colors_by_light(dirt):
+		dirt_colors[c.to_rgba32()] = true
+	var only_dirt := true
+	var keeps := true
+	var dark_src := (TerrainArt._colors_by_light(field)[0] as Color).to_rgba32()
+	var dark_dst := (TerrainArt._colors_by_light(dirt)[0] as Color).to_rgba32()
+	for y: int in range(16):
+		for x: int in range(16):
+			var c := out.get_pixel(x, y)
+			only_dirt = only_dirt and dirt_colors.has(Color(c.r, c.g, c.b).to_rgba32())
+			var s := field.get_pixel(x, y)
+			if Color(s.r, s.g, s.b).to_rgba32() == dark_src:
+				keeps = keeps and Color(c.r, c.g, c.b).to_rgba32() == dark_dst
+	_check.call(only_dirt and keeps and out.get_data() != dirt.get_data(),
+			"chão: pontilhado do TilesetField pintado com os marrons da terra (desenho novo, só cores da terra)")
+	var recolor_mats := 0
+	for b: Dictionary in (TerrainArt.data().get("biomes", {}) as Dictionary).values():
+		for m: Dictionary in b.get("materials", []):
+			for t: Array in m.get("tiles", []):
+				if t.size() > 4 and String(t[4]) == "recolor":
+					recolor_mats += 1
+	_check.call(recolor_mats >= 6, "chão: materiais de terra marrom com tile recolorido (%d)", recolor_mats)
+	# Bambuzal: o material 2 (terra escura) montado no atlas só com as cores da terra.
+	var art := TerrainArt.new()
+	art.build(TerrainArt.biome("bamboo"))
+	var atlas := art.materials_texture.get_image()
+	var slot := atlas.get_region(Rect2i(0, 2 * TerrainArt.SLOT_H, TerrainArt.SLOT_W, TerrainArt.TILE))
+	var floor_dirt: Dictionary = {}
+	for c: Color in TerrainArt._colors_by_light(TerrainArt.tileset_image("floor").get_region(Rect2i(176, 128, 48, 64))):
+		floor_dirt[c.to_rgba32()] = true
+	var stray := 0
+	for c: Color in TerrainArt._colors_by_light(slot):
+		if not floor_dirt.has(c.to_rgba32()):
+			stray += 1
+	_check.call(stray == 0, "chão: terra do bambuzal só com cores da folha do chão (%d cores de fora)", stray)
 
 
 ## Copas e telhados ficam a 35% com a guardiã ou um inimigo atrás e voltam depois.

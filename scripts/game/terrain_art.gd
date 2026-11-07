@@ -42,6 +42,57 @@ const GENERATED := ["gen_tuft_a", "gen_tuft_b", "gen_tuft_c", "shadow_soft", "sh
 const TORII_SIDE_W := 26
 const TORII_SIDE_TALL := 34
 const TORII_SIDE_SHIFT := 12
+## Bambu (gen_bamboo_*): recorte de 16x46 px do bambu do TilesetNature (canto em px) e as linhas de
+## cada parte no recorte ([primeira, quantas]): copa com o 1º entrenó, nó, entrenó e pé.
+const BAMBOO_W := 34
+const BAMBOO_SRC := Vector2i(176, 128)
+const BAMBOO_CROWN := 22
+const BAMBOO_NODE := Vector2i(22, 5)
+const BAMBOO_GAP := Vector2i(27, 8)
+const BAMBOO_FOOT := Vector2i(35, 11)
+## Cores do bambu do pacote: contorno, verde, luz e sombra.
+const BAMBOO_PALETTE := {"c": Color("#141b1b"), "d": Color("#74a334"), "f": Color("#adbc3a"),
+		"e": Color("#4a7f4b")}
+## Colmo fino (gen_bamboo_b e _c): as 13 primeiras linhas do recorte (só a folhagem da copa) e o
+## resto redesenhado com 7 px nas cores do pacote: nó (com o anel saliente), entrenó e pé.
+const BAMBOO_SLIM_CROWN := 13
+const BAMBOO_SLIM := {
+	"node": [
+		"...cdfdfdfdc....",
+		"...cddffffdc....",
+		"....cdfffdc.....",
+		"....cedddec.....",
+	],
+	"gap": ["....cdffddc....."],
+	"foot": [
+		"...cdfdfdfdc....",
+		"...cddffffdc....",
+		"...cdedddedc....",
+		"..cddffdddddc...",
+		"..edffffdddde...",
+		"...edfffddde....",
+		"....edfddde.....",
+		".....eddde......",
+	],
+}
+## Raminhos com folhas (lado direito; a base do galho fica embaixo à esquerda).
+const BAMBOO_SPRIGS := [
+	[
+		"...c.ccc.....",
+		"..c.cffdcc...",
+		".c..cdddddcc.",
+		"c....cceeeddc",
+		"c......ccccc.",
+	],
+	[
+		"....cc.......",
+		"...cfdc......",
+		"..ccdcccc....",
+		".c.cffdddcc..",
+		"c...cdddeeec.",
+		"c....ccccccc.",
+	],
+]
 
 static var _data: Dictionary = {}
 static var _images: Dictionary = {}
@@ -57,6 +108,9 @@ var water_slot: int = -1
 var water_glint := Color.WHITE
 ## Fração das células da água com a ondulação animada (material "ripple"; 0 = nenhuma).
 var water_ripple := 0.0
+## Barranco da margem (material "bank": [cor, força]; alfa 0 = sem barranco): a faixa de terra de
+## 2 px por fora da água, como no autotile de margem do TilesetWater.
+var water_bank := Color(0, 0, 0, 0)
 ## Atlas da decoração e o retângulo (px) de cada sprite.
 var decor_texture: ImageTexture
 var regions: Dictionary = {}
@@ -82,6 +136,7 @@ static func sprite_size(sprite_name: String) -> Vector2:
 	if entry.size() == 5:
 		return Vector2(float(entry[3]) * TILE, float(entry[4]) * TILE)
 	if sprite_name.begins_with("gen_bamboo"):
+		# Pegada do colmo no layout (a do desenho antigo): o sprite é mais largo só pelos raminhos.
 		return Vector2(15, 60)
 	if sprite_name == "gen_step":
 		return Vector2(48, 6)
@@ -142,6 +197,7 @@ func _build_materials(mats: Array) -> void:
 	lava_slot = -1
 	water_slot = -1
 	water_ripple = 0.0
+	water_bank = Color(0, 0, 0, 0)
 	for k: int in range(MATERIALS):
 		var m: Dictionary = mats[k] if k < mats.size() else (mats[0] if not mats.is_empty() else {})
 		var y := k * SLOT_H
@@ -152,6 +208,10 @@ func _build_materials(mats: Array) -> void:
 			water_slot = k
 			water_glint = Color(String(m.get("glint", "#ffffff")))
 			water_ripple = clampf(float(m.get("ripple", 0.0)), 0.0, 1.0)
+			var bank: Array = m.get("bank", [])
+			if bank.size() == 2:
+				water_bank = Color(String(bank[0]))
+				water_bank.a = clampf(float(bank[1]), 0.0, 1.0)
 		if bool(m.get("lava", false)):
 			lava_slot = k
 			mat_info.append(Vector4(y, 1, 1, 1))
@@ -165,13 +225,58 @@ func _build_materials(mats: Array) -> void:
 			mat_info.append(Vector4(y, 0, bw, bh))
 			continue
 		# Variações repetidas na proporção dos pesos: o shader sorteia uma das 16 por célula.
-		var slots := _weighted_slots(m.get("tiles", [[0, 12, 1]]), VARIATIONS)
+		var tiles: Array = m.get("tiles", [[0, 12, 1]])
+		var slots := _weighted_slots(tiles, VARIATIONS)
+		var base_tile: Array = tiles[0]
+		var base_rect := Rect2i(int(base_tile[0]) * TILE, int(base_tile[1]) * TILE, TILE, TILE)
 		for v: int in range(slots.size()):
 			var t: Array = slots[v]
 			var sheet := tileset_image(String(t[3])) if t.size() > 3 else src
-			img.blit_rect(sheet, Rect2i(int(t[0]) * TILE, int(t[1]) * TILE, TILE, TILE), Vector2i(v * TILE, y))
+			var rect := Rect2i(int(t[0]) * TILE, int(t[1]) * TILE, TILE, TILE)
+			if t.size() > 4 and String(t[4]) == "recolor":
+				# Desenho de outra folha nas cores do 1º tile do material (terra marrom sem par no
+				# TilesetField: o pontilhado do campo pintado com os marrons da terra).
+				img.blit_rect(recolored(sheet.get_region(rect), src.get_region(base_rect)), Rect2i(0, 0, TILE, TILE),
+						Vector2i(v * TILE, y))
+				continue
+			img.blit_rect(sheet, rect, Vector2i(v * TILE, y))
 		mat_info.append(Vector4(y, slots.size(), 1, 1))
 	materials_texture = ImageTexture.create_from_image(img)
+
+
+## `tile` com as cores trocadas pelas de `ref`, na ordem da luz: a cor mais escura de um vira a mais
+## escura do outro e assim por diante (quantidades diferentes de cores se espalham por igual).
+## Transparência mantida.
+static func recolored(tile: Image, ref: Image) -> Image:
+	var from := _colors_by_light(tile)
+	var to := _colors_by_light(ref)
+	var out := tile.duplicate() as Image
+	if from.is_empty() or to.is_empty():
+		return out
+	var map: Dictionary = {}
+	for i: int in range(from.size()):
+		var j := roundi(float(i) * float(to.size() - 1) / float(maxi(1, from.size() - 1)))
+		map[(from[i] as Color).to_rgba32()] = to[j]
+	for py: int in range(out.get_height()):
+		for px: int in range(out.get_width()):
+			var c := out.get_pixel(px, py)
+			if c.a > 0.0:
+				var dst: Color = map.get(Color(c.r, c.g, c.b).to_rgba32(), c)
+				out.set_pixel(px, py, Color(dst.r, dst.g, dst.b, c.a))
+	return out
+
+
+## Cores opacas distintas da imagem (sem o alfa), da mais escura para a mais clara.
+static func _colors_by_light(img: Image) -> Array:
+	var seen: Dictionary = {}
+	for py: int in range(img.get_height()):
+		for px: int in range(img.get_width()):
+			var c := img.get_pixel(px, py)
+			if c.a > 0.0:
+				seen[Color(c.r, c.g, c.b).to_rgba32()] = Color(c.r, c.g, c.b)
+	var out: Array = seen.values()
+	out.sort_custom(func(a: Color, b: Color) -> bool: return a.get_luminance() < b.get_luminance())
+	return out
 
 
 static func _weighted_slots(tiles: Array, count: int) -> Array:
@@ -212,8 +317,8 @@ func _build_decor(biome_data: Dictionary) -> void:
 	images["shadow_soft"] = _shadow(true)
 	images["shadow_hard"] = _shadow(false)
 	images["gen_bamboo_a"] = _bamboo(76, 3)
-	images["gen_bamboo_b"] = _bamboo(62, 7)
-	images["gen_bamboo_c"] = _bamboo(88, 13)
+	images["gen_bamboo_b"] = _bamboo(62, 7, true)
+	images["gen_bamboo_c"] = _bamboo(88, 13, true)
 	images["gen_step"] = _step(Color(String(biome_data.get("step", "#a8a49a"))))
 	images["gen_torii_side"] = _torii_side()
 	# Empacota em prateleiras, do mais alto para o mais baixo.
@@ -308,46 +413,94 @@ static func _step(stone: Color) -> Image:
 	return img
 
 
-## Colmo de bambu alto (pixel art): caule de 3 px com nós, folhas finas em leque no alto e
-## alguns ramos nos nós. 15 px de largura.
-static func _bamboo(h: int, salt: int) -> Image:
-	var w := 15
-	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
-	var outline := Color("#1b2e1a")
-	var dark := Color("#3f7a33")
-	var mid := Color("#6aa845")
-	var light := Color("#a7d46a")
-	var leaf_dark := Color("#2d5e2c")
-	var leaf := Color("#4e9440")
+## Colmo de bambu alto emendado do bambu do TilesetNature (Ninja Adventure, 16x48 px em
+## BAMBOO_SRC): a copa com o 1º entrenó, depois nó + entrenó repetidos até a altura pedida (cada
+## entrenó com 6 a 11 px, sorteados pela semente, para os nós não ficarem alinhados entre colmos) e o
+## pé com a touceira de raízes; nos nós de cima saem raminhos com folhas na paleta do pacote,
+## alternando os lados (o de baixo da copa sempre). `slim`: o mesmo colmo redesenhado com 7 px
+## (BAMBOO_SLIM, só a folhagem da copa vem do recorte), para os colmos de trás da touceira não
+## virarem uma parede. BAMBOO_W px de largura, colmo no meio. O layout continua com a pegada antiga
+## (sprite_size), então a posição e a colisão das touceiras não mudam.
+static func _bamboo(h: int, salt: int, slim: bool = false) -> Image:
+	var src := tileset_image("nature")
+	var img := Image.create(BAMBOO_W, h, false, Image.FORMAT_RGBA8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = salt
-	var cx := 7
-	var node := rng.randi_range(9, 13)
-	for y: int in range(h):
-		img.set_pixel(cx - 2, y, outline)
-		img.set_pixel(cx - 1, y, dark)
-		img.set_pixel(cx, y, mid)
-		img.set_pixel(cx + 1, y, light if y % 5 != 0 else mid)
-		img.set_pixel(cx + 2, y, outline)
-		if (h - y) % node == 0 and y < h - 3:
-			for x: int in range(cx - 2, cx + 3):
-				img.set_pixel(x, y, outline)
-			img.set_pixel(cx, y + 1, light)
-	# Folhas: pinceladas inclinadas saindo dos nós de cima.
-	var tufts := rng.randi_range(4, 6)
-	for t: int in range(tufts):
-		var y0 := rng.randi_range(0, int(h * 0.45))
-		var side := -1 if t % 2 == 0 else 1
-		var length := rng.randi_range(4, 7)
-		for k: int in range(length):
-			var x := cx + side * (2 + k)
-			var y := y0 + k / 2 + (1 if side > 0 else 0)
-			if x < 0 or x >= w or y >= h:
-				continue
-			img.set_pixel(x, y, leaf if k < length - 1 else leaf_dark)
-			if y + 1 < h:
-				img.set_pixel(x, y + 1, leaf_dark)
+	var dx := (BAMBOO_W - TILE) / 2
+	# Cada parte é uma lista de linhas: int = linha do recorte, String = linha desenhada (16 px).
+	var crown: Array = range(BAMBOO_SLIM_CROWN if slim else BAMBOO_CROWN)
+	var node: Array = BAMBOO_SLIM["node"] if slim else range(BAMBOO_NODE.x, BAMBOO_NODE.x + BAMBOO_NODE.y)
+	var gap: Array = BAMBOO_SLIM["gap"] if slim else range(BAMBOO_GAP.x, BAMBOO_GAP.x + BAMBOO_GAP.y)
+	var foot: Array = BAMBOO_SLIM["foot"] if slim else range(BAMBOO_FOOT.x, BAMBOO_FOOT.x + BAMBOO_FOOT.y)
+	var room := h - crown.size() - foot.size()
+	var period := node.size() + BAMBOO_GAP.y
+	var count := maxi(1, roundi(float(room) / float(period)))
+	var gaps: Array[int] = []
+	gaps.resize(count)
+	gaps.fill(BAMBOO_GAP.y)
+	var extra := room - period * count
+	var tries := 0
+	while extra != 0 and tries < 200:
+		tries += 1
+		var i := rng.randi_range(0, count - 1)
+		if extra > 0 and gaps[i] < 11:
+			gaps[i] += 1
+			extra -= 1
+		elif extra < 0 and gaps[i] > 6:
+			gaps[i] -= 1
+			extra += 1
+	var y := 0
+	for r: Variant in crown:
+		y = _bamboo_row(img, src, r, y, dx)
+	var nodes: Array[int] = []
+	for g: int in gaps:
+		nodes.append(y)
+		for r: Variant in node:
+			y = _bamboo_row(img, src, r, y, dx)
+		for k: int in range(g):
+			y = _bamboo_row(img, src, gap[k % gap.size()], y, dx)
+	for r: Variant in foot:
+		y = _bamboo_row(img, src, r, y, dx)
+	# Raminhos: logo abaixo da copa e nos nós (menos o de baixo), lados alternados.
+	var side := 1 if rng.randf() < 0.5 else -1
+	var tops: Array[int] = [crown.size() - (2 if slim else 8)]
+	tops.append_array(nodes.slice(0, nodes.size() - 1))
+	for i: int in range(tops.size()):
+		if i == 0 or rng.randf() < 0.85:
+			var x0 := dx + ((11 if slim else 13) if side > 0 else (4 if slim else 2))
+			_bamboo_sprig(img, x0, tops[i] + 1, side, BAMBOO_SPRIGS[(i + salt) % BAMBOO_SPRIGS.size()])
+		side = -side
 	return img
+
+
+## Linha `r` do colmo na linha `y` (se couber): int copia a linha do recorte, String desenha com
+## BAMBOO_PALETTE. Devolve a próxima linha.
+static func _bamboo_row(img: Image, src: Image, r: Variant, y: int, dx: int) -> int:
+	if y >= img.get_height():
+		return y + 1
+	if r is String:
+		var line := String(r)
+		for i: int in range(line.length()):
+			if line[i] != ".":
+				img.set_pixel(dx + i, y, BAMBOO_PALETTE[line[i]])
+	else:
+		img.blend_rect(src, Rect2i(BAMBOO_SRC.x, BAMBOO_SRC.y + int(r), TILE, 1), Vector2i(dx, y))
+	return y + 1
+
+
+## Raminho com folhas (desenho do lado direito; `side` -1 espelha) com a base em (x0, y0).
+static func _bamboo_sprig(img: Image, x0: int, y0: int, side: int, pattern: Array) -> void:
+	var h := pattern.size()
+	for j: int in range(h):
+		var line := String(pattern[j])
+		for i: int in range(line.length()):
+			var key := line[i]
+			if key == ".":
+				continue
+			var x := x0 + side * i
+			var y := y0 - (h - 1) + j
+			if x >= 0 and x < img.get_width() and y >= 0 and y < img.get_height():
+				img.set_pixel(x, y, BAMBOO_PALETTE[key])
 
 
 ## Torii visto de lado em 3/4 (pixel art só com fill_rect): o pilar de trás mais alto e à direita,
@@ -359,13 +512,15 @@ static func _torii_side() -> Image:
 	var span := int(TerrainLayout.TORII_SIDE_SPAN)
 	var tall := TORII_SIDE_TALL
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
-	var outline := Color("#2a1214")
-	var red := Color("#d8402c")
-	var lit := Color("#f67a4e")
-	var dark_red := Color("#962618")
-	var beam := Color("#3c2624")
-	var beam_lit := Color("#6a4640")
-	var stone := Color("#8a8078")
+	# Paleta do torii de frente do TilesetHouse (o "torii" do catálogo): pilares e nuki vermelhos com
+	# luz laranja, kasagi de madeira marrom com o veio escuro em cima, base marrom, contorno do pacote.
+	var outline := Color("#141b1b")
+	var red := Color("#e0394c")
+	var lit := Color("#e66a3a")
+	var dark_red := red.darkened(0.25)
+	var wood := Color("#965340")
+	var grain := Color("#61372e")
+	var stone := wood
 	var front_x := w / 2 - TORII_SIDE_SHIFT / 2
 	var back_x := front_x + TORII_SIDE_SHIFT
 	var front_base := h - 1
@@ -375,12 +530,13 @@ static func _torii_side() -> Image:
 	# Nuki: travessa vermelha a 10 px do topo, em diagonal entre os pilares, passando um pouco deles.
 	_torii_beam(img, back_x + 3, back_base - tall + 9, front_x - 3, front_base - tall + 9, 4, outline, red, lit)
 	_torii_pillar(img, front_x, front_base, tall, outline, red, lit, dark_red, stone)
-	# Kasagi: viga por cima (face vermelha e topo escuro), com as pontas viradas para cima.
-	_torii_beam(img, back_x + 5, back_base - tall - 4, front_x - 5, front_base - tall - 2, 5, outline, red, lit)
-	_torii_beam(img, back_x + 5, back_base - tall - 6, front_x - 5, front_base - tall - 4, 2, outline, beam, beam_lit)
+	# Kasagi: viga de madeira por cima (face marrom e veio escuro no topo), com as pontas viradas.
+	_torii_beam(img, back_x + 5, back_base - tall - 4, front_x - 5, front_base - tall - 2, 5, outline, wood,
+			wood.lightened(0.12))
+	_torii_beam(img, back_x + 5, back_base - tall - 6, front_x - 5, front_base - tall - 4, 2, outline, grain, wood)
 	for tip: Vector2i in [Vector2i(back_x + 6, back_base - tall - 8), Vector2i(front_x - 6, front_base - tall - 6)]:
 		img.fill_rect(Rect2i(tip.x - 2, tip.y, 5, 3), outline)
-		img.fill_rect(Rect2i(tip.x - 1, tip.y + 1, 3, 1), beam_lit)
+		img.fill_rect(Rect2i(tip.x - 1, tip.y + 1, 3, 1), wood)
 	return img
 
 
