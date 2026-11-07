@@ -580,6 +580,7 @@ func _altars() -> Array[Dictionary]:
 		_h(tr("guide.altars.elite_h")),
 		_p(tr("guide.altars.elite"), [Screen.format_time(EliteAffixes.TWO_AFFIX_T), roman(EliteAffixes.HIGH_MOON),
 				str(EliteAffixes.MAX_AFFIXES), pct(EliteAffixes.HP_PER_AFFIX)]),
+		_p(tr("guide.altars.fury"), [pct(EliteAffixes.FURY_AT), pct(1.0 - EliteAffixes.FURY_CD)]),
 		_rich(lines),
 	]
 	if hidden:

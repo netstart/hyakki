@@ -25,12 +25,16 @@ const TWO_AFFIX_T := 480.0
 const HIGH_MOON := 3
 const MAX_AFFIXES := 3
 ## Vida: × (1 + HP_PER_AFFIX × (afixos − 1)); velocidade e resistência a empurrão.
-const HP_PER_AFFIX := 0.35
+const HP_PER_AFFIX := 0.5
 const SPEED_BONUS := 1.1
-const KNOCK_RESIST := 0.6
+const KNOCK_RESIST := 0.8
 ## Primeiro poder depois de soltar (para o surgimento respirar) e a recarga quando o alvo está longe.
 const FIRST_CAST := 1.6
 const RETRY := 0.5
+## Fúria (怒): uma vez, quando a vida cai abaixo de FURY_AT da máxima, o Elite ruge, a aura fica
+## mais forte e as recargas dos poderes passam a valer FURY_CD (as que estão correndo também).
+const FURY_AT := 0.5
+const FURY_CD := 0.65
 
 ## 雷 Trovão: marca RAIJIN_MARKS círculos perto da guardiã; raio em cada um depois do aviso.
 const RAIJIN_EVERY := 4.0
@@ -99,6 +103,14 @@ const ICON := 14
 const CREST_PATH := "res://assets/art/altar/elite_crest.png"
 ## Surgimento visto pelo EnemyLook: escala com sobre-salto e silhueta na cor do afixo.
 const RISE_TIME := 0.6
+## Aura: raio do brilho no chão (× escala do corpo), pulso (rad/s), período das ondas em anel, raio
+## da luz que atravessa a escuridão, e na fúria a cor puxada e o raio × FURY_AURA.
+const AURA_RADIUS := 18.0
+const AURA_PULSE := 5.0
+const AURA_RING_PERIOD := 1.2
+const AURA_LIGHT := 46.0
+const FURY_AURA := 1.35
+const FURY_COLOR := Color("ff3b2f")
 
 var game: HyakkiGame
 ## índice do EnemyManager -> registro (uid, id, afixos, recargas, estado do poder).
@@ -219,7 +231,7 @@ func attach(i: int, affixes: Array[StringName], altar_key: String, rescale: bool
 	var rec := {"uid": enemies.uid[i], "id": enemies.type_ids[enemies.kind[i]], "affixes": affixes,
 			"altar": altar_key, "timers": timers, "busy": &"", "t": 0.0, "dir": Vector2.ZERO,
 			"line": [], "minions": [], "last_pool": enemies.pos[i], "shield_max": 0.0, "shield_cd": 0.0,
-			"emerge": -1.0, "fade": 1.0, "broke_at": -100.0}
+			"emerge": -1.0, "fade": 1.0, "broke_at": -100.0, "fury": false}
 	if affixes.has(&"kongo"):
 		rec["shield_max"] = enemies.max_hp[i] * SHIELD_FRACTION
 		enemies.shield[i] = rec["shield_max"]
@@ -269,6 +281,8 @@ func step(dt: float) -> void:
 		_step_kongo(i, rec, dt)
 		if enemies.sealed[i] == 1 or float(rec["emerge"]) >= 0.0:
 			continue
+		if not bool(rec["fury"]) and enemies.hp[i] < enemies.max_hp[i] * FURY_AT:
+			_enrage(i, rec)
 		# Ampulheta e atordoamento seguram tudo: recargas e o poder em curso (o Vento não investe
 		# congelado, a Miragem não termina o sumiço).
 		var held := enemies.freeze_time > 0.0 or enemies.stun[i] > 0.0
@@ -288,9 +302,26 @@ func step(dt: float) -> void:
 			timers[id] = float(timers[id]) - dt
 			if float(timers[id]) > 0.0:
 				continue
-			timers[id] = _cast(i, rec, id)
+			timers[id] = _cast(i, rec, id) * (FURY_CD if bool(rec["fury"]) else 1.0)
 			if StringName(rec["busy"]) != &"":
 				break
+
+
+## Entra em fúria (uma vez): recargas em curso encurtam e o rugido sai (AltarFx.elite_fury).
+func _enrage(i: int, rec: Dictionary) -> void:
+	rec["fury"] = true
+	var timers: Dictionary = rec["timers"]
+	for id: StringName in timers:
+		timers[id] = float(timers[id]) * FURY_CD
+	var enemies := game.enemies
+	game.altars.visuals.elite_fury(enemies.pos[i], color_of(StringName((rec["affixes"] as Array)[0])),
+			enemies.type_scale[enemies.kind[i]])
+
+
+## O Elite `i` está em fúria (lido pelo desenho, pela luz e pelos testes).
+func furious(i: int) -> bool:
+	var rec := record(i)
+	return not rec.is_empty() and bool(rec["fury"])
 
 
 ## Solta o poder `id` e devolve a próxima recarga (RETRY se o alvo estava fora de alcance).
@@ -455,8 +486,10 @@ func _step_yomi(i: int, rec: Dictionary, dt: float) -> void:
 	rec["last_pool"] = at
 	var away := at - game.player.sim_pos
 	var behind := at + (away.normalized() if away.length() > 0.01 else Vector2.DOWN) * YOMI_BEHIND
-	game.areas.hazard_pool(game.world.clamp_to_bounds(behind), YOMI_RADIUS, YOMI_DAMAGE * game.enemy_damage_mult(),
+	var pool := game.world.clamp_to_bounds(behind)
+	game.areas.hazard_pool(pool, YOMI_RADIUS, YOMI_DAMAGE * game.enemy_damage_mult(),
 			YOMI_LIFE, YOMI_SLOW, YOMI_WINDUP, StringName(rec["id"]))
+	game.altars.visuals.yomi_pool(pool)
 
 
 ## Escudo do Diamante: volta cheio KONGO_REGEN s depois de quebrar.
@@ -500,7 +533,8 @@ func hash_tag() -> String:
 		var names: PackedStringArray = []
 		for id: StringName in rec["affixes"]:
 			names.append(String(id))
-		parts.append("%s:%s:%s:%.2f" % [rec["id"], ",".join(names), rec["busy"], game.enemies.shield[i]])
+		parts.append("%s:%s:%s:%.2f%s" % [rec["id"], ",".join(names), rec["busy"], game.enemies.shield[i],
+				"!" if bool(rec["fury"]) else ""])
 	parts.sort()
 	return ";".join(parts)
 
@@ -534,7 +568,7 @@ static func power_state(rec: Dictionary) -> Dictionary:
 		line.append([p.x, p.y])
 	return {"timers": timers, "busy": String(rec["busy"]), "t": float(rec["t"]), "dir": [dir.x, dir.y],
 			"line": line, "phase": String(rec.get("phase", &"")), "fade": float(rec["fade"]),
-			"shield_cd": float(rec["shield_cd"])}
+			"shield_cd": float(rec["shield_cd"]), "fury": bool(rec["fury"])}
 
 
 ## Volta o estado dos poderes salvo por power_state no Elite `i` (registro já criado por attach).
@@ -554,6 +588,7 @@ func load_power_state(i: int, rec: Dictionary, s: Dictionary) -> void:
 	rec["phase"] = StringName(String(s.get("phase", "")))
 	rec["fade"] = float(s.get("fade", 1.0))
 	rec["shield_cd"] = float(s.get("shield_cd", 0.0))
+	rec["fury"] = bool(s.get("fury", false))
 	if StringName(rec["busy"]) != &"":
 		game.enemies.controlled[i] = 1
 
@@ -585,7 +620,10 @@ func silhouette_color(i: int) -> Color:
 	return Color.WHITE if int(GameClock.game_time * 20.0) % 2 == 0 else first
 
 
-## Aura na cor do 1º afixo por baixo do corpo (camada aditiva do chão).
+## Aura na cor do 1º afixo por baixo do corpo (camada aditiva do chão): brilho que pulsa e, na
+## Média e na Alta, ondas em anel que saem dos pés (AURA_RING_PERIOD s cada) e a chama que sobe.
+## Na fúria a cor puxa para FURY_COLOR, o pulso acelera e o raio cresce. A luz que atravessa a
+## escuridão da lanterna sai de aura_lights (AltarSystem.collect_lights).
 func draw_under(canvas: CanvasItem, detail: int) -> void:
 	if _soft == null:
 		_soft = EnemyFx.soft_texture()
@@ -596,16 +634,56 @@ func draw_under(canvas: CanvasItem, detail: int) -> void:
 		if not _visible(i):
 			continue
 		var rec: Dictionary = records[i]
-		var color := color_of(StringName((rec["affixes"] as Array)[0]))
+		var fury := bool(rec["fury"])
+		var color := aura_color(rec)
 		var foot := look.foot_of(i)
 		var s := look.body_scale(i) * body_look(i).x
-		var pulse := 0.6 + 0.4 * sin(time * 6.0 + i)
-		var r := 15.0 * s * (0.9 + 0.1 * pulse)
+		var pulse := aura_pulse(i, time, fury)
+		var r := AURA_RADIUS * s * (FURY_AURA if fury else 1.0) * (0.85 + 0.15 * pulse)
 		canvas.draw_texture_rect(_soft, Rect2(foot - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false,
-				Color(color, (0.45 if detail > 0 else 0.3) * pulse))
+				Color(color, (0.6 if detail > 0 else 0.45) * pulse))
+		if detail == 0:
+			continue
+		var period := AURA_RING_PERIOD * (0.6 if fury else 1.0)
+		var rings := 2 if fury else 1
+		for k: int in rings:
+			var phase := fposmod(time / period + float(k) / rings + i * 0.37, 1.0)
+			var rr := r * (0.5 + 1.1 * phase)
+			canvas.draw_set_transform(foot, 0.0, Vector2(1.0, 0.5))
+			Stroke.arc(canvas, Vector2.ZERO, rr, 0.0, TAU, 28, Color(color.lerp(Color.WHITE, 0.25), 0.7 * (1.0 - phase)),
+					1.0)
+			canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		if detail >= 2:
-			canvas.draw_texture_rect(_soft, Rect2(foot - Vector2(r * 0.8, r * 1.9), Vector2(r * 1.6, r * 1.9)), false,
-					Color(color, 0.16 * pulse))
+			canvas.draw_texture_rect(_soft, Rect2(foot - Vector2(r * 0.8, r * 2.1), Vector2(r * 1.6, r * 2.1)), false,
+					Color(color, (0.3 if fury else 0.2) * pulse))
+
+
+## Cor da aura: a do 1º afixo, puxada para FURY_COLOR na fúria.
+static func aura_color(rec: Dictionary) -> Color:
+	var color := color_of(StringName((rec["affixes"] as Array)[0]))
+	return color.lerp(FURY_COLOR, 0.45) if bool(rec["fury"]) else color
+
+
+## Pulso da aura 0,55..1 (mais rápido na fúria).
+static func aura_pulse(i: int, time: float, fury: bool) -> float:
+	return 0.55 + 0.45 * (0.5 + 0.5 * sin(time * (AURA_PULSE * (1.8 if fury else 1.0)) + i))
+
+
+## Luzes das auras dos Elites visíveis em `area` para a lanterna ([pos, cor, raio, força], como
+## WorldMap.collect_lights): a aura aparece mesmo fora da luz da guardiã.
+func aura_lights(area: Rect2) -> Array:
+	var out: Array = []
+	var enemies := game.enemies
+	var time := GameClock.game_time
+	for i: int in records:
+		var rec: Dictionary = records[i]
+		if enemies.alive[i] == 0 or enemies.uid[i] != int(rec["uid"]) or not area.has_point(enemies.pos[i]):
+			continue
+		var fury := bool(rec["fury"])
+		var pulse := aura_pulse(i, time, fury)
+		out.append([enemies.pos[i] + Vector2(0.0, -8.0), aura_color(rec),
+				AURA_LIGHT * (FURY_AURA if fury else 1.0) * (0.85 + 0.15 * pulse), (0.6 if fury else 0.45) + 0.25 * pulse])
+	return out
 
 
 ## Por cima dos corpos: aviso da investida, bolha do escudo, brasão, barra de vida e kanji.

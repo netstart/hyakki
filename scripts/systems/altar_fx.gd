@@ -16,6 +16,9 @@ const AMBIENT_GAP_MS := 260
 ## Lampejo e som do golpe no escudo do Diamante: no máximo um a cada SHIELD_HIT_GAP_MS (a horda
 ## inteira batendo não vira um borrão nem um zumbido).
 const SHIELD_HIT_GAP_MS := 120
+## Borbulhar das poças do Yomi (soltas a cada EliteAffixes.YOMI_EVERY s): no máximo um a cada
+## YOMI_SOUND_GAP_MS.
+const YOMI_SOUND_GAP_MS := 900
 
 var game: HyakkiGame
 ## Lampejos de golpe no escudo mostrados (testes do limite).
@@ -24,6 +27,7 @@ var shield_hits_shown: int = 0
 var _look := RandomNumberGenerator.new()
 var _last_ambient_ms: int = -10000
 var _last_shield_ms: int = -10000
+var _last_yomi_ms: int = -10000
 
 
 func _init(p_game: HyakkiGame = null) -> void:
@@ -203,7 +207,10 @@ func altar_vanquished(at: Vector2) -> void:
 
 # --- Poderes dos Elites --------------------------------------------------------------------
 
-## O poder `id` começou: um lampejo na cor do afixo no Elite (o jogador lê quem fez).
+## O poder `id` começou: um lampejo na cor do afixo no Elite (o jogador lê quem fez) e o som de
+## lançamento próprio de cada afixo (Ninja Adventure, Kenney Sci-Fi e os procedurais g_*):
+## 雷 carga elétrica + estalo, 狐 bola de fogo + chama de espírito, 陽 tremeluzir, 岩 ronco do chão,
+## 霞 fumaça + espírito, 風 rajada de vento.
 func affix_cast(id: StringName, at: Vector2) -> void:
 	var fx := _fx()
 	if fx == null:
@@ -214,23 +221,27 @@ func affix_cast(id: StringName, at: Vector2) -> void:
 	match id:
 		&"raijin":
 			fx.sparks(core, Vector2.UP, color, [2, 5, 8][FxLayer.wfx], 120.0, 0.6, 0.2)
-			_sfx("n_magic_3", 1.2, 0.05, -4.0)
+			_sfx("ks_forcefield_1", 1.3, 0.05, -6.0)
+			_sfx("zap", 1.0, 0.08, -6.0)
 		&"kitsunebi":
 			fx.embers(core, color, [2, 4, 6][FxLayer.wfx], 5.0)
-			_sfx("fireball", 1.1, 0.08, -5.0)
+			_sfx("n_fireball_2", 1.1, 0.08, -3.0)
+			_sfx("spirit_flame", 1.0, 0.05, -8.0)
 		&"kagero":
 			fx.motes(core, color, [2, 5, 8][FxLayer.wfx], 6.0, 20.0)
-			_sfx("n_magic_5", 1.3, 0.05, -5.0)
+			_sfx("magic4", 0.9, 0.05, -3.0)
 		&"iwa":
 			fx.dust(at, 6.0, Color(0.72, 0.62, 0.5, 0.9), [3, 6, 10][FxLayer.wfx], 30.0)
-			_sfx("n_alert_2", 0.8, 0.03, -4.0)
+			_sfx("n_explosion_6", 0.6, 0.03, -2.0)
+			_sfx("n_alert_2", 0.8, 0.03, -8.0)
 		&"kasumi":
 			fx.play_anim("smoke", at, 2.0)
 			fx.play_anim("smoke_circular", at, 1.4)
-			_sfx("n_magic_5", 0.8, 0.05, -4.0)
+			_sfx("smoke_pop", 0.8, 0.05, -2.0)
+			_sfx("spirit", 0.8, 0.05, -8.0)
 		&"kaze":
 			fx.dust(at, 4.0, Color(color, 0.8), [3, 6, 10][FxLayer.wfx], 40.0)
-			_sfx("alt_telegraph", 1.0, 0.03, -3.0)
+			_sfx("wind_gust", 0.9, 0.05, -2.0)
 
 
 ## Trovão: o raio do céu cai no fim de cada aviso.
@@ -245,6 +256,7 @@ func raijin_strike(at: Vector2) -> void:
 	if fx.has_anim("impact_1"):
 		fx.play_anim("impact_1", at - Vector2(0, 4), 0.32, 0.0, color.lerp(Color.WHITE, 0.5), 8.0, false, true)
 	_sfx("alt_thunder", _look.randf_range(1.0, 1.2), 0.0, -4.0)
+	_sfx("explosion3", 1.3, 0.08, -10.0)
 
 
 ## Miragem: estalo onde estava e onde reaparece (fumaça, faíscas e um risco entre os dois).
@@ -261,7 +273,8 @@ func kagero_blink(from: Vector2, to: Vector2) -> void:
 		fx.lightning_bolt(from + Vector2(0, -8), to + Vector2(0, -8), color, 1.0, 0, 0.12)
 	if fx.has_anim("cut_double"):
 		fx.play_anim("cut_double", to + Vector2(0, -8), 0.8, 0.0, color.lerp(Color.WHITE, 0.4), 22.0, false, true)
-	_sfx("n_magic_5", 1.5, 0.05, -2.0)
+	_sfx("fx", 1.2, 0.05, -1.0)
+	_sfx("n_magic_5", 1.5, 0.05, -8.0)
 
 
 ## Vento: a investida sai (rajada atrás, poeira e o assobio).
@@ -275,6 +288,7 @@ func kaze_dash(at: Vector2, dir: Vector2) -> void:
 	if fx.has_anim("cut_double"):
 		fx.play_anim("cut_double", at + dir * 14.0, 0.9, dir.angle(), color, 20.0, false, true)
 	_sfx("whoosh", 0.7, 0.05, -2.0)
+	_sfx("wind_gust", 1.3, 0.05, -5.0)
 
 
 ## Rocha: o golpe no chão (pedras, poeira em anel, distorção).
@@ -288,7 +302,8 @@ func iwa_slam(at: Vector2) -> void:
 	fx.dust(at, EliteAffixes.IWA_RADIUS * 0.5, Color(0.72, 0.62, 0.5, 0.9), [6, 12, 20][FxLayer.wfx], 70.0)
 	game.shake(2.6 * FxLayer.shake_mult)
 	Settings.vibrate(50)
-	_sfx("alt_explosion", 0.7, 0.05, -3.0)
+	_sfx("elite_quake", 0.9, 0.05, 0.0)
+	_sfx("alt_explosion", 0.7, 0.05, -6.0)
 
 
 func shield_up(at: Vector2) -> void:
@@ -298,7 +313,8 @@ func shield_up(at: Vector2) -> void:
 	var color := EliteAffixes.color_of(&"kongo")
 	fx.add_ring(at + Vector2(0, -8), 18.0, Color(color, 0.9), 0.35, 2.0)
 	fx.motes(at + Vector2(0, -8), color, [2, 5, 8][FxLayer.wfx], 10.0, 14.0)
-	_sfx("a_diamond", 1.3, 0.05, -6.0)
+	_sfx("elite_shield", 1.0, 0.05, -4.0)
+	_sfx("a_diamond", 1.3, 0.05, -10.0)
 
 
 func shield_hit(at: Vector2) -> void:
@@ -325,3 +341,37 @@ func shield_break(at: Vector2) -> void:
 	fx.flash(core, 24.0, Color(color, 0.9), 0.14)
 	game.shake(1.2 * FxLayer.shake_mult)
 	_sfx("alt_shield_break", 1.0, 0.05, 0.0)
+
+
+## Yomi: a poça de miasma borbulha onde cai (som limitado a um a cada YOMI_SOUND_GAP_MS).
+func yomi_pool(at: Vector2) -> void:
+	var fx := _fx()
+	var now := UiClock.msec()
+	if fx == null or now - _last_yomi_ms < YOMI_SOUND_GAP_MS:
+		return
+	_last_yomi_ms = now
+	fx.motes(at, EliteAffixes.color_of(&"yomi"), [1, 2, 4][FxLayer.wfx], 6.0, 10.0)
+	_sfx("surf_bubble_1", 0.6, 0.1, -6.0)
+
+
+## Fúria (EliteAffixes._enrage): a aura explode em vermelho (anel duplo, chamas, aberração),
+## tremida e vibração; rugido grave do Elite, o grito do yōkai, o campo de força e a chama.
+func elite_fury(at: Vector2, color: Color, size: float) -> void:
+	var fx := _fx()
+	if fx == null:
+		return
+	var hot := color.lerp(EliteAffixes.FURY_COLOR, 0.5)
+	var core := at + Vector2(0, -8.0 * size)
+	fx.shockwave(at, 70.0, hot.lerp(Color.WHITE, 0.2), 1.4, 0.45)
+	fx.add_ring(at, 34.0 * size, Color(hot, 0.95), 0.35, 3.0)
+	fx.add_ring(at, 20.0 * size, Color(EliteAffixes.FURY_COLOR, 0.9), 0.5, 2.0)
+	fx.flash(core, 36.0, Color(hot, 0.9), 0.2)
+	fx.embers(core, hot, [4, 10, 18][FxLayer.wfx], 10.0)
+	fx.sparks(core, Vector2.UP, hot.lerp(Color.WHITE, 0.3), [5, 10, 18][FxLayer.wfx], 160.0, 1.2, 0.3)
+	fx.chroma_pulse(0.8, 0.22)
+	game.shake(2.2 * FxLayer.shake_mult)
+	Settings.vibrate(80)
+	_sfx("alt_elite_roar", clampf(1.0 - 0.25 * size, 0.6, 1.0), 0.03, 0.0)
+	_sfx("e_roar_%d" % _look.randi_range(0, 2), clampf(0.9 - 0.2 * size, 0.55, 0.9), 0.05, -4.0)
+	_sfx("ks_forcefield_2", 0.8, 0.03, -5.0)
+	_sfx("n_fire_3", 0.8, 0.05, -6.0)

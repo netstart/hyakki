@@ -7,7 +7,8 @@ extends Node
 ## Imprime "BENCH partida | <resumo> | render CPU, chamadas de desenho, primitivas" e sai.
 ## Opções: --native-strokes desenha arcos e polilinhas pelo caminho antigo do motor (Stroke.native),
 ## para comparar o custo; --compare-shots=<pasta> no fim pausa a partida e desenha o mesmo quadro
-## pelos dois caminhos, grava as capturas e conta os pixels diferentes.
+## pelos dois caminhos, grava as capturas e conta os pixels diferentes; --realm=1|2 mede no Kakuriyo ou
+## no Tokoyo (a guardiã atravessa logo no início).
 ## Com --strict (tools/run_checks) sai com erro se o motor × Stroke tiver um pixel com diferença de cor
 ## acima de MAX_COLOR_DIFF (traço visivelmente diferente, como um arco no lugar errado); diferenças de
 ## poucos níveis (até 6 vistos, em dezenas de pixels nas bordas) são arredondamento da interpolação, e
@@ -43,6 +44,13 @@ func _ready() -> void:
 	var game := (load("res://scenes/game/Game.tscn") as PackedScene).instantiate()
 	add_child(game)
 	Engine.max_fps = 0
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--realm="):
+			# Kakuriyo (1) ou Tokoyo (2): campo limpo e a partida segue lá (o estresse repõe a horda).
+			await get_tree().process_frame
+			var rift: RiftPortal = game.get("rift")
+			rift.clear_field()
+			rift.enter_realm(arg.get_slice("=", 1).to_int())
 	await get_tree().create_timer(WARMUP, true, false, true).timeout
 	Engine.max_fps = 0
 	_measuring = true

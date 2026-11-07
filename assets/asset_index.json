@@ -2862,6 +2862,12 @@
   "sha256": "63d64985697d77033372256b9304ea85db7061f0fc19aafd0714492a9b57140e"
  },
  {
+  "file": "assets/art/tilesets/field.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetField.png",
+  "license_id": "ninja_adventure",
+  "sha256": "a519353dfdb4dfe8d2a1c67061be063056bbf0275eafa87ff711614e278c7261"
+ },
+ {
   "file": "assets/art/tilesets/floor.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetFloor.png",
   "license_id": "ninja_adventure",
@@ -2898,10 +2904,28 @@
   "sha256": "9f4156d97efe449e161ec9065edd48f296e977cfd77f7e60474f2ddaae34c2e9"
  },
  {
+  "file": "assets/art/tilesets/relief_detail.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetReliefDetail.png",
+  "license_id": "ninja_adventure",
+  "sha256": "f372a146d382ae3be1b1cac3278fa0771a62bf13bf4367a04a68ee0a48d0e8dc"
+ },
+ {
   "file": "assets/art/tilesets/village_abandoned.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetVillageAbandoned.png",
   "license_id": "ninja_adventure",
   "sha256": "6787c6e22a4d44ceee4f158309b2519707bdb70c59aca00b3d49006cadcca06e"
+ },
+ {
+  "file": "assets/art/tilesets/water.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetWater.png",
+  "license_id": "ninja_adventure",
+  "sha256": "927e1fa1e793bb0398fdaad40cea22792c20f66703cdba80fb9462df7cbc275c"
+ },
+ {
+  "file": "assets/art/tilesets/water_ripples.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Animated/Water Ripples/SpriteSheet16x16.png",
+  "license_id": "ninja_adventure",
+  "sha256": "6c4aa7b642943130efc10b9f18047d57e6fa9fb883c5e6896cba8f2dbea2aa0e"
  },
  {
   "file": "assets/art/ui/ability_icons/anvil_hammer.png",
@@ -6390,6 +6414,42 @@
   "sha256": "f1b07a53ac10c615fff9ba470511fdeb722b5902e1a8520759fc20ad6f546015"
  },
  {
+  "file": "assets/audio/sfx/ks_forcefield_0.ogg",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/Audio/forceField_000.ogg",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "c2916f2a062c8ddd1aca2826d134fe90847037db31342726ffb0f9097afe339c"
+ },
+ {
+  "file": "assets/audio/sfx/ks_forcefield_1.ogg",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/Audio/forceField_001.ogg",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "5574e69dd04e5f59322c5ddffde5978f077b09170ae5e29cec0bd9901828cd90"
+ },
+ {
+  "file": "assets/audio/sfx/ks_forcefield_2.ogg",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/Audio/forceField_002.ogg",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "051b0eafc479695af4ca3607d41fd4be41bae7c21f4f9508d004722b09f1bd63"
+ },
+ {
+  "file": "assets/audio/sfx/ks_forcefield_3.ogg",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/Audio/forceField_003.ogg",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "15e3fe971ffd3415e5ab641d3a4d043fb31f6712b0956315b524ba29c3889cda"
+ },
+ {
+  "file": "assets/audio/sfx/ks_low_boom_0.ogg",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "3cb48d86dab63140cfb9aaeea4d4a6846abaca5831d157d8adbec0490da26343"
+ },
+ {
+  "file": "assets/audio/sfx/ks_low_boom_1.ogg",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/Audio/lowFrequency_explosion_001.ogg",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "cdda50600a4928f2f1b8371224d53c171ac799c1cf2c30b11999508985250b3b"
+ },
+ {
   "file": "assets/audio/sfx/launch.wav",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Whoosh & Slash/Launch.wav",
   "license_id": "ninja_adventure",
@@ -6436,6 +6496,24 @@
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Explosion5.wav",
   "license_id": "ninja_adventure",
   "sha256": "3e23968cce244b0a280ae2206f0170c352d4751e9dea3f2d4e68a990428f13ca"
+ },
+ {
+  "file": "assets/audio/sfx/n_explosion_6.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Explosion6.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "01a254a81b96eefb2c56c8927c759365fb397382231c09645083c3fe9d689cd8"
+ },
+ {
+  "file": "assets/audio/sfx/n_fire_3.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Fire3.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "f9764ebfd7109235ac413512f706dd1d6a2cd2c0df57c07daf36f971d6e843fa"
+ },
+ {
+  "file": "assets/audio/sfx/n_fireball_2.wav",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Sounds/Elemental/Fireball2.wav",
+  "license_id": "ninja_adventure",
+  "sha256": "3cd6a0112cb01a74a12de0b65b61d72aca560f1a352ecc152630f2abb80c6dfd"
  },
  {
   "file": "assets/audio/sfx/n_magic_3.wav",
@@ -6898,6 +6976,12 @@
   "source": "C:/src/assets/kenney/rpg-audio/License.txt",
   "license_id": "kenney_audio",
   "sha256": "5735dfd72cb64cbbceda4ebc00c380c41ca680edb82ff153aa7c9ab97614c539"
+ },
+ {
+  "file": "assets/licenses_src/kenney_sci-fi-sounds_License.txt",
+  "source": "C:/src/assets/kenney-free/sci-fi-sounds/License.txt",
+  "license_id": "kenney_scifi_sounds",
+  "sha256": "a9767b25c3533f69d03af136480efad08efba19a9f0d89616992b34c79fd6186"
  },
  {
   "file": "assets/licenses_src/ninja_adventure_LICENSE.txt",

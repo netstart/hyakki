@@ -57,6 +57,9 @@ var elite_affix_max: int = 0
 var elite_affixes_slain: Dictionary = {}
 ## Afixos dos Elites que surgiram nesta partida ({id: true}): o Guia os mostra (Discovery.affix_known).
 var elite_affixes_seen: Dictionary = {}
+## Tempo (s) entre o Elite ser solto e morrer, um por Elite de altar vencido (a linha ELITES do bot).
+var elite_kill_times: PackedFloat32Array = []
+var elites_spawned: int = 0
 ## Lutas com chefes em andamento: {id: {start, hits}} (golpes do chefe na guardiã na entrada).
 var boss_fights: Dictionary = {}
 ## Chefes vencidos nesta partida: {id: {time (s da entrada à derrota), clean (sem golpe dele)}}.
@@ -84,13 +87,16 @@ func on_altar(outcome: StringName) -> void:
 
 ## Um Elite de altar surgiu com estes afixos (só registro).
 func on_elite_spawned(affixes: Array) -> void:
+	elites_spawned += 1
 	for id: Variant in affixes:
 		elite_affixes_seen[StringName(id)] = true
 
 
-## Um Elite de altar foi vencido com estes afixos.
-func on_elite_slain(affixes: Array) -> void:
+## Um Elite de altar foi vencido com estes afixos, `seconds` s depois de solto (-1: sem registro).
+func on_elite_slain(affixes: Array, seconds: float = -1.0) -> void:
 	altar_elites_slain += 1
+	if seconds >= 0.0:
+		elite_kill_times.append(seconds)
 	elite_affix_max = maxi(elite_affix_max, affixes.size())
 	for id: Variant in affixes:
 		elite_affixes_slain[StringName(id)] = true
@@ -138,6 +144,23 @@ func economy_line() -> String:
 		ryo_from(&"chests"), ryo_from(&"kyo"), ryo_from(&"card"), ryo_from(&"other"), ryo_spent, ryo,
 		chests, coins, ryo_bags, bosses.size(),
 	]
+
+
+## Linha do fim da partida do bot (fora do hash): Elites de altar que surgiram e foram vencidos e o
+## tempo para vencer cada um (média, menor e maior).
+func elite_line() -> String:
+	var times: PackedStringArray = []
+	var total := 0.0
+	var low := INF
+	var high := 0.0
+	for t: float in elite_kill_times:
+		times.append("%.1f" % t)
+		total += t
+		low = minf(low, t)
+		high = maxf(high, t)
+	var n := elite_kill_times.size()
+	return "ELITES surgiram=%d vencidos=%d media=%.1f min=%.1f max=%.1f tempos=[%s]" % [elites_spawned, altar_elites_slain,
+			total / maxi(n, 1), low if n > 0 else 0.0, high, ",".join(times)]
 
 
 ## Gasta ryō da partida (o HUD lê `ryo` a cada quadro).

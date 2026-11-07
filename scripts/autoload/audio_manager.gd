@@ -122,6 +122,10 @@ const VARIANTS := {
 	# Altares do Selo (alt_*, CC0, tools/gen_altar_sfx.py) e explosões do Ninja Adventure (CC0).
 	"alt_thunder": ["alt_thunder_0", "alt_thunder_1", "alt_thunder_2"],
 	"alt_explosion": ["n_explosion_2", "n_explosion_4", "n_explosion_5"],
+	# Golpe da Rocha (岩) dos Elites: estrondo grave da Kenney Sci-Fi (CC0).
+	"elite_quake": ["ks_low_boom_0", "ks_low_boom_1"],
+	# Escudo do Diamante (剛) voltando: campos de força da Kenney Sci-Fi (CC0).
+	"elite_shield": ["ks_forcefield_0", "ks_forcefield_3"],
 	"a_ready": ["a_ready_0"],
 }
 

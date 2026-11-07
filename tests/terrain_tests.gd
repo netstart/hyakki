@@ -78,6 +78,21 @@ func run_unit(check: Callable) -> void:
 func _test_biomes_data() -> void:
 	var sprites: Dictionary = TerrainArt.data().get("sprites", {})
 	_check.call(sprites.size() > 100, "terreno: catálogo de sprites carregado (%d)", sprites.size())
+	# Folhas dos materiais (a do material e a de cada tile [x, y, peso, folha]) e do catálogo existem.
+	var sheets_ok := true
+	var mixed := 0
+	for b: Dictionary in (TerrainArt.data().get("biomes", {}) as Dictionary).values():
+		for m: Dictionary in b.get("materials", []):
+			var sheet := String(m.get("tileset", "floor"))
+			sheets_ok = sheets_ok and (bool(m.get("lava", false)) or TerrainArt.TILESETS.has(sheet))
+			for t: Array in m.get("tiles", []):
+				if t.size() > 3:
+					mixed += 1
+					sheets_ok = sheets_ok and TerrainArt.TILESETS.has(String(t[3]))
+	for e: Array in sprites.values():
+		sheets_ok = sheets_ok and TerrainArt.TILESETS.has(String(e[0]))
+	_check.call(sheets_ok and mixed > 30, "terreno: folhas dos materiais e sprites existem (%d tiles de outra folha)",
+			mixed)
 	for id: String in STAGES:
 		var b := TerrainArt.biome(id)
 		_check.call(String(b.get("layout", "")) == id, "terreno: bioma %s com layout próprio", id)
@@ -439,6 +454,14 @@ func _test_tokoyo_mount(host: Node) -> void:
 		var mat := (w._materials["ground"] as ShaderMaterial)
 		_check.call(is_equal_approx(float(mat.get_shader_parameter("water_slot")), 5.0),
 				"tokoyo %s: shader do chão com a água ligada", id)
+		var ripples: Variant = mat.get_shader_parameter("ripples")
+		_check.call(w.art.water_ripple > 0.0 and ripples is Texture2D
+				and (ripples as Texture2D).get_size() == Vector2(TerrainArt.TILE * TerrainArt.RIPPLE_FRAMES, TerrainArt.TILE)
+				and is_equal_approx(float(mat.get_shader_parameter("water_ripple")), w.art.water_ripple),
+				"tokoyo %s: ondulações animadas da água no shader (%.2f das células)", [id, w.art.water_ripple])
+		_check.call(w.art.materials_texture.get_width() == TerrainArt.SLOT_W
+				and w.art.mat_info[5].y == float(TerrainArt.VARIATIONS),
+				"tokoyo %s: água com %d variações do TilesetWater", [id, TerrainArt.VARIATIONS])
 		w.queue_free()
 		await host.get_tree().process_frame
 

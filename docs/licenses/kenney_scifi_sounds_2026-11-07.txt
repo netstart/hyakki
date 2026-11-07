@@ -1,0 +1,18 @@
+Registro de origem - kenney_scifi_sounds (2026-11-07)
+
+Pacote: Kenney "Sci-Fi Sounds" 1.0 (Kenney Vleugels, www.kenney.nl), criado em 11-10-2020.
+Página de origem: https://kenney.nl/assets/sci-fi-sounds
+Cópia local usada (já no disco, nada foi baixado nesta data): C:/src/assets/kenney-free/sci-fi-sounds
+(Audio/*.ogg e License.txt do próprio pacote).
+
+Licença declarada no License.txt do pacote:
+  License: (Creative Commons Zero, CC0)
+  http://creativecommons.org/publicdomain/zero/1.0/
+  This content is free to use in personal, educational and commercial projects.
+  Support us by crediting Kenney or www.kenney.nl (this is not mandatory)
+
+Arquivos usados no jogo (copiados sem alteração por tools/sync_assets.py, manifesto
+tools/kenney_scifi_assets.json): assets/audio/sfx/ks_forcefield_0..3.ogg (forceField_000..003)
+e assets/audio/sfx/ks_low_boom_0..1.ogg (lowFrequency_explosion_000..001), nos poderes dos
+Elites dos Altares (scripts/systems/altar_fx.gd). Aviso do autor em
+assets/licenses_src/kenney_sci-fi-sounds_License.txt e licenses/notices/kenney_scifi_sounds_License.txt.

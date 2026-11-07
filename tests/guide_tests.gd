@@ -478,6 +478,9 @@ func _test_altars() -> void:
 	_ok(text.contains(_t("guide.altars.elite") % [Screen.format_time(EliteAffixes.TWO_AFFIX_T),
 			GuideBook.roman(EliteAffixes.HIGH_MOON), EliteAffixes.MAX_AFFIXES, GuideBook.pct(EliteAffixes.HP_PER_AFFIX)]),
 			"Guia altares: afixos por tempo e Lua Vermelha (TWO_AFFIX_T, HIGH_MOON, MAX_AFFIXES)")
+	_ok(text.contains(_t("guide.altars.fury") % [GuideBook.pct(EliteAffixes.FURY_AT),
+			GuideBook.pct(1.0 - EliteAffixes.FURY_CD)]),
+			"Guia altares: fúria do Elite (FURY_AT, FURY_CD)")
 	_ok(EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T - 1.0, 0) == 1
 			and EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T, 0) == 2
 			and EliteAffixes.affix_count(0.0, EliteAffixes.HIGH_MOON) == 2

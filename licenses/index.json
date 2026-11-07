@@ -33,11 +33,11 @@
     "version": "NinjaAdventure-AssetPack.zip (SHA-256 95a06f4fdcfd1882f061a45ff313b7c905dbe2de1e8512b281d7937df62a7b15)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png)",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader",
     "source_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/ninja_adventure_LICENSE.txt",
-    "files_count": 767
+    "files_count": 774
   },
   {
     "id": "fusion_pixel_font",
@@ -107,6 +107,21 @@
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/kenney_audio_License.txt",
     "files_count": 68
+  },
+  {
+    "id": "kenney_scifi_sounds",
+    "name": "Kenney - Sci-Fi Sounds",
+    "author": "Kenney Vleugels (Kenney.nl)",
+    "license_id": "CC0-1.0",
+    "category": "audio",
+    "version": "Sci-Fi Sounds 1.0 (2020-10-11), local copy C:/src/assets/kenney-free/sci-fi-sounds",
+    "downloaded_at": "2026-11-07",
+    "verified_at": "2026-11-07",
+    "modifications": "a subset of files copied and renamed (ks_forcefield_*.ogg, ks_low_boom_*.ogg)",
+    "source_url": "https://kenney.nl/assets/sci-fi-sounds",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/kenney_scifi_sounds_License.txt",
+    "files_count": 7
   },
   {
     "id": "kenney_game_icons",

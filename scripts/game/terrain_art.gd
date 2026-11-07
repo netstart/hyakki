@@ -1,14 +1,18 @@
 class_name TerrainArt
 extends RefCounted
 ## Arte do terreno montada uma vez por partida (data/biomes.json):
-##   - atlas de materiais do chão (6 linhas de 128x80 px: 8 variações de 16 px ou um bloco);
+##   - atlas de materiais do chão (6 linhas de 256x80 px: 16 variações de 16 px ou um bloco), cada
+##     variação de qualquer folha (um tile [x, y, peso, folha] sai de outra folha que a do material);
 ##   - atlas de decoração: todos os sprites do catálogo usados pelo bioma, recortados justos,
 ##     mais os gerados aqui (tufos de grama na paleta do bioma, sombras suave e dura);
-##   - textura de halo (gradiente radial) para as luzes.
+##   - textura de halo (gradiente radial) para as luzes;
+##   - ondulações animadas da água (4 quadros de 16 px do Water Ripples do pacote).
 ## Tudo vem dos tilesets do Ninja Adventure já no jogo (CC0) ou é desenhado aqui.
 
 const TILE := 16
-const SLOT_W := 128
+## Variações por material (o shader sorteia uma por célula, na proporção dos pesos).
+const VARIATIONS := 16
+const SLOT_W := VARIATIONS * TILE
 const SLOT_H := 80
 const MATERIALS := 6
 const ATLAS_W := 512
@@ -22,7 +26,14 @@ const TILESETS := {
 	"element": "res://assets/art/tilesets/element.png",
 	"interior_floor": "res://assets/art/tilesets/interior_floor.png",
 	"dungeon": "res://assets/art/tilesets/dungeon.png",
+	"field": "res://assets/art/tilesets/field.png",
+	"water": "res://assets/art/tilesets/water.png",
+	"relief_detail": "res://assets/art/tilesets/relief_detail.png",
 }
+## Ondulações da água (Backgrounds/Animated/Water Ripples): 4 quadros de 16x16 lado a lado, no
+## mesmo azul do miolo do TilesetWater.
+const RIPPLES := "res://assets/art/tilesets/water_ripples.png"
+const RIPPLE_FRAMES := 4
 ## Sprites desenhados aqui (não estão no catálogo de data/biomes.json).
 const GENERATED := ["gen_tuft_a", "gen_tuft_b", "gen_tuft_c", "shadow_soft", "shadow_hard", "gen_step",
 		"gen_bamboo_a", "gen_bamboo_b", "gen_bamboo_c", "gen_torii_side"]
@@ -44,6 +55,8 @@ var lava_slot: int = -1
 ## Material de água espelhada (material com "water": true; -1 = nenhum) e a cor do brilho dela.
 var water_slot: int = -1
 var water_glint := Color.WHITE
+## Fração das células da água com a ondulação animada (material "ripple"; 0 = nenhuma).
+var water_ripple := 0.0
 ## Atlas da decoração e o retângulo (px) de cada sprite.
 var decor_texture: ImageTexture
 var regions: Dictionary = {}
@@ -99,6 +112,11 @@ static func halo_texture() -> Texture2D:
 	return _halo
 
 
+## Quadros da ondulação da água (64x16).
+static func ripples_texture() -> Texture2D:
+	return load(RIPPLES) as Texture2D
+
+
 static func tileset_image(tileset: String) -> Image:
 	if not _images.has(tileset):
 		var tex := load(TILESETS.get(tileset, TILESETS["floor"])) as Texture2D
@@ -123,6 +141,7 @@ func _build_materials(mats: Array) -> void:
 	mat_tint.clear()
 	lava_slot = -1
 	water_slot = -1
+	water_ripple = 0.0
 	for k: int in range(MATERIALS):
 		var m: Dictionary = mats[k] if k < mats.size() else (mats[0] if not mats.is_empty() else {})
 		var y := k * SLOT_H
@@ -132,6 +151,7 @@ func _build_materials(mats: Array) -> void:
 		if bool(m.get("water", false)):
 			water_slot = k
 			water_glint = Color(String(m.get("glint", "#ffffff")))
+			water_ripple = clampf(float(m.get("ripple", 0.0)), 0.0, 1.0)
 		if bool(m.get("lava", false)):
 			lava_slot = k
 			mat_info.append(Vector4(y, 1, 1, 1))
@@ -144,11 +164,12 @@ func _build_materials(mats: Array) -> void:
 			img.blit_rect(src, Rect2i(int(b[0]) * TILE, int(b[1]) * TILE, bw * TILE, bh * TILE), Vector2i(0, y))
 			mat_info.append(Vector4(y, 0, bw, bh))
 			continue
-		# Variações repetidas na proporção dos pesos: o shader sorteia uma das 8 por célula.
-		var slots := _weighted_slots(m.get("tiles", [[0, 12, 1]]), 8)
+		# Variações repetidas na proporção dos pesos: o shader sorteia uma das 16 por célula.
+		var slots := _weighted_slots(m.get("tiles", [[0, 12, 1]]), VARIATIONS)
 		for v: int in range(slots.size()):
 			var t: Array = slots[v]
-			img.blit_rect(src, Rect2i(int(t[0]) * TILE, int(t[1]) * TILE, TILE, TILE), Vector2i(v * TILE, y))
+			var sheet := tileset_image(String(t[3])) if t.size() > 3 else src
+			img.blit_rect(sheet, Rect2i(int(t[0]) * TILE, int(t[1]) * TILE, TILE, TILE), Vector2i(v * TILE, y))
 		mat_info.append(Vector4(y, slots.size(), 1, 1))
 	materials_texture = ImageTexture.create_from_image(img)
 

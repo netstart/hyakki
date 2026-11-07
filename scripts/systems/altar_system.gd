@@ -57,7 +57,7 @@ const CHAMPION_RING := RADIUS + 18.0
 ## Sino Purificador num Elite com afixos: tira só esta fração da vida máxima (chefes são imunes).
 const PURIFY_ELITE := 0.25
 ## Elite: vida extra sobre a do Elite comum e os pesos dos arquétipos (prop e enxame não entram).
-const ELITE_HP_BONUS := 1.6
+const ELITE_HP_BONUS := 12.0
 const ARCHETYPE_WEIGHT := {"tank": 4.0, "charger": 3.0, "shooter": 3.0, "chaser": 2.0, "shade": 1.0,
 		"splitter": 1.0}
 ## Saque: BOSS_CHEST_AFFIXES+ afixos dão baú de chefe; 1 afixo: CHEST_CHANCE baú comum, senão item raro + ryō.
@@ -517,6 +517,7 @@ func _release(r: Dictionary) -> void:
 	game.enemies.controlled[i] = 0
 	game.enemies.vel[i] = Vector2.ZERO
 	rec["emerge"] = -1.0
+	rec["released_at"] = GameClock.game_time
 
 
 ## Emboscada: anel de inimigos da fase com raio e fumaça, mais o campeão (Elite sem afixos).
@@ -591,7 +592,7 @@ func consume_claim() -> bool:
 func _elite_slain(rec: Dictionary, at: Vector2) -> void:
 	var list: Array = rec["affixes"]
 	var enemy_id := StringName(rec["id"])
-	game.tracker.on_elite_slain(list)
+	game.tracker.on_elite_slain(list, GameClock.game_time - float(rec.get("released_at", GameClock.game_time + 1.0)))
 	Events.elite_slain.emit(at, enemy_id, list.duplicate())
 	var size := game.enemies.type_scale[game.enemies.type_of(enemy_id)] if game.enemies.type_of(enemy_id) >= 0 else 1.0
 	visuals.elite_death(at, EliteAffixes.color_of(StringName(list[0])), size)
@@ -737,7 +738,8 @@ func _respawn_elite(d: Dictionary) -> void:
 
 ## Luz dos altares para a lanterna: [posição, cor, raio, força].
 func collect_lights(center: Vector2, half: Vector2) -> Array:
-	var out: Array = []
+	# Auras dos Elites primeiro (só os que estão na tela): a escuridão não as esconde.
+	var out: Array = affixes.aura_lights(Rect2(center - half, half * 2.0))
 	var area := Rect2(center - half, half * 2.0).grow(140.0)
 	var now := GameClock.game_time
 	for at: Vector2 in altars_near():

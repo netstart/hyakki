@@ -35,7 +35,7 @@ static func report(game: HyakkiGame) -> String:
 		p.hp, p.max_hp(), p.revives_used, p.healed, p.overhealed, int(game.tracker.items.get(&"onigiri", 0)),
 		int(game.tracker.items.get(&"sushi", 0)), p.stats.get_stat("regen")]
 	return "\n".join([p.damage.report_line(), game.abilities.uses_line(), game.rift.journey_line(),
-			game.tracker.economy_line(), vitals])
+			game.tracker.economy_line(), game.tracker.elite_line(), vitals])
 
 
 ## Slot da habilidade que o bot solta neste passo (-1 = nenhuma). Chamado no passo fixo.

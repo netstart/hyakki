@@ -143,7 +143,10 @@
     "Backgrounds/Tilesets/TilesetDungeon.png": "art/tilesets/dungeon.png",
     "Backgrounds/Tilesets/TilesetRelief.png": "art/tilesets/relief.png",
     "Backgrounds/Tilesets/Interior/TilesetInteriorFloor.png": "art/tilesets/interior_floor.png",
-    "Audio/Musics/7 - Sad Theme.ogg": "audio/music/defeat.ogg",
+    "Backgrounds/Tilesets/TilesetWater.png": "art/tilesets/water.png",
+    "Backgrounds/Tilesets/TilesetField.png": "art/tilesets/field.png",
+    "Backgrounds/Tilesets/TilesetReliefDetail.png": "art/tilesets/relief_detail.png",
+    "Backgrounds/Animated/Water Ripples/SpriteSheet16x16.png": "art/tilesets/water_ripples.png",    "Audio/Musics/7 - Sad Theme.ogg": "audio/music/defeat.ogg",
     "Audio/Musics/13 - Mystical.ogg": "audio/music/kakuriyo.ogg",
     "Audio/Jingles/LevelUp1.wav": "audio/sfx/jingle_levelup.wav",
     "Audio/Jingles/LevelUp2.wav": "audio/sfx/jingle_levelup2.wav",
@@ -206,6 +209,9 @@
     "Audio/Sounds/Magic & Skill/Magic3.wav": "audio/sfx/n_magic_3.wav",
     "Audio/Sounds/Magic & Skill/Magic5.wav": "audio/sfx/n_magic_5.wav",
     "Audio/Sounds/Alert/Alert2.wav": "audio/sfx/n_alert_2.wav",
+    "Audio/Sounds/Elemental/Fireball2.wav": "audio/sfx/n_fireball_2.wav",
+    "Audio/Sounds/Elemental/Fire3.wav": "audio/sfx/n_fire_3.wav",
+    "Audio/Sounds/Elemental/Explosion6.wav": "audio/sfx/n_explosion_6.wav",
     "LICENSE.txt": "licenses_src/ninja_adventure_LICENSE.txt",
     "README.md": "licenses_src/ninja_adventure_README.md"
   }

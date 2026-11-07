@@ -51,7 +51,7 @@ Rolagem com `game.rng`, com "pena" (pity) para o Elite sempre vir:
 ### Elite com poderes (afixos)
 - Número de afixos: 1 antes de `ELITE_TWO_AFFIX_T` (8 min), 2 depois; Lua Vermelha/dificuldade alta +1
   (máx. 3). Sem afixos repetidos; combinações proibidas definidas no código.
-- HP: `ELITE_HP` atual × `(1 + 0,35 × (afixos-1))`. Velocidade +10 %. Resistência a empurrão.
+- HP: `ELITE_HP` atual × `ELITE_HP_BONUS` (12) × `(1 + 0,5 × (afixos-1))`. Velocidade +10 %. Resistência a empurrão (0,8).
 - Afixos (reaproveitam a biblioteca de padrões de chefes: `areas.telegraph`, `enemy_shots.spawn`,
   `hazard_pool`, `beam`). Cada um tem nome (i18n), cor, ícone e kanji:
   | id | kanji | nome pt-BR | poder |
@@ -67,6 +67,33 @@ Rolagem com `game.rng`, com "pena" (pity) para o Elite sempre vir:
 - Nome exibido: "<Inimigo> <afixo>" ex.: "Kappa do Trovão", e com 2: "Kappa do Trovão · Miragem".
   Formato via chave i18n (ordem das palavras varia por idioma).
 - Dano dos poderes escala com `game.enemy_damage_mult()`.
+
+### Elites mais resistentes, aura, fúria e sons próprios (07/11/2026)
+- **Vida**: `AltarSystem.ELITE_HP_BONUS` 1,6 → 12 (sobre a vida de Elite comum, `EnemyManager.ELITE_HP` ×10)
+  e `EliteAffixes.HP_PER_AFFIX` 0,35 → 0,5; resistência a empurrão `KNOCK_RESIST` 0,6 → 0,8.
+  Medido com o bot (`-- --bot --seed=N --meta=max|none --speed=3 --quit-at=900`, linha nova `ELITES` do
+  `BotPilot.report`: tempo entre o Elite ser solto e morrer, `RunTracker.elite_kill_times`):
+  | Santuário | seed | antes (1,6 / 0,35) | depois (12 / 0,5) |
+  |---|---|---|---|
+  | máximo | 7 | 8 de 8 vencidos, média 3,1 s (0,9–7,7) | 12 de 12, média 15,8 s (7,3–29,2), vida cheia no fim |
+  | máximo | 11 | 5 de 5, média 1,8 s (0,3–4,4) | 7 de 9 (2 vivos no amanhecer), média 22,5 s (15,2–33,8) |
+  | vazio | 7 | 2 de 2, média 4,8 s; o bot morre em 5:54 | 1 de 1 em 27,1 s; o bot morre em 5:33 |
+
+  Com Santuário no máximo, a média das duas partidas fica em ~18 s (era ~2,6 s). Sem Santuário o bot
+  já morria antes dos 6 min (as ondas, não os Elites); o Elite que surge morre em ~27 s.
+- **Fúria (怒)**: uma vez, abaixo de `FURY_AT` (50 %) da vida: rugido (`AltarFx.elite_fury`), aura
+  vermelha e maior, recargas dos poderes × `FURY_CD` (0,65, as que estão correndo também). Entra no hash
+  (`!`) e na partida suspensa (`power_state.fury`); texto `guide.altars.fury` no Guia.
+- **Aura**: brilho que pulsa (`AURA_PULSE`), ondas em anel saindo dos pés na Média/Alta (nenhuma na
+  Baixa), chama na Alta e, para não sumir no escuro, uma luz da lanterna por Elite na tela
+  (`EliteAffixes.aura_lights` → `AltarSystem.collect_lights`, dentro do teto `lights_max` da qualidade).
+- **Sons** (lançamento / impacto), todos CC0: 雷 `ks_forcefield_1` + `zap` / `alt_thunder` + `explosion3`;
+  狐 `n_fireball_2` + `spirit_flame`; 陽 `magic4` / `fx` + `n_magic_5`; 岩 `n_explosion_6` (grave) /
+  `elite_quake` (`ks_low_boom_0..1`) + `alt_explosion`; 霞 `smoke_pop` + `spirit`; 剛 escudo volta com
+  `elite_shield` (`ks_forcefield_0`, `_3`); 冥 poça borbulha `surf_bubble_1` (no máx. 1 a cada
+  `AltarFx.YOMI_SOUND_GAP_MS`); 風 `wind_gust` / `whoosh` + `wind_gust`; fúria `alt_elite_roar` + `e_roar` +
+  `ks_forcefield_2` + `n_fire_3`. Novos no disco: `n_fireball_2`, `n_fire_3`, `n_explosion_6` (Ninja
+  Adventure) e `ks_*` (Kenney Sci-Fi Sounds, entrada `kenney_scifi_sounds` no registro).
 
 ### Animação de surgimento do Elite (BREAKING → ~1,6 s total, o Elite fica `controlled`, invulnerável e parado)
 1. 0,0 s: selo estoura — flash branco no altar, anel de choque (`shockwave` + `distort`), estilhaços

@@ -1,0 +1,15 @@
+{
+  "_doc": "Kenney Sci-Fi Sounds 1.0 (CC0), pacote local em C:/src/assets/kenney-free/sci-fi-sounds: campos de força e o estrondo grave dos poderes dos Elites (AltarFx).",
+  "pack_root": "C:/src/assets/kenney-free/sci-fi-sounds",
+  "license_id": "kenney_scifi_sounds",
+  "folders": {},
+  "files": {
+    "Audio/forceField_000.ogg": "audio/sfx/ks_forcefield_0.ogg",
+    "Audio/forceField_001.ogg": "audio/sfx/ks_forcefield_1.ogg",
+    "Audio/forceField_002.ogg": "audio/sfx/ks_forcefield_2.ogg",
+    "Audio/forceField_003.ogg": "audio/sfx/ks_forcefield_3.ogg",
+    "Audio/lowFrequency_explosion_000.ogg": "audio/sfx/ks_low_boom_0.ogg",
+    "Audio/lowFrequency_explosion_001.ogg": "audio/sfx/ks_low_boom_1.ogg",
+    "License.txt": "licenses_src/kenney_sci-fi-sounds_License.txt"
+  }
+}

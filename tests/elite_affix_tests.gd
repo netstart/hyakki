@@ -5,7 +5,10 @@ extends RefCounted
 ##   - partida de verdade, um Elite por afixo perto da guardiã: cada poder dispara (Trovão marca
 ##     raios, Raposa solta o leque, Miragem reaparece atrás dela, Rocha bate no chão com aviso
 ##     em anel, Névoa chama lacaios até o teto, Diamante absorve e volta, Yomi deixa poças, Vento
-##     investe em linha); vaga reusada não herda poderes; dano dos poderes escala com a partida.
+##     investe em linha); vaga reusada não herda poderes; dano dos poderes escala com a partida;
+##   - fúria abaixo de FURY_AT da vida (uma vez: rugido, recargas × FURY_CD, hash e partida suspensa);
+##   - sons: cada afixo pede um lançamento próprio (e o impacto onde há), todos com arquivo;
+##   - aura: luz para a lanterna (aparece no escuro), maior na fúria.
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const STEP := 1.0 / 60.0
@@ -20,8 +23,9 @@ func run_unit(check: Callable) -> void:
 			"afixo: 1 antes dos 8 min, 2 depois")
 	_check.call(EliteAffixes.affix_count(60.0, 3) == 2 and EliteAffixes.affix_count(900.0, 5) == EliteAffixes.MAX_AFFIXES,
 			"afixo: Lua Vermelha alta soma 1 (máx. 3)")
-	_check.call(is_equal_approx(EliteAffixes.hp_mult(1), 1.0) and is_equal_approx(EliteAffixes.hp_mult(3), 1.7),
-			"afixo: vida × (1 + 0,35 por afixo extra)")
+	_check.call(is_equal_approx(EliteAffixes.hp_mult(1), 1.0)
+			and is_equal_approx(EliteAffixes.hp_mult(3), 1.0 + 2.0 * EliteAffixes.HP_PER_AFFIX)
+			and EliteAffixes.HP_PER_AFFIX >= 0.5, "afixo: vida × (1 + %s por afixo extra)", EliteAffixes.HP_PER_AFFIX)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2024
 	var seen := {}
@@ -63,6 +67,9 @@ func run(host: Node, check: Callable) -> void:
 	await _test_names()
 	await _test_held()
 	await _test_shield_flash()
+	await _test_fury()
+	await _test_sounds()
+	await _test_aura_light()
 	GameClock.paused = false
 	await _host.get_tree().process_frame
 
@@ -253,4 +260,128 @@ func _test_shield_flash() -> void:
 	for _k: int in 12:
 		game.deal_damage(&"katana", i, 1.0, Vector2.RIGHT, 0.0)
 	_check.call(game.altars.visuals.shield_hits_shown - before <= 1, "afixo: lampejo do escudo limitado")
+	await _free(game)
+
+
+## Fúria: abaixo de FURY_AT da vida, uma vez só: rugido, recargas encurtadas, marca no hash e na
+## partida suspensa.
+func _test_fury() -> void:
+	var game := await _new_game()
+	var me := game.player.sim_pos
+	var i := _elite(game, [&"raijin", &"kitsunebi"], Vector2(150, 0))
+	var affixes := game.altars.affixes
+	var enemies := game.enemies
+	var rec := affixes.record(i)
+	_tick(game, 2, me)
+	_check.call(not affixes.furious(i) and not affixes.hash_tag().contains("!"), "fúria: vida cheia, sem fúria")
+	var before := float((rec["timers"] as Dictionary)[&"raijin"])
+	var roars := int(AudioManager.request_count.get("alt_elite_roar", 0))
+	enemies.hp[i] = enemies.max_hp[i] * (EliteAffixes.FURY_AT - 0.01)
+	_tick(game, 1, me)
+	var after := float((rec["timers"] as Dictionary)[&"raijin"])
+	_check.call(affixes.furious(i) and absf(after - (before * EliteAffixes.FURY_CD - STEP)) < 0.02,
+			"fúria: abaixo de %s da vida, recarga em curso × %s (%.2f -> %.2f)",
+			[EliteAffixes.FURY_AT, EliteAffixes.FURY_CD, before, after])
+	_check.call(int(AudioManager.request_count.get("alt_elite_roar", 0)) == roars + 1, "fúria: rugido ao entrar")
+	_check.call(affixes.hash_tag().contains("!"), "fúria: entra no hash")
+	enemies.hp[i] = enemies.max_hp[i] * 0.2
+	_tick(game, 30, me)
+	_check.call(int(AudioManager.request_count.get("alt_elite_roar", 0)) == roars + 1, "fúria: uma vez só")
+	# Recarga nova depois do lançamento: a da Raposa sai × FURY_CD.
+	(rec["timers"] as Dictionary)[&"kitsunebi"] = 0.0
+	_tick(game, 1, me)
+	var fox := float((rec["timers"] as Dictionary)[&"kitsunebi"])
+	_check.call(absf(fox - EliteAffixes.FOX_EVERY * EliteAffixes.FURY_CD) < 0.02,
+			"fúria: recarga do poder × %s", EliteAffixes.FURY_CD)
+	var state := EliteAffixes.power_state(rec)
+	var j := _elite(game, [&"raijin"], Vector2(-150, 0))
+	var other := affixes.record(j)
+	affixes.load_power_state(j, other, state)
+	_check.call(bool(state["fury"]) and affixes.furious(j), "fúria: guardada na partida suspensa")
+	await _free(game)
+
+
+## Ids de som pedidos ao AudioManager desde `before` (cópia de request_count).
+static func _new_sounds(before: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	for id: String in AudioManager.request_count:
+		if int(AudioManager.request_count[id]) > int(before.get(id, 0)):
+			out.append(id)
+	out.sort()
+	return out
+
+
+## O som `id` tem arquivo (grupo de variações ou nome em assets/audio/sfx/).
+static func _sound_exists(id: String) -> bool:
+	var files: Array = AudioManager.VARIANTS.get(id, [id])
+	for file: String in files:
+		var base := AudioManager.SFX_DIR + file
+		if not (ResourceLoader.exists(base + ".wav") or ResourceLoader.exists(base + ".ogg")
+				or ResourceLoader.exists(base + ".mp3")):
+			return false
+	return true
+
+
+## Cada afixo pede um lançamento próprio (nenhum com o aviso genérico alt_telegraph) e os impactos
+## (raio, sumiço, investida, golpe no chão, escudo, poça, fúria) também; todos com arquivo.
+func _test_sounds() -> void:
+	var game := await _new_game()
+	var fx := game.altars.visuals
+	var at := game.player.sim_pos + Vector2(40, 0)
+	var seen := {}
+	var missing: Array[String] = []
+	for id: StringName in EliteAffixes.IDS:
+		if id == &"kongo" or id == &"yomi":
+			continue
+		var before := AudioManager.request_count.duplicate()
+		fx.affix_cast(id, at)
+		var ids := _new_sounds(before)
+		_check.call(not ids.is_empty() and not ids.has("alt_telegraph"), "som: lançamento do %s %s", [id, ids])
+		_check.call(not seen.has(str(ids)), "som: lançamento do %s não repete outro afixo", id)
+		seen[str(ids)] = true
+		for sound: String in ids:
+			if not _sound_exists(sound):
+				missing.append(sound)
+	var impacts := {
+		"raijin": func() -> void: fx.raijin_strike(at),
+		"kagero": func() -> void: fx.kagero_blink(at, at + Vector2(30, 0)),
+		"kaze": func() -> void: fx.kaze_dash(at, Vector2.RIGHT),
+		"iwa": func() -> void: fx.iwa_slam(at),
+		"kongo": func() -> void: fx.shield_up(at),
+		"yomi": func() -> void: fx.yomi_pool(at),
+		"fury": func() -> void: fx.elite_fury(at, EliteAffixes.color_of(&"iwa"), 1.0),
+	}
+	for name: String in impacts:
+		var before := AudioManager.request_count.duplicate()
+		(impacts[name] as Callable).call()
+		var ids := _new_sounds(before)
+		_check.call(not ids.is_empty(), "som: impacto do %s %s", [name, ids])
+		for sound: String in ids:
+			if not _sound_exists(sound):
+				missing.append(sound)
+	_check.call(missing.is_empty(), "som: todos os sons dos Elites têm arquivo %s", [missing])
+	var bubbles := int(AudioManager.request_count.get("surf_bubble_1", 0))
+	fx.yomi_pool(at)
+	_check.call(int(AudioManager.request_count.get("surf_bubble_1", 0)) == bubbles, "som: borbulhar do Yomi limitado")
+	await _free(game)
+
+
+## A aura vira luz da lanterna (aparece fora da luz da guardiã), maior na fúria.
+func _test_aura_light() -> void:
+	var game := await _new_game()
+	var me := game.player.sim_pos
+	var i := _elite(game, [&"yomi"], Vector2(60, 0))
+	var lights := game.altars.collect_lights(me, Vector2(200, 120))
+	var aura: Array = []
+	for l: Array in lights:
+		if (l[0] as Vector2).distance_to(game.enemies.pos[i]) < 12.0:
+			aura = l
+	_check.call(not aura.is_empty() and (aura[1] as Color).is_equal_approx(EliteAffixes.color_of(&"yomi")),
+			"aura: luz na cor do afixo para a lanterna")
+	game.altars.affixes.record(i)["fury"] = true
+	var hot: Array = game.altars.affixes.aura_lights(Rect2(me - Vector2(200, 120), Vector2(400, 240)))
+	var bigger := not hot.is_empty() and not aura.is_empty() and float(hot[0][2]) > float(aura[2])
+	_check.call(bigger, "aura: maior na fúria")
+	var far: Array = game.altars.affixes.aura_lights(Rect2(me + Vector2(1000, 1000), Vector2(10, 10)))
+	_check.call(far.is_empty(), "aura: só os Elites da área")
 	await _free(game)

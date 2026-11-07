@@ -27,6 +27,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 ## Efeitos sonoros
 
 - **Kenney - Impact Sounds, Interface Sounds, Music Jingles, RPG Audio and Casino Audio** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/music-jingles
+- **Kenney - Sci-Fi Sounds** — Kenney Vleugels (Kenney.nl) (CC0-1.0) — https://kenney.nl/assets/sci-fi-sounds
 - **Hyakki - procedural sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_sfx.py
 - **Hyakki - procedural enemy and boss sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_enemy_sfx.py
 - **効果音ラボ (Sound Effect Lab) - Japanese sound effects** — 効果音ラボ (LicenseRef-SoundEffectLab) — https://soundeffect-lab.info/
