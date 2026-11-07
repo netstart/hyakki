@@ -42,8 +42,8 @@ campos `launcher_icons/*` do `export_presets.cfg` para `res://assets/art/ui/app_
 | 02 | Horda nas dunas de cinza | Jogue com um dedo | Play with one finger |
 | 03 | Escolha de bênção ao subir de nível | Monte sua build a cada nível | Craft your build every level |
 | 04 | Golpe da Lanterna (Clarão da Aurora) | Golpe da Lanterna | Lantern Strike |
-| 05 | Pausa com 6 armas evoluídas | Mais de 30 armas e evoluções | 30+ weapons and evolutions |
-| 06 | Chefe Rei Tengu Corvo no templo | 12 chefes lendários | 12 legendary bosses |
+| 05 | Pausa com 6 armas evoluídas | 41 armas e evoluções | 41 weapons and evolutions |
+| 06 | Chefe Rei Tengu Corvo no templo | 24 chefes lendários | 24 legendary bosses |
 | 07 | Escolha do guardião | 7 guardiões, 7 estilos | 7 guardians, 7 playstyles |
 | 08 | Jornada do Guardião (mapa das fases) | Uma jornada pelo Japão mítico | A journey through mythic Japan |
 | 09 | Baú laqueado com evolução | Baús laqueados e evoluções | Lacquered chests and evolutions |
@@ -52,7 +52,8 @@ campos `launcher_icons/*` do `export_presets.cfg` para `res://assets/art/ui/app_
 | 12 | Resultados: vitória ao amanhecer | Chegue ao amanhecer | Make it to dawn |
 
 Tablets (7" e 10"): 01, 02, 03 e o guardião (07). Números das legendas conferidos nos dados:
-15 armas + 15 evoluções + 2 uniões (`data/weapons.json`), 12 chefes, 7 guardiões, 18 ofertas.
+18 armas + 18 evoluções + 5 uniões (`data/weapons.json`), 24 chefes (18 + 6 Sombras do Guardião,
+`data/bosses.json`), 7 guardiões, 18 ofertas.
 
 ## Como regenerar
 

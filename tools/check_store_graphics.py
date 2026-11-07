@@ -15,6 +15,8 @@ RULES = [
     ("icon_512.png", 512, 512, {6}, 1 * MB, 1),
     ("launcher/icon_192.png", 192, 192, {6}, 1 * MB, 1),
     ("launcher/adaptive_*_432.png", 432, 432, {6}, 1 * MB, 3),
+    # Ícones dos produtos das compras no app (Play Console: 512×512, até 1 MB).
+    ("products/*_512.png", 512, 512, {6}, 1 * MB, 2),
     ("feature_graphic_*.png", 1024, 500, {2}, 15 * MB, 3),
     # Referência na tela real do jogo (678×305 ×2): não vai para a Play (2,22:1 > 2:1).
     ("screenshots/raw/*/*.png", 1356, 610, {2}, 8 * MB, 16),
