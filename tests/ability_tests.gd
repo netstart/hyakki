@@ -26,6 +26,7 @@ const SPEC := {
 	"rin": ["focus", "hamaya", "hunting_trap", "swallow_leap"],
 	"tora": ["forge_heat", "anvil_hammer", "chain_pull", "quench"],
 	"yuki": ["oni_blood", "oni_claw", "oni_roar", "onikiri_whirl"],
+	"kuon": ["tamashii", "tamashii_gari", "kotsu_heki", "yomigaeri"],
 }
 
 var _check: Callable
@@ -37,7 +38,7 @@ var _events: Dictionary = {}
 func run_unit(check: Callable) -> void:
 	_check = check
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA))
-	check.call(parsed is Array and (parsed as Array).size() == SPEC.size(), "abilities.json: 7 heróis")
+	check.call(parsed is Array and (parsed as Array).size() == SPEC.size(), "abilities.json: %d heróis" % SPEC.size())
 	if not parsed is Array:
 		return
 	var rules: Dictionary = {}
@@ -50,6 +51,7 @@ func run_unit(check: Callable) -> void:
 	_unit_rin(HeroEnergy.new(rules["rin"]))
 	_unit_tora(HeroEnergy.new(rules["tora"]))
 	_unit_yuki(HeroEnergy.new(rules["yuki"]))
+	_unit_kuon(HeroEnergy.new(rules["kuon"]))
 	var e := HeroEnergy.new(rules["aki"])
 	e.value = 33.0
 	e.since_gain = 2.5
@@ -168,6 +170,24 @@ func _unit_yuki(e: HeroEnergy) -> void:
 	_near(e.pay(25.0, 100.0, 100.0), 0.0, "Yuki: com energia não usa vida")
 
 
+func _unit_kuon(e: HeroEnergy) -> void:
+	_near(e.value, 30.0, "Kuon: Almas começa em 30 (a 1ª habilidade sai logo)")
+	e.step(1.0, true, false)
+	_near(e.value, 32.0, "Kuon: +2/s no escuro")
+	e.step(1.0, true, true)
+	_near(e.value, 32.0, "Kuon: nada na luz")
+	e.on_kill()
+	_near(e.value, 33.0, "Kuon: +1 por abate")
+	e.on_hit(5)
+	_near(e.value, 34.0, "Kuon: +0,2 por acerto (contra chefe, sem abates, as almas ainda vêm)")
+	e.since_gain = 6.0
+	e.step(1.0, true, true)
+	_near(e.value, 32.5, "Kuon: sem abates nem acertos por 6 s, as almas escapam 1,5/s")
+	e.step(1.0, true, false)
+	_near(e.value, 33.0, "Kuon: no escuro o ganho segue por cima da perda")
+	_check.call(not e.pays_with_hp(), "Kuon: não paga com vida")
+
+
 # --- Integração ---------------------------------------------------------------------------
 
 func run(host: Node, check: Callable) -> void:
@@ -194,6 +214,7 @@ func run(host: Node, check: Callable) -> void:
 	await (load("res://tests/ability_hana_tests.gd") as GDScript).new().run(host, check)
 	await (load("res://tests/ability_rin_tests.gd") as GDScript).new().run(host, check)
 	await (load("res://tests/ability_yuki_tests.gd") as GDScript).new().run(host, check)
+	await (load("res://tests/ability_kuon_tests.gd") as GDScript).new().run(host, check)
 	await (load("res://tests/ability_status_tests.gd") as GDScript).new().run(host, check)
 	await _check_other_heroes(host)
 	await _check_bot_determinism(host)
@@ -205,7 +226,7 @@ func run(host: Node, check: Callable) -> void:
 
 func _check_data() -> void:
 	InputSetup.ensure_actions()
-	_check.call(DB.abilities.size() == SPEC.size(), "DB: 7 heróis com habilidades")
+	_check.call(DB.abilities.size() == SPEC.size(), "DB: %d heróis com habilidades" % SPEC.size())
 	var icons := "res://assets/art/ui/ability_icons/"
 	for hero: String in SPEC:
 		var ids: Array = SPEC[hero]

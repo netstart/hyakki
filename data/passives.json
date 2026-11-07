@@ -13,5 +13,7 @@
   {"id": "noh_mask", "icon": "res://assets/art/ui/skill_icons/passives/noh_mask.png", "max": 5, "per_level": {"curse": 0.10, "growth": 0.10}, "unlock": "ach_win_moon1"},
   {"id": "hiuchi_ishi", "icon": "res://assets/art/ui/skill_icons/passives/hiuchi_ishi.png", "max": 5, "per_level": {"burn": 0.15}, "unlock": ""},
   {"id": "yuki_kushi", "icon": "res://assets/art/ui/skill_icons/passives/yuki_kushi.png", "max": 5, "per_level": {"chill": 0.10}, "unlock": ""},
-  {"id": "yata_kagami", "icon": "res://assets/art/ui/skill_icons/passives/yata_kagami.png", "max": 5, "per_level": {"duration": 0.05, "might": 0.05}, "unlock": ""}
+  {"id": "yata_kagami", "icon": "res://assets/art/ui/skill_icons/passives/yata_kagami.png", "max": 5, "per_level": {"duration": 0.05, "might": 0.05}, "unlock": ""},
+  {"id": "itako_suzu", "hero": "kuon", "icon": "res://assets/art/ui/skill_icons/passives/itako_suzu.png", "max": 5, "per_level": {"minions": 1, "duration": 0.08}, "unlock": ""},
+  {"id": "senko", "hero": "kuon", "icon": "res://assets/art/ui/skill_icons/passives/senko.png", "max": 5, "per_level": {"minion_power": 0.15, "area": 0.05}, "unlock": ""}
 ]

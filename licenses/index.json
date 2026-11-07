@@ -33,11 +33,11 @@
     "version": "NinjaAdventure-AssetPack.zip (SHA-256 95a06f4fdcfd1882f061a45ff313b7c905dbe2de1e8512b281d7937df62a7b15)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; the unused boss GiantRacoonGold reused as the secret mid-boss; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader; TilesetField centre tile palette-mapped at runtime to the brown dirt of TilesetFloor; the TilesetNature bamboo cut into crown, node, internode and foot and spliced at runtime into taller culms with drawn leaf sprigs in the pack palette (gen_bamboo_*); the side torii and the TilesetWater margin profile (bank, foam, shallow band) drawn in the pack palette",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; the unused boss GiantRacoonGold reused as the secret mid-boss; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader; TilesetField centre tile palette-mapped at runtime to the brown dirt of TilesetFloor; the TilesetNature bamboo cut into crown, node, internode and foot and spliced at runtime into taller culms with drawn leaf sprigs in the pack palette (gen_bamboo_*); the side torii and the TilesetWater margin profile (bank, foam, shallow band) drawn in the pack palette; the hero Kuon (heroes/kuon) made by tools/make_kuon_art.py from Character/SorcererBlack, every frame and the portrait recolored (silver hair, bone menpo, indigo robe, violet scarf and soul fire) with bangs, a long lock, the engraved menpo and a hitodama drawn on the portrait",
     "source_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/ninja_adventure_LICENSE.txt",
-    "files_count": 705
+    "files_count": 722
   },
   {
     "id": "fusion_pixel_font",
@@ -293,13 +293,13 @@
     "author": "甘茶 (Amacha)",
     "license_id": "LicenseRef-Amacha",
     "category": "audio",
-    "version": "13 tracks of the 和風・アジア category + 5 tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦; 幕末舞曲〜戦〜 as the mid-boss theme), downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
+    "version": "13 tracks of the 和風・アジア category + 5 tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦; 幕末舞曲〜戦〜 as the mid-boss theme) + 竜の舞 (ryunomai.mp3) as the Gashadokuro theme, downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
     "modifications": "files renamed; played in loop",
     "source_url": "https://amachamusic.chagasi.com/genre_asia.html",
     "license_file": "res://licenses/texts/LicenseRef-Amacha.txt",
-    "files_count": 18
+    "files_count": 19
   },
   {
     "id": "opengameart_lightning_1",
@@ -381,14 +381,14 @@
     "author": "cicifyre (Cici Fyre)",
     "license_id": "CC0-1.0",
     "category": "audio",
-    "version": "RPG Voice Starter Pack.zip (OpenGameArt, 2019-04-26); 15 of 90 files used",
+    "version": "RPG Voice Starter Pack.zip (OpenGameArt, 2019-04-26); 20 of 90 files used",
     "downloaded_at": "2026-11-01",
     "verified_at": "2026-11-01",
-    "modifications": "wordless attack/jump/damage shouts trimmed, pitch-shifted, equalized, mixed with a synthesized oni growl (Yuki) or shrine reverb (Hana), loudness-matched and encoded to Ogg Vorbis by tools/gen_ability_voices.py (voices of Aki, Hana, Rin and Yuki)",
+    "modifications": "wordless attack/jump/damage shouts trimmed, pitch-shifted, equalized, mixed with a synthesized oni growl (Yuki) or shrine reverb (Hana), loudness-matched and encoded to Ogg Vorbis by tools/gen_ability_voices.py (voices of Aki, Hana, Rin, Yuki and Kuon)",
     "source_url": "https://opengameart.org/content/female-rpg-voice-starter-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/cicifyre_rpg_voice_LICENSE.txt",
-    "files_count": 16
+    "files_count": 20
   },
   {
     "id": "haeldb_yelling",
@@ -428,12 +428,12 @@
     "category": "art",
     "version": "tools/gen_ability_icons.py (2026-11-01)",
     "downloaded_at": "2026-11-01",
-    "verified_at": "2026-11-01",
-    "modifications": "original pixel art drawn by tools/gen_ability_icons.py (21 ability icons 24x24 and 7 energy glyphs 12x12)",
+    "verified_at": "2026-11-07",
+    "modifications": "original pixel art drawn by tools/gen_ability_icons.py (24 ability icons 24x24 and 8 energy glyphs 12x12)",
     "source_url": "tools/gen_ability_icons.py",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/hyakki_ability_icons_NOTICE.txt",
-    "files_count": 28
+    "files_count": 32
   },
   {
     "id": "hyakki_altar_art",
@@ -466,6 +466,36 @@
     "files_count": 16
   },
   {
+    "id": "hyakki_necro_sfx",
+    "name": "Hyakki - procedural Kuon and Osorezan sound effects",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "license_id": "CC0-1.0",
+    "category": "audio",
+    "version": "tools/gen_necro_sfx.py (2026-11-07)",
+    "downloaded_at": "2026-11-07",
+    "verified_at": "2026-11-07",
+    "modifications": "original work, synthesized procedurally by tools/gen_necro_sfx.py (nc_*.wav)",
+    "source_url": "tools/gen_necro_sfx.py",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/hyakki_necro_sfx_NOTICE.txt",
+    "files_count": 31
+  },
+  {
+    "id": "hyakki_osorezan_art",
+    "name": "Hyakki - Osorezan terrain art",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "license_id": "CC0-1.0",
+    "category": "art",
+    "version": "tools/gen_osorezan_art.py (2026-11-07)",
+    "downloaded_at": "2026-11-07",
+    "verified_at": "2026-11-07",
+    "modifications": "original pixel art drawn procedurally by tools/gen_osorezan_art.py (pinwheels, cairns, sotoba, Jizo, stone lantern, dead trees, volcanic rocks, Sanzu torii, sulfur and pebble decals and the ash, sulfur, pebble and water ground tiles) with colors from the Ninja Adventure palette (CC0)",
+    "source_url": "tools/gen_osorezan_art.py",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/hyakki_osorezan_art_NOTICE.txt",
+    "files_count": 1
+  },
+  {
     "id": "willyee_sengoku",
     "name": "Sengoku Pixel Pack",
     "author": "willYEE",
@@ -474,10 +504,10 @@
     "version": "Sengoku_Pixel_Pack.zip (downloaded 2026-11-07, SHA-256 136d5aa9fd6eea4b754aac0d97314664a40fc9355b236b44a74924c5dc958093)",
     "downloaded_at": "2026-11-07",
     "verified_at": "2026-11-07",
-    "modifications": "yokai and boss 'move' strips from characters/ reduced to the game's sizes (box filter, binary alpha, colors snapped to each character's palette), rotated so the resting frame comes first, and a 38x38 portrait cut from the resting frame, by tools/import_sengoku.py",
+    "modifications": "yokai and boss 'move' strips from characters/ reduced to the game's sizes (box filter, binary alpha, colors snapped to each character's palette), rotated so the resting frame comes first, and a 38x38 portrait cut from the resting frame, by tools/import_sengoku.py; for Osorezan, deterministic per-color recolors: the silver samurai hero mirrored to face left in spectral blue (Masakado), the gaki with aged grey skin and red eyes (Datsue-ba) and the gashadokuro scaled 1.5x (nearest) with ivory bones, indigo armour and violet soul-fire tongues drawn on its top outline (Gashadokuro)",
     "source_url": "https://willyee.itch.io/sengoku-pixel-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/willyee_sengoku_NOTICE.txt",
-    "files_count": 45
+    "files_count": 51
   }
 ]

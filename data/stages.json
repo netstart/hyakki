@@ -170,5 +170,35 @@
      {"t": 700, "type": "ring", "enemy": "yomi_eye", "count": 30},
      {"t": 810, "type": "procession", "enemy": "yurei", "count": 80},
      {"t": 870, "type": "drums"}
+   ]},
+
+  {"id": "osorezan", "difficulty": 1.75, "order": 7, "music": "stage_osorezan", "tint": "#cdc8d6", "light_mult": 0.85, "bounds": [1500, 1500],
+   "lanterns_per_chunk": 2, "hazard": {"type": "fog"},
+   "bosses": [{"t": 300, "id": "masakado"}, {"t": 600, "id": "gashadokuro"}],
+   "kami": [300, 600],
+   "midboss": {"t": 450, "id": "datsueba"},
+   "otherworld": {"biome": "osorezan_ura", "kanji": "賽の河原", "tint": "#d4ccff", "light_mult": 0.8, "music": "sanzu", "weather": "secret", "bounds": [1200, 1200], "hazard": {}},
+   "midboss2": {"t": 540, "id": "datsueba_kage", "after": 45},
+   "tokoyo": {"biome": "osorezan_toko", "kanji": "常世浜", "tint": "#f4f0ff", "light_mult": 1.18, "music": "tokoyo", "weather": "temple", "bounds": [1200, 1200], "hazard": {}},
+   "waves": [
+     {"from": 0, "to": 60, "mix": {"gaki": 1}},
+     {"from": 60, "to": 180, "mix": {"gaki": 3, "skull_blue": 1, "shade_ghost": 1}},
+     {"from": 180, "to": 300, "mix": {"gaki": 3, "funayurei": 1, "yurei": 2, "skull_blue": 1}},
+     {"from": 300, "to": 450, "mix": {"gasha_crawler": 1, "funayurei": 2, "yurei": 2, "gaki": 3, "skeleton_demon": 1}},
+     {"from": 450, "to": 600, "mix": {"gasha_crawler": 2, "funayurei": 2, "yurei": 3, "skeleton_demon": 2, "yomi_eye": 1}},
+     {"from": 600, "to": 780, "mix": {"gasha_crawler": 2, "funayurei": 3, "gaki": 3, "yurei": 3, "yomi_beast_dark": 1}},
+     {"from": 780, "to": 2000, "mix": {"gasha_crawler": 3, "funayurei": 3, "gaki": 4, "yurei": 4, "yomi_beast_dark": 2, "skeleton_demon": 2}}
+   ],
+   "events": [
+     {"t": 75, "type": "swarm", "enemy": "skull_blue", "count": 20},
+     {"t": 150, "type": "elite", "enemy": "gaki"},
+     {"t": 240, "type": "ring", "enemy": "gaki", "count": 40},
+     {"t": 420, "type": "elite", "enemy": "funayurei"},
+     {"t": 520, "type": "ring", "enemy": "yurei", "count": 40},
+     {"t": 545, "type": "elite", "enemy": "gasha_crawler"},
+     {"t": 700, "type": "ring", "enemy": "gaki", "count": 56},
+     {"t": 760, "type": "elite", "enemy": "yomi_beast_dark"},
+     {"t": 810, "type": "procession", "enemy": "gaki", "count": 80},
+     {"t": 870, "type": "drums"}
    ]}
 ]

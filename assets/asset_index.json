@@ -228,6 +228,78 @@
   "sha256": "d6cc9b3211972f1191501993147570cfa34f24ebf36425040b33f44785c12df3"
  },
  {
+  "file": "assets/art/actors/enemies/funayurei/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "1800f2b6242ba95d7ec593bb3545e6decf0430d795b7dd2d1a426cf42a00f936"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Attack.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Attack.png",
+  "license_id": "ninja_adventure",
+  "sha256": "9bf55d273c012227ec759518684d1b64196f3082901644fe69f39d259605ea3b"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Dead.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Dead.png",
+  "license_id": "ninja_adventure",
+  "sha256": "6916e20bff794b9f9371c68d5640c26eba13155b755c55cdd32a1037cead9f85"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Idle.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Idle.png",
+  "license_id": "ninja_adventure",
+  "sha256": "d2942e9c476608cdc0c51e57f39f76510c06be1c7e74a776e7a0ba61a132379d"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Item.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Item.png",
+  "license_id": "ninja_adventure",
+  "sha256": "38ca037185481f3461f4547787ef7cb67c764d062daba9f4cdc34ce6427bcea5"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Jump.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Jump.png",
+  "license_id": "ninja_adventure",
+  "sha256": "6a7762c27161b95cd9d2409a9c5e7b1abf9d7f97f03ac9e0498160814335c0e2"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Special1.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Special1.png",
+  "license_id": "ninja_adventure",
+  "sha256": "a5c80fcd84cc111ccbf99d0d895d00adcd1099823478dce48310b4227bcc2ad9"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Special2.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Special2.png",
+  "license_id": "ninja_adventure",
+  "sha256": "bd393aa7aeaade81bf278c5f31cbcdbd37d5307aa01a523eb76d8be85e0d9ad5"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SeparateAnim/Walk.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SeparateAnim/Walk.png",
+  "license_id": "ninja_adventure",
+  "sha256": "939891669c34d7d026fd6d703e3ea0b7c909a3ea068ba5ca952d935aa12b93b0"
+ },
+ {
+  "file": "assets/art/actors/enemies/funayurei/SpriteSheet.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Spirit/SpriteSheet.png",
+  "license_id": "ninja_adventure",
+  "sha256": "761c5f6b98ea5b53dfa48521f104df0c4c6a50e17b140967b0101f577e2775fb"
+ },
+ {
+  "file": "assets/art/actors/enemies/gaki/Faceset.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Axolot/Faceset.png",
+  "license_id": "ninja_adventure",
+  "sha256": "4903e4af95c9ac74618fc7b481c091d8e8386cf6625b586068b58aa93eb83384"
+ },
+ {
+  "file": "assets/art/actors/enemies/gaki/SpriteSheet.png",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Axolot/SpriteSheet.png",
+  "license_id": "ninja_adventure",
+  "sha256": "8286f472bf46e2b9e3fea4bf15a368dc30b15ef0d780b095e5df023a2b6bd26c"
+ },
+ {
   "file": "assets/art/actors/enemies/ghost_monk/Faceset.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Monk/Faceset.png",
   "license_id": "ninja_adventure",
@@ -1152,6 +1224,18 @@
   "sha256": "add7add88a9f391e776ede8d0ef9246850bedf22b3510f4c8366886df8101a25"
  },
  {
+  "file": "assets/art/actors/heroes/kuon/Faceset.png",
+  "source": "tools/make_kuon_art.py",
+  "license_id": "ninja_adventure",
+  "sha256": "3589a298e24690dee1b3eea06b4bdbe161de1336d0a96034fac09f406c206ae0"
+ },
+ {
+  "file": "assets/art/actors/heroes/kuon/SpriteSheet.png",
+  "source": "tools/make_kuon_art.py",
+  "license_id": "ninja_adventure",
+  "sha256": "292b02a0cf62b2884696751a2405c9d4188af8ad2c85a94e94142dd2c7594612"
+ },
+ {
   "file": "assets/art/actors/heroes/rin/Faceset.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Character/Hunter/Faceset.png",
   "license_id": "ninja_adventure",
@@ -1422,6 +1506,18 @@
   "sha256": "04887e8a7931757af7be8bfafc01a7deda429e5a63656473adb659e8de6c0ae5"
  },
  {
+  "file": "assets/art/bosses/gashadokuro/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "fb9667cca236612e0d59e297a7263aca33a633040fe8cd7c2f1ec17726659fe1"
+ },
+ {
+  "file": "assets/art/bosses/gashadokuro/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "d20044bd9924044c4e266623fa43a5c7e64a1621021a7cf78b77452d2bb330d2"
+ },
+ {
   "file": "assets/art/bosses/izanami/Faceset.png",
   "source": "tools/import_sengoku.py",
   "license_id": "willyee_sengoku",
@@ -1468,6 +1564,18 @@
   "source": "tools/import_sengoku.py",
   "license_id": "willyee_sengoku",
   "sha256": "7e4cea4c5ed07ff5af0769e91edba1e6b52e43da1bda9a28f96f4770860e807b"
+ },
+ {
+  "file": "assets/art/bosses/masakado/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "63328f29f092045e3d7f193bdab9b1ddf6205fae3084436e193847ef66700445"
+ },
+ {
+  "file": "assets/art/bosses/masakado/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "d8f30e06453e999ba8678827855abf6d362bf36346b31c53c7c7f427f51d1d75"
  },
  {
   "file": "assets/art/bosses/red_oni/Faceset.png",
@@ -2604,6 +2712,18 @@
   "sha256": "221ebb7e6323d68c4c517e172567c36fcbdd2cbcff64a0f85603147e0aca7fe6"
  },
  {
+  "file": "assets/art/midbosses/osorezan/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "5d4a2f458c8171c24c4f7b897bd45e3ad19493b33822e70ad5ad789146ba1253"
+ },
+ {
+  "file": "assets/art/midbosses/osorezan/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "88a6bd06abf5caacc6c20fbbc9f9c8be186d9db2b42643ecc2abfa6c68fd5a51"
+ },
+ {
   "file": "assets/art/midbosses/secret/Attack.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoonGold/Attack.png",
   "license_id": "ninja_adventure",
@@ -2730,6 +2850,12 @@
   "sha256": "51eedd957ad4ac88988d170aa83a42404ef8fdebff9e6753b6fe80841ab3d5bb"
  },
  {
+  "file": "assets/art/tilesets/osorezan.png",
+  "source": "tools/gen_osorezan_art.py",
+  "license_id": "hyakki_osorezan_art",
+  "sha256": "7bc692fad383f066198ac2840e188c3b9ad44de46c1e3a7a68bdff47a131d057"
+ },
+ {
   "file": "assets/art/tilesets/relief.png",
   "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Backgrounds/Tilesets/TilesetRelief.png",
   "license_id": "ninja_adventure",
@@ -2832,6 +2958,12 @@
   "sha256": "94324dd477f9191b3659bdceaa9e42f5bd22ff5cf01169212d03cb94cc25cbe4"
  },
  {
+  "file": "assets/art/ui/ability_icons/energy_tamashii.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "eb38542c846843560ac420f22326eb059144e4e913ca4044a2022bf8ea079f86"
+ },
+ {
   "file": "assets/art/ui/ability_icons/grandmother_seal.png",
   "source": "tools/gen_ability_icons.py",
   "license_id": "hyakki_ability_icons",
@@ -2866,6 +2998,12 @@
   "source": "tools/gen_ability_icons.py",
   "license_id": "hyakki_ability_icons",
   "sha256": "1a9fb988dc579e829a0df3396e9d06521e2ef8bf0cd9b809118a73b28c620bbd"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/kotsu_heki.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "deaeed2dc895e45200e8efa4e9ba99d1a72f6ab1f3a7098d1b79bd7a62ca976f"
  },
  {
   "file": "assets/art/ui/ability_icons/lantern_wall.png",
@@ -2926,6 +3064,18 @@
   "source": "tools/gen_ability_icons.py",
   "license_id": "hyakki_ability_icons",
   "sha256": "06e47e05885f062fe56c37610f84ec540d9afd58a662576be07b3c534d087435"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/tamashii_gari.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "89fb538f7452c44c6df6dd6f04a7ff1d06447cafc269286e4f90238d79cfba0a"
+ },
+ {
+  "file": "assets/art/ui/ability_icons/yomigaeri.png",
+  "source": "tools/gen_ability_icons.py",
+  "license_id": "hyakki_ability_icons",
+  "sha256": "a9764a283ac1c61fd1600cfc9df85ad3b937f29a01916c225052c38d9116ca52"
  },
  {
   "file": "assets/art/ui/arrow.png",
@@ -4470,6 +4620,12 @@
   "sha256": "9500bbd6ff3b1de32a934c879cd80af47a261c6b8da3f59587bff4e850fef4ef"
  },
  {
+  "file": "assets/audio/music/boss_gashadokuro.mp3",
+  "source": "C:/src/assets/amacha/mp3/ryunomai.mp3",
+  "license_id": "amacha_music",
+  "sha256": "9aa467b6e45b75b5bd60198cd13dde63e32bab3d1f0b703c3bffbc5b6097827f"
+ },
+ {
   "file": "assets/audio/music/codex.mp3",
   "source": "C:/src/assets/amacha/mp3/yukyunotokie.mp3",
   "license_id": "amacha_music",
@@ -4506,6 +4662,12 @@
   "sha256": "eb741e9ec62636770f5b97a9d56df8cd0718be040ebf60f0233b440ee4656c96"
  },
  {
+  "file": "assets/audio/music/lament.ogg",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/29 - Lament.ogg",
+  "license_id": "ninja_adventure",
+  "sha256": "54198353dbadfa16ee6853afd0b8775a405c80cc9452032c9131af00f96c0a49"
+ },
+ {
   "file": "assets/audio/music/midboss.mp3",
   "source": "C:/src/assets/amacha/mp3/bakumatsubukyoku_ikusa.mp3",
   "license_id": "amacha_music",
@@ -4518,6 +4680,12 @@
   "sha256": "d735a9c7dafd4d22332d69bd1f6bb1d83512e47399077696cd944688c91fa215"
  },
  {
+  "file": "assets/audio/music/sanzu.ogg",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/39 - Boat.ogg",
+  "license_id": "ninja_adventure",
+  "sha256": "6e4d3c55fce77bf83902ef9138c789cbbc7609b65fb509749b155c1305d6d5dd"
+ },
+ {
   "file": "assets/audio/music/stage_bamboo.mp3",
   "source": "C:/src/assets/amacha/mp3/yowanotsuki_yomichi.mp3",
   "license_id": "amacha_music",
@@ -4528,6 +4696,12 @@
   "source": "C:/src/assets/amacha/mp3/yowanotsuki_karakasa.mp3",
   "license_id": "amacha_music",
   "sha256": "f95e555d40739ba08ccf104d4b602106ffdaa4b622d6c95cdcb0520a665738b1"
+ },
+ {
+  "file": "assets/audio/music/stage_osorezan.ogg",
+  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Audio/Musics/40 - Crypt.ogg",
+  "license_id": "ninja_adventure",
+  "sha256": "0abbe14e7210bb08ac88d8f72d7d15efe7c28e341728bf33c80c5d459f69d817"
  },
  {
   "file": "assets/audio/music/stage_secret.mp3",
@@ -6360,6 +6534,192 @@
   "sha256": "e6d4d18949e513255ed2363fb19133df40dfd38a088bef20f634157012fc2585"
  },
  {
+  "file": "assets/audio/sfx/nc_bone_crack_0.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "deedda89f4c26064f4f8aa35d93c1ec25c9b5f8e7ff2ecf316d4864e1c497856"
+ },
+ {
+  "file": "assets/audio/sfx/nc_bone_crack_1.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "9acc37b079c8f99a2f04c84ef2c0c5c7e39d2d6b3365539e4c1618695f2d6d92"
+ },
+ {
+  "file": "assets/audio/sfx/nc_bone_orbit.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "e2bea9d07ff58f0750fa354724b6f505d3531a409c53795c6e6bb879266da12c"
+ },
+ {
+  "file": "assets/audio/sfx/nc_bone_wall.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "4ae15a8fbfdcfecb93df2fc14a46a348ff8f063b007f1a687655aaa9ada2447f"
+ },
+ {
+  "file": "assets/audio/sfx/nc_datsueba_cackle.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "0483d8df3963f91bc67d936ea23dba442b630a95a12ad80c8cdb2bbfac554e9e"
+ },
+ {
+  "file": "assets/audio/sfx/nc_ferry_bell.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "6ed8dbe4506779982c4bf341dfb74b2a583058ef846ca940cf3e38dabd74f1f4"
+ },
+ {
+  "file": "assets/audio/sfx/nc_fuda_hit_0.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "3ec1834885c2c0688f4533ef0d2c4406f41c0556fcb004a7ce02265ce754439c"
+ },
+ {
+  "file": "assets/audio/sfx/nc_fuda_hit_1.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "e98c46cf8e723345d31285731e68022a1530f2def54ce2ecfd64cc77dff67bd0"
+ },
+ {
+  "file": "assets/audio/sfx/nc_fuda_hit_2.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "5fa33c1bc13f609ba11c964617947f81cb10edf65b7da7a686b8295ed0bb2e85"
+ },
+ {
+  "file": "assets/audio/sfx/nc_fuda_throw_0.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "9044245ed820ea30aec77aefff9596383f6b5d99787a588c4f6d66581c33b100"
+ },
+ {
+  "file": "assets/audio/sfx/nc_fuda_throw_1.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "ca769ae8c1678f02cadd049e9f18ad56d179c303e3becafb1af2f557d96d2505"
+ },
+ {
+  "file": "assets/audio/sfx/nc_fuda_throw_2.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "71500e8805af8e8f58213157b70f81084986486e5eb6baa18e74193fd6a288a8"
+ },
+ {
+  "file": "assets/audio/sfx/nc_gasha_rise.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "66df35796a3e07faca05ac2158db29e79008506d7e4c1036eaf3dcbaaf7646eb"
+ },
+ {
+  "file": "assets/audio/sfx/nc_gasha_roar.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "6c18ecd377ebeaa3c4dbd510f6e115a72a32d55f65192d520726ccfdec8774ce"
+ },
+ {
+  "file": "assets/audio/sfx/nc_gasha_slam.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "96ed7b6b72eda95605a1b674e4f00777bfd5df494c06acce17ac0f81e65666e1"
+ },
+ {
+  "file": "assets/audio/sfx/nc_harvest.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "0c0223ce6ba938380c9d290a99457e7f62d8919eec37c365f924a7b64ed1e77e"
+ },
+ {
+  "file": "assets/audio/sfx/nc_kazaguruma.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "fe1ea155cfdb1b9d0b8b90ad5701e7fd445132699e67c4634718018f1fa26a6a"
+ },
+ {
+  "file": "assets/audio/sfx/nc_kuon_freed.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "1bf9bb71f115c282adce396743f64e17d53c111882afab56a5bb9726fe59cac8"
+ },
+ {
+  "file": "assets/audio/sfx/nc_legion_march.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "dd09a2b49f3646fadafcf877a1d85cba22d2ec3ad403bccae02f10ebb08dc841"
+ },
+ {
+  "file": "assets/audio/sfx/nc_masakado_cry.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "72580170ff12f4f8ed9bab724bba841357c287bc881ef7effaa1cba5eb681205"
+ },
+ {
+  "file": "assets/audio/sfx/nc_minion_fade.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "c8387efcbd6d449a9032410738b472287f292224e1a0b5d8760480af239694fc"
+ },
+ {
+  "file": "assets/audio/sfx/nc_minion_hit_0.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "db7bdc125708a7208cb7c9f3a96684a957e5ca55e9d990602d703303270f09a9"
+ },
+ {
+  "file": "assets/audio/sfx/nc_minion_hit_1.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "9f93fb76de7a3459f5bdda07dba77e1dd1cab7b46729583162b1f065b8cceba3"
+ },
+ {
+  "file": "assets/audio/sfx/nc_minion_hit_2.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "1b6c5d1d1bc275a869e4acdd55f79b58709a1224f61cd220c2dc47ade832d08d"
+ },
+ {
+  "file": "assets/audio/sfx/nc_raise.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "0a2a6f722860cdaa915ff2edeff2706bc27b31fd29bc0d4dc0d9920e01c5979a"
+ },
+ {
+  "file": "assets/audio/sfx/nc_rite.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "f9fd1ebcfd6f99dec319783abc1e2a14414995ea320e66c5fe40d2bc5f58f53d"
+ },
+ {
+  "file": "assets/audio/sfx/nc_sanzu_wave.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "4443503d8b1a7ac7255743389325659a60edbd7881c589a6c3cabc044f7c6d17"
+ },
+ {
+  "file": "assets/audio/sfx/nc_soul_pickup_0.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "0b012aa528946d3dac999a9de41e86a4248df295a471b98402dd157138aea9c6"
+ },
+ {
+  "file": "assets/audio/sfx/nc_soul_pickup_1.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "441072d34b47e58b0e522472a954fdf7eb83f72416ea6d18351db1f724813086"
+ },
+ {
+  "file": "assets/audio/sfx/nc_soul_pickup_2.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "f324543a6678beaa47a5fafd519764747c94838e15b216249a321e9c555a63a8"
+ },
+ {
+  "file": "assets/audio/sfx/nc_yomigaeri.wav",
+  "source": "tools/gen_necro_sfx.py",
+  "license_id": "hyakki_necro_sfx",
+  "sha256": "96b9ecc3e57aa0eaa57c5edc041652d569ff2489634646ce445bd0d20be6f090"
+ },
+ {
   "file": "assets/audio/sfx/p_midboss_intro_0.wav",
   "source": "tools/gen_portal_sfx.py",
   "license_id": "hyakki_portal_sfx",
@@ -6646,6 +7006,30 @@
   "source": "tools/gen_ability_voices.py",
   "license_id": "haeldb_yelling",
   "sha256": "8e8ea4ed3e7cfb4a6420b8ded5c836af948c325b96f2be4cdf1876ab8ae80448"
+ },
+ {
+  "file": "assets/audio/voice/kuon_1.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "3e59c9322d975253b6b34ac808c2630a9fc3ba41ce781f0c9347b2352d26081d"
+ },
+ {
+  "file": "assets/audio/voice/kuon_1_b.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "e9385ee652d7a845d00c94da81df5e3b9ed6a212946da4bc961c1029912c1b42"
+ },
+ {
+  "file": "assets/audio/voice/kuon_2.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "88ed067f30eeb85a1d7ffa4259c2aa76a4f56b826de3c32b0db509b266d98552"
+ },
+ {
+  "file": "assets/audio/voice/kuon_3.ogg",
+  "source": "tools/gen_ability_voices.py",
+  "license_id": "cicifyre_rpg_voice",
+  "sha256": "e49fecc3ad0efd43d4fcb9277f6c500b38aa4b427d1a11a65424c8225556627c"
  },
  {
   "file": "assets/audio/voice/rin_1.ogg",

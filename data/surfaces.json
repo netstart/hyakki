@@ -30,6 +30,10 @@
     "secret": [
       {"type": "tar", "per_chunk": 0.5, "size": [14, 22]},
       {"type": "swamp", "per_chunk": 0.4, "size": [16, 26]}
+    ],
+    "osorezan": [
+      {"type": "swamp", "per_chunk": 0.6, "size": [16, 28]},
+      {"type": "clay", "per_chunk": 0.5, "size": [14, 24], "rain": true}
     ]
   }
 }

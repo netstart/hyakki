@@ -19,6 +19,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Hyakki - Kakuriyo portal art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_portal_fx.py
 - **Hyakki - guardian ability icons** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_ability_icons.py
 - **Hyakki - Seal Altar and Elite art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_altar_art.py
+- **Hyakki - Osorezan terrain art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_osorezan_art.py
 - **Sengoku Pixel Pack** — willYEE (CC0-1.0) — https://willyee.itch.io/sengoku-pixel-pack
 
 ## Música
@@ -38,6 +39,7 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **HaelDB - Male grunt/yelling sounds** — HaelDB (CC0-1.0) — https://opengameart.org/content/male-gruntyelling-sounds
 - **Hyakki - procedural guardian ability sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_ability_sfx.py
 - **Hyakki - procedural Seal Altar and Elite sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_altar_sfx.py
+- **Hyakki - procedural Kuon and Osorezan sound effects** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_necro_sfx.py
 
 ## Fontes
 

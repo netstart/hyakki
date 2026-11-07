@@ -48,6 +48,8 @@ var realm_reached: bool = false
 var tokoyo_reached: bool = false
 ## Abates fora da luz da lanterna (Missões do Santuário).
 var dark_kills: int = 0
+## Servos espectrais levantados na partida (Kuon, MinionSystem): conquista e Missões.
+var minions_raised: int = 0
 ## Altares do Selo (AltarSystem, Missões e Diário): selos quebrados, emboscadas, Elites com afixos
 ## vencidos, o maior número de afixos de um Elite vencido e os afixos já vencidos ({id: true}).
 var altars_awakened: int = 0
@@ -203,8 +205,8 @@ func snapshot() -> Dictionary:
 	var uses_out := {}
 	for id: StringName in ability_uses:
 		uses_out[String(id)] = int(ability_uses[id])
-	return {"dark_kills": dark_kills, "items": items_out, "boss_fights": _str_keys(boss_fights),
-			"boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
+	return {"dark_kills": dark_kills, "minions_raised": minions_raised, "items": items_out,
+			"boss_fights": _str_keys(boss_fights), "boss_results": _str_keys(boss_results), "max_dark_streak": max_dark_streak,
 			"max_no_damage": max_no_damage, "ultimates": ultimates, "chests": chests,
 			"abilities": abilities, "ability_uses": uses_out, "ryo_spent": ryo_spent,
 			"endless_ryo_start": endless_ryo_start,
@@ -218,6 +220,7 @@ func snapshot() -> Dictionary:
 
 func restore(s: Dictionary) -> void:
 	dark_kills = int(s.get("dark_kills", 0))
+	minions_raised = int(s.get("minions_raised", 0))
 	for id: String in (s.get("items", {}) as Dictionary):
 		items[StringName(id)] = int(s["items"][id])
 	for key: String in ["boss_fights", "boss_results"]:

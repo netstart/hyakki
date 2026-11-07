@@ -50,6 +50,11 @@
       "precip": "spirit", "extra": "petals", "puddles": true, "rain_scale": 0.7,
       "lightning": true, "lightning_color": "#c9a2ff", "storm_grade": "#b6a6e0", "rain_color": "#c8a8ff",
       "puddle_color": "#3a2458", "swirl": 0.5
+    },
+    "osorezan": {
+      "precip": "spirit", "extra": "dust", "puddles": true, "rain_scale": 0.4,
+      "wind_scale": 0.9, "fog": 0.32, "lightning": true, "lightning_color": "#b89aff",
+      "storm_grade": "#b8b4c8", "rain_color": "#d8d0f0", "puddle_color": "#5a5428", "swirl": 0.3
     }
   }
 }

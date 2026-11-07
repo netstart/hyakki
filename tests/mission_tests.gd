@@ -22,7 +22,7 @@ const LANGS: Array[String] = ["pt_BR", "en", "es", "de", "fr", "ru", "id", "ja",
 const KNOWN_REWARDS: Array[String] = ["ryo", "hero", "weapon", "passive", "stage", "cosmetic", "next_run"]
 ## Lanternas que existem no jogo (HyakkiGame.LANTERN_TINTS).
 const COSMETICS: Array[String] = ["golden_lantern", "crimson_lantern", "jade_lantern", "azure_lantern",
-		"violet_lantern"]
+		"violet_lantern", "ferry_lantern"]
 
 var _check: Callable
 var _host: Node
@@ -91,7 +91,8 @@ static func _ryo(id: StringName) -> int:
 func _test_data() -> void:
 	var ach := DB.ids("achievements")
 	var missions := DB.ids("missions")
-	_check.call(ach.size() == 41, "missões: as 41 conquistas de sempre continuam (%d)", ach.size())
+	# 41 de sempre + as 2 do Osorezan (ach_boss_gashadokuro e ach_win_osorezan).
+	_check.call(ach.size() == 44, "missões: as 44 conquistas continuam (%d)", ach.size())
 	_check.call(missions.size() >= 110, "missões: ao menos 110 missões novas (%d)", missions.size())
 	_check.call(MissionBook.ids().size() >= 150, "missões: ~150 no total (%d)", MissionBook.ids().size())
 	for id: StringName in [&"ach_first_steps", &"ach_win_village", &"ach_boss_red_oni", &"ach_win_moon5"]:

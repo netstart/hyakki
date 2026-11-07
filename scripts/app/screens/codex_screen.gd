@@ -409,9 +409,13 @@ func entries_for(id: StringName) -> Array[Dictionary]:
 				var data: Dictionary = DB.passives[p]
 				var known := _passive_known(p)
 				var effect := tr("codex.per_level") % LevelUpSystem.describe_stats(data["per_level"])
+				var note := Discovery.exclusive_note(data)
+				if not note.is_empty():
+					effect += "\n" + note
 				out.append({"title": tr("passive.%s.name" % p), "known": known, "icon": UiIcons.skill_path("passives", p),
 						"id": String(p), "recipe": _relic_recipe(p) if known else [],
-						"text": effect if known else tr("heroes.locked") % tr("achievement.%s.desc" % data["unlock"])})
+						"text": effect if known else tr("heroes.locked") % tr("achievement.%s.desc"
+								% Discovery.unlock_achievement(data))})
 		&"kami":
 			for k: StringName in DB.ids("kami"):
 				var data: Dictionary = DB.kami[k]
@@ -450,8 +454,13 @@ func _weapon_entries() -> Array[Dictionary]:
 	for w: StringName in DB.ids("weapons"):
 		var kind := String(DB.weapon(w).get("kind", "base"))
 		var known := _weapon_known(w)
+		# Exclusiva de uma guardiã (as da Kuon): a marca vai junto do tipo.
+		var kind_text := String(kinds.get(kind, ""))
+		var note := Discovery.exclusive_note(DB.weapon(w))
+		if not note.is_empty():
+			kind_text += " · " + note
 		out.append({"title": tr("weapon.%s.name" % w), "known": known, "icon": UiIcons.skill_path("weapons", w),
-				"id": String(w), "recipe": _weapon_recipe(w), "kind": String(kinds.get(kind, "")),
+				"id": String(w), "recipe": _weapon_recipe(w), "kind": kind_text,
 				"text": tr("weapon.%s.desc" % w) if known else tr("codex.weapon_locked")})
 	return out
 
@@ -564,6 +573,10 @@ func _story_entries() -> Array[Dictionary]:
 				"replay": "ending", "replay_text": tr("codex.replay_ending")},
 		{"title": tr("codex.story_secret"), "known": bool(story["secret_ending_seen"]), "icon": STORY_ICON,
 				"replay": "secret_ending", "replay_text": tr("codex.replay_secret")},
+		{"title": tr("codex.story_kuon"), "known": bool(story.get("kuon_freed_seen", false)), "icon": STORY_ICON,
+				"replay": "kuon_freed", "replay_text": tr("codex.replay_kuon")},
+		{"title": tr("codex.story_osorezan"), "known": bool(story.get("osorezan_ending_seen", false)),
+				"icon": STORY_ICON, "replay": "osorezan_ending", "replay_text": tr("codex.replay_osorezan")},
 	]
 	for e: Dictionary in out:
 		e["text"] = String(e["replay_text"]) if bool(e["known"]) else tr("codex.story_locked")

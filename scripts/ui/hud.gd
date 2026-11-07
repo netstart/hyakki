@@ -499,6 +499,7 @@ func skill_slot(card: Dictionary) -> Vector2:
 ## (cada um com som) e o cartão de cada item. Sem `fortune`, a sorte sai da contagem.
 func show_chest(rewards: Array[Dictionary], fortune: StringName = &"") -> void:
 	joystick.release()
+	_chest_panel.hero = game.abilities.hero_id if game != null else &""
 	_chest_panel.show_chest(rewards, fortune)
 
 

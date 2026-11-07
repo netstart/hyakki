@@ -91,9 +91,15 @@ func on_spawn(boss: Dictionary) -> void:
 	director.game.shake(2.5 * float(GfxQuality.budget("screen_shake")))
 
 
+## Rugido do chefe: o som próprio dele (data/bosses.json "roar_sfx", no tom do arquivo) ou um dos
+## rugidos genéricos no tom "roar_pitch".
 func roar(data: Dictionary, pitch_mult: float = 1.0) -> void:
 	var audio := get_node_or_null(^"/root/AudioManager")
 	if audio:
+		var own := String(data.get("roar_sfx", ""))
+		if not own.is_empty():
+			audio.call("play", own, pitch_mult, 0.04, -2.0)
+			return
 		audio.call("play", "e_roar_%d" % _look.randi_range(0, 2), float(data.get("roar_pitch", 1.0)) * pitch_mult,
 				0.05, -2.0)
 

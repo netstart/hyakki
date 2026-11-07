@@ -24,6 +24,13 @@ const BY_BEHAVIOR := {
 	"incense": "hit_area",
 	"ofuda": "hit_orbit",
 	"smoke_bomb": "hit_poison",
+	# Kuon: ofuda, ossos em órbita, o rio Sanzu, o braço da Gashadokuro, a balsa e o exército.
+	"shiryo_fuda": "hit_projectile",
+	"hone_kaze": "hit_orbit",
+	"sanzu_nagare": "hit_area",
+	"gasha_kaina": "hit_blade",
+	"watashimori": "hit_area",
+	"yomi_no_gunzei": "hit_blade",
 }
 ## Mixagem por tipo: [volume dB, tom, variação de tom]. Golpes pesados um pouco mais altos e
 ## graves; os que chegam em rajada (projéteis, raios, veneno) mais baixos.

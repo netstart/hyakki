@@ -761,5 +761,116 @@
 				}
 			}
 		]
+	},
+	{
+		"id": "kuon",
+		"energy": {
+			"id": "tamashii",
+			"color": "b88cff",
+			"max": 100,
+			"start": 30,
+			"icon": "res://assets/art/ui/ability_icons/energy_tamashii.png",
+			"per_kill": 1.0,
+			"per_hit": 0.2,
+			"regen_out_light": 2,
+			"decay": 1.5,
+			"decay_after": 6
+		},
+		"abilities": [
+			{
+				"id": "tamashii_gari",
+				"kanji": "魂狩",
+				"level": 1,
+				"cost": 25,
+				"cooldown": 4,
+				"icon": "res://assets/art/ui/ability_icons/tamashii_gari.png",
+				"voice": "kuon_1",
+				"sfx": "ab_tamashii_gari",
+				"params": {
+					"radius": 120,
+					"pull": 160,
+					"pull_time": 0.35,
+					"damage": 35,
+					"raise_max": 4,
+					"raise_life": 10.0
+				},
+				"bot": {
+					"near": 5,
+					"radius": 110
+				},
+				"hit": {
+					"tags": [
+						"area"
+					],
+					"fx": {
+						"color": "#b88cff",
+						"hot": "#f0e6ff"
+					}
+				}
+			},
+			{
+				"id": "kotsu_heki",
+				"kanji": "骨壁",
+				"level": 5,
+				"cost": 40,
+				"cooldown": 13,
+				"icon": "res://assets/art/ui/ability_icons/kotsu_heki.png",
+				"voice": "kuon_2",
+				"sfx": "ab_kotsu_heki",
+				"params": {
+					"radius": 75,
+					"spears": 14,
+					"damage": 30,
+					"root_time": 1.5,
+					"time": 3.0,
+					"band": 12,
+					"tick": 0.5
+				},
+				"bot": {
+					"near": 8,
+					"radius": 80
+				},
+				"hit": {
+					"tags": [
+						"blade"
+					],
+					"fx": {
+						"color": "#e8dcc0",
+						"hot": "#ffffff"
+					}
+				}
+			},
+			{
+				"id": "yomigaeri",
+				"kanji": "黄泉返り",
+				"level": 10,
+				"cost": 65,
+				"cooldown": 20,
+				"icon": "res://assets/art/ui/ability_icons/yomigaeri.png",
+				"voice": "kuon_3",
+				"sfx": "ab_yomigaeri",
+				"params": {
+					"recall": 12,
+					"minion_life": 12.0,
+					"invuln": 1.5,
+					"radius": 100,
+					"damage": 60,
+					"knockback": 200
+				},
+				"bot": {
+					"near": 10,
+					"radius": 120
+				},
+				"hit": {
+					"tags": [
+						"aura"
+					],
+					"fx": {
+						"color": "#9a6cff",
+						"hot": "#efe4ff"
+					}
+				}
+			}
+		]
 	}
 ]

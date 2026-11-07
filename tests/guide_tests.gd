@@ -300,7 +300,9 @@ func _test_discovery() -> void:
 	var bases_known := true
 	for line: Array in lines:
 		all_hidden = all_hidden and not bool(line[2]["ref"]["known"]) and String(line[2]["ref"]["name"]) == "???"
-		bases_known = bases_known and bool(line[0]["ref"]["known"])
+		# As exclusivas da Kuon (bloqueada no save novo) ficam como ???; as outras armas base, conhecidas.
+		var base: Dictionary = line[0]["ref"]
+		bases_known = bases_known and bool(base["known"]) != MetaProgress.exclusive_locked(DB.weapon(StringName(base["id"])))
 	_ok(all_hidden and bases_known, "Guia descoberta: save novo mostra as armas base e as evoluções como ???")
 	var chests := chapter_text(book.chapter(&"chests"))
 	_ok(not chests.contains(TranslationServer.translate("weapon.dawn_blade.name"))
@@ -378,6 +380,14 @@ func _test_abilities() -> void:
 			TranslationServer.translate("energy.%s.name" % yuki["id"]), TranslationServer.translate("hero.%s.name" % payer),
 			str(roundi(1.0 / float(yuki["hp_price"]))), GuideBook.pct(float(yuki["hp_floor"]))]
 	_ok(text.contains(blood), "Guia habilidades: Yuki paga com vida (%s)", blood.left(40))
+	# Servos espectrais: a guardiã cuja arma inicial levanta servos sai dos dados, com o teto da arma
+	# e o absoluto do MinionSystem.
+	var raiser := GuideBook.minion_hero()
+	_ok(raiser == &"kuon", "Guia habilidades: quem levanta servos é a Kuon nos dados")
+	var fuda: Dictionary = DB.weapon(StringName(String(DB.heroes[raiser]["weapon"])))["base"]
+	var minions := TranslationServer.translate("guide.abilities.minions") % [
+			TranslationServer.translate("hero.%s.name" % raiser), str(int(fuda["minion_cap"])), str(MinionSystem.HARD_CAP)]
+	_ok(text.contains(minions), "Guia habilidades: servos da Kuon com o teto dos dados (%s)", minions.left(40))
 	var raw_ok := true
 	for lang: String in LANGS:
 		Locale.set_language(lang, false)
@@ -406,6 +416,7 @@ func _test_abilities() -> void:
 			and not text.contains(TranslationServer.translate("energy.shadow.name"))
 			and not text.contains(blood) and text.contains(TranslationServer.translate("guide.abilities.unknown")),
 			"Guia habilidades descoberta: só a guardiã liberada mostra energia e habilidades; Yuki bloqueada sem a regra")
+	_ok(not text.contains(minions), "Guia habilidades descoberta: Kuon bloqueada, sem o parágrafo dos servos")
 
 
 ## Modo Brisa (Como jogar), Desafio Diário (Como jogar) e Noite Sem Fim com o Shinigami (Ficar
@@ -719,7 +730,9 @@ func _test_tips() -> void:
 		var shown := false
 		for cat: String in groups["shown"]:
 			shown = shown or (groups["shown"][cat] as Array).has(tip)
-		if not shown and not (tip["when"] as Dictionary).has("locked"):
+		var when: Dictionary = tip["when"]
+		# Fora também: as das exclusivas de outra guardiã (as da Kuon, com outra escolhida).
+		if not shown and not when.has("locked") and String(when.get("hero", ctx["hero"])) == String(ctx["hero"]):
 			locked_only = false
 	_ok(locked_only and int(groups["other_platform"]) == 0,
 			"Guia dicas (tudo descoberto): só as de conteúdo bloqueado ficam de fora")

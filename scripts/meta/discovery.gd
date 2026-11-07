@@ -4,6 +4,7 @@ extends RefCounted
 ## (GuideBook) escondem o que ainda não foi visto com exatamente as mesmas regras.
 ## - armas: as base sempre; evoluções e uniões depois de descobertas (stats "evolved"/"unions");
 ## - relíquias: liberadas (as sem condição desde o início);
+## - exclusivas de uma guardiã ("hero", as da Kuon): só depois de liberar a dona;
 ## - chefes: depois de vencidos (stats "bosses_defeated");
 ## - guardiãs e fases: liberadas no save;
 ## - Kami: sempre (o Diário mostra todos).
@@ -17,16 +18,21 @@ extends RefCounted
 const UNKNOWN := "???"
 
 
-## Arma conhecida: base sempre; evolução e união depois de descobertas.
+## Arma conhecida: base sempre; evolução e união depois de descobertas. As exclusivas de uma guardiã
+## (as da Kuon) ficam escondidas enquanto ela estiver bloqueada.
 static func weapon_known(w: StringName) -> bool:
 	var stats: Dictionary = SaveManager.data["stats"]
-	return String(DB.weapon(w).get("kind", "base")) == "base" or (stats["evolved"] as Array).has(String(w)) \
+	var data := DB.weapon(w)
+	if MetaProgress.exclusive_locked(data):
+		return false
+	return String(data.get("kind", "base")) == "base" or (stats["evolved"] as Array).has(String(w)) \
 			or (stats.get("unions", []) as Array).has(String(w))
 
 
-## Relíquia conhecida: liberada (as sem condição desde o início).
+## Relíquia conhecida: liberada (as sem condição desde o início); a exclusiva, com a dona liberada.
 static func passive_known(p: StringName) -> bool:
-	return MetaProgress.is_content_available("passives", p, DB.passives.get(p, {}) as Dictionary)
+	var data: Dictionary = DB.passives.get(p, {})
+	return MetaProgress.is_content_available("passives", p, data) and not MetaProgress.exclusive_locked(data)
 
 
 ## Chefe conhecido: já vencido alguma vez.
@@ -96,6 +102,25 @@ static func reaper_known() -> bool:
 		if float((SaveManager.data["stage_best"][s] as Dictionary).get("endless_best", 0.0)) >= Spawner.SHINIGAMI_TIME:
 			return true
 	return false
+
+
+## Marca "Exclusiva de <guardiã>" de uma arma ou relíquia exclusiva (data "hero"), já traduzida; "" nas
+## das outras e enquanto a dona estiver bloqueada (aí o item nem aparece).
+static func exclusive_note(data: Dictionary) -> String:
+	var owner := MetaProgress.exclusive_hero(data)
+	if owner == &"" or MetaProgress.exclusive_locked(data):
+		return ""
+	var template := TranslationServer.translate("exclusive.hero")
+	var name := TranslationServer.translate("hero.%s.name" % owner)
+	return template % name if template.contains("%s") else "%s · %s" % [template, name]
+
+
+## Como liberar uma arma ou relíquia ainda escondida: a conquista dela, ou a da dona, se for exclusiva.
+static func unlock_achievement(data: Dictionary) -> String:
+	var owner := MetaProgress.exclusive_hero(data)
+	if owner != &"" and MetaProgress.exclusive_locked(data):
+		return String((DB.heroes.get(owner, {}) as Dictionary).get("unlock", ""))
+	return String(data.get("unlock", ""))
 
 
 ## Item citado numa receita: {category, id, known, icon, name}; desconhecido sai como "???".

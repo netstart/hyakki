@@ -75,12 +75,15 @@ static func context() -> Dictionary:
 			break
 	ctx["can_buy"] = can_buy
 	var available := {"weapons": [], "passives": []}
+	# Exclusivas de outra guardiã (as da Kuon) não contam como liberadas para a escolhida.
 	for id: StringName in DB.ids("weapons"):
 		var data := DB.weapon(id)
-		if String(data.get("kind", "")) == "base" and MetaProgress.is_content_available("weapons", id, data):
+		if String(data.get("kind", "")) == "base" and MetaProgress.is_content_available("weapons", id, data) \
+				and MetaProgress.fits_hero(data, StringName(hero)):
 			(available["weapons"] as Array).append(String(id))
 	for id: StringName in DB.ids("passives"):
-		if MetaProgress.is_content_available("passives", id, DB.passives[id]):
+		var row: Dictionary = DB.passives[id]
+		if MetaProgress.is_content_available("passives", id, row) and MetaProgress.fits_hero(row, StringName(hero)):
 			(available["passives"] as Array).append(String(id))
 	ctx["available"] = available
 	return ctx

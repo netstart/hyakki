@@ -74,6 +74,8 @@ STRINGS = {
     "codex.story_intro": ["O Despertar", "The Awakening", "El Despertar", "Das Erwachen", "L'Éveil", "Пробуждение", "Kebangkitan", "目覚め", "깨어남", "甦醒", "苏醒"],
     "codex.story_ending": ["O Amanhecer", "The Dawn", "El Amanecer", "Die Morgendämmerung", "L'Aube", "Рассвет", "Fajar", "夜明け", "새벽", "黎明", "黎明"],
     "codex.story_secret": ["O Final Verdadeiro", "The True Ending", "El Final Verdadero", "Das wahre Ende", "La Vraie Fin", "Истинный финал", "Akhir Sejati", "真の結末", "진정한 결말", "真正的結局", "真正的结局"],
+    "codex.story_kuon": ["A Última Hakamori", "The Last Hakamori", "La Última Hakamori", "Die letzte Hakamori", "La Dernière Hakamori", "Последняя из Хакамори", "Hakamori Terakhir", "最後の墓守", "마지막 하카모리", "最後的墓守", "最后的墓守"],
+    "codex.story_osorezan": ["Uma Lanterna a Mais", "One More Lantern", "Una Linterna Más", "Eine Laterne mehr", "Une Lanterne de Plus", "Ещё один фонарь", "Satu Lentera Lagi", "もうひとつの灯籠", "등불 하나 더", "多一盞燈籠", "多一盏灯笼"],
     "codex.story_locked": ["Esta página ainda não foi escrita. Siga até o amanhecer.", "This page is not yet written. Keep going until dawn.", "Esta página aún no se ha escrito. Sigue hasta el amanecer.", "Diese Seite ist noch leer. Halte durch bis zum Morgen.", "Cette page n'est pas encore écrite. Tiens jusqu'à l'aube.", "Эта страница ещё не написана. Дойди до рассвета.", "Halaman ini belum ditulis. Bertahanlah sampai fajar.", "この頁はまだ白紙だ。夜明けまで進め。", "이 쪽은 아직 비어 있다. 새벽까지 나아가라.", "這一頁尚未寫下。撐到黎明吧。", "这一页尚未写下。撑到黎明吧。"],
     "codex.kind_base": ["Arma", "Weapon", "Arma", "Waffe", "Arme", "Оружие", "Senjata", "武器", "무기", "武器", "武器"],
     "codex.kind_evolution": ["Evolução", "Evolution", "Evolución", "Entwicklung", "Évolution", "Эволюция", "Evolusi", "進化", "진화", "進化", "进化"],

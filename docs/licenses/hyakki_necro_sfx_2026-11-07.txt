@@ -1,0 +1,14 @@
+Registro de origem - hyakki_necro_sfx (2026-11-07)
+
+Arquivos: assets/audio/sfx/nc_*.wav (31 arquivos: ofuda lançada x 3, ofuda colando x 3, alma
+virando servo x 1, golpe do servo x 3, servo se desfazendo x 1, ossos girando x 1, osso quebrando
+x 2, onda do Sanzu x 1, sino da balsa x 1, marcha do Exército de Yomi x 1, alma recolhida x 3,
+Tamashii-gari x 1, Kotsu-heki x 1, Yomigaeri x 1, golpe supremo da Kuon x 1, rugido, mão batendo
+e erguida da Gashadokuro x 3, risada da Datsue-ba x 1, grito do Masakado x 1, cata-ventos x 1 e
+Kuon libertada x 1).
+Origem: gerados pelo próprio projeto com tools/gen_necro_sfx.py (síntese procedural, só
+biblioteca padrão do Python, sementes fixas; rodar de novo reproduz os mesmos bytes).
+Não há página externa de origem: a fonte é o script versionado neste repositório.
+Nenhuma gravação, sample de terceiros ou modelo de IA de áudio foi usado.
+Licença: CC0-1.0 (dedicação ao domínio público pelos autores do projeto).
+Comando: python -I tools/gen_necro_sfx.py --update-index

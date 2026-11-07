@@ -16,7 +16,7 @@ extends RefCounted
 const TerrainTests := preload("res://tests/terrain_tests.gd")
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const STEP := 1.0 / 60.0
-const STAGES: Array[String] = ["village", "bamboo", "temple", "dunes", "yomi", "secret"]
+const STAGES: Array[String] = ["village", "bamboo", "temple", "dunes", "yomi", "secret", "osorezan"]
 
 var _check: Callable
 var _host: Node

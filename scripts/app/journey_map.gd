@@ -311,7 +311,7 @@ func _seal_kanji() -> String:
 
 
 func _node_tooltip(id: StringName) -> String:
-	if id == &"secret" and node_state(id) == &"locked":
+	if JourneyGeo.HIDDEN.has(id) and node_state(id) == &"locked":
 		return "???"
 	return tr("stage.%s.name" % id)
 

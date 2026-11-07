@@ -9,7 +9,7 @@ extends RefCounted
 ##   - Tokoyo (biomas <fase>_toko, layout "tokoyo"): só ele usa o layout, diferente da fase e do
 ##     Kakuriyo; praça do meio livre, tōrō e torii, espelhos d'água sem colisão, moldura que não
 ##     fecha a borda, determinismo e custo de geração na ordem dos outros layouts;
-##   - partida de verdade nas 6 fases: chunks montados com chão e decoração, troca ao vivo
+##   - partida de verdade nas 7 fases: chunks montados com chão e decoração, troca ao vivo
 ##     Baixa → Alta → Baixa remontando os chunks, luzes do cenário dentro de lights_max;
 ##   - arte: bambu emendado do TilesetNature (grosso e fino, raminhos, pegada do layout), torii de
 ##     lado e barranco da água na paleta do pacote, terra marrom com o TilesetField recolorido.
@@ -17,7 +17,7 @@ extends RefCounted
 ## (tests/integration_tests.gd).
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
-const STAGES := ["village", "bamboo", "temple", "dunes", "yomi", "secret"]
+const STAGES := ["village", "bamboo", "temple", "dunes", "yomi", "secret", "osorezan"]
 ## Limites do Tokoyo nos testes (metade da arena, como o bloco "tokoyo" de data/stages.json).
 const TOKO_BOUNDS := [1200, 1200]
 ## Geração do Tokoyo: no máximo este múltiplo do custo do layout da própria fase (mesmos chunks).
@@ -207,7 +207,7 @@ func _test_mask() -> void:
 
 # --- Tokoyo ------------------------------------------------------------------------------
 
-## Os 6 biomas <fase>_toko existem, usam o layout tokoyo (que nenhum outro bioma usa) e são claros.
+## Os 7 biomas <fase>_toko existem, usam o layout tokoyo (que nenhum outro bioma usa) e são claros.
 func _test_tokoyo_biomes() -> void:
 	var sprites: Dictionary = TerrainArt.data().get("sprites", {})
 	var biomes: Dictionary = TerrainArt.data().get("biomes", {})

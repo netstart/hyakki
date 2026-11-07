@@ -178,6 +178,16 @@ static func daily_ryo() -> int:
 	return 0
 
 
+## Guardiã cuja arma inicial levanta servos espectrais ("raise_chance" em data/weapons.json: a Kuon);
+## &"" se nenhuma.
+static func minion_hero() -> StringName:
+	for h: StringName in DB.ids("heroes"):
+		var weapon := DB.weapon(StringName(String((DB.heroes[h] as Dictionary).get("weapon", ""))))
+		if float((weapon.get("base", {}) as Dictionary).get("raise_chance", 0.0)) > 0.0:
+			return h
+	return &""
+
+
 ## Habilidades por guardiã (data/abilities.json; a maior lista, hoje 3 para todas).
 static func ability_count() -> int:
 	var best := 0
@@ -221,6 +231,12 @@ func _abilities() -> Array[Dictionary]:
 	if not blood.is_empty():
 		out.append(_p(tr("guide.abilities.blood"), [tr("energy.%s.name" % blood["id"]), tr("hero.%s.name" % blood_hero),
 				_num(1.0 / float(blood["hp_price"])), pct(float(blood.get("hp_floor", 0.0)))]))
+	var raiser := minion_hero()
+	if raiser != &"" and Discovery.hero_known(raiser):
+		var weapon := DB.weapon(StringName(String((DB.heroes[raiser] as Dictionary).get("weapon", ""))))
+		out.append(_p(tr("guide.abilities.minions"), [tr("hero.%s.name" % raiser),
+				str(int((weapon.get("base", {}) as Dictionary).get("minion_cap", MinionSystem.BASE_CAP))),
+				str(MinionSystem.HARD_CAP)]))
 	if hidden:
 		out.append(_p(tr("guide.abilities.unknown")))
 	out.append(_h(tr("guide.abilities.keys_h")))
@@ -298,10 +314,10 @@ func _chests() -> Array[Dictionary]:
 	var unions: Array = []
 	var hidden := false
 	for line: Array in evolution_lines():
-		evolutions.append(_parts(tr("guide.chests.line"), line))
+		evolutions.append(_note_exclusive(_parts(tr("guide.chests.line"), line), line[0]))
 		hidden = hidden or line.any(func(part: Dictionary) -> bool: return not bool(part["ref"]["known"]))
 	for line: Array in union_lines():
-		unions.append(_parts(tr("guide.chests.line"), line))
+		unions.append(_note_exclusive(_parts(tr("guide.chests.line"), line), line[2]))
 		hidden = hidden or line.any(func(part: Dictionary) -> bool: return not bool(part["ref"]["known"]))
 	var out: Array[Dictionary] = [
 		_h(tr("guide.chests.drop_h")),
@@ -369,6 +385,15 @@ func evolution_lines() -> Array:
 				{"ref": Discovery.recipe_ref(&"relics", String(data.get("evolves_with", "")))},
 				{"ref": Discovery.recipe_ref(&"weapons", String(data["evolution"]))}])
 	return out
+
+
+## Marca "Exclusiva de <guardiã>" no fim da linha montada `parts` da receita cuja arma é `item` (o
+## trecho {ref} dela; as da Kuon), quando a dona é conhecida. Devolve `parts`.
+static func _note_exclusive(parts: Array, item: Dictionary) -> Array:
+	var note := Discovery.exclusive_note(DB.weapon(StringName(String((item.get("ref", {}) as Dictionary).get("id", "")))))
+	if not note.is_empty():
+		parts.append({"t": " · " + note})
+	return parts
 
 
 ## Uniões: [evolução, evolução, união] como trechos {ref}.
@@ -746,6 +771,9 @@ func _count_available(kind: String) -> Array[int]:
 	for id: StringName in DB.ids(kind):
 		var data: Dictionary = DB.weapon(id) if kind == "weapons" else DB.passives[id]
 		if kind == "weapons" and String(data.get("kind", "base")) != "base":
+			continue
+		# Exclusivas de uma guardiã ainda bloqueada (as da Kuon) não entram na conta.
+		if MetaProgress.exclusive_locked(data):
 			continue
 		out[1] += 1
 		out[0] += int(MetaProgress.is_content_available(kind, id, data))

@@ -603,6 +603,8 @@ func clear_field() -> void:
 	game.areas.reset()
 	for weapon: Weapon in game.weapons:
 		weapon.on_realm_change()
+	if game.minions != null:
+		game.minions.clear()  # servos da Kuon (e a procissão do Necro Rite) ficam no mundo velho
 	game.fx.reset()
 
 

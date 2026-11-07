@@ -2,7 +2,7 @@ Hyakki - guardian ability icons (assets/art/ui/ability_icons/*)
 
 Copyright (c) 2026 Clayton K. N. Passos and the Hyakki project contributors.
 
-These pixel-art icons (21 ability icons of 24x24 and 7 energy glyphs of 12x12) are original
+These pixel-art icons (24 ability icons of 24x24 and 8 energy glyphs of 12x12) are original
 works of the Hyakki project, drawn pixel by pixel by tools/gen_ability_icons.py (Python
 standard library only, deterministic: running it again produces the same bytes).
 No third-party art and no AI image models were used.

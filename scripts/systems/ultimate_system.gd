@@ -10,7 +10,7 @@ const ULT_COLORS := {
 	"dawn_flash": Color(1.0, 0.9, 0.55), "shadow_clone": Color(0.62, 0.55, 0.95),
 	"kagura": Color(0.6, 1.0, 0.75), "temple_bell": Color(1.0, 0.8, 0.4),
 	"arrow_rain": Color(1.0, 0.85, 0.45), "oni_awakening": Color(1.0, 0.32, 0.28),
-	"living_forge": Color(1.0, 0.55, 0.25),
+	"living_forge": Color(1.0, 0.55, 0.25), "necro_rite": Color(0.72, 0.55, 1.0),
 }
 
 var game: HyakkiGame
@@ -115,6 +115,13 @@ func activate() -> bool:
 		"living_forge":
 			forge_time = float(ult.get("duration", 10.0))
 			game.fx.play_anim("boost", at, 1.2, 0.0, Color(1.0, 0.6, 0.3))
+		"necro_rite":
+			# Kuon: a procissão dos mortos ao contrário atravessa a tela (MinionSystem.start_rite) e os
+			# servos de pé renovam a vida.
+			game.minions.start_rite(ult, float(ult.get("base_damage", 30)) * might)
+			game.minions.refresh(at, INF)
+			game.fx.add_ring(at, 120.0, Color(0.72, 0.55, 1.0))
+			game.fx.play_anim("spirit", at, 1.4, 0.0, Color(0.8, 0.65, 1.0), 14.0, false, true)
 	_cinematic(String(ult.get("type", "")), at)
 	Settings.vibrate(120)
 	# Reacende a lanterna apagada por Kuroe.

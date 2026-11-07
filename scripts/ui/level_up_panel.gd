@@ -406,7 +406,7 @@ static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 				info["text"] = String(info["text"]).replace("\n" + line, "").replace(line, "").strip_edges()
 			# A evolução entra numa união: a arma base parceira ("Une com"), acesa quando o jogador
 			# já tem a evolução parceira.
-			for partner: Array in union_partners(evolution):
+			for partner: Array in union_partners(evolution, game.abilities.hero_id if game != null else &""):
 				var base: StringName = partner[0]
 				combos.append(_combo(TranslationServer.translate("lvchest.unites_with"),
 						[TranslationServer.translate("weapon.%s.name" % base)],
@@ -423,7 +423,7 @@ static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 			var names: Array[String] = []
 			var icons: Array[Texture2D] = []
 			var ready := false
-			for weapon_id: StringName in weapons_evolved_by(id):
+			for weapon_id: StringName in weapons_evolved_by(id, game.abilities.hero_id if game != null else &""):
 				names.append(TranslationServer.translate("weapon.%s.name" % weapon_id))
 				icons.append(_load(String(DB.weapon(weapon_id).get("icon", ""))))
 				var owned: Weapon = game.get_weapon(weapon_id) if game != null else null
@@ -439,19 +439,22 @@ static func card_info(card: Dictionary, game: HyakkiGame) -> Dictionary:
 	return info
 
 
-## Armas base (na ordem de data/weapons.json) que a relíquia `passive` evolui.
-static func weapons_evolved_by(passive: StringName) -> Array[StringName]:
+## Armas base (na ordem de data/weapons.json) que a relíquia `passive` evolui. Com `hero`, só as que
+## podem sair para essa guardiã (as exclusivas de outra ficam de fora, MetaProgress.fits_hero).
+static func weapons_evolved_by(passive: StringName, hero: StringName = &"") -> Array[StringName]:
 	var list: Array[StringName] = []
 	for weapon_id: StringName in DB.ids("weapons"):
 		var data := DB.weapon(weapon_id)
-		if String(data.get("kind", "")) == "base" and StringName(data.get("evolves_with", "")) == passive:
+		if String(data.get("kind", "")) == "base" and StringName(data.get("evolves_with", "")) == passive \
+				and (hero == &"" or MetaProgress.fits_hero(data, hero)):
 			list.append(weapon_id)
 	return list
 
 
 ## Parceiros de união da evolução `evolution`: [arma base parceira, evolução parceira, união] para
-## cada arma "union" cujo "requires" traz `evolution`.
-static func union_partners(evolution: StringName) -> Array[Array]:
+## cada arma "union" cujo "requires" traz `evolution`. Com `hero`, só uniões e parceiras que podem sair
+## para essa guardiã.
+static func union_partners(evolution: StringName, hero: StringName = &"") -> Array[Array]:
 	var list: Array[Array] = []
 	if evolution == &"":
 		return list
@@ -460,13 +463,16 @@ static func union_partners(evolution: StringName) -> Array[Array]:
 		var parts: Array = data.get("requires", [])
 		if String(data.get("kind", "")) != "union" or not parts.has(String(evolution)):
 			continue
+		if hero != &"" and not MetaProgress.fits_hero(data, hero):
+			continue
 		for part: Variant in parts:
 			var other := StringName(part)
 			if other == evolution:
 				continue
 			for base_id: StringName in DB.ids("weapons"):
 				var base := DB.weapon(base_id)
-				if String(base.get("kind", "")) == "base" and StringName(base.get("evolution", "")) == other:
+				if String(base.get("kind", "")) == "base" and StringName(base.get("evolution", "")) == other \
+						and (hero == &"" or MetaProgress.fits_hero(base, hero)):
 					list.append([base_id, other, union_id])
 	return list
 

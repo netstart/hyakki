@@ -895,6 +895,8 @@ func _draw_glow() -> void:
 	if game:
 		for weapon: Weapon in game.weapons:
 			weapon.draw_glow(_glow_layer)
+		if game.minions:
+			game.minions.draw_glow(_glow_layer)
 		if game.projectiles:
 			game.projectiles.draw_glow(_glow_layer)
 	for span: Vector2i in spans:

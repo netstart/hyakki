@@ -125,7 +125,7 @@ func _test_abilities(check: Callable) -> void:
 			var alt := AudioManager.VOICE_DIR + voice + "_b.ogg"
 			if ResourceLoader.exists(alt):
 				check.call(AudioManager._sfx(alt) is AudioStream, "variação %s_b carrega", voice)
-	check.call(count == 21, "21 habilidades com som e voz (%d)", count)
+	check.call(count == 24, "24 habilidades com som e voz (%d)", count)
 	for cue: String in ["ab_denied", "ab_ready"]:
 		check.call(WeaponSfx.CUES.has(cue), "cue %s existe", cue)
 	for group: String in AudioManager.VARIANTS:

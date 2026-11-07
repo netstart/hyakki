@@ -20,7 +20,8 @@ const SPEED_GUARD_MS := 13.0
 const SPEED_GUARD_SECONDS := 5.0
 ## Chama da lanterna por cosmético da Loja (sem cosmético, a âmbar de sempre).
 const LANTERN_TINTS := {"golden_lantern": Color(1.0, 0.85, 0.2), "crimson_lantern": Color(1.0, 0.3, 0.3),
-		"jade_lantern": Color(0.4, 1.0, 0.6), "azure_lantern": Color(0.4, 0.7, 1.0), "violet_lantern": Color(0.8, 0.5, 1.0)}
+		"jade_lantern": Color(0.4, 1.0, 0.6), "azure_lantern": Color(0.4, 0.7, 1.0), "violet_lantern": Color(0.8, 0.5, 1.0),
+		"ferry_lantern": Color(0.55, 0.95, 0.9)}
 const DEFAULT_LANTERN := Color(1.0, 0.8, 0.3)
 const MOON_HP := 0.25
 const MOON_REWARD := 0.15
@@ -33,7 +34,8 @@ const ENDLESS_HP_PER_MIN := 0.15  # Noite Sem Fim: vida extra dos inimigos por m
 ## Comportamentos de arma ("behavior" em data/weapons.json): scripts/weapons/<behavior>.gd.
 const WEAPON_BEHAVIORS: Array[String] = ["katana", "shuriken", "kunai", "ofuda", "incense", "kusarigama",
 		"smoke_bomb", "raijin", "fujin_fan", "hurricane", "yumi", "taiko", "hitodama", "typhoon",
-		"blade_cyclone", "kaminari", "inazuma", "onikiri", "horokubiya", "tsurara", "kage_bunshin", "taikyoku"]
+		"blade_cyclone", "kaminari", "inazuma", "onikiri", "horokubiya", "tsurara", "kage_bunshin", "taikyoku",
+		"shiryo_fuda", "hone_kaze", "sanzu_nagare", "gasha_kaina", "watashimori", "yomi_no_gunzei"]
 
 var config: Dictionary = {}
 var stage: Dictionary = {}
@@ -66,6 +68,7 @@ var ultimate: UltimateSystem
 var abilities: AbilitySystem
 ## Fogo, gelo e clones: armas elementais, itens do chão e clones do Caco do Espelho.
 var elements: ElementSystem
+var minions: MinionSystem  # servos espectrais da Kuon (scripts/systems/minion_system.gd)
 var tracker: RunTracker
 var hud: Hud
 var death: DeathSequence
@@ -206,7 +209,7 @@ func snapshot() -> Dictionary:
 		"endless_phase": endless_phase, "ad_revive_used": _ad_revive_used and not _ad_in_progress,
 		"dead": not player.is_alive, "speed": GameClock.speed,
 		"damage": player.damage.summary(), "realm": rift.snapshot(), "tracker": tracker.snapshot(),
-		"altars": altars.snapshot(),
+		"altars": altars.snapshot(), "minions": minions.state(),
 	}
 
 
@@ -254,6 +257,7 @@ func restore_snapshot(s: Dictionary) -> void:
 	rift.restore(s.get("realm", {}))
 	altars.restore(s.get("altars", {}))
 	tracker.restore(s.get("tracker", {}))
+	minions.load_state(s.get("minions", {}))  # depois do rift.restore, que limpa o campo
 	_ad_revive_used = bool(s.get("ad_revive_used", false))
 	hud.refresh_speed()
 	if bool(s.get("dead", false)):
@@ -276,6 +280,7 @@ func _build() -> void:
 	world.game = self
 	add_child(world)
 	elements = ElementSystem.new(self)
+	minions = MinionSystem.new(self)
 	kami = KamiSystem.new()
 	kami.game = self
 	add_child(kami)
@@ -627,12 +632,13 @@ func view_half_diagonal() -> float:
 	return view_size().length() * 0.5
 
 
+## Pode sair no nível, no baú e no omikuji (MetaProgress.can_offer: exclusivas só para a dona, também no bot).
 func is_weapon_available(id: StringName) -> bool:
-	return _bot or MetaProgress.is_content_available("weapons", id, DB.weapon(id))
+	return MetaProgress.can_offer("weapons", id, DB.weapon(id), abilities.hero_id, _bot)
 
 
 func is_passive_available(id: StringName) -> bool:
-	return _bot or MetaProgress.is_content_available("passives", id, DB.passives[id])
+	return MetaProgress.can_offer("passives", id, DB.passives[id], abilities.hero_id, _bot)
 
 
 # --- Armas ---------------------------------------------------------------------
@@ -1142,7 +1148,7 @@ func _weapon_summary() -> String:
 	var parts: PackedStringArray = []
 	for weapon: Weapon in weapons:
 		parts.append("%s%d" % [weapon.id, weapon.level])
-	# + lentidão das superfícies e as habilidades (determinismo).
+	# + lentidão das superfícies, as habilidades (com os servos da Kuon) e os altares (determinismo).
 	return ",".join(parts) + SurfaceSystem.hash_tag_of(self) + abilities.hash_tag() + altars.hash_tag()
 
 

@@ -67,7 +67,7 @@
     "commercial_use": true,
     "redistribution_of_raw_pack": true,
     "ai_generated": false,
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; the unused boss GiantRacoonGold reused as the secret mid-boss; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader; TilesetField centre tile palette-mapped at runtime to the brown dirt of TilesetFloor; the TilesetNature bamboo cut into crown, node, internode and foot and spliced at runtime into taller culms with drawn leaf sprigs in the pack palette (gen_bamboo_*); the side torii and the TilesetWater margin profile (bank, foam, shallow band) drawn in the pack palette",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; the unused boss GiantRacoonGold reused as the secret mid-boss; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader; TilesetField centre tile palette-mapped at runtime to the brown dirt of TilesetFloor; the TilesetNature bamboo cut into crown, node, internode and foot and spliced at runtime into taller culms with drawn leaf sprigs in the pack palette (gen_bamboo_*); the side torii and the TilesetWater margin profile (bank, foam, shallow band) drawn in the pack palette; the hero Kuon (heroes/kuon) made by tools/make_kuon_art.py from Character/SorcererBlack, every frame and the portrait recolored (silver hair, bone menpo, indigo robe, violet scarf and soul fire) with bangs, a long lock, the engraved menpo and a hitodama drawn on the portrait",
     "files": [
       "assets/art/**",
       "assets/licenses_src/ninja_adventure_*",
@@ -291,7 +291,7 @@
     "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
     "sha256": {
       "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
-      "notice_file": "68a86b3a620be3366d6dc28a4a8ffb8d5de12e0b86b5199c86e51fc617e29a49",
+      "notice_file": "5d57a5e5fa1c14d5002f5735cd46cd3285b559500b648cdf137bdc4c3dec6053",
       "snapshot_file": "d3e0aad5d396528e8ccc9638f4f5ffd207d703c1abe2969f3bd90840231ee5a0"
     },
     "snapshot_file": "docs/licenses/kenney_game_icons_2026-10-24.pdf",
@@ -597,7 +597,7 @@
     "name": "甘茶の音楽工房 (Amacha) - Japanese-style background music",
     "category": "audio",
     "author": "甘茶 (Amacha)",
-    "version": "13 tracks of the 和風・アジア category + 5 tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦; 幕末舞曲〜戦〜 as the mid-boss theme), downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
+    "version": "13 tracks of the 和風・アジア category + 5 tracks of the 激しい category (ボス戦, 侵攻, 戦火, 最終戦; 幕末舞曲〜戦〜 as the mid-boss theme) + 竜の舞 (ryunomai.mp3) as the Gashadokuro theme, downloaded 2026-10-21 (SHA-256 in C:/src/assets/amacha/SHA256SUMS.txt)",
     "source_url": "https://amachamusic.chagasi.com/genre_asia.html",
     "license_id": "LicenseRef-Amacha",
     "license_source": "licenses/sources/LicenseRef-Amacha.txt",
@@ -770,7 +770,7 @@
     "name": "Cici Fyre - Female RPG Voice Starter Pack",
     "category": "audio",
     "author": "cicifyre (Cici Fyre)",
-    "version": "RPG Voice Starter Pack.zip (OpenGameArt, 2019-04-26); 15 of 90 files used",
+    "version": "RPG Voice Starter Pack.zip (OpenGameArt, 2019-04-26); 20 of 90 files used",
     "source_url": "https://opengameart.org/content/female-rpg-voice-starter-pack",
     "license_id": "CC0-1.0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
@@ -781,12 +781,13 @@
     "attribution_required": false,
     "commercial_use": true,
     "ai_generated": false,
-    "modifications": "wordless attack/jump/damage shouts trimmed, pitch-shifted, equalized, mixed with a synthesized oni growl (Yuki) or shrine reverb (Hana), loudness-matched and encoded to Ogg Vorbis by tools/gen_ability_voices.py (voices of Aki, Hana, Rin and Yuki)",
+    "modifications": "wordless attack/jump/damage shouts trimmed, pitch-shifted, equalized, mixed with a synthesized oni growl (Yuki) or shrine reverb (Hana), loudness-matched and encoded to Ogg Vorbis by tools/gen_ability_voices.py (voices of Aki, Hana, Rin, Yuki and Kuon)",
     "files": [
       "assets/audio/voice/aki_*",
       "assets/audio/voice/hana_*",
       "assets/audio/voice/rin_*",
       "assets/audio/voice/yuki_*",
+      "assets/audio/voice/kuon_*",
       "assets/licenses_src/cicifyre_rpg_voice_*"
     ],
     "verified_at": "2026-11-01",
@@ -876,15 +877,15 @@
     "attribution_required": false,
     "commercial_use": true,
     "ai_generated": false,
-    "modifications": "original pixel art drawn by tools/gen_ability_icons.py (21 ability icons 24x24 and 7 energy glyphs 12x12)",
+    "modifications": "original pixel art drawn by tools/gen_ability_icons.py (24 ability icons 24x24 and 8 energy glyphs 12x12)",
     "files": [
       "assets/art/ui/ability_icons/*"
     ],
-    "verified_at": "2026-11-01",
+    "verified_at": "2026-11-07",
     "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
     "sha256": {
       "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
-      "notice_file": "adc4acbd684b21f7d6fd01e90ce3bc43bd74f6a611ffaf3a2ccfd600fc71b240",
+      "notice_file": "1398abc746091f2b2281bdd09d1eda10bf3918164619a9c17a1c6ed2d195e0ac",
       "snapshot_file": "688fd6e5b6d20281707df7dd17e86f0eb2049781a045228e78a09e22383bb951"
     },
     "snapshot_file": "docs/licenses/hyakki_ability_icons_2026-11-01.txt",
@@ -947,6 +948,62 @@
     "downloaded_at": "2026-11-03"
   },
   {
+    "id": "hyakki_necro_sfx",
+    "name": "Hyakki - procedural Kuon and Osorezan sound effects",
+    "category": "audio",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "version": "tools/gen_necro_sfx.py (2026-11-07)",
+    "source_url": "tools/gen_necro_sfx.py",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_file": "licenses/notices/hyakki_necro_sfx_NOTICE.txt",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "original work, synthesized procedurally by tools/gen_necro_sfx.py (nc_*.wav)",
+    "files": [
+      "assets/audio/sfx/nc_*"
+    ],
+    "verified_at": "2026-11-07",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "8fdbd90461c5ef924123d0c740b5a49bb2dfcf68e42f929ebf161e303d183a51",
+      "snapshot_file": "cf89aa773560ec905ea0833579b75710bf13134c5af609df41c78bb7b778c2e5"
+    },
+    "snapshot_file": "docs/licenses/hyakki_necro_sfx_2026-11-07.txt",
+    "downloaded_at": "2026-11-07"
+  },
+  {
+    "id": "hyakki_osorezan_art",
+    "name": "Hyakki - Osorezan terrain art",
+    "category": "art",
+    "author": "Hyakki project (Clayton K. N. Passos)",
+    "version": "tools/gen_osorezan_art.py (2026-11-07)",
+    "source_url": "tools/gen_osorezan_art.py",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt",
+    "license_file": "licenses/texts/CC0-1.0.txt",
+    "notice_file": "licenses/notices/hyakki_osorezan_art_NOTICE.txt",
+    "attribution_required": false,
+    "commercial_use": true,
+    "ai_generated": false,
+    "modifications": "original pixel art drawn procedurally by tools/gen_osorezan_art.py (pinwheels, cairns, sotoba, Jizo, stone lantern, dead trees, volcanic rocks, Sanzu torii, sulfur and pebble decals and the ash, sulfur, pebble and water ground tiles) with colors from the Ninja Adventure palette (CC0)",
+    "files": [
+      "assets/art/tilesets/osorezan.png"
+    ],
+    "verified_at": "2026-11-07",
+    "verified_by": "Claude (checklist 12.6.4); final review by Clayton before release",
+    "sha256": {
+      "license_file": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "notice_file": "bd8190a9781cdbce999bf622d3449654419164ddfb7bdd7effc86a2f35315fee",
+      "snapshot_file": "28e7e3fb8dbfe47db24a318cde5fe65de0a497e36101f7bed122d95bcb0cd2ea"
+    },
+    "snapshot_file": "docs/licenses/hyakki_osorezan_art_2026-11-07.txt",
+    "downloaded_at": "2026-11-07"
+  },
+  {
     "id": "willyee_sengoku",
     "name": "Sengoku Pixel Pack",
     "category": "art",
@@ -962,7 +1019,7 @@
     "commercial_use": true,
     "ai_generated": true,
     "ai_decision": "The author states every image was generated with Google Gemini from text prompts and then cut, cleaned and assembled by hand and with scripts (no existing artwork as input). Approved by the maintainer on 2026-11-07 for the boss, mid-boss and altar Elite art (folklore yokai, CC0); recorded in docs/licenses/willyee_sengoku_2026-11-07.txt.",
-    "modifications": "yokai and boss 'move' strips from characters/ reduced to the game's sizes (box filter, binary alpha, colors snapped to each character's palette), rotated so the resting frame comes first, and a 38x38 portrait cut from the resting frame, by tools/import_sengoku.py",
+    "modifications": "yokai and boss 'move' strips from characters/ reduced to the game's sizes (box filter, binary alpha, colors snapped to each character's palette), rotated so the resting frame comes first, and a 38x38 portrait cut from the resting frame, by tools/import_sengoku.py; for Osorezan, deterministic per-color recolors: the silver samurai hero mirrored to face left in spectral blue (Masakado), the gaki with aged grey skin and red eyes (Datsue-ba) and the gashadokuro scaled 1.5x (nearest) with ivory bones, indigo armour and violet soul-fire tongues drawn on its top outline (Gashadokuro)",
     "files": [
       "assets/art/bosses/tanuki/*",
       "assets/art/bosses/kappa_elder/*",
@@ -976,6 +1033,9 @@
       "assets/art/bosses/kuroe/*",
       "assets/art/bosses/izanami/*",
       "assets/art/bosses/shinigami/*",
+      "assets/art/bosses/masakado/*",
+      "assets/art/bosses/gashadokuro/*",
+      "assets/art/midbosses/osorezan/*",
       "assets/art/midbosses/village/*",
       "assets/art/midbosses/bamboo/*",
       "assets/art/midbosses/temple/*",

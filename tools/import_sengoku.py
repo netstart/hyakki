@@ -40,13 +40,19 @@ LICENSE_ID = "willyee_sengoku"
 #     face   (x, y, lado) do quadrado do rosto em px do pack, relativo ao canto superior
 #            esquerdo da caixa opaca do quadro de repouso; sem isso, automatico (topo)
 #     center "feet" (padrao: frame centrado nos pes do quadro de repouso) ou "box"
+#     flip   espelha os quadros (personagem que olha para a direita passa a olhar para a esquerda)
+#     recolor receita de RECOLOR aplicada aos quadros do pack antes de tudo (cor por cor,
+#            deterministica); a paleta da saida passa a ser a recolorida
+#     grow   deixa ampliar (altura-alvo maior que a do pack)
+#     method metodo de reducao/ampliacao so desta saida (ex.: "nearest" para ampliar sem borrar)
+#     soulfire chamas de alma violetas sobre o contorno de cima, diferentes em cada quadro
 #   faces_left: para que lado o desenho original olha (True = esquerda), para data/*.json.
 # ---------------------------------------------------------------------------------------------
 BOSS, GUARD, ELITE = "chefe", "guardiao", "elite"
 DEST = {BOSS: "assets/art/bosses", GUARD: "assets/art/midbosses", ELITE: "assets/art/elites"}
 # Guardioes ficam na pasta da fase deles (assets/art/midbosses/<fase>/, como o Kincho em secret/).
 GUARD_DIR = {"onikuma": "village", "nuppeppo": "bamboo", "onmoraki": "temple", "onibi": "dunes",
-             "yomi_hebi": "yomi"}
+             "yomi_hebi": "yomi", "datsueba": "osorezan"}
 
 TABLE = [
     # chefes (alvo ~80)
@@ -62,12 +68,20 @@ TABLE = [
     ("kuroe",            BOSS,  "jp_mob_umibozu",        72, {"face": (4, 0, 46)}),
     ("izanami",          BOSS,  "jp_mob_yukionna",       80, {"face": (10, 0, 24)}),
     ("shinigami",        BOSS,  "jp_mob_gashadokuro",    80, {"face": (8, 0, 22)}),
+    # Osorezan: samurai fantasma (o heroi prateado em azul espectral, virado para a esquerda) e a
+    # Gashadokuro gigante (o esqueleto do Shinigami 1,5x, ossos marfim e fogo de alma violeta).
+    ("masakado",         BOSS,  "jp_hero_samurai_v_silver", 80, {"anim": "walk", "flip": True,
+                                                              "recolor": "spectral", "face": (6, 0, 24)}),
+    ("gashadokuro",      BOSS,  "jp_mob_gashadokuro",   104, {"grow": True, "method": "nearest", "recolor": "ivory_soul",
+                                                              "soulfire": True, "face": (8, 0, 22)}),
     # guardioes (alvo ~62)
     ("onikuma",          GUARD, "jp_mob_kasaobake",      62, {"face": (0, 14, 25)}),
     ("nuppeppo",         GUARD, "jp_mob_ittan",          34, {"face": (0, 4, 40)}),
     ("onmoraki",         GUARD, "jp_mob_jorogumo",       44, {"face": (44, 0, 22)}),
     ("onibi",            GUARD, "jp_mob_chochin",        60, {"face": (0, 4, 44)}),
     ("yomi_hebi",        GUARD, "jp_boss_orochi",        60, {"face": (36, 0, 40)}),
+    # Datsue-ba: o gaki do pack (velha curvada, magra, de trapo) com pele cinza de velha e olhos rubros.
+    ("datsueba",         GUARD, "jp_mob_gaki",           66, {"recolor": "hag", "face": (8, 0, 30)}),
     # elites (alvo ~36)
     ("kappa_young",      ELITE, "jp_mob_kappa",          36, {"face": (0, 0, 26)}),
     ("tengu_crow",       ELITE, "jp_mob_tengu",          36, {"face": (8, 6, 26)}),
@@ -91,8 +105,120 @@ FACES_LEFT = {
     "jp_mob_kasaobake": True, "jp_mob_ittan": True, "jp_mob_jorogumo": True,
     "jp_mob_chochin": True, "jp_boss_orochi": True, "jp_mob_kappa": True,
     "jp_mob_tengu": True, "jp_mob_oni": True, "jp_mob_kitsune_v_silver": True,
-    "jp_mob_chochin_v_purple": True, "jp_mob_hitotsume": True,
+    "jp_mob_chochin_v_purple": True, "jp_mob_hitotsume": True, "jp_mob_gaki": True,
+    "jp_hero_samurai_v_silver": False,
 }
+
+
+# --------------------------------------------------------------------------- recolor
+
+
+def _lum(c: tuple) -> float:
+    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+
+
+def _ramp(ramp: list, t: float) -> tuple:
+    """Cor da rampa (lista de RGB, escuro -> claro) na posicao t em [0, 1], sem misturar cores."""
+    i = min(len(ramp) - 1, max(0, int(t * len(ramp))))
+    return ramp[i]
+
+
+# Rampas das receitas (escuro -> claro).
+GHOST = [(18, 22, 44), (40, 52, 92), (70, 92, 142), (112, 140, 190), (164, 192, 228), (214, 232, 248),
+         (244, 250, 255)]
+GHOST_RED = [(70, 18, 40), (150, 34, 62), (226, 74, 96), (255, 150, 160)]
+HAG_SKIN = [(40, 30, 40), (78, 62, 70), (116, 98, 102), (152, 136, 132), (190, 176, 164), (224, 214, 200)]
+IVORY = [(120, 108, 92), (168, 156, 128), (206, 196, 164), (230, 222, 194), (248, 244, 224)]
+INDIGO = [(22, 16, 38), (40, 30, 66), (62, 46, 98)]
+VIOLET = [(66, 34, 110), (104, 58, 170), (150, 98, 222), (198, 160, 255)]
+
+
+def _sat(c: tuple) -> int:
+    return max(c[:3]) - min(c[:3])
+
+
+def recolor_spectral(c: tuple) -> tuple:
+    """Masakado: corpo em azul de fantasma pela luminancia; vermelhos viram carmim (o onryo)."""
+    lum = _lum(c) / 255.0
+    if c[0] > c[1] + 60 and c[0] > c[2] + 40 and _lum(c) < 150:
+        return _ramp(GHOST_RED, lum * 1.6)
+    return _ramp(GHOST, min(1.0, lum * 1.15 + 0.04))
+
+
+def recolor_hag(c: tuple) -> tuple:
+    """Datsue-ba: pele verde do gaki vira pele cinza de velha; olhos amarelos viram rubros."""
+    r, g, b = c[:3]
+    if r > 180 and r >= g and b < 100:   # olhos e brilho dourado
+        return (255, 92, 96) if g > 190 else (196, 40, 56)
+    if g >= r - 15 and b < g - 20:       # pele verde-oliva do gaki
+        return _ramp(HAG_SKIN, _lum(c) / 230.0)
+    return (r, g, b)
+
+
+def recolor_ivory_soul(c: tuple) -> tuple:
+    """Gashadokuro: ossos marfim, armadura num indigo liso (sem salpico), cordoes e o olho em
+    violeta de alma."""
+    r, g, b = c[:3]
+    lum = _lum(c)
+    if b > r + 50:                       # olho azul
+        return (232, 200, 255)
+    if lum < 40:                         # contorno
+        return (16, 10, 26)
+    if r > max(g, b) + 40 and lum > 70:  # cordoes e laca vermelha clara
+        return _ramp(VIOLET, (lum - 70) / 40.0)
+    if lum < 72:                         # placas da armadura e laca escura
+        return _ramp(INDIGO, (lum - 50) / 22.0)
+    return _ramp(IVORY, (lum - 72) / 145.0)
+
+
+RECOLOR = {"spectral": recolor_spectral, "hag": recolor_hag, "ivory_soul": recolor_ivory_soul}
+
+
+def recolor(im: Image.Image, recipe: str) -> Image.Image:
+    """Troca cada cor opaca do quadro pela da receita (tabela de cores; alfa igual)."""
+    fn = RECOLOR[recipe]
+    colors = im.getcolors(maxcolors=1 << 16) or []
+    out = im.copy()
+    px = out.load()
+    table = {col: fn(col) for _n, col in colors if col[3] >= ALPHA_CUT}
+    for y in range(out.height):
+        for x in range(out.width):
+            p = px[x, y]
+            if p[3] >= ALPHA_CUT:
+                q = table[p]
+                px[x, y] = (q[0], q[1], q[2], 255)
+    return out
+
+
+# Fogo de alma (soulfire): cores da base para a ponta e altura maxima da chama (px).
+SOUL_FIRE = [(244, 226, 255), (198, 150, 255), (140, 84, 226), (88, 46, 168)]
+SOUL_PAD = 12
+
+
+def soulfire(frames: list[Image.Image]) -> list[Image.Image]:
+    """Linguas de fogo violeta subindo do contorno de cima (cabeca, ombros, espada), cada quadro
+    com outra altura por coluna (ondas em seno com fase do quadro): deterministico."""
+    import math
+    out = []
+    for i, f in enumerate(frames):
+        w, h = f.size
+        big = Image.new("RGBA", (w, h + SOUL_PAD), (0, 0, 0, 0))
+        big.paste(f, (0, SOUL_PAD))
+        a = big.getchannel("A").load()
+        px = big.load()
+        for x in range(w):
+            top = next((y for y in range(big.height) if a[x, y] >= ALPHA_CUT), None)
+            if top is None or top > SOUL_PAD + h * 0.55:
+                continue
+            if (x * 7 + i * 3) % 6 == 0:
+                continue                  # falhas entre as linguas
+            wave = 4.0 + 3.4 * math.sin(x * 0.83 + i * 2.1) + 2.6 * math.sin(x * 0.29 - i * 1.4)
+            tall = max(0, min(SOUL_PAD - 1, round(wave)))
+            for k in range(1, tall + 1):
+                c = SOUL_FIRE[min(len(SOUL_FIRE) - 1, (k - 1) * len(SOUL_FIRE) // max(1, tall))]
+                px[x, top - k] = (c[0], c[1], c[2], 255)
+        out.append(big)
+    return out
 
 FACE_SIZE = 38
 ALPHA_CUT = 128          # limiar de alfa em 50%
@@ -196,11 +322,18 @@ def feet_center(frame: Image.Image) -> float:
 
 def build(pack: str, meta: dict, entry: tuple, method: str) -> dict:
     oid, group, src, target, opts = entry
+    method = opts.get("method", method)
     anim = opts.get("anim", "move")
     idle = load_strip(pack, meta, src + "_idle")
     frames: list[Image.Image] = []
     for a in anim.split("+"):
         frames += idle if a == "idle" else load_strip(pack, meta, f"{src}_{a}")
+    if opts.get("flip"):
+        idle = [f.transpose(Image.Transpose.FLIP_LEFT_RIGHT) for f in idle]
+        frames = [f.transpose(Image.Transpose.FLIP_LEFT_RIGHT) for f in frames]
+    if opts.get("recolor"):
+        idle = [recolor(f, opts["recolor"]) for f in idle]
+        frames = [recolor(f, opts["recolor"]) for f in frames]
     # Quadro parado = o mais parecido com o idle[0] (o jogo mostra o quadro 0 quando para):
     # gira a tira para ele vir primeiro, sem mudar a ordem do ciclo.
     if anim != "idle":
@@ -213,7 +346,7 @@ def build(pack: str, meta: dict, entry: tuple, method: str) -> dict:
     s = target / rest_h
     # Nunca amplia (a arte do pack e o maximo de detalhe; ampliar 1,1x so duplica colunas soltas)
     # e, perto de 1:1, mantem 1:1: reduzir 0,95x apaga contornos sem ganho de tamanho.
-    if s >= NATIVE_FROM:
+    if s >= NATIVE_FROM and not (opts.get("grow") and s > 1.0):
         s = 1.0
     ux0, uy0, ux1, uy1 = union_box(frames)
     if opts.get("center", "feet") == "feet":
@@ -227,6 +360,9 @@ def build(pack: str, meta: dict, entry: tuple, method: str) -> dict:
     h = max(1, round((uy1 - uy0) * s))
     pal = palette_image(palette_of(frames)) if method.endswith("_pal") else None
     out_frames = [reduce(f.crop(crop), (w, h), method, pal) for f in frames]
+    if opts.get("soulfire"):
+        out_frames = soulfire(out_frames)
+        h = out_frames[0].height
     strip = Image.new("RGBA", (w * len(out_frames), h), (0, 0, 0, 0))
     for i, f in enumerate(out_frames):
         strip.paste(f, (i * w, 0))
@@ -235,7 +371,8 @@ def build(pack: str, meta: dict, entry: tuple, method: str) -> dict:
     return {
         "id": oid, "group": group, "src": src, "anim": anim, "frame": [w, h],
         "frames": len(out_frames), "fps": int(meta[f"{src}_{anim.split('+')[-1]}"]["fps"]),
-        "height": opaque_h[3] - opaque_h[1], "faces_left": FACES_LEFT.get(src),
+        "height": opaque_h[3] - opaque_h[1],
+        "faces_left": (not FACES_LEFT.get(src)) if opts.get("flip") else FACES_LEFT.get(src),
         "strip": strip, "first": out_frames[0], "face": face, "scale": s,
         "frames_img": out_frames,
     }

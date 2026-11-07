@@ -59,7 +59,7 @@ func run(host: Node, check: Callable) -> void:
 static func progress_profile(moon: int, extra_won: Array = []) -> Dictionary:
 	var data := SaveManager.default_profile()
 	var won: Array = ["village", "bamboo"] + extra_won
-	var order := ["village", "bamboo", "temple", "dunes", "yomi", "secret"]
+	var order := ["village", "bamboo", "temple", "dunes", "yomi", "secret", "osorezan"]
 	data["unlocked"]["stages"] = order.slice(0, won.size() + 1)
 	for id: String in won:
 		data["stage_best"][id] = {"won": true, "won_brisa": false, "max_moon": moon if id == "village" else 0,

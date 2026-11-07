@@ -19,16 +19,25 @@ const STAGES := {
 	&"dunes": Vector2(134.40, 35.52),  # Tottori
 	&"yomi": Vector2(130.26, 32.75),  # Unzen
 	&"secret": Vector2(132.69, 35.40),  # Izumo / Yomotsu Hirasaka
+	&"osorezan": Vector2(141.09, 41.33),  # Osorezan (Mutsu, Aomori)
 }
 
+## Fases escondidas no mapa e na tela de fases ("???" e a dica da névoa) enquanto bloqueadas: a
+## secreta (liberada pela vitória no Yomi) e o Osorezan (liberado pela vitória na secreta).
+const HIDDEN: Array[StringName] = [&"secret", &"osorezan"]
+
 ## Pontos de passagem da estrada até cada fase (lon, lat), para ela correr por terra e o
-## caminho secreto (de Unzen a Izumo) seguir pela costa do Mar do Japão, sem cruzar o outro.
+## caminho secreto (de Unzen a Izumo) seguir pela costa do Mar do Japão, sem cruzar o outro; de
+## Izumo a Osorezan a estrada sobe a costa do Mar do Japão (Tottori, Wakasa, Noto, Echigo, Akita)
+## até a península de Shimokita, passando ao norte de Tottori para não cruzar a do Yomi.
 const VIA := {
 	&"bamboo": [Vector2(140.75, 37.75), Vector2(139.85, 36.6)],
 	&"temple": [Vector2(137.9, 35.75), Vector2(136.7, 35.3)],
 	&"dunes": [Vector2(135.15, 35.05)],
 	&"yomi": [Vector2(133.3, 34.95), Vector2(131.9, 34.2), Vector2(130.75, 33.55)],
 	&"secret": [Vector2(129.85, 33.25), Vector2(130.9, 34.35), Vector2(131.9, 35.05)],
+	&"osorezan": [Vector2(133.7, 35.5), Vector2(134.6, 35.6), Vector2(136.48, 35.73), Vector2(137.07, 36.61),
+			Vector2(138.58, 37.19), Vector2(139.6, 38.24), Vector2(140.3, 39.54), Vector2(140.16, 40.44)],
 }
 
 ## Contornos (lon, lat), no sentido horário do mapa.

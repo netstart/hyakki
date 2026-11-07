@@ -105,6 +105,31 @@ static func is_content_available(kind: String, id: StringName, data: Dictionary)
 	return unlock.is_empty() or SaveManager.is_unlocked(kind, id)
 
 
+## Guardiã dona de uma arma ou relíquia exclusiva ("hero" em data/weapons.json e
+## data/passives.json, ex.: as da Kuon); &"" = de todas as guardiãs.
+static func exclusive_hero(data: Dictionary) -> StringName:
+	return StringName(String(data.get("hero", "")))
+
+
+## A arma ou relíquia `data` pode sair para a guardiã `hero` (no nível, no baú e no omikuji, também
+## no bot): as exclusivas só para a dona, nunca para as outras.
+static func fits_hero(data: Dictionary, hero: StringName) -> bool:
+	var owner := exclusive_hero(data)
+	return owner == &"" or owner == hero
+
+
+## Arma ou relíquia que pode sair numa partida da guardiã `hero` (nível, baú e omikuji): a exclusiva
+## só para a dona e o desbloqueio do perfil, que o bot pula (`bot`; a exclusividade vale para ele também).
+static func can_offer(kind: String, id: StringName, data: Dictionary, hero: StringName, bot: bool) -> bool:
+	return fits_hero(data, hero) and (bot or is_content_available(kind, id, data))
+
+
+## Exclusiva cuja dona ainda está bloqueada no perfil: o Diário e o Guia a escondem ("???").
+static func exclusive_locked(data: Dictionary) -> bool:
+	var owner := exclusive_hero(data)
+	return owner != &"" and not is_hero_unlocked(owner)
+
+
 ## Ryō que a partida leva para o perfil: na Noite Sem Fim só o ganho depois do amanhecer
 ## (acima de tracker.endless_ryo_start) vale ×ENDLESS_GOLD; o anúncio de dobrar vale sobre tudo.
 static func run_ryo(result: Dictionary, tracker: RunTracker) -> int:
@@ -133,6 +158,9 @@ static func apply_run(result: Dictionary, tracker: RunTracker) -> Dictionary:
 	stats["chests"] = int(stats["chests"]) + tracker.chests
 	stats["max_level"] = maxi(int(stats["max_level"]), int(result["level"]))
 	stats["max_kills_10s"] = maxi(int(stats["max_kills_10s"]), tracker.max_kills_10s)
+	# Servos espectrais levantados (Kuon, MinionSystem): total da vida, para a conquista.
+	if tracker.minions_raised > 0:
+		stats["minions_raised"] = int(stats.get("minions_raised", 0)) + tracker.minions_raised
 	if bool(result["victory"]):
 		stats["wins"] = int(stats["wins"]) + 1
 	else:
@@ -268,6 +296,10 @@ static func _met(c: Dictionary, result: Dictionary, tracker: RunTracker) -> bool
 			return (stats.get("won_heroes", []) as Array).size() >= DB.ids("heroes").size()
 		"win_hero":
 			return victory and String(result["hero"]) == String(c["hero"])
+		"minions_raised":
+			# Total da vida (stats "minions_raised"); com "hero", conferido no fim de uma partida dela.
+			return (not c.has("hero") or String(c["hero"]) == String(result["hero"])) \
+					and int(stats.get("minions_raised", 0)) >= int(c["count"])
 		"win_speed":
 			var needed := int(c["speed"])
 			return victory and int(result.get("speed_max", 1)) >= needed \

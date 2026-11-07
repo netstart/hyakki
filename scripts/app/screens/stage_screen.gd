@@ -471,7 +471,7 @@ func _refresh() -> void:
 	var id := _viewing
 	var best := SaveManager.stage_best(id)
 	var unlocked := MetaProgress.is_stage_unlocked(id)
-	var hidden := id == &"secret" and not unlocked
+	var hidden := JourneyGeo.HIDDEN.has(id) and not unlocked
 	_region.text = "???" if hidden else tr("stage.%s.region" % id)
 	_name.text = "???" if hidden else tr("stage.%s.name" % id)
 	_cleared.visible = bool(best["won"])

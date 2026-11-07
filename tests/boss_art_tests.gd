@@ -14,10 +14,14 @@ const AbilityTests := preload("res://tests/ability_tests.gd")
 const KAGE_SCALE := 1.15
 ## Ids trocados pela arte do Sengoku Pixel Pack (chefes e guardiões).
 const BOSSES := [&"tanuki", &"kappa_elder", &"bamboo_ancestral", &"kitsune_nine", &"tengu_crow_king",
-		&"faceless_monk", &"stone_cyclops", &"ash_dragon", &"red_oni", &"kuroe", &"izanami", &"shinigami"]
-const GUARDS := [&"onikuma", &"nuppeppo", &"onmoraki", &"onibi", &"yomi_hebi"]
+		&"faceless_monk", &"stone_cyclops", &"ash_dragon", &"red_oni", &"kuroe", &"izanami", &"shinigami",
+		&"masakado", &"gashadokuro"]
+const GUARDS := [&"onikuma", &"nuppeppo", &"onmoraki", &"onibi", &"yomi_hebi", &"datsueba"]
+## Chefes gigantes (a Gashadokuro do Osorezan: o esqueleto do Shinigami 1,5x, fogo de alma por cima).
+const GIANTS := [&"gashadokuro"]
 ## Altura do quadro (px na tela) de cada grupo, a da prancha de conferência com folga.
 const BOSS_HEIGHT := Vector2(56.0, 90.0)
+const GIANT_HEIGHT := Vector2(100.0, 130.0)
 const GUARD_HEIGHT := Vector2(34.0, 72.0)
 const ELITE_HEIGHT := Vector2(20.0, 44.0)
 const FACE_SIZE := 38
@@ -53,7 +57,7 @@ func run_unit(check: Callable) -> void:
 	for id: StringName in BOSSES + GUARDS:
 		var b: Dictionary = bosses.get(id, {})
 		var sprite: Dictionary = b.get("sprite", {})
-		var limits: Vector2 = GUARD_HEIGHT if GUARDS.has(id) else BOSS_HEIGHT
+		var limits: Vector2 = GUARD_HEIGHT if GUARDS.has(id) else (GIANT_HEIGHT if GIANTS.has(id) else BOSS_HEIGHT)
 		var tall := float((sprite.get("frame", [0, 0]) as Array)[1]) * float(b.get("scale", 1.0))
 		_check.call(bool(sprite.get("faces_left", false)) and not sprite.has("composite")
 				and not b.has("scale") and not b.has("tint") and not b.has("walk_sprite") and not b.has("attack_sprite"),
@@ -64,6 +68,12 @@ func run_unit(check: Callable) -> void:
 			_check.call(kage["sprite"] == sprite and kage.get("faceset") == b.get("faceset")
 					and is_equal_approx(float(kage.get("scale", 1.0)), KAGE_SCALE),
 					"%s_kage: mesma arte do Guardião × %.2f", [id, KAGE_SCALE])
+	var shini: Dictionary = (bosses.get(&"shinigami", {}) as Dictionary).get("sprite", {})
+	var gasha: Dictionary = (bosses.get(&"gashadokuro", {}) as Dictionary).get("sprite", {})
+	_check.call(String(shini.get("path", "")).ends_with("bosses/shinigami/Idle.png")
+			and String(gasha.get("path", "")) != String(shini.get("path", ""))
+			and float((gasha.get("frame", [0, 0]) as Array)[1]) >= 1.4 * float((shini.get("frame", [0, 0]) as Array)[1]),
+			"gashadokuro: arte própria, bem maior que a do Shinigami (que continua a mesma)")
 	var with_art := 0
 	for e: Dictionary in _json("enemies"):
 		if not e.has("elite_sprite"):

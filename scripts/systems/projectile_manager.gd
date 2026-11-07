@@ -46,6 +46,12 @@ const KINDS := {
 	# Ninja Adventure (CC0), rastro curto azul-branco.
 	"icicle": {"path": "res://assets/art/fx/projectile/IceSpike.png", "frame": 16, "spin": 0.0,
 			"tint": "#e8fbff", "trail": "#a8e8ff", "width": 2.0, "glow": "#5fc8ff", "glow_r": 7.0},
+	# Ofuda dos mortos da Kuon (Shiryō-fuda / Hyakki-shō): o papel do Ninja Adventure (CC0) girando
+	# devagar, tingido de lavanda, com rastro de alma violeta.
+	"soul_fuda": {"path": "res://assets/art/items/scroll/Scroll.png", "frame": 14, "spin": 7.0,
+			"tint": "#eee4ff", "trail": "#b88cff", "width": 2.0, "glow": "#9a6cff", "glow_r": 9.0},
+	"war_fuda": {"path": "res://assets/art/items/scroll/Scroll.png", "frame": 14, "spin": 9.0,
+			"tint": "#ffe9f6", "trail": "#9a6cff", "width": 3.0, "glow": "#7a4cff", "glow_r": 12.0, "scale": 1.15},
 }
 
 var game: HyakkiGame

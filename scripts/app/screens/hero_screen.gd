@@ -30,6 +30,8 @@ const LOOK := {
 	"rin": {"kanji": "凛", "color": Color("8fe07a"), "motes": "leaf", "ult": "items/Arrow"},
 	"tora": {"kanji": "虎", "color": Color("ff8a4a"), "motes": "ember", "ult": "spell/OrbFire"},
 	"yuki": {"kanji": "雪", "color": Color("a8dcff"), "motes": "snow", "ult": "spell/OrbDarkness"},
+	# Kuon (conteúdo premium): almas violeta subindo, hitodama orbitando o pedestal e moldura de ouro velho.
+	"kuon": {"kanji": "久遠", "color": Color("b88cff"), "motes": "soul", "ult": "spell/OrbDarkness", "premium": true},
 }
 
 var _grid: HBoxContainer
@@ -110,6 +112,7 @@ func on_show() -> void:
 	_portraits.clear()
 	for id: StringName in DB.ids("heroes"):
 		var p := Portrait.new()
+		p.premium = bool((LOOK.get(String(id), {}) as Dictionary).get("premium", false))
 		p.setup(id, MetaProgress.is_hero_unlocked(id))
 		p.pressed.connect(_select.bind(id))
 		_grid.add_child(p)
@@ -472,6 +475,8 @@ class HeroStage extends Control:
 	var _color := Color.WHITE
 	var _kanji := ""
 	var _unlocked := true
+	## Guardiã premium (LOOK "premium"): hitodama orbitando e o arco de ouro velho atrás dela.
+	var _premium := false
 	var _time := 0.0
 	var _slide := 0.0
 	var _alpha := 1.0
@@ -504,6 +509,7 @@ class HeroStage extends Control:
 		_color = Color(look["color"])
 		_kanji = String(look["kanji"])
 		_unlocked = unlocked
+		_premium = bool(look.get("premium", false))
 		set_meta("hero", id)
 		if _tween != null and _tween.is_valid():
 			_tween.kill()
@@ -591,6 +597,39 @@ class HeroStage extends Control:
 				# Quadrilátero como primitiva (sem buffer de polígono), cor única: mesmos pixels.
 				c.draw_primitive(PackedVector2Array([feet + perp * 2.0, feet - perp * 2.0, tip - perp * 10.0,
 						tip + perp * 10.0]), PackedColorArray([Color(light, maxf(a, 0.0))]), PackedVector2Array())
+		if _premium and _unlocked:
+			_draw_premium(c, feet, pulse)
+
+	## Toque da guardiã premium (Kuon): um arco fino de ouro velho atrás dela, que gira devagar, e três
+	## hitodama (chamas de alma) numa órbita achatada em volta do pedestal, com brilho e núcleo claro.
+	## Só retângulos, textura e Stroke (nada de polígono por quadro); parado na qualidade 0.
+	func _draw_premium(c: Control, feet: Vector2, pulse: float) -> void:
+		var k := scale_factor()
+		var center := feet + Vector2(_slide, -8.0 * k)
+		var spin := _time * 0.35 if fx >= 1 else 0.0
+		var gold := Color(ThemeFactory.GOLD, (0.22 + 0.08 * pulse) * _alpha)
+		var r := 9.5 * k
+		for i: int in 3:
+			var a := spin + TAU * i / 3.0
+			Stroke.arc(c, center, r, a, a + 1.4, 16, gold, 1.0)
+		var glow := MenuKit.glow_texture()
+		var souls := 3 if fx >= 1 else 0
+		for i: int in souls:
+			var a := _time * 0.9 + TAU * i / 3.0
+			var at := (feet + Vector2(_slide + cos(a) * 13.0 * k, -6.0 * k + sin(a) * 3.0 * k
+					- 2.0 * sin(_time * 2.0 + i))).round()
+			var front := sin(a) > 0.0
+			var alpha := (1.0 if front else 0.5) * _alpha
+			var flicker := 0.85 + 0.15 * sin(_time * 9.0 + i * 2.0)
+			# Chama de alma: halo, corpo em gota (base larga e ponta que tremula) e núcleo branco.
+			c.draw_texture_rect(glow, Rect2(at - Vector2(12, 13), Vector2(24, 24)), false,
+					Color(_color, 0.55 * alpha * flicker))
+			c.draw_rect(Rect2(at + Vector2(-2, -1), Vector2(5, 4)), Color(_color, 0.9 * alpha))
+			c.draw_rect(Rect2(at + Vector2(-1, -3), Vector2(3, 2)), Color(_color.lightened(0.25), alpha))
+			c.draw_rect(Rect2(at + Vector2(roundf(sin(_time * 7.0 + i)), -5), Vector2(1, 2)),
+					Color(_color.lightened(0.5), 0.8 * alpha))
+			c.draw_rect(Rect2(at + Vector2(-1, 0), Vector2(3, 2)), Color(_color.lightened(0.6), alpha))
+			c.draw_rect(Rect2(at + Vector2(0, 0), Vector2(1, 1)), Color(1, 1, 1, alpha))
 
 	## Kanji gigante ao fundo, opaco: a transparência (e o pulso) vem do modulate (_sync_layers),
 	## então o texto não é moldado de novo a cada quadro.
@@ -705,6 +744,8 @@ class HeroStage extends Control:
 class Portrait extends Button:
 	var hero_id: StringName
 	var unlocked := true
+	## Guardiã premium (LOOK "premium"): moldura dupla de ouro velho com cantos e o brilho violeta.
+	var premium := false
 	var _face: Texture2D
 	var _pair: Array[Texture2D] = []
 	var _selected := false
@@ -750,8 +791,11 @@ class Portrait extends Button:
 		var hot := is_hovered() or has_focus()
 		var border := ThemeFactory.ACCENT if _selected else Color(ThemeFactory.GOLD, 0.85 if hot else 0.45)
 		if _selected:
-			draw_texture_rect(MenuKit.glow_texture(), r.grow(8), false, Color(1.0, 0.75, 0.35, 0.35))
+			var halo := Color(0.72, 0.55, 1.0, 0.4) if premium and unlocked else Color(1.0, 0.75, 0.35, 0.35)
+			draw_texture_rect(MenuKit.glow_texture(), r.grow(8), false, halo)
 		var bg := Color("2c1a22") if unlocked else Color(0.05, 0.04, 0.08)
+		if premium and unlocked:
+			bg = Color("221a30")
 		draw_style_box(ThemeFactory.flat_box(bg, border, 2 if _selected else 1, 3), r)
 		if _face != null:
 			var inner := r.grow(-3)
@@ -768,8 +812,23 @@ class Portrait extends Button:
 				draw_set_transform(r.end - Vector2(12, 14), 0.0, Vector2.ONE)
 				MenuKit.draw_lock(self, Vector2.ZERO)
 				draw_set_transform(Vector2.ZERO)
+		if premium:
+			_draw_premium_frame(r)
 		if _selected:
 			draw_rect(Rect2(r.position + Vector2(r.size.x * 0.5 - 3, r.size.y + 1), Vector2(6, 2)), ThemeFactory.ACCENT)
+
+	## Moldura premium por dentro do retrato (não muda o tamanho): fio violeta e cantos de ouro velho.
+	func _draw_premium_frame(r: Rect2) -> void:
+		var inner := r.grow(-2)
+		var violet := Color(0.72, 0.55, 1.0, 0.8 if unlocked else 0.35)
+		var gold := Color(ThemeFactory.GOLD, 0.95 if unlocked else 0.45)
+		draw_rect(inner, violet, false, 1.0)
+		for right: bool in [false, true]:
+			for bottom: bool in [false, true]:
+				var x := inner.end.x - 3.0 if right else inner.position.x
+				var y := inner.end.y - 3.0 if bottom else inner.position.y
+				draw_rect(Rect2(x, y + (2.0 if bottom else 0.0), 3, 1), gold)
+				draw_rect(Rect2(x + (2.0 if right else 0.0), y, 1, 3), gold)
 
 
 ## Barra de 5 segmentos; acima do normal (3) na cor do guardião, abaixo em vermelhão.

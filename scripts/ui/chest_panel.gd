@@ -81,6 +81,9 @@ const ARPEGGIO := [0, 2, 4, 7, 9, 12, 14, 16]
 const RewardRow := preload("res://scripts/ui/chest_reward_row.gd")
 
 
+## Guardiã da partida (HUD.show_chest): a roleta não mostra armas exclusivas de outra guardiã.
+var hero: StringName = &""
+
 var _rewards: Array[Dictionary] = []
 var _rows: Array[RewardRow] = []
 var _ryo_total: int = 0
@@ -121,6 +124,7 @@ var _branch_rect := Rect2()
 ## Fita de cada cartão na roleta: ícones de enchimento e o item no fim.
 var _strips: Array = []
 var _pool: Array[Texture2D] = []
+var _pool_hero: StringName = &"-"
 var _reel_row: int = -1
 var _reel_index: int = -1
 var _reel_flash: float = 0.0
@@ -502,16 +506,28 @@ func _fill_row(row: RewardRow, reward: Dictionary) -> void:
 	row.shown = 0.0
 
 
-## Fita da roleta de cada cartão: ícones de armas sorteados (só visual, `_rng` da tela, nunca
-## o da partida) e o item de verdade no fim, onde a roleta para.
-func _build_strips() -> void:
+## Ícones que a roleta sorteia: as armas que podem sair para a guardiã da partida (`hero`), uma vez
+## cada (montado na primeira roleta e de novo quando a guardiã muda).
+func reel_pool() -> Array[Texture2D]:
+	if _pool_hero != hero:
+		_pool.clear()
+		_pool_hero = hero
 	if _pool.is_empty():
 		for id: StringName in DB.ids("weapons"):
+			if not MetaProgress.fits_hero(DB.weapon(id), hero):
+				continue
 			var path := String(DB.weapon(id).get("icon", ""))
 			if not path.is_empty() and ResourceLoader.exists(path):
 				var tex := load(path) as Texture2D
 				if tex and not _pool.has(tex):
 					_pool.append(tex)
+	return _pool
+
+
+## Fita da roleta de cada cartão: ícones de armas sorteados (só visual, `_rng` da tela, nunca
+## o da partida) e o item de verdade no fim, onde a roleta para.
+func _build_strips() -> void:
+	reel_pool()
 	_strips.clear()
 	for i: int in range(_rows.size()):
 		var row := _rows[i]

@@ -174,6 +174,9 @@ func _test_heroes(view: Vector2, state: String) -> void:
 			for o: Rect2 in rects:
 				_ok(not o.intersects(r), "%s: retratos sem sobrepor", st)
 			rects.append(r)
+			# Moldura premium (ouro velho e fio violeta, por dentro do retrato) só na Kuon.
+			_ok(bool(child.get("premium")) == (child.get("hero_id") == &"kuon"), "%s: %s com a moldura certa",
+					[st, child.name])
 		var ids := DB.ids("heroes")
 		# Todos: cada um tem a sua energia e as suas 3 habilidades (textos de tamanhos diferentes).
 		var picks: Array[StringName] = ids
@@ -193,6 +196,7 @@ func _test_heroes(view: Vector2, state: String) -> void:
 			_ok((screen.get("_lock_box") as Control).visible != unlocked, "%s: condição só no bloqueado", sub)
 			var stage := screen.get("_stage") as Control
 			var hero_rect: Rect2 = stage.call("hero_rect")
+			_ok(bool(stage.get("_premium")) == (id == &"kuon"), "%s: hitodama e arco de ouro só na Kuon", sub)
 			_ok(Rect2(Vector2.ZERO, stage.size).encloses(hero_rect), "%s: guardião inteiro no palco", sub)
 			_ok(not stage.get_global_rect().intersects(panel.get_global_rect()), "%s: palco fora do painel", sub)
 			for r: Rect2 in rects:
@@ -848,8 +852,12 @@ func _expected_recipe(w: StringName) -> Array:
 
 
 func _ref_known(category: String, id: String) -> bool:
+	var data: Dictionary = DB.passives[StringName(id)] if category == "relics" else DB.weapon(StringName(id))
+	# Exclusivas de uma guardiã bloqueada (as da Kuon) ficam escondidas.
+	if MetaProgress.exclusive_locked(data):
+		return false
 	if category == "relics":
-		return MetaProgress.is_content_available("passives", StringName(id), DB.passives[StringName(id)])
+		return MetaProgress.is_content_available("passives", StringName(id), data)
 	var stats: Dictionary = SaveManager.data["stats"]
 	return String(DB.weapon(StringName(id)).get("kind", "base")) == "base" or (stats["evolved"] as Array).has(id) \
 			or (stats.get("unions", []) as Array).has(id)

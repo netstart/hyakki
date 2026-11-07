@@ -1,4 +1,8 @@
 # Textos de licença ficam com LF: tools/fetch_licenses.py compara o conteúdo byte a byte.
 licenses/** text eol=lf
+# Cópias das licenças junto dos assets: o hash em assets/asset_index.json vale para o arquivo com LF em
+# qualquer checkout (com ou sem core.autocrlf). text=auto deixa como estão os avisos que o git trata
+# como binários (CR solto nos da Kenney de impacto, interface e sci-fi), com os bytes exatos do pacote.
+assets/licenses_src/** text=auto eol=lf
 # Snapshots de origem: o hash em licenses/registry.json vale para os bytes exatos.
 docs/licenses/** -text

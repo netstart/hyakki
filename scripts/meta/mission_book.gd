@@ -36,6 +36,7 @@ const LEGACY_CATEGORY := {
 	"survive": &"stages", "win_stage": &"stages", "win_moon": &"stages", "win_mode": &"stages",
 	"win_speed": &"stages", "win_slow_moon": &"stages", "no_damage": &"stages",
 	"win_hero": &"heroes", "win_all_heroes": &"heroes", "level_reach": &"heroes", "ultimates_run": &"heroes",
+	"minions_raised": &"heroes",
 	"evolve_count": &"weapons", "union_any": &"weapons", "boss_defeat": &"bosses", "dark_survive": &"lantern",
 	"win_no_kami": &"kami", "endless_reach": &"endless", "kills_total": &"kills", "kills_burst": &"kills",
 	"daily_complete": &"daily", "codex_entries": &"collection", "ryo_total": &"collection",
@@ -363,6 +364,8 @@ static func raw_progress(id: StringName) -> Vector2:
 			return Vector2(_best_endless(), float(c["seconds"]))
 		"ultimates_run":
 			return Vector2(float(rec["ultimates_run"]), float(c["count"]))
+		"minions_raised":
+			return Vector2(float(stats.get("minions_raised", 0)), float(c["count"]))
 		"codex_entries":
 			return Vector2(float(MetaProgress.codex_count()), float(c["count"]))
 		"win_all_heroes":
@@ -676,13 +679,16 @@ static func is_available(id: StringName) -> bool:
 	return true
 
 
-## Evolução cuja arma base e relíquia já saem no jogo.
+## Evolução cuja arma base e relíquia já saem no jogo (e, se exclusiva, com a dona liberada).
 static func _weapon_ready(evolution: StringName) -> bool:
 	var base := StringName(String(DB.weapon(evolution).get("from", "")))
 	var row := DB.weapon(base)
 	if row.is_empty():
 		return false
 	var relic := StringName(String(row.get("evolves_with", "")))
+	# Exclusivas (as da Kuon): só depois de liberar a dona.
+	if MetaProgress.exclusive_locked(row):
+		return false
 	return MetaProgress.is_content_available("weapons", base, row) \
 			and (relic == &"" or MetaProgress.is_content_available("passives", relic, DB.passives.get(relic, {})))
 

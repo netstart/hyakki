@@ -127,6 +127,13 @@ const VARIANTS := {
 	# Escudo do Diamante (剛) voltando: campos de força da Kenney Sci-Fi (CC0).
 	"elite_shield": ["ks_forcefield_0", "ks_forcefield_3"],
 	"a_ready": ["a_ready_0"],
+	# Kuon, a Shinobi dos Mortos, e o Osorezan (nc_*, CC0, tools/gen_necro_sfx.py): ofuda de papel,
+	# servos espectrais, almas recolhidas e ossos. Os únicos (nc_raise, nc_rite...) tocam pelo nome.
+	"nc_fuda_throw": ["nc_fuda_throw_0", "nc_fuda_throw_1", "nc_fuda_throw_2"],
+	"nc_fuda_hit": ["nc_fuda_hit_0", "nc_fuda_hit_1", "nc_fuda_hit_2"],
+	"nc_minion_hit": ["nc_minion_hit_0", "nc_minion_hit_1", "nc_minion_hit_2"],
+	"nc_soul_pickup": ["nc_soul_pickup_0", "nc_soul_pickup_1", "nc_soul_pickup_2"],
+	"nc_bone_crack": ["nc_bone_crack_0", "nc_bone_crack_1"],
 }
 
 ## Último som pedido e quantos pedidos por id (inclusive os descartados), para os testes,

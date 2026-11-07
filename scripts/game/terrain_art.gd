@@ -29,6 +29,9 @@ const TILESETS := {
 	"field": "res://assets/art/tilesets/field.png",
 	"water": "res://assets/art/tilesets/water.png",
 	"relief_detail": "res://assets/art/tilesets/relief_detail.png",
+	## Osorezan (恐山): cata-ventos, pilhas de pedras, sotoba, Jizō, rochas vulcânicas, enxofre e o
+	## chão de cinza (tools/gen_osorezan_art.py, obra do projeto em CC0).
+	"osorezan": "res://assets/art/tilesets/osorezan.png",
 }
 ## Ondulações da água (Backgrounds/Animated/Water Ripples): 4 quadros de 16x16 lado a lado, no
 ## mesmo azul do miolo do TilesetWater.

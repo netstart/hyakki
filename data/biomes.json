@@ -1281,6 +1281,237 @@
    5,
    1,
    1
+  ],
+  "kazaguruma_a": [
+   "osorezan",
+   0,
+   0,
+   1,
+   2
+  ],
+  "kazaguruma_a_spin": [
+   "osorezan",
+   1,
+   0,
+   1,
+   2
+  ],
+  "kazaguruma_b": [
+   "osorezan",
+   2,
+   0,
+   1,
+   2
+  ],
+  "kazaguruma_b_spin": [
+   "osorezan",
+   3,
+   0,
+   1,
+   2
+  ],
+  "kazaguruma_pile": [
+   "osorezan",
+   4,
+   0,
+   2,
+   2
+  ],
+  "kazaguruma_pile_spin": [
+   "osorezan",
+   6,
+   0,
+   2,
+   2
+  ],
+  "cairn_l": [
+   "osorezan",
+   8,
+   0,
+   1,
+   2
+  ],
+  "sotoba_a": [
+   "osorezan",
+   9,
+   0,
+   1,
+   2
+  ],
+  "sotoba_b": [
+   "osorezan",
+   10,
+   0,
+   1,
+   2
+  ],
+  "jizo_a": [
+   "osorezan",
+   11,
+   0,
+   1,
+   2
+  ],
+  "jizo_c": [
+   "osorezan",
+   12,
+   0,
+   1,
+   2
+  ],
+  "lantern_old": [
+   "osorezan",
+   13,
+   0,
+   1,
+   2
+  ],
+  "dead_pine": [
+   "osorezan",
+   14,
+   0,
+   2,
+   2
+  ],
+  "dead_tree_bare": [
+   "osorezan",
+   16,
+   0,
+   2,
+   2
+  ],
+  "sanzu_torii": [
+   "osorezan",
+   18,
+   0,
+   2,
+   2
+  ],
+  "volcanic_a": [
+   "osorezan",
+   20,
+   0,
+   2,
+   2
+  ],
+  "cairn_s": [
+   "osorezan",
+   0,
+   2,
+   1,
+   1
+  ],
+  "cairn_m": [
+   "osorezan",
+   1,
+   2,
+   1,
+   1
+  ],
+  "jizo_b": [
+   "osorezan",
+   2,
+   2,
+   1,
+   1
+  ],
+  "volcanic_b": [
+   "osorezan",
+   3,
+   2,
+   1,
+   1
+  ],
+  "volcanic_c": [
+   "osorezan",
+   4,
+   2,
+   1,
+   1
+  ],
+  "sulfur_vent": [
+   "osorezan",
+   5,
+   2,
+   1,
+   1
+  ],
+  "sulfur_crust": [
+   "osorezan",
+   6,
+   2,
+   1,
+   1
+  ],
+  "sulfur_patch": [
+   "osorezan",
+   7,
+   2,
+   2,
+   1
+  ],
+  "sai_pebbles_a": [
+   "osorezan",
+   9,
+   2,
+   1,
+   1
+  ],
+  "sai_pebbles_b": [
+   "osorezan",
+   10,
+   2,
+   1,
+   1
+  ],
+  "sai_pebbles_c": [
+   "osorezan",
+   11,
+   2,
+   2,
+   1
+  ],
+  "water_ripple": [
+   "osorezan",
+   13,
+   2,
+   1,
+   1
+  ],
+  "ground_ash_a": [
+   "osorezan",
+   0,
+   3,
+   1,
+   1
+  ],
+  "ground_ash_b": [
+   "osorezan",
+   1,
+   3,
+   1,
+   1
+  ],
+  "ground_sulfur": [
+   "osorezan",
+   2,
+   3,
+   1,
+   1
+  ],
+  "ground_pebbles": [
+   "osorezan",
+   3,
+   3,
+   1,
+   1
+  ],
+  "ground_water": [
+   "osorezan",
+   4,
+   3,
+   1,
+   1
   ]
  },
  "biomes": {
@@ -3055,6 +3286,352 @@
     }
    ],
    "step": "#8e88a4"
+  },
+  "osorezan": {
+   "layout": "osorezan",
+   "materials": [
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       0,
+       3,
+       5
+      ],
+      [
+       1,
+       3,
+       3
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#c8c4bc"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       11,
+       12,
+       4
+      ],
+      [
+       14,
+       12,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#9a96a0"
+    },
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       2,
+       3,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#e8d890"
+    },
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       3,
+       3,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#b8b4b0"
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       16,
+       13,
+       2
+      ],
+      [
+       17,
+       13,
+       2
+      ],
+      [
+       16,
+       14,
+       1
+      ]
+     ],
+     "mono": true,
+     "tint": "#a8a4b0"
+    },
+    {
+     "tileset": "water",
+     "tiles": [
+      [
+       1,
+       1,
+       11
+      ],
+      [
+       11,
+       2,
+       3
+      ],
+      [
+       11,
+       4,
+       1
+      ],
+      [
+       11,
+       1,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#3e4a5c",
+     "water": true,
+     "glint": "#c8a8ff",
+     "ripple": 0.04,
+     "bank": [
+      "#6a6670",
+      0.85
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.6,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.24
+    ],
+    [
+     1,
+     0.72,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#6a6670",
+     0.6
+    ],
+    [
+     "#8a8478",
+     0.45
+    ],
+    [
+     "#8a7a3a",
+     0.6
+    ],
+    [
+     "#4a4650",
+     0.7
+    ],
+    [
+     "#2a2438",
+     0.8
+    ]
+   ],
+   "scales": [
+    0.012,
+    0.017
+   ],
+   "shade": 0.08,
+   "grade": {
+    "night": "#120c22",
+    "warm": "#e8d890",
+    "vignette": 0.55,
+    "vignette_color": "#3a2458",
+    "darkness": 0.95
+   },
+   "tufts": [
+    "#6a6670",
+    "#9a96a0",
+    "#d8d4c8"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       2
+      ],
+      [
+       "gen_tuft_b",
+       2
+      ],
+      [
+       "gen_tuft_c",
+       1
+      ]
+     ],
+     "count": 50,
+     "zone": "lush",
+     "sway": 0.7,
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "sulfur_vent",
+       2
+      ],
+      [
+       "sulfur_crust",
+       3
+      ],
+      [
+       "sulfur_patch",
+       2
+      ]
+     ],
+     "count": 16,
+     "zone": "dirt",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "sai_pebbles_a",
+       2
+      ],
+      [
+       "sai_pebbles_b",
+       2
+      ],
+      [
+       "fd_pebbles",
+       1
+      ],
+      [
+       "fd_bone",
+       1
+      ],
+      [
+       "fd_crack",
+       1
+      ]
+     ],
+     "count": 18,
+     "zone": "any",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "kazaguruma_a",
+       3
+      ],
+      [
+       "kazaguruma_b",
+       3
+      ],
+      [
+       "kazaguruma_pile",
+       1
+      ]
+     ],
+     "count": 10,
+     "zone": "grass",
+     "sway": 1.0,
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "cairn_s",
+       3
+      ],
+      [
+       "cairn_m",
+       2
+      ],
+      [
+       "cairn_l",
+       1
+      ],
+      [
+       "jizo_b",
+       1
+      ]
+     ],
+     "count": 10,
+     "zone": "any",
+     "cluster": 2
+    },
+    {
+     "sprites": [
+      [
+       "sotoba_a",
+       2
+      ],
+      [
+       "sotoba_b",
+       2
+      ],
+      [
+       "jizo_a",
+       1
+      ],
+      [
+       "jizo_c",
+       1
+      ],
+      [
+       "volcanic_b",
+       1
+      ],
+      [
+       "volcanic_c",
+       1
+      ]
+     ],
+     "count": 5,
+     "zone": "grass"
+    },
+    {
+     "sprites": [
+      [
+       "water_ripple",
+       3
+      ],
+      [
+       "sai_pebbles_a",
+       1
+      ]
+     ],
+     "count": 10,
+     "zone": "water",
+     "flat": true,
+     "cluster": 2
+    }
+   ],
+   "step": "#b0aca4"
   },
   "village_ura": {
    "layout": "temple",
@@ -5039,6 +5616,280 @@
     }
    ],
    "step": "#d8d0e0"
+  },
+  "osorezan_ura": {
+   "layout": "secret",
+   "otherworld": true,
+   "materials": [
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       3,
+       3,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#d8d4e0"
+    },
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       4,
+       3,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#1a1628"
+    },
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       3,
+       3,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#a8a2bc"
+    },
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       0,
+       3,
+       3
+      ],
+      [
+       1,
+       3,
+       2
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#8a84a0"
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       16,
+       13,
+       2
+      ],
+      [
+       17,
+       13,
+       2
+      ],
+      [
+       16,
+       14,
+       1
+      ]
+     ],
+     "mono": true,
+     "tint": "#c8c0e0"
+    },
+    {
+     "tileset": "water",
+     "tiles": [
+      [
+       1,
+       1,
+       11
+      ],
+      [
+       11,
+       2,
+       3
+      ],
+      [
+       11,
+       4,
+       1
+      ],
+      [
+       11,
+       1,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#221c3a",
+     "water": true,
+     "glint": "#d8c0ff",
+     "ripple": 0.03,
+     "bank": [
+      "#4a4468",
+      0.85
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.62,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.26
+    ],
+    [
+     1,
+     0.74,
+     1.0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#8a80b0",
+     0.5
+    ],
+    [
+     "#0a0814",
+     0.85
+    ],
+    [
+     "#6a6488",
+     0.6
+    ],
+    [
+     "#4a4468",
+     0.7
+    ],
+    [
+     "#000000",
+     0.0
+    ]
+   ],
+   "scales": [
+    0.011,
+    0.017
+   ],
+   "shade": 0.09,
+   "grade": {
+    "night": "#06040e",
+    "warm": "#b89aff",
+    "vignette": 0.6,
+    "vignette_color": "#2a1848",
+    "darkness": 1.0
+   },
+   "tufts": [
+    "#4a4468",
+    "#8a80b0",
+    "#e0d8ff"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "sai_pebbles_a",
+       3
+      ],
+      [
+       "sai_pebbles_b",
+       3
+      ],
+      [
+       "sai_pebbles_c",
+       2
+      ]
+     ],
+     "count": 40,
+     "zone": "any",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "cairn_s",
+       4
+      ],
+      [
+       "cairn_m",
+       3
+      ],
+      [
+       "cairn_l",
+       2
+      ]
+     ],
+     "count": 22,
+     "zone": "any",
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "water_ripple",
+       1
+      ]
+     ],
+     "count": 10,
+     "zone": "dirt",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "kazaguruma_a",
+       2
+      ],
+      [
+       "kazaguruma_b",
+       2
+      ]
+     ],
+     "count": 8,
+     "zone": "grass",
+     "sway": 1.0,
+     "cluster": 2
+    },
+    {
+     "sprites": [
+      [
+       "jizo_a",
+       1
+      ],
+      [
+       "jizo_b",
+       2
+      ],
+      [
+       "jizo_c",
+       1
+      ],
+      [
+       "sanzu_torii",
+       1
+      ]
+     ],
+     "count": 4,
+     "zone": "grass"
+    }
+   ],
+   "step": "#c8c0e0"
   },
   "village_toko": {
    "layout": "tokoyo",
@@ -7424,6 +8275,385 @@
      "pillar",
      "pillar_block",
      "pillar"
+    ]
+   }
+  },
+  "osorezan_toko": {
+   "layout": "tokoyo",
+   "tokoyo": true,
+   "materials": [
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       0,
+       3,
+       5
+      ],
+      [
+       1,
+       3,
+       3
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#f6f2ea"
+    },
+    {
+     "tileset": "osorezan",
+     "tiles": [
+      [
+       3,
+       3,
+       3
+      ],
+      [
+       0,
+       3,
+       1
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#e8e4f2"
+    },
+    {
+     "tileset": "floor",
+     "tiles": [
+      [
+       0,
+       12,
+       6
+      ],
+      [
+       1,
+       12,
+       1
+      ],
+      [
+       2,
+       12,
+       1
+      ],
+      [
+       3,
+       12,
+       1
+      ],
+      [
+       4,
+       12,
+       1
+      ],
+      [
+       1,
+       4,
+       3,
+       "field"
+      ]
+     ],
+     "flip": true,
+     "mono": true,
+     "tint": "#f0ecfa"
+    },
+    {
+     "tileset": "interior_floor",
+     "tiles": [
+      [
+       5,
+       13,
+       2
+      ],
+      [
+       6,
+       13,
+       2
+      ],
+      [
+       6,
+       14,
+       1
+      ],
+      [
+       7,
+       14,
+       1
+      ]
+     ],
+     "mono": true,
+     "tint": "#eceaf6"
+    },
+    {
+     "tileset": "interior_floor",
+     "block": [
+      15,
+      0,
+      5,
+      4
+     ],
+     "mono": true,
+     "tint": "#e6e0f6"
+    },
+    {
+     "tileset": "water",
+     "tiles": [
+      [
+       1,
+       1,
+       11
+      ],
+      [
+       11,
+       2,
+       3
+      ],
+      [
+       11,
+       4,
+       1
+      ],
+      [
+       11,
+       1,
+       1
+      ]
+     ],
+     "flip": true,
+     "tint": "#5fb4c0",
+     "water": true,
+     "glint": "#f0fff8",
+     "ripple": 0.05,
+     "bank": [
+      "#d8d0bc",
+      0.9
+     ]
+    }
+   ],
+   "bands": [
+    [
+     0,
+     0.68,
+     1.0
+    ],
+    [
+     0,
+     -1.0,
+     0.26
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ],
+    [
+     -1,
+     1,
+     0
+    ]
+   ],
+   "rims": [
+    [
+     "#c8c0d8",
+     0.45
+    ],
+    [
+     "#b8b0d0",
+     0.4
+    ],
+    [
+     "#a8a0c8",
+     0.6
+    ],
+    [
+     "#9a90c0",
+     0.9
+    ],
+    [
+     "#f4fff8",
+     0.9
+    ]
+   ],
+   "scales": [
+    0.01,
+    0.016
+   ],
+   "shade": 0.05,
+   "grade": {
+    "night": "#f2eeff",
+    "warm": "#e0d0ff",
+    "vignette": 0.24,
+    "darkness": 0.36
+   },
+   "edge_shade": [
+    "#f6f2ff",
+    0.45
+   ],
+   "tufts": [
+    "#a8a0c0",
+    "#d0c8e4",
+    "#fbf8ff"
+   ],
+   "scatter": [
+    {
+     "sprites": [
+      [
+       "gen_tuft_a",
+       3
+      ],
+      [
+       "gen_tuft_b",
+       2
+      ],
+      [
+       "gen_tuft_c",
+       2
+      ]
+     ],
+     "count": 70,
+     "zone": "lush",
+     "sway": 0.8
+    },
+    {
+     "sprites": [
+      [
+       "sai_pebbles_a",
+       3
+      ],
+      [
+       "sai_pebbles_b",
+       3
+      ],
+      [
+       "sai_pebbles_c",
+       2
+      ]
+     ],
+     "count": 30,
+     "zone": "any",
+     "flat": true
+    },
+    {
+     "sprites": [
+      [
+       "kazaguruma_a",
+       3
+      ],
+      [
+       "kazaguruma_b",
+       3
+      ],
+      [
+       "kazaguruma_pile",
+       1
+      ]
+     ],
+     "count": 16,
+     "zone": "grass",
+     "sway": 1.0,
+     "cluster": 3
+    },
+    {
+     "sprites": [
+      [
+       "cairn_s",
+       3
+      ],
+      [
+       "cairn_m",
+       2
+      ],
+      [
+       "jizo_b",
+       1
+      ]
+     ],
+     "count": 12,
+     "zone": "any",
+     "cluster": 2
+    },
+    {
+     "sprites": [
+      [
+       "plant_purple",
+       3
+      ],
+      [
+       "white_flower",
+       2
+      ],
+      [
+       "water_ripple",
+       2
+      ]
+     ],
+     "count": 18,
+     "zone": "water",
+     "flat": true,
+     "cluster": 2
+    },
+    {
+     "sprites": [
+      [
+       "fd_pale_flowers",
+       2
+      ],
+      [
+       "fd_pale_leaves",
+       1
+      ]
+     ],
+     "count": 14,
+     "zone": "grass",
+     "flat": true,
+     "cluster": 3
+    }
+   ],
+   "step": "#e4e0f0",
+   "toko": {
+    "trees": [
+     "big_white",
+     "pine",
+     "big_white",
+     "sakura_cluster",
+     "pine"
+    ],
+    "island_tree": "big_white",
+    "guardian": "lion_statue",
+    "pond": 1.3,
+    "relics": [
+     "jizo_a",
+     "jizo_c",
+     "lantern_old",
+     "crystal_teal"
+    ],
+    "ruins": [
+     "cairn_l",
+     "sotoba_a",
+     "sotoba_b",
+     "jizo_b",
+     "cairn_m"
+    ],
+    "bushes": [
+     "kazaguruma_a",
+     "kazaguruma_b",
+     "plant_purple"
+    ],
+    "light": [
+     "#d8c4ff",
+     62.0,
+     0.8,
+     -20.0
+    ],
+    "frame": [
+     "pillar",
+     "volcanic_a",
+     "rockpillar_gray"
     ]
    }
   }

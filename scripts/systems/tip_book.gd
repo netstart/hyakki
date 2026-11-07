@@ -81,7 +81,7 @@ static func generated(weapons: Array, passives: Array, achievements: Array) -> A
 		out.append(_normalize({"id": "evo.%s" % base, "cat": "combo", "tier": 1, "base": base, "recipe": true,
 				"args": ["weapon.%s.name" % base, "passive.%s.name" % passive, "weapon.%s.name" % evo],
 				"icons": ["weapon:" + base, "passive:" + passive, "weapon:" + evo],
-				"when": {"unlocked": ["weapons:" + base, "passives:" + passive]}, "after": ["no_evolution"]},
+				"when": _for_hero(w, {"unlocked": ["weapons:" + base, "passives:" + passive]}), "after": ["no_evolution"]},
 				GEN_EVOLUTION))
 	for w: Dictionary in weapons:
 		if String(w.get("kind", "")) != "union":
@@ -101,7 +101,7 @@ static func generated(weapons: Array, passives: Array, achievements: Array) -> A
 		out.append(_normalize({"id": "union.%s" % uid, "cat": "combo", "tier": 2, "recipe": true,
 				"args": ["weapon.%s.name" % needs[0], "weapon.%s.name" % needs[1], "weapon.%s.name" % uid],
 				"icons": ["weapon:%s" % needs[0], "weapon:%s" % needs[1], "weapon:" + uid],
-				"when": {"evolved": true, "unlocked": unlocked}}, GEN_UNION))
+				"when": _for_hero(w, {"evolved": true, "unlocked": unlocked})}, GEN_UNION))
 	for p: Dictionary in passives:
 		var pid := String(p["id"])
 		var list: Array = users.get(pid, [])
@@ -110,7 +110,7 @@ static func generated(weapons: Array, passives: Array, achievements: Array) -> A
 		out.append(_normalize({"id": "shared.%s" % pid, "cat": "combo", "tier": 1,
 				"args": ["passive.%s.name" % pid, "weapon.%s.name" % list[0], "weapon.%s.name" % list[1]],
 				"icons": ["passive:" + pid, "weapon:%s" % list[0], "weapon:%s" % list[1]],
-				"when": {"unlocked": ["passives:" + pid, "weapons:%s" % list[0], "weapons:%s" % list[1]]}},
+				"when": _for_hero(p, {"unlocked": ["passives:" + pid, "weapons:%s" % list[0], "weapons:%s" % list[1]]})},
 				GEN_SHARED))
 	for pair: Array in [["weapon", "weapons", weapons, GEN_UNLOCK_WEAPON], ["passive", "passives", passives,
 			GEN_UNLOCK_PASSIVE]]:
@@ -123,7 +123,7 @@ static func generated(weapons: Array, passives: Array, achievements: Array) -> A
 				continue
 			out.append(_normalize({"id": "unlock.%s.%s" % [pair[0], id], "cat": "progress", "tier": 1,
 					"args": ["%s.%s.name" % [pair[0], id], "achievement.%s.desc" % ach],
-					"icons": ["%s:%s" % [pair[0], id]], "when": {"locked": ["%s:%s" % [pair[1], id]]}},
+					"icons": ["%s:%s" % [pair[0], id]], "when": _for_hero(item, {"locked": ["%s:%s" % [pair[1], id]]})},
 					String(pair[3])))
 	return out
 
@@ -165,6 +165,14 @@ static func _normalize(entry: Dictionary, key: String) -> Dictionary:
 			"when": (entry.get("when", {}) as Dictionary).duplicate(true), "after": after,
 			"priority": bool(entry.get("priority", false)), "gap": int(entry.get("gap", 0)),
 			"base": String(entry.get("base", ""))}
+
+
+## Dica de arma ou relíquia exclusiva ("hero" nos dados, como as da Kuon): só com a dona escolhida.
+static func _for_hero(row: Dictionary, when: Dictionary) -> Dictionary:
+	var owner := String(row.get("hero", ""))
+	if not owner.is_empty():
+		when["hero"] = owner
+	return when
 
 
 static func _by_id(list: Array) -> Dictionary:

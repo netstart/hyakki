@@ -9,7 +9,7 @@ extends Node2D
 ## Ouve Events.player_hit/player_leveled; nada aqui mexe em posição, hitbox ou velocidade.
 
 const AURA := {"aki": Color("ffd27a"), "kenta": Color("8fb8ff"), "hana": Color("ff9ccf"), "goro": Color("ff8a4c"),
-		"rin": Color("8be08b"), "tora": Color("ffc04d"), "yuki": Color("a8dcff")}
+		"rin": Color("8be08b"), "tora": Color("ffc04d"), "yuki": Color("a8dcff"), "kuon": Color("b88cff")}
 const HURT_TIME := 0.22
 const HURT_JITTER := 1.5
 const LEVEL_TIME := 1.1

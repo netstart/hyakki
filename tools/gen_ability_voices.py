@@ -3,7 +3,7 @@
 São gritos de combate sem palavras (kiai, "Ha!", rosnados), então servem nos 11 idiomas.
 Fontes (CC0, baixadas para C:/src/assets, com SHA256SUMS.txt e a página de origem):
 - `cicifyre_rpg_voice`: "Female RPG Voice Starter Pack" (cicifyre, OpenGameArt, CC0) para
-  Aki (Type 1), Hana (Type 2), Rin e Yuki (Type 3);
+  Aki (Type 1), Hana (Type 2), Rin e Yuki (Type 3) e Kuon (falas de Type 1 e 2 que ninguém usa);
 - `haeldb_yelling`: "Male grunt/yelling sounds" (HaelDB, OpenGameArt, CC0 escolhida entre
   OGA-BY 3.0 e CC0) para Kenta (vocalista 1), Goro (vocalista 3) e Tora (vocalista 4).
 O "Om" do Mantra do Mestre (goro_3) é sintetizado aqui (formantes; obra original do projeto,
@@ -12,14 +12,17 @@ CC0, entrada `hyakki_ability_sfx`), sem gravação de terceiros.
 Tratamento por personagem (cadeia em `process`): corte do silêncio, mudança de tom por
 reamostragem (Goro e Tora mais graves), filtros, rouquidão (saturação em banda e "fry" em
 modulação de amplitude, Tora), camada de rosnado sintetizado (Yuki), sopro de ar (Kenta),
-reverberação curta de templo (Hana e Goro), fades e pico normalizado em -1 dBFS.
+reverberação curta de templo (Hana e Goro; sala de pedra maior na Kuon), fades e pico
+normalizado em -1 dBFS.
 Saída: Ogg Vorbis mono 44,1 kHz. Sementes fixas: o áudio é o mesmo a cada execução (o número
 de série do Ogg muda, então o hash do arquivo pode mudar; o índice é atualizado aqui).
 
 Precisa de numpy, scipy e soundfile (fora da biblioteca padrão): rode sem -I, mas sem pôr a
 pasta do script nem a atual no caminho de importação:
-    python -E -P tools/gen_ability_voices.py
-Atualiza as linhas assets/audio/voice/* de assets/asset_index.json. Depois rode o import do
+    python -E -P tools/gen_ability_voices.py [--only kuon,yuki]
+`--only` gera só as falas desses guardiões (prefixo do nome) e troca só as linhas delas no
+índice: as outras .ogg ficam com os mesmos bytes. Sem ele, atualiza todas as linhas
+assets/audio/voice/* de assets/asset_index.json. Depois rode o import do
 Godot para criar os .import.
 """
 import hashlib
@@ -69,6 +72,11 @@ HERO = {
     "yuki": {"pack": "cicifyre_rpg_voice", "pitch": -2.5, "hp": 80, "lp": 9000,
              "eq": [(200, 2.5, 0.9), (2500, 2.0, 1.0)], "growl": 0.7, "drive": 0.35,
              "room": (0.4, -20.0)},
+    # Necromante do Osorezan: voz feminina calma e soprada, um pouco mais grave, ar no ataque
+    # e sala de templo de pedra.
+    "kuon": {"pack": "cicifyre_rpg_voice", "pitch": -1.5, "hp": 130, "lp": 9000,
+             "eq": [(2600, -1.5, 1.0), (450, 1.5, 0.9), (6500, 1.5, 0.8)], "breath": 0.2,
+             "room": (1.1, -12.0)},
 }
 
 # Fala de cada habilidade: arquivo de origem (relativo ao pacote) e ajustes.
@@ -102,6 +110,10 @@ LINES = {
     "yuki_2": ("Type 3/damaged1.wav", {"pitch": -4.0, "growl": 1.4, "roar": 0.9,
                                        "room": (0.9, -14.0)}),   # Rugido Oni
     "yuki_3": ("Type 3/damaged3.wav", {"pitch": -3.0, "growl": 1.0}),  # Redemoinho Onikiri
+    "kuon_1": ("Type 2/jump1.wav", {}),                                   # Tamashii-gari
+    "kuon_1_b": ("Type 1/jump1.wav", {"pitch": -2.0}),
+    "kuon_2": ("Type 1/jump3.wav", {"pitch": -2.0, "drive": 0.15}),       # Kotsu-heki
+    "kuon_3": ("Type 2/jump2.wav", {"pitch": -2.5, "room": (1.6, -9.0)}),  # Yomigaeri
 }
 
 
@@ -383,19 +395,32 @@ def process(name: str, src: str | None, opts: dict) -> tuple[np.ndarray, str]:
     return finish(x, p.get("max", 1.2)), p["pack"]
 
 
-def update_index(rows: list) -> None:
+def update_index(rows: list, partial: bool = False) -> None:
     path = ROOT / "assets" / "asset_index.json"
     index = json.loads(path.read_text(encoding="utf-8"))
-    index = [row for row in index if not row["file"].startswith("assets/audio/voice/")]
+    if partial:
+        names = {row["file"] for row in rows}
+        index = [row for row in index if row["file"] not in names]
+    else:
+        index = [row for row in index if not row["file"].startswith("assets/audio/voice/")]
     index.extend(rows)
     index.sort(key=lambda item: item["file"])
     path.write_text(json.dumps(index, indent=1, ensure_ascii=False), encoding="utf-8")
 
 
 def main() -> int:
+    only = set()
+    if "--only" in sys.argv:
+        only = {h for h in sys.argv[sys.argv.index("--only") + 1].split(",") if h}
+        unknown = only - set(HERO)
+        if unknown:
+            print("guardião desconhecido em --only:", ", ".join(sorted(unknown)))
+            return 2
     OUT.mkdir(parents=True, exist_ok=True)
     rows = []
     for name, (src, opts) in LINES.items():
+        if only and name.split("_")[0] not in only:
+            continue
         x, license_id = process(name, src, opts)
         path = OUT / f"{name}.ogg"
         # O Vorbis passa um pouco do pico: só abaixa, pelo arquivo decodificado, até ficar
@@ -415,7 +440,7 @@ def main() -> int:
         })
         print(f"{path.relative_to(ROOT).as_posix():36} {len(y) / SR:.2f} s  pico "
               f"{20 * np.log10(np.abs(y).max()):.1f} dBFS  <- {src or 'síntese (Om)'}")
-    update_index(rows)
+    update_index(rows, bool(only))
     print(f"{len(rows)} vozes geradas")
     return 0
 

@@ -7,6 +7,8 @@ extends RefCounted
 ## - os clones do Caco (um Kage Bunshin fora das armas da guardiã), no passo e no desenho;
 ## - arsenal forçado dos testes e do determinismo (config "arsenal", --arsenal=a,b).
 ## - Estilhaçar e o vapor do Choque Térmico (o desenho e o som; a regra fica no EnemyManager).
+## - os servos espectrais da Kuon (game.minions, MinionSystem), aliados como os clones: zerados no
+##   começo, no passo logo depois das armas e no desenho da camada das armas.
 ## Os estados em si (arrays, tiques, congelar, Choque Térmico) ficam no EnemyManager.
 
 ## Jarro de Fogo: Queimadura de INFERNO_DPS (× atributo "burn") em tudo o que está na tela.
@@ -62,6 +64,8 @@ func start(cfg: Dictionary) -> void:
 	mute = 0
 	item_clones = null
 	_motes_at = -INF
+	if game.minions != null:
+		game.minions.reset()
 	add_arsenal(cfg.get("arsenal", []))
 
 
@@ -80,11 +84,15 @@ func add_arsenal(ids: Array) -> void:
 func step(dt: float) -> void:
 	if item_clones != null:
 		item_clones.step(dt)
+	if game.minions != null:
+		game.minions.step(dt)
 
 
 func draw(canvas: CanvasItem) -> void:
 	if item_clones != null:
 		item_clones.draw(canvas)
+	if game.minions != null:
+		game.minions.draw(canvas)
 
 
 ## Jarro de Fogo: tudo o que está na tela (chefes também) queima por `seconds`. Devolve quantos.

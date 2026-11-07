@@ -7,7 +7,7 @@
   {"id": "ach_win_temple", "icon": "res://assets/art/ui/icons/meteo/Sun.png", "condition": {"type": "win_stage", "stage": "temple"}, "reward": "stage:dunes,hero:tora"},
   {"id": "ach_win_dunes", "icon": "res://assets/art/ui/icons/meteo/Sun.png", "condition": {"type": "win_stage", "stage": "dunes"}, "reward": "stage:yomi"},
   {"id": "ach_win_yomi", "icon": "res://assets/art/ui/icons/meteo/Sun.png", "condition": {"type": "win_stage", "stage": "yomi"}, "reward": "stage:secret"},
-  {"id": "ach_win_secret", "icon": "res://assets/art/ui/icons/meteo/Moon.png", "condition": {"type": "win_stage", "stage": "secret"}, "reward": "ryo:2000,cosmetic:golden_lantern"},
+  {"id": "ach_win_secret", "icon": "res://assets/art/ui/icons/meteo/Moon.png", "condition": {"type": "win_stage", "stage": "secret"}, "reward": "ryo:2000,cosmetic:golden_lantern,stage:osorezan"},
   {"id": "ach_kills_1000", "icon": "res://assets/art/ui/icons/spell/Cut.png", "condition": {"type": "kills_total", "count": 1000}, "reward": "ryo:300"},
   {"id": "ach_kills_5000", "icon": "res://assets/art/ui/icons/spell/Cut.png", "condition": {"type": "kills_total", "count": 5000}, "reward": "hero:goro"},
   {"id": "ach_kills_20000", "icon": "res://assets/art/ui/icons/spell/Cut.png", "condition": {"type": "kills_total", "count": 20000}, "reward": "ryo:1500"},
@@ -39,5 +39,8 @@
   {"id": "ach_all_heroes", "icon": "res://assets/art/ui/icons/job/Talk.png", "condition": {"type": "win_all_heroes"}, "reward": "ryo:3000"},
   {"id": "ach_kenta_win", "icon": "res://assets/art/actors/heroes/kenta/Faceset.png", "condition": {"type": "win_hero", "hero": "kenta"}, "reward": "ryo:400"},
   {"id": "ach_fujin_wind", "icon": "res://assets/art/ui/icons/spell/BookWind.png", "condition": {"type": "win_speed", "speed": 3}, "reward": "ryo:500"},
-  {"id": "ach_no_hurry", "icon": "res://assets/art/ui/icons/items/Helmet.png", "condition": {"type": "win_slow_moon", "stage": "yomi", "moon": 3}, "reward": "ryo:1000"}
+  {"id": "ach_no_hurry", "icon": "res://assets/art/ui/icons/items/Helmet.png", "condition": {"type": "win_slow_moon", "stage": "yomi", "moon": 3}, "reward": "ryo:1000"},
+  {"id": "ach_boss_gashadokuro", "icon": "res://assets/art/bosses/gashadokuro/Faceset.png", "condition": {"type": "boss_defeat", "boss": "gashadokuro"}, "reward": "hero:kuon,weapon:shiryo_fuda"},
+  {"id": "ach_win_osorezan", "icon": "res://assets/art/ui/icons/meteo/Moon.png", "condition": {"type": "win_stage", "stage": "osorezan"}, "reward": "ryo:2500,cosmetic:ferry_lantern"},
+  {"id": "ach_kuon_minions", "icon": "res://assets/art/actors/heroes/kuon/Faceset.png", "condition": {"type": "minions_raised", "count": 1000, "hero": "kuon"}, "reward": "ryo:1000"}
 ]

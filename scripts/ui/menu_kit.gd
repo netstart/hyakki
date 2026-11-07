@@ -703,6 +703,10 @@ class Motes extends Control:
 				"leaf":
 					p.y += delta * 9.0 * p.w
 					p.x += delta * 18.0 * p.w
+				"soul":
+					# Almas sobem devagar, num balanço largo (a Kuon).
+					p.y -= delta * 8.0 * p.w
+					p.x += sin(_time * 0.9 + p.z * 11.0) * delta * 7.0
 				_:
 					p.y -= delta * (9.0 if kind == "smoke" else 13.0) * p.w
 					p.x += sin(_time * 1.3 + p.z * 7.0) * delta * 4.0
@@ -738,6 +742,16 @@ class Motes extends Control:
 				"wisp":
 					draw_circle(at, 2.5, Color(color, 0.18 * tw))
 					draw_rect(Rect2(at, Vector2(1, 1)), Color(color.lightened(0.5), 0.9 * tw))
+				"soul":
+					# Halo, núcleo claro e uma cauda que some para baixo; uma em sete é uma faísca de
+					# ouro velho (o manto da Kuon).
+					var gold := p.z > 0.86
+					var tint := ThemeFactory.GOLD if gold else color
+					if not gold:
+						draw_texture_rect(MenuKit.glow_texture(), Rect2(at - Vector2(4, 4), Vector2(9, 9)), false,
+								Color(tint, 0.22 * tw))
+					draw_rect(Rect2(at, Vector2(1, 1)), Color(tint.lightened(0.55), 0.95 * tw))
+					draw_rect(Rect2(at + Vector2(0, 1), Vector2(1, 2)), Color(tint, 0.45 * tw))
 				"spark":
 					draw_rect(Rect2(at, Vector2(1, 1)), Color(color, tw))
 					if tw > 0.9:

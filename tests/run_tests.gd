@@ -24,6 +24,7 @@ func _initialize() -> void:
 	(load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/solid_shot_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/boss_art_tests.gd") as GDScript).new().run_unit(_check)
+	(load("res://tests/osorezan_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/realm_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/dialogue_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/tip_tests.gd") as GDScript).new().run_unit(_check)
@@ -35,6 +36,7 @@ func _initialize() -> void:
 	(load("res://tests/ability_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/altar_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/elite_affix_tests.gd") as GDScript).new().run_unit(_check)
+	(load("res://tests/kuon_tests.gd") as GDScript).new().run_unit(_check)
 	print("%d verificações, %d falhas" % [_count, _failures])
 	quit(1 if _failures > 0 else 0)
 

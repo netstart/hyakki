@@ -35,6 +35,10 @@ const DEFS := {
 	# (lentidão e duração do congelamento), EnemyManager.burn_mult/chill_mult.
 	"burn": [1.0, "pct"],
 	"chill": [1.0, "pct"],
+	# Servos espectrais da Kuon (MinionSystem): vagas a mais no teto e o multiplicador do dano e do
+	# alcance do golpe deles (1 = sem bônus).
+	"minions": [0.0, "flat"],
+	"minion_power": [1.0, "pct"],
 }
 const MIN_COOLDOWN := 0.1
 

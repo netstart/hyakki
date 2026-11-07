@@ -93,7 +93,7 @@ def data_keys() -> set:
     keys |= {f"moon.rule{n}" for n in range(1, 6)}
     keys |= {f"damage.source.{s}" for s in ("lava", "statue", "unknown")}
     keys |= {f"cosmetic.{c}" for c in ("golden_lantern", "crimson_lantern", "jade_lantern",
-                                        "azure_lantern", "violet_lantern")}
+                                        "azure_lantern", "violet_lantern", "ferry_lantern")}
     keys |= {f"licenses.cat_{c}" for c in ("all", "engine", "art", "audio", "font", "android")}
     for key in ("music_volume", "sfx_volume", "ui_volume", "joystick_mode", "joystick_side", "fps",
                 "vibration", "colorblind", "reduce_flashes", "damage_numbers", "damage_sounds", "hurt_sounds", "hp_bar_below",
@@ -121,6 +121,7 @@ ABILITY_IDS = {
     "rin": ("focus", ("hamaya", "hunting_trap", "swallow_leap")),
     "tora": ("forge_heat", ("anvil_hammer", "chain_pull", "quench")),
     "yuki": ("oni_blood", ("oni_claw", "oni_roar", "onikiri_whirl")),
+    "kuon": ("tamashii", ("tamashii_gari", "kotsu_heki", "yomigaeri")),
 }
 # Textos da UI e do capítulo do Guia das habilidades; ficam aqui até o código usá-los em tr("...")
 # (aí a busca literal já os encontra e esta lista pode sair).

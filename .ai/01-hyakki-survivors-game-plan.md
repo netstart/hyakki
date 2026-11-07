@@ -254,6 +254,7 @@ Tora, já velho, sente a terra tremer com os tambores e quebra o selo. Aki acord
 | **Goro** | Monge que fugiu do templo na noite da queda, cem anos atrás. Vive por causa de um voto e não envelhece. | Quer se redimir diante do Monge Sem Rosto, seu antigo mestre. |
 | **Rin** | Caçadora cujo irmão foi tocado na procissão desta noite. | Corre contra o tempo: ele ainda pode ser salvo se ela vencer antes do amanhecer. |
 | **Tora** | Guardião do selo, narrador. | Carrega a culpa de ter mentido para Aki. Pega em armas pela primeira vez aos 70 anos. |
+| **Kuon** | A última shinobi do clã Hakamori, presa por vontade própria no peito da Gashadokuro (ver 3.6.10). | Volta a guiar os mortos pelo Sanzu, agora ao lado da Ordem: pede, nunca ordena. |
 
 #### 3.6.5 Final
 
@@ -284,6 +285,9 @@ Tora, já velho, sente a terra tremer com os tambores e quebra o selo. Aki acord
 | Oni Vermelho | "O Senhor espera. Eu não." |
 | Kuroe | "Finalmente. Vem, ninguém mais vai te tocar." |
 | Izanami | "Toda luz um dia desce até mim." |
+| Onryō de Masakado (Monte do Medo, 5:00) | "Não atravesso. Que o rio venha até mim." |
+| Datsue-ba (Guardiã do Limiar do Monte do Medo) | "Tire a roupa, criança. Do outro lado, ninguém precisa dela." |
+| Gashadokuro (Monte do Medo, 10:00) | "Gasha... gasha... ninguém nos enterrou." |
 
 #### 3.6.8 Diário do Guardião: exemplos de entradas
 
@@ -297,6 +301,43 @@ Tora, já velho, sente a terra tremer com os tambores e quebra o selo. Aki acord
 - Nenhuma cena interrompe o combate. A história fica na intro, nas falas de abertura, nos painéis de amanhecer, nos balões dos chefes e no Diário.
 - A revelação central (Kuroe é o pai) é **construída aos poucos** nas fases 2→4, para que o jogador possa suspeitar antes da fase 5.
 - Todos os textos ficam em `i18n/strings.csv` (chaves `story_*`, `boss_line_*`, `codex_*`), nos 11 idiomas de 7.7.
+
+#### 3.6.10 Monte do Medo (Osorezan) e Kuon, a shinobi dos mortos (1.28.0)
+
+Continua depois do final secreto (3.6.6). Narração de Tora, no tom de conto curto e poético de 3.5.
+
+- **O problema que o final deixou:** com a Lanterna do Amanhecer na fenda, Izanami recolheu a procissão e a
+  noite virou "só noite". Mas, por mil anos, a procissão também foi o caminho dos mortos. Sem ela, as almas que
+  morreram no vale de Kagerō não têm quem as leve e sobem sozinhas a **Osorezan (恐山, o Monte do Medo)**, a
+  montanha de enxofre no extremo norte (Mutsu, Aomori), onde o rio **Sanzu** separa os vivos dos mortos.
+- **A fase (7ª, `osorezan`):** liberada ao vencer a Encosta dos Mortos (`ach_win_secret`). Campos de enxofre,
+  cata-ventos vermelhos (kazaguruma), pilhas de pedras, tábuas sotoba, estátuas de Jizō e o Sanzu. O Kakuriyo é
+  **Sai no Kawara (賽の河原)**, a margem dos seixos onde as crianças mortas empilham pedras; o Tokoyo é
+  **a Margem Eterna (常世の浜)**. Inimigos novos: **gaki** (mortos sem oferenda, que nunca se saciam),
+  **funayūrei** (afogados que esperam a balsa e atiram água) e a **ossada rastejante** (ossos caídos da
+  Gashadokuro, que se dividem ao quebrar).
+- **Chefes:** às 5:00, o **Onryō de Masakado (将門の怨霊)**, o samurai que se recusou a atravessar o Sanzu e há
+  mil anos procura a própria cabeça e o próprio exército (entra calado, como todo chefe das 5:00). Às 7:30, a
+  Guardiã do Limiar **Datsue-ba (奪衣婆)**, a velha da margem que tira as roupas dos mortos e pesa os pecados nos
+  galhos; sem a procissão, a fila dela nunca acaba (diálogo com aparte da Hana, cuja avó dizia "nunca dê nada a
+  ela, nem a roupa, nem o nome"), e a Sombra dela no Kakuriyo. No Tokoyo, a **Gashadokuro (がしゃどくろ)**: os
+  ossos dos que morreram sem enterro juntos num esqueleto do tamanho de um templo (diálogo com aparte de Tora:
+  "não são inimigos, são os nossos mortos"; no fim, uma voz de mulher pede, de dentro das costelas, que quebrem
+  os ossos).
+- **Kuon (久遠):** a última do clã **Hakamori (墓守, Guardiões dos Túmulos)**, itako-ninjas que guiavam as almas
+  pelo Sanzu. Quando Kuroe se juntou à marcha, há cem anos, a procissão passou pela montanha e engoliu o clã;
+  Kuon prendeu a própria alma nos ossos para que a marcha não levasse os mortos dos Hakamori, e virou o coração
+  da Gashadokuro. Vencer a Gashadokuro (`ach_boss_gashadokuro`) a liberta e a traz para a Ordem como 8ª guardiã.
+  Ela não é cruel: comanda os mortos com respeito (bênção, não profanação). **Pede, e eles a seguem**: cada servo
+  espectral é uma prece. Visual: cabelo prateado, olhos violeta, meia-máscara (menpō) de osso, manto índigo com
+  bordas de ouro velho, hitodama violeta. Voz nos diálogos: serena, respeitosa com os mortos, poética e curta;
+  ela tem resposta para todos os chefes que falam (`dialog.<chefe>.reply.kuon`).
+- **Cenas:** `kuon_freed` (5 painéis) na primeira partida em que a Gashadokuro cai: os mortos sobem sozinhos; a
+  montanha range "gasha, gasha"; Kuon abre os olhos no peito dos ossos e se apresenta; ela toca o sino e os ossos
+  descem ao rio em fila; Tora fecha: "Ela não ordena aos mortos. Pede, e eles a seguem." `osorezan_ending`
+  (3 painéis) na primeira vitória no Monte do Medo: as crianças param de empilhar pedras e a balsa volta a
+  atravessar; "Vão em paz. Eu lembro o nome de cada um."; no templo, a Ordem acende uma lanterna a mais, não para
+  afastar os mortos, mas para que achem o caminho. Nenhuma das duas interrompe o combate (3.6.9).
 
 ---
 

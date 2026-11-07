@@ -328,20 +328,40 @@ func _on_run_finished(result: Dictionary) -> void:
 		game.queue_free()
 		game = null
 	_layer.visible = true
+	_play_stories(stories_after(result))
+
+
+## Sequências da história que a partida libera, na ordem em que tocam: [id, flag do save].
+## A libertação de Kuon toca no fim da 1ª partida em que a Gashadokuro caiu (vitória ou não, pelos
+## chefes vencidos de MetaProgress.apply_run); o epílogo do Osorezan, na 1ª vitória lá, depois dela.
+static func stories_after(result: Dictionary) -> Array:
 	var story: Dictionary = SaveManager.data["story"]
-	if bool(result["victory"]) and String(result["stage"]) == "yomi" and not bool(story["ending_seen"]):
-		play_story(&"ending", func() -> void:
-			story["ending_seen"] = true
-			SaveManager.save_profile()
-			go(&"results"))
+	var won := bool(result["victory"])
+	var stage := String(result["stage"])
+	var out: Array = []
+	if won and stage == "yomi" and not bool(story.get("ending_seen", false)):
+		out.append([&"ending", "ending_seen"])
+	if won and stage == "secret" and not bool(story.get("secret_ending_seen", false)):
+		out.append([&"secret_ending", "secret_ending_seen"])
+	if (SaveManager.data["stats"]["bosses_defeated"] as Dictionary).has("gashadokuro") \
+			and not bool(story.get("kuon_freed_seen", false)):
+		out.append([&"kuon_freed", "kuon_freed_seen"])
+	if won and stage == "osorezan" and not bool(story.get("osorezan_ending_seen", false)):
+		out.append([&"osorezan_ending", "osorezan_ending_seen"])
+	return out
+
+
+## Toca as sequências uma depois da outra (cada uma marca a flag ao terminar) e abre o resultado.
+func _play_stories(queue: Array) -> void:
+	if queue.is_empty():
+		go(&"results")
 		return
-	if bool(result["victory"]) and String(result["stage"]) == "secret" and not bool(story["secret_ending_seen"]):
-		play_story(&"secret_ending", func() -> void:
-			story["secret_ending_seen"] = true
-			SaveManager.save_profile()
-			go(&"results"))
-		return
-	go(&"results")
+	var row: Array = queue[0]
+	var rest := queue.slice(1)
+	play_story(row[0], func() -> void:
+		(SaveManager.data["story"] as Dictionary)[String(row[1])] = true
+		SaveManager.save_profile()
+		_play_stories(rest))
 
 
 func play_again() -> void:

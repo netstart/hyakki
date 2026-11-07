@@ -70,5 +70,17 @@
     {"who": "hero", "key": "dialog.kincho.reply"},
     {"who": "tora", "key": "dialog.kincho.aside", "skip": ["tora"]},
     {"who": "boss", "key": "dialog.kincho.close"}
+  ]},
+  "datsueba": {"lines": [
+    {"who": "boss", "key": "dialog.datsueba.open"},
+    {"who": "hero", "key": "dialog.datsueba.reply"},
+    {"who": "hana", "key": "dialog.datsueba.aside", "skip": ["hana"]},
+    {"who": "boss", "key": "dialog.datsueba.close"}
+  ]},
+  "gashadokuro": {"lines": [
+    {"who": "boss", "key": "dialog.gashadokuro.open"},
+    {"who": "hero", "key": "dialog.gashadokuro.reply"},
+    {"who": "tora", "key": "dialog.gashadokuro.aside", "skip": ["tora"]},
+    {"who": "boss", "key": "dialog.gashadokuro.close"}
   ]}
 }

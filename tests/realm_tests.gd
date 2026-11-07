@@ -17,7 +17,7 @@ extends RefCounted
 ##     limpo, brasas viram XP, baús vão para a fila, chefe ativo vem junto;
 ##   - o outro mundo segue: amanhecer (vitória com "realm") e Noite Sem Fim, mas o chefe dos 10:00
 ##     (o último da lista) não vem no Kakuriyo nem no primeiro mapa;
-##   - Tokoyo (3º nível): dados de "midboss2"/"tokoyo" e das 6 Sombras do Guardião (tier 2, selo
+##   - Tokoyo (3º nível): dados de "midboss2"/"tokoyo" e das 7 Sombras do Guardião (tier 2, selo
 ##     影, tinta, escala/vida/dano/velocidade, fase extra com esperas ≥ 0,6 s e um padrão do kit);
 ##     a Sombra só nasce no Kakuriyo, em max(midboss2.t, chegada + after) com o aviso antes; vencida,
 ##     dois baús e o torii dourado (paleta, folhas douradas, zumbido grave, luz); a travessia leva
@@ -118,8 +118,10 @@ func _test_midboss_data(s: Dictionary, bosses: Dictionary, seen: Dictionary) -> 
 	var tall := float(frame[1]) * float(boss.get("scale", 1.0))
 	_check.call(tall >= 34.0 and tall <= 100.0, "limiar %s: altura de chefe intermediário (%.0f px)", [id, tall])
 	_check.call(String(boss.get("music", "")) == "midboss", "limiar %s: música do Guardião", id)
-	_check.call(String((s.get("otherworld", {}) as Dictionary).get("music", "")) == "kakuriyo",
-			"reino %s: música do Kakuriyo na chegada", id)
+	# O Kakuriyo toca o tema "kakuriyo"; o Sai no Kawara do Osorezan tem a balsa do Sanzu ("sanzu").
+	var ow_music := String((s.get("otherworld", {}) as Dictionary).get("music", ""))
+	_check.call(ow_music == ("sanzu" if id == "osorezan" else "kakuriyo"),
+			"reino %s: música do Kakuriyo na chegada (%s)", [id, ow_music])
 
 
 ## Nenhum evento (onda especial, elite, cerco) cai na entrada do Guardião; nem chefe nem Kami.
@@ -146,7 +148,7 @@ func _test_realm_data(id: String, s: Dictionary, biomes: Dictionary, sprites: Di
 	var biome: Dictionary = biomes.get(String(ow.get("biome", "")), {})
 	_check.call(bool(biome.get("otherworld", false)) and String(ow.get("biome", "")) == id + "_ura",
 			"reino %s: bioma %s do outro mundo", [id, ow.get("biome", "")])
-	_check.call(String(biome.get("layout", "")) in ["village", "bamboo", "temple", "dunes", "yomi", "secret"],
+	_check.call(String(biome.get("layout", "")) in ["village", "bamboo", "temple", "dunes", "yomi", "secret", "osorezan"],
 			"reino %s: layout válido", id)
 	_check.call((biome.get("materials", []) as Array).size() == 6, "reino %s: 6 materiais", id)
 	_check.call((biome.get("grade", {}) as Dictionary).has("night"), "reino %s: noite própria", id)
@@ -418,7 +420,7 @@ func _chests(game: HyakkiGame) -> Array[Dictionary]:
 	return out
 
 
-## Os 6 reinos de verdade: estrutura gerada, origem livre para a guardiã nascer, limites.
+## Os 7 reinos de verdade: estrutura gerada, origem livre para a guardiã nascer, limites.
 func _test_terrain() -> void:
 	for id: StringName in DB.ids("stages"):
 		var realm := RiftPortal.realm_stage(DB.stage(id))

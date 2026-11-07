@@ -78,7 +78,7 @@ func _test_placement() -> void:
 			differs = differs or str(a.patches(k)) != str(c.patches(k))
 	_check.call(same, "solo: mesma semente → mesmas manchas")
 	_check.call(differs, "solo: outra semente → outras manchas")
-	for stage_id: String in ["village", "bamboo", "temple", "dunes", "yomi", "secret"]:
+	for stage_id: String in ["village", "bamboo", "temple", "dunes", "yomi", "secret", "osorezan"]:
 		var stage := DB.stage(StringName(stage_id))
 		var bb: Array = stage.get("bounds", [])
 		var bounds := Vector2(float(bb[0]), float(bb[1])) if bb.size() == 2 else Vector2.ZERO

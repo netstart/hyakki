@@ -4,13 +4,13 @@ Obra original do projeto Hyakki (CC0-1.0), desenhada pixel a pixel aqui; nenhuma
 terceiros. Só biblioteca padrão (PNG escrito à mão com zlib), sem aleatoriedade: rodar de novo
 produz os mesmos bytes. Alfa binário (0 ou 255), seguro para filtro "nearest".
 
-- <id>.png (24x24), 21 ícones (7 heróis x 3 habilidades, IDs de .ai/04-habilidades-dos-guardioes.md):
+- <id>.png (24x24), 24 ícones (8 heróis x 3 habilidades, IDs de .ai/04-habilidades-dos-guardioes.md):
   mesmo estilo dos ícones de tools/gen_skill_icons.gd (moldura de 3 px com contorno, bisel claro
   no alto/esquerda e escuro embaixo/direita, cantos chanfrados, fundo em degradê diagonal com
   halo central e pontilhado só na transição, brilho de canto, silhueta com contorno escuro de
   1 px e sombra projetada). A moldura de habilidade usa a cor da energia do herói no aro, com
   uma joia no topo e pontas nos cantos; o fundo é um tom que contrasta com essa cor.
-- energy_<energia>.png (12x12), 7 glifos da energia de cada herói para a barra do HUD
+- energy_<energia>.png (12x12), 8 glifos da energia de cada herói para a barra do HUD
   (sem moldura, fundo transparente, contorno escuro de 1 px).
 
 Também atualiza as linhas assets/art/ui/ability_icons/* de assets/asset_index.json (hash e origem,
@@ -96,6 +96,14 @@ HEROES = {
         "accent": {"Q": "ffe4e4", "X": "ffa4a4", "E": "ff4a4a", "x": "981a2a"},
         "bg": ["d4a8f0", "5a2c74", "18081e"],
         "abilities": ["oni_claw", "oni_roar", "onikiri_whirl"],
+    },
+    # Moldura na cor da energia Tamashii (violeta das hitodama); fundo em ouro velho escuro (as
+    # bordas do manto índigo dela), que contrasta com o violeta e não repete o teal do Kenta.
+    "kuon": {
+        "energy": "tamashii", "color": "b08cff",
+        "accent": {"Q": "f6f0ff", "X": "d8c4ff", "E": "a47cf4", "x": "5a34a8"},
+        "bg": ["f0d890", "8a6a2a", "221808"],
+        "abilities": ["tamashii_gari", "kotsu_heki", "yomigaeri"],
     },
 }
 
@@ -764,6 +772,75 @@ def onikiri_whirl(c: Canvas) -> None:
     c.line(4, 12, 3, 13, "N")
 
 
+def tamashii_gari(c: Canvas) -> None:
+    # Caça de almas: três hitodama correndo em espiral para a alma grande do centro.
+    c.ascii([
+        ".....X....",
+        "....XE....",
+        "...XEEx...",
+        "..XQQEEx..",
+        ".XQWWQEx..",
+        ".EQWWQEEx.",
+        ".EQQQQEEx.",
+        "..xEEEEx..",
+        "...xxxx...",
+    ], 3, 4)
+    # Almas pequenas (cabeça clara + rastro) em três pontos da espiral.
+    for (hx_, hy), trail in (((1, 2), ((2, 1), (3, 0))), ((14, 6), ((15, 4), (15, 3))),
+                              ((5, 14), ((3, 14), (2, 13)))):
+        c.put(hx_, hy, "W")
+        c.put(hx_ + 1 if hx_ < 8 else hx_ - 1, hy, "X")
+        for tx, ty in trail:
+            c.put(tx, ty, "E")
+    # Fios de puxão (arcos tracejados) ligando cada alma ao centro.
+    c.arc(8.0, 8.5, 6.5, 200.0, 250.0, "x", 12.0)
+    c.arc(8.0, 8.5, 6.5, 330.0, 380.0, "x", 12.0)
+    c.arc(8.0, 8.5, 6.5, 95.0, 125.0, "x", 12.0)
+
+
+def kotsu_heki(c: Canvas) -> None:
+    # Muralha de ossos: anel no chão (elipse) com cinco lanças de osso irrompendo dele.
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot((x + 0.5 - 8.0) / 7.6, (y + 0.5 - 12.0) / 3.2)
+            if 0.78 <= d < 1.0:
+                c.put(x, y, "x" if y < 12 else "E")
+    tall = ["W.", "PL", "PP", "Pp", "Pp", "Pp", "PP", "pp"]
+    short = ["W", "P", "P", "p", "p"]
+    for x0, y0, art in ((7, 0, tall), (2, 4, short), (13, 4, short), (3, 7, tall), (11, 7, tall)):
+        c.ascii(art, x0, y0)
+    c.ascii([".Q.", "QWQ", ".Q."], 7, 10)
+
+
+def yomigaeri(c: Canvas) -> None:
+    # Volta de Yomi: caveira subindo de uma poça violeta com a chama da alma acima.
+    c.ascii([
+        "......X.........",
+        ".....XEX........",
+        "....XQEEx.......",
+        "....EQWEx.......",
+        ".....EEx........",
+        "....PPPPPp......",
+        "...PPWPPPPp.....",
+        "...PNNPPNNp.....",
+        "...PNNPPNNp.....",
+        "...PPPPNPPp.....",
+        "....pPkPkp......",
+        "....ppppp.......",
+        "..xEEEEEEEEx....",
+        ".xEQQEEEEEEEx...",
+        "..xxEEEEEExx....",
+    ], 1, 1)
+    # Setas de subida (fiapos de alma) dos lados.
+    for x, y0 in ((13, 3), (14, 8)):
+        c.put(x, y0, "Q")
+        c.put(x - 1, y0 + 1, "X")
+        c.put(x + 1, y0 + 1, "X")
+        c.put(x, y0 + 1, "E")
+        c.put(x, y0 + 2, "E")
+        c.put(x, y0 + 3, "x")
+
+
 ABILITIES = {
     "dawn_step": dawn_step, "lantern_wall": lantern_wall, "century_flame": century_flame,
     "shadow_step": shadow_step, "kawarimi": kawarimi, "makibishi": makibishi,
@@ -772,6 +849,7 @@ ABILITIES = {
     "hamaya": hamaya, "hunting_trap": hunting_trap, "swallow_leap": swallow_leap,
     "anvil_hammer": anvil_hammer, "chain_pull": chain_pull, "quench": quench,
     "oni_claw": oni_claw, "oni_roar": oni_roar, "onikiri_whirl": onikiri_whirl,
+    "tamashii_gari": tamashii_gari, "kotsu_heki": kotsu_heki, "yomigaeri": yomigaeri,
 }
 
 
@@ -861,6 +939,18 @@ ENERGY_ART = {
         "..EEEEEx..",
         "...xEEx...",
         "....xx....",
+    ],
+    "tamashii": [
+        ".......X..",
+        "......XE..",
+        "...XXEEx..",
+        "..XQQEx...",
+        ".XQWWQEx..",
+        ".EQWWQEEx.",
+        ".EQQQQEEx.",
+        "..xEEEEx..",
+        "...xxxx...",
+        "..........",
     ],
 }
 

@@ -2,8 +2,9 @@ class_name TerrainLayout
 extends RefCounted
 ## Composição dos chunks de cada bioma (data/biomes.json "layout"): vila com ruas e quarteirões,
 ## bambuzal com trilha, templo com avenida e santuários, dunas de cinza com ruínas, Yomi com
-## rochas e lava, Encosta dos Mortos com escadaria, Tokoyo (常世) com o santuário de luz da
-## batalha final. Tudo é função pura da semente e do chunk.
+## rochas e lava, Encosta dos Mortos com escadaria, Osorezan (恐山) com o rio Sanzu e as margens
+## de pedras empilhadas, Tokoyo (常世) com o santuário de luz da batalha final. Tudo é função pura
+## da semente e do chunk.
 ##
 ## generate(c) devolve o que tem jogabilidade ou estrutura (obstáculos sólidos, casas, ruas) e é
 ## igual em qualquer nível gráfico. scatter(c) devolve a decoração orgânica SEM colisão (tufos,
@@ -76,6 +77,21 @@ const TOKO_LIGHT := ["#ffe2a0", 58.0, 0.75, -20.0]
 ## Torii de lado (gen_torii_side, terrain_art.gd) nos caminhos leste-oeste: distância entre os
 ## pés dos dois pilares, no chão (px); como no torii de frente, os pilares ficam dentro do caminho.
 const TORII_SIDE_SPAN := 30.0
+## Osorezan: o rio Sanzu corre de oeste a leste ao sul do início. Linha do meio em SANZU_Y px com
+## duas ondas de seno (amplitudes SANZU_WAVE), meia largura SANZU_HALF (só água no canal B, sem
+## colisão: dá para atravessar a vau) e as margens de pedra até SANZU_BANK px do meio.
+const SANZU_Y := 236.0
+const SANZU_WAVE := Vector2(68.0, 16.0)
+const SANZU_HALF := 26.0
+const SANZU_BANK := 58.0
+## Passo das amostras do rio e das lanternas da margem norte (px).
+const SANZU_STEP := 24.0
+const SANZU_LAMP_STEP := 192.0
+## Torii da travessia: um a cada SANZU_GATE_EVERY chunks, na margem norte.
+const SANZU_GATE_EVERY := 3
+const JIZO := ["jizo_a", "jizo_b", "jizo_c"]
+const CAIRNS := ["cairn_s", "cairn_m", "cairn_s", "cairn_l"]
+const PINWHEELS := ["kazaguruma_a", "kazaguruma_b", "kazaguruma_a", "kazaguruma_pile"]
 
 var seed_value: int = 0
 var stage_id: String = ""
@@ -137,6 +153,8 @@ func generate(c: Vector2i, reserved: Array) -> Dictionary:
 			_yomi(c)
 		"secret":
 			_secret(c)
+		"osorezan":
+			_osorezan(c)
 		"tokoyo":
 			_tokoyo(c)
 	if kind == "tokoyo":
@@ -604,6 +622,102 @@ func _secret(c: Vector2i) -> void:
 				"rock_gray", "stump_big"]), _rand_in(24.0), 7.0, {"tone": 0.45})
 
 
+# --- Osorezan -----------------------------------------------------------------------------
+
+## Linha do meio do Sanzu na coluna `x` (fase das ondas tirada da semente).
+func sanzu_y(x: float) -> float:
+	var phase := float(_row_hash("sanzu", 0) % 6283) * 0.001
+	return SANZU_Y + sin(x * 0.0061 + phase) * SANZU_WAVE.x + sin(x * 0.019 + phase * 2.0) * SANZU_WAVE.y
+
+
+## Campos de enxofre com o rio Sanzu: a água no canal B (sem colisão), as margens de seixos com as
+## pilhas de pedras das crianças (Sai no Kawara), cata-ventos e lanternas de fogo-fátuo na margem
+## norte, um torii de travessia de vez em quando; fora do rio, rochas vulcânicas, fileiras de Jizō,
+## bosques de sotoba e pinheiros mortos.
+func _osorezan(c: Vector2i) -> void:
+	var top := _origin.y - SANZU_BANK - SANZU_WAVE.x - SANZU_WAVE.y
+	var bottom := _origin.y + CHUNK + SANZU_BANK
+	if SANZU_Y + SANZU_WAVE.x + SANZU_WAVE.y > top and SANZU_Y - SANZU_WAVE.x - SANZU_WAVE.y < bottom:
+		_sanzu(c)
+	var roll := _rng.randf()
+	if roll < 0.3:
+		# Rochedo vulcânico com pedras soltas (o enxofre aflora em volta pelo espalhado).
+		var p := _rand_in(56.0)
+		if _place("volcanic_a", p, 13.0, {"tone": 0.45}, 0.0):
+			for k: int in range(_rng.randi_range(2, 4)):
+				_place(_pick(["volcanic_b", "volcanic_c"]), p + Vector2(_rng.randf_range(-44, 44),
+						_rng.randf_range(-18, 26)), 5.0, {"tone": 0.45})
+	elif roll < 0.5:
+		# Fileira de Jizō de babador vermelho com uma lanterna de pedra na ponta.
+		var p := _rand_in(60.0)
+		var step := Vector2(18.0, 0.0)
+		var n := _rng.randi_range(3, 5)
+		var start := p - step * float(n - 1) * 0.5
+		for k: int in range(n):
+			_place(_pick(JIZO), start + step * float(k), 4.0, {"tone": 0.5}, 0.0)
+		_place("lantern_old", start + step * float(n) + Vector2(4, 0), 5.0, {"light": SPIRIT_LIGHT}, 0.0)
+	elif roll < 0.68:
+		# Bosque de sotoba (tábuas de prece fincadas) em volta de uma pilha grande.
+		var p := _rand_in(52.0)
+		_place("cairn_l", p, 5.0, {}, 0.0)
+		for k: int in range(_rng.randi_range(3, 6)):
+			var a := _rng.randf() * TAU
+			_place(_pick(["sotoba_a", "sotoba_b"]), p + Vector2(cos(a), sin(a) * 0.7) * _rng.randf_range(18.0, 40.0),
+					3.0, {"tone": _rng.randf_range(0.45, 0.55)}, 0.0)
+		_deco(_pick(PINWHEELS), p + Vector2(_rng.randf_range(-30, 30), 22.0), {"sway": 0.9})
+	for k: int in range(_rng.randi_range(1, 3)):
+		_place(_pick(["dead_pine", "dead_tree_bare", "volcanic_b", "cairn_m", "volcanic_c"]), _rand_in(26.0), 7.0,
+				{"tone": _rng.randf_range(0.4, 0.5), "sway": 0.04})
+	if c == Vector2i.ZERO:
+		_place("lantern_old", Vector2(60, 70), 5.0, {"light": SPIRIT_LIGHT})
+
+
+## O trecho do Sanzu no chunk: água, faixa livre de sólidos, margens e a travessia.
+func _sanzu(c: Vector2i) -> void:
+	var x0 := _origin.x - SANZU_STEP
+	var prev := Vector2(x0, sanzu_y(x0))
+	var x := x0 + SANZU_STEP
+	while x <= _origin.x + CHUNK + SANZU_STEP:
+		var cur := Vector2(x, sanzu_y(x))
+		_paint.append(["line", 2, prev, cur, SANZU_HALF])
+		var lo := minf(prev.y, cur.y) - SANZU_HALF - 6.0
+		_keepout.append(Rect2(prev.x, lo, cur.x - prev.x, absf(cur.y - prev.y) + (SANZU_HALF + 6.0) * 2.0))
+		prev = cur
+		x += SANZU_STEP
+	# Margens: pilhas de pedras e cata-ventos dos dois lados, mais densos no sul (a margem dos
+	# mortos), Jizō vigiando de vez em quando.
+	for k: int in range(_rng.randi_range(5, 8)):
+		var bx := _origin.x + _rng.randf_range(10.0, CHUNK - 10.0)
+		# A base do sprite fica embaixo: na margem sul ela desce mais para o corpo não cair na água.
+		var north := _rng.randf() < 0.4
+		var by := sanzu_y(bx) - _rng.randf_range(SANZU_HALF + 10.0, SANZU_BANK) if north \
+				else sanzu_y(bx) + _rng.randf_range(SANZU_HALF + 26.0, SANZU_BANK + 12.0)
+		var p := Vector2(bx, by)
+		var roll := _rng.randf()
+		if roll < 0.55:
+			_place(_pick(CAIRNS), p, 4.0, {"tone": _rng.randf_range(0.42, 0.58)}, 2.0)
+		elif roll < 0.85:
+			_deco(_pick(PINWHEELS), p, {"sway": 1.0})
+		else:
+			_place(_pick(JIZO), p, 4.0, {}, 2.0)
+	# Lanternas de fogo-fátuo na margem norte, numa grade fixa do mundo (emendam entre chunks).
+	var lx := ceilf(_origin.x / SANZU_LAMP_STEP) * SANZU_LAMP_STEP
+	while lx < _origin.x + CHUNK:
+		_place("lantern_old", Vector2(lx, sanzu_y(lx) - SANZU_HALF - 16.0), 5.0, {"light": SPIRIT_LIGHT}, 0.0)
+		lx += SANZU_LAMP_STEP
+	if posmod(c.x, SANZU_GATE_EVERY) == 1:
+		var gx := _origin.x + 128.0
+		_sanzu_gate(Vector2(gx, sanzu_y(gx) - SANZU_HALF - 30.0))
+
+
+## Torii de madeira gasta da travessia: só os pilares têm colisão.
+func _sanzu_gate(p: Vector2) -> void:
+	if not _deco("sanzu_torii", p, {"shadow": 0.0, "tone": 0.45}):
+		return
+	for side: float in [-1.0, 1.0]:
+		_solids.append([p + Vector2(side * 12.0, -3.0), 3.5])
+
+
 # --- Tokoyo ------------------------------------------------------------------------------
 
 ## Metade da arena (o menor dos dois limites; TOKO_HALF sem limites).
@@ -870,7 +984,7 @@ func _toko_frame() -> void:
 func _edges() -> void:
 	if bounds == Vector2.ZERO:
 		return
-	var wall := "rockwall_gray" if kind == "yomi" else "rockpillar_gray"
+	var wall := "rockwall_gray" if kind == "yomi" else ("volcanic_a" if kind == "osorezan" else "rockpillar_gray")
 	for axis: int in range(2):
 		var lim := bounds[axis]
 		if lim <= 0.0:

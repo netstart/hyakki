@@ -191,6 +191,8 @@ STRINGS = {
     "codex.replay_intro": ["Rever a introdução", "Replay the intro", "Volver a ver la introducción", "Intro erneut ansehen", "Revoir l'introduction", "Пересмотреть пролог", "Putar ulang pembuka", "序章をもう一度", "서장 다시 보기", "重看序章", "重看序章"],
     "codex.replay_ending": ["Rever o final", "Replay the ending", "Volver a ver el final", "Ende erneut ansehen", "Revoir la fin", "Пересмотреть финал", "Putar ulang akhir", "結末をもう一度", "결말 다시 보기", "重看結局", "重看结局"],
     "codex.replay_secret": ["Rever o final verdadeiro", "Replay the true ending", "Volver a ver el final verdadero", "Wahres Ende erneut ansehen", "Revoir la vraie fin", "Пересмотреть истинный финал", "Putar ulang akhir sejati", "真の結末をもう一度", "진엔딩 다시 보기", "重看真結局", "重看真结局"],
+    "codex.replay_kuon": ["Rever a libertação da Kuon", "Replay Kuon's release", "Volver a ver la liberación de Kuon", "Kuons Befreiung erneut ansehen", "Revoir la libération de Kuon", "Пересмотреть освобождение Куон", "Putar ulang pembebasan Kuon", "久遠の解放をもう一度", "쿠온의 해방 다시 보기", "重看久遠的解放", "重看久远的解放"],
+    "codex.replay_osorezan": ["Rever o final do Monte do Medo", "Replay the Mount Fear ending", "Volver a ver el final del Monte del Miedo", "Ende am Berg der Furcht erneut ansehen", "Revoir la fin du Mont de la Peur", "Пересмотреть финал Горы Страха", "Putar ulang akhir Gunung Ketakutan", "恐山の結末をもう一度", "오소레산 결말 다시 보기", "重看恐山結局", "重看恐山结局"],
     "options.title": ["Opções", "Options", "Opciones", "Optionen", "Options", "Настройки", "Pengaturan", "設定", "설정", "設定", "设置"],
     "options.language": ["Idioma", "Language", "Idioma", "Sprache", "Langue", "Язык", "Bahasa", "言語", "언어", "語言", "语言"],
     "options.music_volume": ["Música", "Music", "Música", "Musik", "Musique", "Музыка", "Musik", "音楽", "음악", "音樂", "音乐"],
@@ -290,6 +292,7 @@ STRINGS = {
     "realm.yomi.name": ["Ne-no-Kuni, Terra das Raízes", "Ne-no-Kuni, Land of Roots", "Ne-no-Kuni, Tierra de Raíces", "Ne-no-Kuni, Land der Wurzeln", "Ne-no-Kuni, terre des racines", "Нэ-но-куни, Страна корней", "Ne-no-Kuni, Negeri Akar", "根の国", "뿌리의 나라", "根之國", "根之国"],
     # O Kakuriyo do Santuário Secreto é a ponte que Kinchō guarda (o Tokoyo vem depois dela).
     "realm.secret.name": ["Ukihashi, a Ponte Flutuante", "Ukihashi, the Floating Bridge", "Ukihashi, el Puente Flotante", "Ukihashi, die Schwebebrücke", "Ukihashi, le pont flottant", "Укихаси, Плывущий мост", "Ukihashi, Jembatan Melayang", "天の浮橋", "하늘의 뜬다리", "天之浮橋", "天之浮桥"],
+    "realm.osorezan.name": ["Sai no Kawara, a Margem dos Seixos", "Sai no Kawara, the Pebble Shore", "Sai no Kawara, la Orilla de los Guijarros", "Sai no Kawara, das Kieselufer", "Sai no Kawara, la rive des galets", "Сай-но-кавара, Берег камешков", "Sai no Kawara, Tepian Kerikil", "賽の河原", "사이노카와라, 조약돌 강변", "賽之河原", "赛之河原"],
     # Sombra do Guardião, torii dourado e o Tokoyo (常世), o terceiro nível de cada fase.
     "midboss2.warning": ["A sombra do Guardião se ergue do último limiar...", "The Guardian's shadow rises from the last threshold...", "La sombra del Guardián se alza del último umbral...", "Der Schatten des Hüters erhebt sich an der letzten Schwelle ...", "L'ombre du Gardien se dresse au dernier seuil...", "Тень Стража поднимается у последнего порога...", "Bayangan Penjaga bangkit dari ambang terakhir...", "守り手の影が、最後の境に立ち上がる……", "수호자의 그림자가 마지막 경계에서 일어선다...", "守護者之影自最後的界線升起……", "守护者之影自最后的界线升起……"],
     "midboss2.title": ["Sombra do Guardião", "Guardian's Shadow", "Sombra del Guardián", "Schatten des Hüters", "Ombre du Gardien", "Тень Стража", "Bayangan Penjaga", "守り手の影", "수호자의 그림자", "守護者之影", "守护者之影"],
@@ -304,4 +307,5 @@ STRINGS = {
     "realm3.dunes.name": ["Areias de Prata da Lua", "Moon-Silver Sands", "Arenas de Plata Lunar", "Mondsilberner Sand", "Sables d'argent lunaire", "Пески лунного серебра", "Pasir Perak Rembulan", "常世の白砂", "달빛 은모래", "常世白沙", "常世白沙"],
     "realm3.yomi.name": ["Fonte dos Lótus", "Spring of Lotuses", "Fuente de los Lotos", "Quelle der Lotosblüten", "Source des lotus", "Источник лотосов", "Mata Air Teratai", "常世の泉", "연꽃의 샘", "常世之泉", "常世之泉"],
     "realm3.secret.name": ["Palácio da Aurora", "Palace of the Aurora", "Palacio de la Aurora", "Palast der Aurora", "Palais de l'aurore", "Дворец сияния", "Istana Aurora", "常世の宮", "오로라의 궁", "常世之宮", "常世之宫"],
+    "realm3.osorezan.name": ["A Margem Eterna", "The Everlasting Shore", "La Orilla Eterna", "Das ewige Ufer", "La rive éternelle", "Вечный берег", "Tepian Abadi", "常世の浜", "영원의 물가", "常世之濱", "常世之滨"],
 }

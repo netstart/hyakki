@@ -6,8 +6,20 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 
 ## O que tem
 
-- 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 41 armas (18 base, 18 evoluções, 5 uniões), 15 passivos (relíquias),
-  37 yōkai, 24 chefes (18 + 6 Sombras do Guardião 影), 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
+- 8 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho, e Kuon, a shinobi dos mortos,
+  liberada ao vencer a Gashadokuro), 7 fases (5 + secreta + Monte do Medo), 48 armas (21 base, 21 evoluções,
+  6 uniões), 17 passivos (relíquias), 40 yōkai, 28 chefes (21 + 7 Sombras do Guardião 影), 15 Kami, 8 Golpes
+  da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
+- **Monte do Medo e Kuon** (1.28.0): a 7ª fase, **Osorezan (恐山)**, abre ao vencer a Encosta dos Mortos.
+  Campos de enxofre com cata-ventos, pilhas de pedras e o rio Sanzu; o Kakuriyo é **Sai no Kawara**, a margem
+  dos seixos. Chefes novos: o **Onryō de Masakado** (5:00), **Datsue-ba**, a velha do rio, como Guardiã do
+  Limiar (7:30, com a sua Sombra no Kakuriyo) e a **Gashadokuro** (10:00), o esqueleto gigante dos mortos sem
+  enterro; inimigos novos gaki, funayūrei e a ossada rastejante. Vencer a Gashadokuro liberta **Kuon (久遠)**,
+  a 8ª guardiã, a última do clã Hakamori: energia **Almas (魂)**, servos espectrais que se levantam dos abates,
+  3 habilidades (Caça às Almas, Muralha de Ossos, Retorno de Yomi), o Golpe Rito dos Hakamori e um arsenal só
+  dela (3 armas, 2 relíquias, 3 evoluções e a união **Exército de Yomi**), que não aparece para os outros
+  guardiões. História nova narrada por Tora (a libertação da Kuon e o epílogo do Monte do Medo), diálogos com
+  resposta da Kuon para todos os chefes, conquistas e missões da fase.
 - **Fogo, gelo e sombra** ([.ai/06-fogo-gelo-clones.md](.ai/06-fogo-gelo-clones.md), 1.23.0): três linhas
   novas sem desbloqueio, cada uma arma base → relíquia → evolução:
   Hōroku-biya 焙烙火矢 (pote de pólvora em arco, explosão e chão em brasa) + Pedra de Fogo → Kagutsuchi
@@ -24,9 +36,9 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   lançamento em camadas (pavio assobiando, cristais tilintando, selo com fumaça); 6 missões novas
   (3 evoluções e 3 uniões) e uma seção no Guia com os números lidos do código.
 - **Habilidades dos guardiões** ([.ai/04-habilidades-dos-guardioes.md](.ai/04-habilidades-dos-guardioes.md)):
-  21 habilidades (3 por guardião, ligadas à história de cada um, liberadas nos níveis 1, 5 e 10 da partida)
-  e 7 energias próprias (Chama da Ordem, Sombra, Prece, Penitência, Foco, Calor da Forja e Sangue Oni, que
-  a Yuki pode pagar com vida), com recarga, efeitos, som em camadas, grito do guardião e o letreiro
+  24 habilidades (3 por guardião, ligadas à história de cada um, liberadas nos níveis 1, 5 e 10 da partida)
+  e 8 energias próprias (Chama da Ordem, Sombra, Prece, Penitência, Foco, Calor da Forja, Sangue Oni, que
+  a Yuki pode pagar com vida, e Almas, da Kuon), com recarga, efeitos, som em camadas, grito do guardião e o letreiro
   kanji + nome. Números em `data/abilities.json`; o bot usa as três por regras fixas (determinístico).
   No toque, 3 botões em arco ao lado do Golpe; ficha na tela do guardião, no Diário e um capítulo no Guia.
 - **Três níveis por fase** ([.ai/06-tokoyo-terceiro-nivel.md](.ai/06-tokoyo-terceiro-nivel.md)): a fase, o
@@ -46,8 +58,8 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   na 1ª rolagem paga e +10 a cada outra, com cartas novas sempre que o sorteio tiver outras) e, com tudo no
   máximo, a mão comida/moedas com "Não perguntar mais": a escolha vira automática, sem pausar a luta, só com
   o som (com a vida cheia, "Comida" pega as moedas); muda em Opções e no menu de pausa.
-- Santuário (18 power-ups, reembolso total; preços base de 240 a 12.000 ryō em `data/powerups.json`), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
-  e mais 153 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
+- Santuário (18 power-ups, reembolso total; preços base de 240 a 12.000 ryō em `data/powerups.json`), **Missões do Santuário** (as 44 conquistas que desbloqueiam conteúdo
+  e mais 170 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
   Próximas 3 metas no título e nos Resultados), Diário do Guardião
   (com o **Guia**: 9 capítulos de manual montados dos dados do jogo, sem revelar o que não foi descoberto),
   história completa, Noite Sem Fim (o ryō ganho depois do amanhecer vale ×1,5), Desafio Diário, Brisa / Normal / Lua Vermelha I–V (regras cumulativas em
@@ -79,14 +91,14 @@ C:\src\tools\godot\Godot_v4.7.2-stable_win64.exe --path C:\src\hyakki
 
 ### Testar todos os heróis
 
-Execute este comando para abrir o jogo em modo de desenvolvimento com os sete guardiões liberados:
+Execute este comando para abrir o jogo em modo de desenvolvimento com os oito guardiões liberados:
 
 ```powershell
 C:\src\tools\godot\Godot_v4.7.2-stable_win64.exe --path C:\src\hyakki
 ```
 
-Ao iniciar, a build de desenvolvimento libera e salva automaticamente Aki, Kenta, Hana, Goro, Rin, Tora e
-Yuki no perfil local, preservando o restante do progresso. Esse desbloqueio automático é exclusivo da build
+Ao iniciar, a build de desenvolvimento libera e salva automaticamente Aki, Kenta, Hana, Goro, Rin, Tora,
+Yuki e Kuon no perfil local, preservando o restante do progresso. Esse desbloqueio automático é exclusivo da build
 de desenvolvimento; na build de produção, os heróis continuam sendo liberados pela progressão normal.
 
 Teclas: **WASD/setas** movem · **Esc/P** pausa · **Tab** velocidade · **Espaço/E** Golpe da Lanterna ·
@@ -183,7 +195,7 @@ powershell -ExecutionPolicy Bypass -File tools\run_tests_report.ps1
 que passou (`--verbose`, milhões de linhas). O relatório roda as etapas em sequência, com `user://` isolado.
 
 Suítes que se rodam sozinhas com frequência (todas também rodam dentro da integração do `run_checks`):
-habilidades dos guardiões (`--suites=ability`: energias, AbilitySystem, primitivas, as 21 habilidades em
+habilidades dos guardiões (`--suites=ability`: energias, AbilitySystem, primitivas, as 24 habilidades em
 cenários montados, marcadores de estado, partida suspensa e o bot com o mesmo hash na Baixa e na Alta; a HUD das
 habilidades em todas as resoluções fica em `tests/ability_hud_tests.gd`, chamada pelos testes de layout do HUD),
 missões do Santuário (`--suites=mission`: dados, cada condição, recompensas, save, Próximas metas e uma partida
