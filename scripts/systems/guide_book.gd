@@ -538,6 +538,15 @@ func boss_ref(b: StringName) -> Dictionary:
 			"name": tr("boss.%s.name" % b) if known else Discovery.UNKNOWN}
 
 
+## Quantos inimigos têm arte própria de Elite (data/enemies.json "elite_sprite").
+static func elite_art_count() -> int:
+	var n := 0
+	for id: StringName in DB.ids("enemies"):
+		if (DB.enemies[id] as Dictionary).has("elite_sprite"):
+			n += 1
+	return n
+
+
 ## Retrato de um chefe (data/bosses.json "faceset", ou o Faceset.png ao lado do sprite).
 static func boss_face(b: StringName) -> String:
 	var data: Dictionary = DB.bosses.get(b, {})
@@ -581,6 +590,7 @@ func _altars() -> Array[Dictionary]:
 		_p(tr("guide.altars.elite"), [Screen.format_time(EliteAffixes.TWO_AFFIX_T), roman(EliteAffixes.HIGH_MOON),
 				str(EliteAffixes.MAX_AFFIXES), pct(EliteAffixes.HP_PER_AFFIX)]),
 		_p(tr("guide.altars.fury"), [pct(EliteAffixes.FURY_AT), pct(1.0 - EliteAffixes.FURY_CD)]),
+		_p(tr("guide.altars.elite_look"), [str(elite_art_count())]),
 		_rich(lines),
 	]
 	if hidden:

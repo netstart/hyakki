@@ -221,7 +221,7 @@ func _step_boss(boss: Dictionary, dt: float) -> void:
 		"charge":
 			var v: Vector2 = boss["dir"]
 			enemies.vel[i] = v
-			# Folhas "dir4" (Onikuma, Onmoraki) olham para onde investem.
+			# O chefe olha para onde investe (coluna da folha "dir4" ou lado da "strip").
 			enemies.facing[i] = SpriteSheet.dir_from_vector(v, enemies.facing[i])
 			enemies.pos[i] = game.world.clamp_to_bounds(me + v * dt)
 			if float(boss["timer"]) <= 0.0:

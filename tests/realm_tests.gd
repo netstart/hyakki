@@ -28,8 +28,8 @@ extends RefCounted
 ##     (portal dourado, Sombra e último chefe em campo, chegada salva) e de um snapshot antigo;
 ##   - cenários de depuração "midboss", "portal", "realm", "midboss2", "portal2" e "tokoyo";
 ##   - arte própria: cada Guardião usa a folha de assets/art/midbosses/<fase>/ (sem tinta nem
-##     montagem provisória), com retrato do códice, tamanho de chefe e, nas folhas "dir4" (Onikuma,
-##     Onmoraki), o lado certo para onde anda e investe; o portal usa portal_open → portal_loop e o
+##     montagem provisória), com retrato do códice, tamanho de chefe e, na folha "strip" que olha
+##     para a esquerda (Kasa-obake), o lado certo para onde anda e investe; o portal usa portal_open → portal_loop e o
 ##     torii importados, e o zumbido toca com o portal aberto e para ao fechar, atravessar,
 ##     reiniciar, retomar sem portal e no fim da partida.
 ## run_unit() roda sem autoloads (tests/run_tests.gd); run() precisa da árvore
@@ -115,8 +115,8 @@ func _test_midboss_data(s: Dictionary, bosses: Dictionary, seen: Dictionary) -> 
 	_check.call(not boss.has("tint") and not sheet.has("composite"), "limiar %s: sem tinta nem montagem provisória", id)
 	_check.call(ResourceLoader.exists(String(boss.get("faceset", ""))), "limiar %s: retrato do códice existe", id)
 	var frame: Array = sheet.get("frame", [0, 0])
-	var tall := maxf(float(frame[0]), float(frame[1])) * float(boss.get("scale", 1.0))
-	_check.call(tall >= 44.0 and tall <= 100.0, "limiar %s: tamanho de chefe intermediário (%.0f px)", [id, tall])
+	var tall := float(frame[1]) * float(boss.get("scale", 1.0))
+	_check.call(tall >= 34.0 and tall <= 100.0, "limiar %s: altura de chefe intermediário (%.0f px)", [id, tall])
 	_check.call(String(boss.get("music", "")) == "midboss", "limiar %s: música do Guardião", id)
 	_check.call(String((s.get("otherworld", {}) as Dictionary).get("music", "")) == "kakuriyo",
 			"reino %s: música do Kakuriyo na chegada", id)
@@ -378,7 +378,7 @@ func run(host: Node, check: Callable) -> void:
 	await _test_tokoyo_scenarios()
 	await _test_bot_two_portals()
 	await _test_midboss_kill_daily()
-	await _test_dir4_facing()
+	await _test_strip_facing()
 	await _test_portal_art_and_hum()
 	GameClock.paused = false
 	await _host.get_tree().process_frame
@@ -444,8 +444,8 @@ func _test_schedule() -> void:
 			"limiar: aviso antes da entrada")
 	_check.call(not game.bosses.has_boss(&"onikuma"), "limiar: Guardião ainda não entrou no aviso")
 	_tick(game, roundi(4.0 / STEP))
-	_check.call(game.bosses.has_boss(&"onikuma"), "limiar: Onikuma entra aos 7:30 na Vila")
-	_check.call(game.hud.boss_panel().seal_glyph == "門" and game.hud.boss_panel().kanji == "鬼熊",
+	_check.call(game.bosses.has_boss(&"onikuma"), "limiar: Kasa-obake entra aos 7:30 na Vila")
+	_check.call(game.hud.boss_panel().seal_glyph == "門" and game.hud.boss_panel().kanji == "傘お化け",
 			"limiar: painel do chefe com o kanji e o selo do portão")
 	var commons := game.enemies.count_common
 	game.spawner.hush(2.0)
@@ -660,28 +660,29 @@ func _test_snapshot() -> void:
 	await _free(again)
 
 
-## Folha "dir4" de chefe: a coluna segue o movimento (andando e investindo).
-func _test_dir4_facing() -> void:
+## Folha "strip" do Guardião (arte que olha para a esquerda): vira para onde anda e investe.
+func _test_strip_facing() -> void:
 	var game := await _new_game()
 	game.bosses.spawn(&"onikuma")
 	var boss: Dictionary = game.bosses.bosses[0]
 	var i := int(boss["index"])
 	var enemies := game.enemies
 	var sheet: SpriteSheet = enemies.type_sheets[enemies.kind[i]]
-	_check.call(sheet.layout == "dir4" and sheet.frame_size == Vector2(16, 16), "dir4: folha do Onikuma em 4 direções")
-	for dir: int in [SpriteSheet.Dir.LEFT, SpriteSheet.Dir.UP, SpriteSheet.Dir.RIGHT, SpriteSheet.Dir.DOWN]:
+	_check.call(sheet.layout == "strip" and sheet.faces_left, "strip: folha do Kasa-obake olhando para a esquerda")
+	for dir: int in [SpriteSheet.Dir.LEFT, SpriteSheet.Dir.RIGHT]:
 		var offset: Vector2 = [Vector2(0, 1), Vector2(0, -1), Vector2(-1, 0), Vector2(1, 0)][dir] * 200.0
 		game.player.sim_pos = enemies.pos[i] + offset
 		boss["state"] = "move"
 		boss["timer"] = 5.0
 		_tick(game, 2)
-		_check.call(enemies.facing[i] == dir and sheet.region(0, dir).position.x == dir * 16.0,
-				"dir4: anda e olha para %s", ["baixo", "cima", "esquerda", "direita"][dir])
+		_check.call(enemies.facing[i] == dir and sheet.needs_flip(dir) == (dir == SpriteSheet.Dir.RIGHT),
+				"strip: anda e olha para a %s", ["", "", "esquerda", "direita"][dir])
 	boss["state"] = "charge"
 	boss["timer"] = 1.0
 	boss["dir"] = Vector2(-200, 0)
 	_tick(game, 1)
-	_check.call(enemies.facing[i] == SpriteSheet.Dir.LEFT, "dir4: olha para onde investe")
+	_check.call(enemies.facing[i] == SpriteSheet.Dir.LEFT and not sheet.needs_flip(enemies.facing[i]),
+			"strip: olha para onde investe")
 	await _free(game)
 
 

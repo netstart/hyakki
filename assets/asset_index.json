@@ -1386,298 +1386,100 @@
   "sha256": "a213fbdf800b0106c4b309d7d1e74a025436c4600561e7427c78dce0f419a871"
  },
  {
-  "file": "assets/art/bosses/bamboo_ancestral/Attack.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Attack.png",
-  "license_id": "ninja_adventure",
-  "sha256": "fba4d5ec9a21c4e2ca773c44e544d0dce43743fbccdffbc31c8fb5eca9553b86"
+  "file": "assets/art/bosses/ash_dragon/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "be3f1b9ef2bfa11e30d5edffe02c3e4f7582cecce5b28420a5a212ecfdc2a449"
  },
  {
-  "file": "assets/art/bosses/bamboo_ancestral/Charge.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Charge.png",
-  "license_id": "ninja_adventure",
-  "sha256": "69a77012dc1a0a132c65c8e8ab70aaaee6316e4d2597d02566fa2b1098fbe585"
+  "file": "assets/art/bosses/ash_dragon/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "3039b4c109c4a0d99cdd0027e69a072ae7aaade8b6926044d05d5e9d616a6efb"
  },
  {
   "file": "assets/art/bosses/bamboo_ancestral/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "20408cdaea03f40fb8025f57219781d0c7d01acb901e585e49d6e0e8d1f7cdc4"
- },
- {
-  "file": "assets/art/bosses/bamboo_ancestral/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "6baa8443dc499abd18c1bde62b0c08fceae9f33785a6ceab82bdab77e4fa7613"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "3c3351dfd417c7e68da225e84976bbb6ad9801b6dee0044e78e8955f72c0e7b4"
  },
  {
   "file": "assets/art/bosses/bamboo_ancestral/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "b6030c6c44f34445f354febbb75e0abdd3eab3c515d53453a4443c98ce565a10"
- },
- {
-  "file": "assets/art/bosses/bamboo_ancestral/Walk.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBamboo/Walk.png",
-  "license_id": "ninja_adventure",
-  "sha256": "cab88edc425e7d6a6201a781be7a58457a6a1256922c0c924800d1f0f43e801b"
- },
- {
-  "file": "assets/art/bosses/cyclops/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "22c089ba89c40fa3874f3a9e74179f99a3e2203d8f9d0efe353935e3465d1b2f"
- },
- {
-  "file": "assets/art/bosses/cyclops/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "6546e595f653c4de180534c193012fc6a13729bf9eb880f283c593a7ffd46857"
- },
- {
-  "file": "assets/art/bosses/cyclops/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "0bf748c6b777a2c0b77eead35b13e5e21e3a08e2bcbc69e8bc8b6fce52221a60"
- },
- {
-  "file": "assets/art/bosses/cyclops/Sprite.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop/Sprite.png",
-  "license_id": "ninja_adventure",
-  "sha256": "25277aff9c8fcae0515172a1161c9774b1a9854fdee7a4c2e2d3ce975ee4bd7a"
- },
- {
-  "file": "assets/art/bosses/cyclops/Walk.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop/Walk.png",
-  "license_id": "ninja_adventure",
-  "sha256": "170669561646d42f3500ec137b69fad91b1f3453aa9902bdb8aa90eae4f37593"
- },
- {
-  "file": "assets/art/bosses/dragon/Body1.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Body1.png",
-  "license_id": "ninja_adventure",
-  "sha256": "223d414c471f964d8b813968be3179015975fa294b20ae438de22daaef302f16"
- },
- {
-  "file": "assets/art/bosses/dragon/Body2.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Body2.png",
-  "license_id": "ninja_adventure",
-  "sha256": "0a1bbed69a9babfa30b8e759a2fa77c7b1c4ae7af38c4ff334cf7f42ad78fe6e"
- },
- {
-  "file": "assets/art/bosses/dragon/BodyEnd.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/BodyEnd.png",
-  "license_id": "ninja_adventure",
-  "sha256": "a69f4f956bd3fce40e017ec3d11ae2583f68cb00c73c8b0078a063411a03e3f5"
- },
- {
-  "file": "assets/art/bosses/dragon/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "b18f5483e074e5397f3cbc8a0d9b4c861603e05a8c1af8d59163dd49f397f6f7"
- },
- {
-  "file": "assets/art/bosses/dragon/Head.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Head.png",
-  "license_id": "ninja_adventure",
-  "sha256": "2a9a9d0537515a16ca2f7a77aa91c8f38db2557c198ad3d79555b3ea30ba8bb4"
- },
- {
-  "file": "assets/art/bosses/dragon/Wing.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DragonBlue/Wing.png",
-  "license_id": "ninja_adventure",
-  "sha256": "6ec5982f328fbe1c4351a8fe3ac50f677e8a64e28cb0d18df8f0ed994c332687"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "cffed1ed84b65e8f65742d4f824cc4a0ed486bae2f802973d58519a5c78f30c0"
  },
  {
   "file": "assets/art/bosses/faceless_monk/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSpirit/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "44bd3804d3fc1ef4aa9e4ffa74d77b42ffe0754e0c856eacd68071767d5e0420"
- },
- {
-  "file": "assets/art/bosses/faceless_monk/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSpirit/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "2fc6e5c3bd4ed2dc3be5ed12e361707a65a1283513627e949e3ac898d7593556"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "850bb540f2fb09dfccabc47f7d59ee5a80d947413ebfab5eb7f30f06659a0bfb"
  },
  {
   "file": "assets/art/bosses/faceless_monk/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSpirit/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "258b38baa3606ed9592d63b98a34d61eae9ce1a457db0cad5f38ba662b540175"
- },
- {
-  "file": "assets/art/bosses/izanami/Attack.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/Attack.png",
-  "license_id": "ninja_adventure",
-  "sha256": "a3fdaae6431b02587440ed46287ba9dd546146548e6a87a5dc11fbccc9ecdb70"
- },
- {
-  "file": "assets/art/bosses/izanami/AttackLoop.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/AttackLoop.png",
-  "license_id": "ninja_adventure",
-  "sha256": "d00d58f39b456b085c6bca8fbd60178ff056ccdc3ed64fe7760e81400b4240de"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "04887e8a7931757af7be8bfafc01a7deda429e5a63656473adb659e8de6c0ae5"
  },
  {
   "file": "assets/art/bosses/izanami/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "324adaf829ed0d807b5d7ee9de69be195e274d3173f2e014754b8db74202ab2d"
- },
- {
-  "file": "assets/art/bosses/izanami/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "896760cd6d477ca0370e92083f7146ffb405dbc7cd84b6e1d59f02f2eb41953d"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "603746e3e5c450eec6194f1d413acdecb90e55fa1ae1f44e06dc65882c6d7637"
  },
  {
   "file": "assets/art/bosses/izanami/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "c2139ee6b76935b9e3724dc0573fe54a8ecba10d267c8af888f4e8517c2b81ff"
- },
- {
-  "file": "assets/art/bosses/izanami/Shoot.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/Shoot.png",
-  "license_id": "ninja_adventure",
-  "sha256": "b8b83029443adce234a51ffb709310b3b7f8d0cffdd34c00db1d2f89fe417208"
- },
- {
-  "file": "assets/art/bosses/izanami/Walk.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/SquidRed/Walk.png",
-  "license_id": "ninja_adventure",
-  "sha256": "6b57d4263dc53e50a6d469f755ebe4b9dd8b3548cac89dc4d8fe82d48d1e1ca7"
- },
- {
-  "file": "assets/art/bosses/kappa_elder/Attack.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFrog/Attack.png",
-  "license_id": "ninja_adventure",
-  "sha256": "5ac0a5a76f1429a57cfee5981de0da0b2a68dc6056d37282f2487476f19ee576"
- },
- {
-  "file": "assets/art/bosses/kappa_elder/Charge.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFrog/Charge.png",
-  "license_id": "ninja_adventure",
-  "sha256": "cfd5fdf2b91b9093980c3304a381584f5184ffe0382ff7ec35806b9c6a5418d2"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "30691099fb51c2eeb8ef0db212e2fffc79e2c2a11296dc9a8db04bed9748be08"
  },
  {
   "file": "assets/art/bosses/kappa_elder/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFrog/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "e4dc8b065b7e8a9f29951ede4483f5960bdae7d6316ad8b96355ebb9f46e5336"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "c87e2252f5e21410a1b8f2028e0fa24430ea48421f999abf82ed44d7dbfc7aac"
  },
  {
-  "file": "assets/art/bosses/kappa_elder/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFrog/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "ed0b5ce7820cb6f049eac008660cae9e6ad28c72e8c533a326144a467150cdde"
+  "file": "assets/art/bosses/kappa_elder/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "fdab1b332ce391c6ed0f4b85d6c2b25f1410a4dce08fa750fdcd48887cd159cb"
  },
  {
-  "file": "assets/art/bosses/kappa_elder/Idle40x40.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFrog/Idle40x40.png",
-  "license_id": "ninja_adventure",
-  "sha256": "dc2d67d1333e73259691a0bca9aff06377757a157be9c19317aac3a83b34ee15"
+  "file": "assets/art/bosses/kitsune_nine/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "c02787d95d972ae83699c581a274ac33077beafdb59afed3ec2b74b7a4fbf647"
  },
  {
-  "file": "assets/art/bosses/kappa_elder/Jump.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFrog/Jump.png",
-  "license_id": "ninja_adventure",
-  "sha256": "cc264f1da8d6974decc7595f7254d5aed6b146499e3859c6b9d8cbfe36989c41"
- },
- {
-  "file": "assets/art/bosses/kitsune/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFlam/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "9451c49d2bff5706b2e075356f015b71f92b5ea72d769fc70d62ba56b524253c"
- },
- {
-  "file": "assets/art/bosses/kitsune/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFlam/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "00ea580c02798e3ac56c3f061d7ea74b66979a31b998d5c5a66299ceeb93ce63"
- },
- {
-  "file": "assets/art/bosses/kitsune/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantFlam/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "2cbe6951a3209c3204bdc7b634f72e474e38bc14eda51726cb1126712ff97687"
- },
- {
-  "file": "assets/art/bosses/kuroe/AttackLeft.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/AttackLeft.png",
-  "license_id": "ninja_adventure",
-  "sha256": "128c59a924e0e36c70d0b1693c060e8481c52d20fff49e57b706b510ab80426e"
- },
- {
-  "file": "assets/art/bosses/kuroe/AttackRight.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/AttackRight.png",
-  "license_id": "ninja_adventure",
-  "sha256": "860699ad1b52b8b7ef1655d37926504b4349c60c7baab1ca680cb5b4c4460d3e"
- },
- {
-  "file": "assets/art/bosses/kuroe/ChargeLeft.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/ChargeLeft.png",
-  "license_id": "ninja_adventure",
-  "sha256": "8e15e5ba39eeb6c7378bd43a45fbb453092ebc44e73d28e359eb813b4d0014e2"
- },
- {
-  "file": "assets/art/bosses/kuroe/ChargeRight.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/ChargeRight.png",
-  "license_id": "ninja_adventure",
-  "sha256": "95fed0a3cf1a31df15a62a3b38580b2d0cb03381bd1c9ceb02c39457d7fa9b1c"
+  "file": "assets/art/bosses/kitsune_nine/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "80e7f87c8cfa8c9bf4c149d22ef49b3e22d3ec8c5ec4a258d62f4502fa53f2e8"
  },
  {
   "file": "assets/art/bosses/kuroe/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "876f9b2b0e401a36033fc9558cecfd0f0bd051bbdc217f194bebe740a52850a1"
- },
- {
-  "file": "assets/art/bosses/kuroe/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "fc9370f4ac61358e58862f5ce0630947194025bfef46822ecea3bfbd862bd320"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "c3062f50bc96b3612326e141825759e2d793db259f127755c2e10d4c80be587c"
  },
  {
   "file": "assets/art/bosses/kuroe/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "6e9b02eeda3cfc07ac33dd1ca6d682c17333f4356769f34d7ddd8805f85b6029"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "7e4cea4c5ed07ff5af0769e91edba1e6b52e43da1bda9a28f96f4770860e807b"
  },
  {
-  "file": "assets/art/bosses/kuroe/Walk.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantBlueSamurai/Walk.png",
-  "license_id": "ninja_adventure",
-  "sha256": "0bfe296a87d6e7a20b09aea471d6e60ae22132deb8a6c91a6c3125d53f232f16"
+  "file": "assets/art/bosses/red_oni/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "fa1339c0b27abd287c6a3da3ee4c948add9c379728c893155bd9052596c40076"
  },
  {
-  "file": "assets/art/bosses/oni/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop2/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "98150f85f5c443491d8669efaf9cd1bb900d35492cd4cadfb96fffcadb363bc7"
- },
- {
-  "file": "assets/art/bosses/oni/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop2/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "3029673b398c899c25f0c6d8edf89b127afd3922dfc3d6c4fd86d8af2379c6cd"
- },
- {
-  "file": "assets/art/bosses/oni/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop2/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "e5d05edde8967bd570067dbbfed4f324b6508048d13eca82b6882d1569bb4318"
- },
- {
-  "file": "assets/art/bosses/oni/Sprite.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop2/Sprite.png",
-  "license_id": "ninja_adventure",
-  "sha256": "71b07202950a1b248197d3eb06eef5576949cc6ae5928c33ddbe2eb5d37709f7"
- },
- {
-  "file": "assets/art/bosses/oni/Walk.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/DemonCyclop2/Walk.png",
-  "license_id": "ninja_adventure",
-  "sha256": "b9e7c978ec555a6dfcedde5830fda0bf51b0c189fcd46ac79dede1b958003b10"
+  "file": "assets/art/bosses/red_oni/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "42844625f536632b3dbfa30e9b2cf417879bd3c51a03bd37451890816dd03d08"
  },
  {
   "file": "assets/art/bosses/red_samurai/AttackLeft.png",
@@ -1728,76 +1530,118 @@
   "sha256": "2373059fc0b48c379dcd6e29c979e8ac63e323972207d9479a4687ce91d5f6c0"
  },
  {
-  "file": "assets/art/bosses/tanuki/Attack.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoon/Attack.png",
-  "license_id": "ninja_adventure",
-  "sha256": "3e727e48b620a585029c9f24341aa94e947b79ed2c0326d08f1a1b99a00512c7"
+  "file": "assets/art/bosses/shinigami/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "afcdfba18b2eccef48d2ff6a3d30bd15f25dc2af23a7cf8dd4cd380761bb619f"
  },
  {
-  "file": "assets/art/bosses/tanuki/Charge.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoon/Charge.png",
-  "license_id": "ninja_adventure",
-  "sha256": "cedf7ab45f033611bf853a2c3caf0810807041804b9206f07fffb229303f640a"
+  "file": "assets/art/bosses/shinigami/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "48efc1310ffddee468d975136efc4a55600827bba8953e73d87a53f0ae2e1f16"
+ },
+ {
+  "file": "assets/art/bosses/stone_cyclops/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "70e15609f65816bcadd004eec495b118b3b03425ea441bf78ac789452eeecd97"
+ },
+ {
+  "file": "assets/art/bosses/stone_cyclops/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "5cb6ac76fa5ed3ccedca5a64319a2436b364d1059bfe3656e5a6fae425ddc7ef"
  },
  {
   "file": "assets/art/bosses/tanuki/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoon/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "2036313fec99dfc389042b92d19f192bb51a38e3b3680e5b719782dfa395b753"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "791e714f1c9e34751784a8a3c2b906790da89a1d053ed8144b7cb92dac66534f"
  },
  {
   "file": "assets/art/bosses/tanuki/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoon/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "aa442d131d75e982696fb1c0c7f57b556f7f7e8b504195444bf6caadd0dbd837"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "b99e71e3b54097e2d2564f3bb9c169657bc0c0bb6eb6e559648226a997294bf1"
  },
  {
-  "file": "assets/art/bosses/tanuki/Jump.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoon/Jump.png",
-  "license_id": "ninja_adventure",
-  "sha256": "859d782a6c718b40598dd027a9f41ab68a2b236dd9d49e773dee20384106fd6e"
+  "file": "assets/art/bosses/tengu_crow_king/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "8cdd91a56a67ece83f1914aead5e664aeb6c9853d8fb1c311210130a76c076cf"
  },
  {
-  "file": "assets/art/bosses/tanuki/Sprite.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantRacoon/Sprite.png",
-  "license_id": "ninja_adventure",
-  "sha256": "7cbbc981441f0e7b6bee893e0f6a2a651ddaabaf76fbc3401b726d556299cbc5"
+  "file": "assets/art/bosses/tengu_crow_king/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "59f7e78155c019088ed7fb4a0ce77ed967974005ec3e6374991680b81e36d890"
  },
  {
-  "file": "assets/art/bosses/tengu/Attack.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/TenguRed/Attack.png",
-  "license_id": "ninja_adventure",
-  "sha256": "fba073e5de32d2fffeb5b9d53487b8cc0b64809667514917ff98faf20649f799"
+  "file": "assets/art/elites/bakeneko/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "bbe77d7799215e251d634784e01883c1a2b48544ce3bcc56f0a1b3744a6f5877"
  },
  {
-  "file": "assets/art/bosses/tengu/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/TenguRed/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "b8cc8b7ab452bafbdfd1ad42ab981db14c8d378b8e557e615f9f9bd4049f3089"
+  "file": "assets/art/elites/hyakume/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "e679465499a7c46529b4d0d9e2edea19725874aa190d53f493dc7ffaca73ae0a"
  },
  {
-  "file": "assets/art/bosses/tengu/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/TenguRed/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "4dcdfabbf0b1541eb03d0e2b842e5739b100cc322c79df68eb96b4af804d65cc"
+  "file": "assets/art/elites/kappa_young/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "86a8e88de622bdc38c1eade295c1ab8b15d72ecdf1be70a20ffe876c9e8b99a3"
  },
  {
-  "file": "assets/art/bosses/tengu/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/TenguRed/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "9f8491de7fb5d02880cc87f30d780d809e3446b138973fa04217780531dde849"
+  "file": "assets/art/elites/kitsune_minor/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "ba9c36f15dcc2f2d7b5eb9a3ac07f4f400e84129d925021db2bc0e725141994b"
  },
  {
-  "file": "assets/art/bosses/tengu/Trans.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/TenguRed/Trans.png",
-  "license_id": "ninja_adventure",
-  "sha256": "f9fb566612fe7e5ceaa9bb8f2f93ca81028c44fceb8312101b6aa127f7fd3b4c"
+  "file": "assets/art/elites/lantern_obake/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "bea297498a99ed2aaf736291393587e596f60fc7d9bf972b8b69b23868595626"
  },
  {
-  "file": "assets/art/bosses/tengu/Walk.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/TenguRed/Walk.png",
-  "license_id": "ninja_adventure",
-  "sha256": "e81f44c7a3d41693cf8c5431167e1236aa6791a3d7e16971724543849a8c5f6d"
+  "file": "assets/art/elites/oni_small/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "244391a4b8a160acbd89269f8d16ac53df4b354f72bd599a817c238194c863d3"
+ },
+ {
+  "file": "assets/art/elites/shade_ghost/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "c41c0534e6965853d435ca7cc014937370577759aada6f919acb1dfe847835f2"
+ },
+ {
+  "file": "assets/art/elites/skeleton_peasant/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "26e0cf850a2eb63f871c572eb85d83cee186339e7022f81d4732b242f75f586f"
+ },
+ {
+  "file": "assets/art/elites/tengu_crow/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "ae9a488342cbbeb02b780d14089e0ffabfc2b255bba4659687d76b7fbf9c37a4"
+ },
+ {
+  "file": "assets/art/elites/tsuchigumo/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "b4dc70529eddb1dde18e2cc225ea776652e149e0fb697aa8761cfb5f8f54031f"
+ },
+ {
+  "file": "assets/art/elites/yurei/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "8ffcbc677c22c070aaad528275b738920d51f7ed6ccace748c8cf5334ad93509"
  },
  {
   "file": "assets/art/fx/aura/SpriteSheet.png",
@@ -2737,39 +2581,27 @@
  },
  {
   "file": "assets/art/midbosses/bamboo/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "f5ca42e715017cbaf624f5c7ac04ff02589bcf9ef816f60c6805a5470e6d6a1b"
- },
- {
-  "file": "assets/art/midbosses/bamboo/Hit.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Hit.png",
-  "license_id": "ninja_adventure",
-  "sha256": "42073c137b251e3b17a2ee11a92c3d75eec1d131511b52ae702ba17d5ba957e9"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "659f39b5ee1b92853215baa78f487de90db6687a1ea55bda9ab89ecfcf316a43"
  },
  {
   "file": "assets/art/midbosses/bamboo/Idle.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Idle.png",
-  "license_id": "ninja_adventure",
-  "sha256": "459d02491f25cdc0d8e3b87863e1422ec1e2cfca9286db83494e7d98f1dcfb47"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "31117207b0c9cd5423f122bc943bb3b4f4fe1d180be86190468c9a45daaeb1b6"
  },
  {
-  "file": "assets/art/midbosses/bamboo/Jump.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Boss/GiantSlime2/Jump.png",
-  "license_id": "ninja_adventure",
-  "sha256": "75a676512247665ca6515d770ca8b4d7ce20d23198841924b454ba383b576a91"
+  "file": "assets/art/midbosses/dunes/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "f1c19885be852a4157bd6cc608fab81abcf3f7af0b7f3b82a79ca82698ffb8c9"
  },
  {
   "file": "assets/art/midbosses/dunes/Idle.png",
-  "source": "tools/make_midboss_idle.py",
-  "license_id": "pixelboy_freemix",
-  "sha256": "ca24d23376a3c237bd49865b7aaef45b0d70aaf872d826924785b6d50226f357"
- },
- {
-  "file": "assets/art/midbosses/dunes/Sprite.png",
-  "source": "C:/src/assets/pixelboy-freemix/pack/FreeMix/rpg/mimic_campfire.png",
-  "license_id": "pixelboy_freemix",
-  "sha256": "463437b45a29831395a851f4d9736b04ee903ece7221701c45806ee47eb09aae"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "221ebb7e6323d68c4c517e172567c36fcbdd2cbcff64a0f85603147e0aca7fe6"
  },
  {
   "file": "assets/art/midbosses/secret/Attack.png",
@@ -2809,39 +2641,39 @@
  },
  {
   "file": "assets/art/midbosses/temple/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Owl2/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "ad8142676768d1f0a8a4a6735bfba976026c4da9ac6fa8ad1157ada4fd1ff493"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "73db6fa57ff41f3cbcc77794967b095ecafd80ad42f6143126902df3e5e60b4b"
  },
  {
-  "file": "assets/art/midbosses/temple/Owl2.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Owl2/Owl2.png",
-  "license_id": "ninja_adventure",
-  "sha256": "d94dc8b6edf6ba7d74169b3c59b5aa638d8149556a91d11fcc646008bb528cbd"
+  "file": "assets/art/midbosses/temple/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "c972e26ceba1c077d50039448911707002e9b14d1326670df6be362d051852b8"
  },
  {
   "file": "assets/art/midbosses/village/Faceset.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Bear/Faceset.png",
-  "license_id": "ninja_adventure",
-  "sha256": "529e40b702dc5d3af1eedf0e4744bba836730fa1d8a815bd3ffa55519b62ab94"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "e9681f6f8b17ff6eec4b80b83bfcce54a99a8af4ddbaea804cf06fb775e5672a"
  },
  {
-  "file": "assets/art/midbosses/village/SpriteSheet.png",
-  "source": "C:/src/assets/ninja-adventure/pack/Ninja Adventure - Asset Pack/Actor/Monster/Bear/SpriteSheet.png",
-  "license_id": "ninja_adventure",
-  "sha256": "f4da7b71149dbf9ad90b17106692c9747f1a332704514aee17bd0563db41c686"
+  "file": "assets/art/midbosses/village/Idle.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "1bd50aad3c8339f65a2003a157a6c3dfe6342ef6669a7fc2f591c3423b2d0d47"
+ },
+ {
+  "file": "assets/art/midbosses/yomi/Faceset.png",
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "6aafa625234334589ee4029e539c6f9d09adde5d93e147e0b286f659db0cebb2"
  },
  {
   "file": "assets/art/midbosses/yomi/Idle.png",
-  "source": "tools/make_midboss_idle.py",
-  "license_id": "pixelboy_freemix",
-  "sha256": "8eeda6ed5da8e594d2ef7089af233f4bb84fcd0c3f15e8fad08f225227f56aa7"
- },
- {
-  "file": "assets/art/midbosses/yomi/Sprite.png",
-  "source": "C:/src/assets/pixelboy-freemix/pack/FreeMix/rpg/candlesnake_boss.png",
-  "license_id": "pixelboy_freemix",
-  "sha256": "b95eebb705b203f778849248c36133acdcd381914b34a47fbf0a1e605ceb1d65"
+  "source": "tools/import_sengoku.py",
+  "license_id": "willyee_sengoku",
+  "sha256": "c5583412157c2ee4d758d12d9efe57c7b514bd02b529d640f528ee9f1f673ed8"
  },
  {
   "file": "assets/art/tilesets/desert.png",

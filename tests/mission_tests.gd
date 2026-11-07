@@ -299,7 +299,7 @@ func _test_boss_trackers() -> void:
 	t.on_boss_defeated(&"tanuki", 340.0, dmg)
 	_check.call(t.bosses == [&"tanuki"] and is_equal_approx(float(t.boss_results[&"tanuki"]["time"]), 40.0)
 			and bool(t.boss_results[&"tanuki"]["clean"]), "chefe: tempo da luta e sem golpe do chefe")
-	# Onikuma acerta a guardiã uma vez: vence, mas não "sem golpe".
+	# O Kasa-obake (onikuma) acerta a guardiã uma vez: vence, mas não "sem golpe".
 	t.on_boss_start(&"onikuma", 450.0, dmg)
 	dmg.record(&"onikuma", 9.0, 460.0)
 	t.on_boss_defeated(&"onikuma", 600.0, dmg)

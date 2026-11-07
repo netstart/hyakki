@@ -1,0 +1,21 @@
+Registro de origem - willyee_sengoku (2026-11-07)
+
+Pacote: "Sengoku Pixel Pack" (willYEE), Sengoku_Pixel_Pack.zip baixado em 2026-11-07 da página
+https://willyee.itch.io/sengoku-pixel-pack (SHA-256 do zip
+136d5aa9fd6eea4b754aac0d97314664a40fc9355b236b44a74924c5dc958093).
+
+Licença declarada no pacote:
+  LICENSE.txt: texto integral do CC0 1.0 Universal (igual a licenses/texts/CC0-1.0.txt).
+  README.md, "License": CC0 1.0 Universal - public domain dedication. Use it commercially,
+  modify it, ship it. No credit required.
+
+Declaração de IA do autor (README.md, "AI disclosure"): todas as imagens do pacote foram geradas
+com Google Gemini a partir de prompts de texto e depois cortadas, limpas, alinhadas e montadas
+com scripts e à mão; nenhuma arte existente foi usada como entrada, referência ou img2img.
+Decisão registrada (plano 12.1, regra 7): uso aprovado pelo mantenedor para a arte dos chefes,
+guardiões e Elites (arte de yōkai do folclore, CC0), marcado ai_generated no registro.
+
+Arquivos usados no jogo (gerados por tools/import_sengoku.py a partir de characters/ do pacote):
+assets/art/bosses/<id>/Idle.png e Faceset.png (12 chefes), assets/art/midbosses/<fase>/Idle.png e
+Faceset.png (5 guardiões) e assets/art/elites/<id>/Idle.png (11 Elites). Aviso do autor em
+licenses/notices/willyee_sengoku_NOTICE.txt.

@@ -185,7 +185,7 @@ static func line_height() -> float:
 
 
 ## Retrato de quem fala, 38x38 desenhado com filtro "nearest". Um Faceset que não é o quadrado de
-## 38 (Onibi e Yomi-hebi usam a folha inteira) vira o recorte quadrado do que está desenhado,
+## 38 (uma folha inteira usada como retrato) vira o recorte quadrado do que está desenhado,
 ## a partir do topo (a cabeça).
 static func face_texture(path: String) -> Texture2D:
 	if _faces.has(path):

@@ -721,8 +721,6 @@ func _remove(i: int) -> void:
 		return
 	alive[i] = 0
 	_free.append(i)
-	if look:
-		look.forget(i)
 	count_alive -= 1
 	var ai := type_ai[kind[i]]
 	if ai != AI.PROP and ai != AI.BOSS:

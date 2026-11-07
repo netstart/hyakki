@@ -698,8 +698,8 @@ func draw_over(canvas: CanvasItem) -> void:
 		var affixes: Array = rec["affixes"]
 		var foot := look.foot_of(i)
 		var bl := body_look(i)
-		var s := look.body_scale(i) * bl.x
-		var sheet: SpriteSheet = enemies.type_sheets[enemies.kind[i]]
+		var s := look.sprite_scale(i) * bl.x
+		var sheet: SpriteSheet = look.sheet_of(i)
 		var top := foot.y - sheet.frame_size.y * s + 2.0
 		if StringName(rec["busy"]) == &"kaze" and StringName(rec.get("phase", &"")) != &"dash":
 			_draw_dash_warning(canvas, rec, time)

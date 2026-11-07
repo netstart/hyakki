@@ -1,0 +1,17 @@
+Sengoku Pixel Pack - willYEE
+Source: https://willyee.itch.io/sengoku-pixel-pack
+
+License: CC0 1.0 Universal (public domain dedication), as stated in the pack's LICENSE.txt and
+README.md: "Use it commercially, modify it, ship it. No credit required."
+Full text: licenses/texts/CC0-1.0.txt (identical to the pack's LICENSE.txt).
+
+AI disclosure (from the pack's README.md, "AI disclosure"): every image in the pack was generated
+by the author with Google Gemini from written text prompts, then cut, cleaned, aligned and
+assembled with scripts and by hand; the author states that no existing artwork was used as an
+input, reference or img2img source.
+
+Used in Hyakki (assets/art/bosses/*, assets/art/midbosses/*, assets/art/elites/*): yokai and boss
+animations from characters/ (jp_mob_* and jp_boss_*, "move" strips) for the stage bosses, the
+mid-bosses (guardians) and the altar Elites. Each strip is reduced to the game's size (box filter,
+binary alpha, colors snapped back to the character's own palette) and gets a 38x38 portrait
+(Faceset.png) cut from the resting frame, by tools/import_sengoku.py. No pixels were redrawn.

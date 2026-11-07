@@ -63,7 +63,7 @@ func reset() -> void:
 			elites += 1
 		_events.append(event)
 	# O último chefe da lista (o das 10:00) só nasce no Tokoyo (on_arrival); os outros entram
-	# calados na hora marcada (o Dragão de Cinzas aos 5:00 do Santuário Secreto também).
+	# calados na hora marcada (a Kiyohime aos 5:00 do Santuário Secreto também).
 	var boss_list: Array = stage.get("bosses", [])
 	for i: int in boss_list.size() - 1:
 		var b: Dictionary = boss_list[i]

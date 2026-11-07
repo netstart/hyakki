@@ -481,6 +481,8 @@ func _test_altars() -> void:
 	_ok(text.contains(_t("guide.altars.fury") % [GuideBook.pct(EliteAffixes.FURY_AT),
 			GuideBook.pct(1.0 - EliteAffixes.FURY_CD)]),
 			"Guia altares: fúria do Elite (FURY_AT, FURY_CD)")
+	_ok(GuideBook.elite_art_count() == 11 and text.contains(_t("guide.altars.elite_look") % [GuideBook.elite_art_count()]),
+			"Guia altares: Elites com arte própria (data/enemies.json elite_sprite)")
 	_ok(EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T - 1.0, 0) == 1
 			and EliteAffixes.affix_count(EliteAffixes.TWO_AFFIX_T, 0) == 2
 			and EliteAffixes.affix_count(0.0, EliteAffixes.HIGH_MOON) == 2

@@ -12,13 +12,7 @@ License (from the asset page, 2026-10-28; the same terms appear on every AssetsM
   Ninja Adventure Asset Pack (CC0) that the rest of the game's art comes from.
 
 Used in Hyakki: only the free demo "FreeMix.zip" (itch.io upload 18782511, SHA-256
-71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075). Two monster sprites, used as
-mid-bosses inside the game binary:
-- rpg/candlesnake_boss.png -> assets/art/midbosses/yomi/Sprite.png
-- rpg/mimic_campfire.png   -> assets/art/midbosses/dunes/Sprite.png
-Each also gets a 4-frame breathing strip (Idle.png) made by tools/make_midboss_idle.py (rows removed
-from the upper part; no new colors).
-Four effect sheets, used for the Seal Altar elites inside the game binary, re-packed by
+71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075). Four effect sheets, used for the Seal Altar elites inside the game binary, re-packed by
 tools/import_altar_fx.py into horizontal strips of square frames (pixels only moved, never redrawn):
 - fx/explosion.png  -> assets/art/fx/explosion_big/explosion_big.png (16 frames 118x118)
 - fx/impact_01.png  -> assets/art/fx/impact/impact_0.png (centered in 115x115)

@@ -11,7 +11,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 |---|---|
 | Nome do app | Hyakki: Até o Amanhecer |
 | ID do aplicativo (pacote) | `io.github.netstart.hyakki` (**não muda nunca mais** depois do primeiro envio) |
-| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.26.1`, versionCode 54) |
+| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.27.0`, versionCode 55) |
 | Desenvolvedor | conta pessoal, GitHub `netstart` |
 | E-mail público | netstart@gmail.com |
 | Site | https://netstart.github.io/ |
@@ -96,8 +96,8 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
   `build\release\hyakki-release.apk` (para conferir no emulador ou aparelho).
 - Cada envio à Play Console precisa de um **versionCode maior** que o anterior. O versionCode e o
   versionName seguem o SemVer do `AGENTS.md` (sobem a cada commit); o script também aceita
-  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.26.1`,
-  versionCode 54).
+  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.27.0`,
+  versionCode 55).
 - Os IDs reais do AdMob **já estão no projeto** (`admob/general/android/app_id` no `project.godot` e
   `RELEASE_UNITS` em `scripts/ads/admob_provider.gd`), então o build de release sai com anúncios e
   compra ligados.
@@ -399,7 +399,7 @@ bloqueado.
 A Play **só deixa criar produto no app depois que um AAB com a permissão `BILLING` foi enviado para
 alguma faixa**. O teste interno serve. A ordem é:
 
-1. Envie o AAB da versão atual (hoje `1.26.1`) no **teste interno** ([seção 9.2](#92-teste-interno-primeiro-para-você)).
+1. Envie o AAB da versão atual (hoje `1.27.0`) no **teste interno** ([seção 9.2](#92-teste-interno-primeiro-para-você)).
 2. **Monetizar › Produtos › Produtos no app › Criar produto** (*In-app products*):
    - ID do produto: **`remove_open_ad`** (a constante `PRODUCT`; o ID **não pode ser mudado** nem
      reaproveitado depois);
@@ -474,7 +474,7 @@ conteúdo regional). Se algum país pedir documentação extra, remova só ele.
 ### 9.2 Teste interno (primeiro, para você)
 1. **Testar e lançar › Testes › Teste interno › Criar nova versão.**
 2. Aceite a **Assinatura de apps do Google Play** (seção 3).
-3. Envie `build\release\hyakki-release.aab`. Nome da versão: o `version/name` (hoje `1.26.1`).
+3. Envie `build\release\hyakki-release.aab`. Nome da versão: o `version/name` (hoje `1.27.0`).
 4. Notas da versão: as da [seção 9.5](#95-notas-da-versão-1-versão).
 5. Em **Testadores**, crie uma lista de e-mails com a sua conta, salve e abra o **link de inscrição**
    (*opt-in URL*) no celular. A versão aparece em minutos.
@@ -685,6 +685,20 @@ New: altar Elites are much tougher, with an aura that glows in the dark, their o
 </en-US>
 ```
 
+### 9.5.13 Notas da versão 1.27.0 (versionCode 55)
+Para o envio com a arte nova dos chefes, guardiões e Elites (1.27.0):
+
+```
+<pt-BR>
+Novidades: chefes, guardiões e Elites ganharam arte nova e maior, com yōkai do folclore: Bakeneko, Kamaitachi, Rokurokubi, Nurikabe, Kiyohime, Kasa-obake, Ittan-momen, Jorōgumo e Chōchin-obake chegam com nome e história novos no Diário.
+</pt-BR>
+<en-US>
+New: bosses, guardians and Elites have new, bigger art of folklore yōkai: Bakeneko, Kamaitachi, Rokurokubi, Nurikabe, Kiyohime, Kasa-obake, Ittan-momen, Jorōgumo and Chōchin-obake arrive with new names and stories in the Journal.
+</en-US>
+```
+
+(pt-BR: 236 caracteres; en-US: 229.)
+
 ### 9.6 Relatório de pré-lançamento (*Pre-launch report*)
 Roda sozinho em aparelhos reais do Google sempre que um AAB entra num teste (interno, fechado ou
 aberto). Abra em **Testar e lançar › Relatório de pré-lançamento** e confira:
@@ -754,7 +768,7 @@ O jogo não precisa de credenciais de login para o robô.
 - [ ] AdMob: mensagem GDPR publicada (estados dos EUA opcional)
 - [ ] AdMob: aparelho cadastrado como dispositivo de teste
 - [ ] Play Console: perfil de pagamentos (comerciante) com dados fiscais
-- [ ] AAB da versão atual (hoje `1.26.1`) gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
+- [ ] AAB da versão atual (hoje `1.27.0`) gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
       anúncio, premiados, consentimento, "Privacidade e anúncios", "Restaurar compras")
 - [ ] Assinatura de apps do Google Play aceita
 - [ ] Teste interno enviado (1º AAB com `BILLING`)

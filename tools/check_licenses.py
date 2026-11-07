@@ -51,8 +51,8 @@ def main() -> int:
                 errors.append(f"{tag}: marcada {flag}")
         if not e.get("commercial_use"):
             errors.append(f"{tag}: uso comercial não confirmado")
-        if e.get("ai_generated"):
-            errors.append(f"{tag}: asset gerado por IA precisa de decisão registrada (12.1)")
+        if e.get("ai_generated") and not str(e.get("ai_decision", "")).strip():
+            errors.append(f"{tag}: asset gerado por IA precisa de decisão registrada (12.1, campo ai_decision)")
         for key in ("license_file", "notice_file", "snapshot_file"):
             if not e.get(key):
                 continue

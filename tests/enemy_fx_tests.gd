@@ -65,8 +65,6 @@ func _test_data() -> void:
 		for key: String in ["walk_sprite", "attack_sprite"]:
 			if data.has(key):
 				_check.call(ResourceLoader.exists(String(data[key]["path"])), "%s.%s existe", [id, key])
-	for part: String in ["Head", "Body1", "Body2", "BodyEnd", "Wing"]:
-		_check.call(ResourceLoader.exists(EnemyLook.DRAGON_DIR + part + ".png"), "Dragão de Cinza: parte %s", part)
 	for name: String in ["e_roar_0", "e_boss_fall_0", "e_die_ash_0", "e_die_ember_2", "e_die_mist_1", "e_die_splat_0",
 			"e_die_bone_0"]:
 		_check.call(ResourceLoader.exists("res://assets/audio/sfx/%s.wav" % name), "som %s existe", name)

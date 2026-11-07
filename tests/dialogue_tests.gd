@@ -13,7 +13,7 @@ extends RefCounted
 ##   - partida: aviso do Guardião aos 7:26, diálogo aos 7:30 com o relógio parado e a entrada
 ##     (painel com o selo 門, aviso "Guardião do Limiar", música) só depois; segunda partida sem
 ##     diálogo, com a opção ligada ele volta; o mesmo para o chefe das 10:00 (Velho Kappa, 3 falas
-##     com Tora); o Dragão de Cinzas aos 5:00 do Santuário Secreto entra calado; o Guardião chamado
+##     com Tora); a Kiyohime aos 5:00 do Santuário Secreto entra calada; o Guardião chamado
 ##     de novo ao retomar a partida não repete o diálogo.
 ## run_unit() roda sem autoloads (tests/run_tests.gd); run() precisa da árvore
 ## (tests/integration_tests.gd; sozinho: `-- --suites=dialogue`).
@@ -352,13 +352,13 @@ func _test_boss_flow() -> void:
 	await _free(game)
 
 
-## O Dragão de Cinzas é o chefe dos 5:00 do Santuário Secreto: lá ele entra sem diálogo.
+## Kiyohime é a chefe dos 5:00 do Santuário Secreto: lá ela entra sem diálogo.
 func _test_secret_five() -> void:
 	SaveManager.data = SaveManager.default_profile()
 	var game := await _new_game("aki", "secret")
 	var opened := _run_until(game, 298.0, 4.0, func() -> bool: return game.hud.dialogue_open())
 	_check.call(not opened and game.bosses.has_boss(&"ash_dragon") and not DialogueScript.seen(&"ash_dragon"),
-			"diálogo: Dragão de Cinzas aos 5:00 do Santuário Secreto entra calado")
+			"diálogo: Kiyohime aos 5:00 do Santuário Secreto entra calada")
 	await _free(game)
 
 

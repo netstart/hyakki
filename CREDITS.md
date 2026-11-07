@@ -15,10 +15,11 @@ Créditos do jogo mostra as mesmas entradas. Não editar à mão.
 - **Hyakki - app icon** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/make_store_art.gd
 - **Platformer character pack (free sample)** — Merakintsugi (LicenseRef-Merakintsugi) — https://merakintsugi.itch.io/platformer-character-pack
 - **Lightning (OpenGameArt)** — oglsdl (CC0-1.0) — https://opengameart.org/content/lightning-1
-- **FreeMix - AssetsMix free demo (mid-boss monsters)** — pixel-boy & AAA (challengerAAA) (LicenseRef-PixelBoy-AssetsMix) — https://pixel-boy.itch.io/free-mix
+- **FreeMix - AssetsMix free demo (effects)** — pixel-boy & AAA (challengerAAA) (LicenseRef-PixelBoy-AssetsMix) — https://pixel-boy.itch.io/free-mix
 - **Hyakki - Kakuriyo portal art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_portal_fx.py
 - **Hyakki - guardian ability icons** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_ability_icons.py
 - **Hyakki - Seal Altar and Elite art** — Hyakki project (Clayton K. N. Passos) (CC0-1.0) — tools/gen_altar_art.py
+- **Sengoku Pixel Pack** — willYEE (CC0-1.0) — https://willyee.itch.io/sengoku-pixel-pack
 
 ## Música
 

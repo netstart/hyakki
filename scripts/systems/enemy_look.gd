@@ -7,12 +7,12 @@ extends RefCounted
 ## - Sombra suave (degradê) em Média/Alta, elipse dura em Baixa; menor e mais clara em quem voa.
 ## - Squash & stretch: passo (respira no ritmo da animação), golpe (achata e estica) e entrada.
 ## - Clarão de dano: o corpo normal e, por cima, a silhueta branca que se desfaz.
-## - Elites: aura que pulsa embaixo, contorno dourado, coroa e brilho.
+## - Elites: aura que pulsa embaixo, contorno dourado, coroa e brilho; com arte própria
+##   (data/enemies.json "elite_sprite") desenham a folha dela no tamanho dela (sem ELITE_SCALE).
 ## - Onis: chifres em brasa, vapor do corpo e pisadas (tremor só em Alta, perto da guardiã).
 ## - Investida: "!" e seta vermelha na direção do bote durante a preparação.
-## - Chefes: anda com a folha de andar, prepara com a de ataque e o Dragão de Cinza é montado
-##   em partes (cabeça, asas, corpo e cauda que seguem o caminho da cabeça).
-## - Chefes de frente, sem folha de andar (Onibi, Yomi-hebi, Nuppeppō: data "breathe"): respiram
+## - Chefes: anda com a folha de andar e prepara com a de ataque (quando o chefe as tem).
+## - Chefes que flutuam ou rastejam (Chōchin-obake, Yomi-hebi, Ittan-momen: data "breathe"): respiram
 ##   (squash lento, parados ou não) e, preparando um golpe, a silhueta pulsa na cor da aura.
 ## - Estados das habilidades dos guardiões (status_flags): lento (tom azulado e flocos caindo
 ##   devagar), preso (argola de ferro aos pés), com medo (treme, gota e linhas de pavor acima),
@@ -27,10 +27,6 @@ const ELITE_AURA := Color(1.0, 0.78, 0.3)
 const HORN_GLOW := Color(1.0, 0.32, 0.12)
 const STEP_SHAKE_RANGE := 90.0
 const STEP_SHAKE_GAP := 0.35
-## Dragão montado: distância entre os gomos ao longo do rastro da cabeça.
-const DRAGON_GAP := 11.0
-const DRAGON_SEGMENTS := 6
-const DRAGON_DIR := "res://assets/art/bosses/dragon/"
 ## Estados das habilidades (status_flags): bits e as cores dos indicadores.
 const STATUS_SLOW := 1
 const STATUS_ROOT := 2
@@ -70,7 +66,9 @@ var death_styles := PackedStringArray()
 var spawn_styles := PackedStringArray()
 var walk_sheets: Array[SpriteSheet] = []
 var attack_sheets: Array[SpriteSheet] = []
-var composite := PackedStringArray()
+## Folha própria do Elite (data/enemies.json "elite_sprite"), ou null: sem ela o Elite usa a
+## folha do inimigo ampliada ELITE_SCALE. Só desenho: o raio e a simulação não mudam.
+var elite_sheets: Array[SpriteSheet] = []
 ## Amplitude do "respiro" do chefe (data "breathe"; 0 = sem) e a cor da aura dele.
 var breathe := PackedFloat32Array()
 var aura := PackedColorArray()
@@ -86,8 +84,6 @@ var _step_frame := PackedInt32Array()
 var _anim := PackedFloat32Array()
 var _emit_left: float = 0.0
 var _shake_left: float = 0.0
-var _trails: Dictionary = {}
-var _dragon: Dictionary = {}
 var _look := RandomNumberGenerator.new()
 var _ring := PackedVector2Array()
 ## Inimigos com marca neste quadro (desenhadas depois de todos os corpos) e onde desenhar.
@@ -126,11 +122,9 @@ func _init(manager: EnemyManager) -> void:
 		var sprite: Dictionary = data.get("sprite", {}) if is_boss else {}
 		walk_sheets.append(_extra_sheet(data.get("walk_sprite", {}), sprite))
 		attack_sheets.append(_extra_sheet(data.get("attack_sprite", {}), sprite))
-		composite.append(String(sprite.get("composite", "")))
+		elite_sheets.append(null if is_boss else _extra_sheet(data.get("elite_sprite", {}), {}))
 		breathe.append(float(data.get("breathe", 0.0)) if is_boss else 0.0)
 		aura.append(Color(String(data.get("aura", "#ffffff"))))
-		if composite[t] == "dragon" and _dragon.is_empty():
-			_load_dragon()
 	apply_quality()
 
 
@@ -141,13 +135,6 @@ static func _extra_sheet(spec: Variant, base: Dictionary) -> SpriteSheet:
 	var frame: Array = s.get("frame", base.get("frame", [0, 0]))
 	return SpriteSheet.load_sheet(s["path"], s.get("layout", "strip"), Vector2(frame[0], frame[1]), 0,
 			bool(s.get("faces_left", base.get("faces_left", false))))
-
-
-func _load_dragon() -> void:
-	for part: String in ["Head", "Body1", "Body2", "BodyEnd", "Wing"]:
-		var path := DRAGON_DIR + part + ".png"
-		if ResourceLoader.exists(path):
-			_dragon[part] = SpriteSheet.load_sheet(path, "strip", Vector2.ZERO, 1)
 
 
 func apply_quality() -> void:
@@ -182,6 +169,20 @@ func body_scale(i: int) -> float:
 	return m.type_scale[m.kind[i]] * (EnemyManager.ELITE_SCALE if m.elite[i] == 1 else 1.0)
 
 
+## Folha que desenha o inimigo `i`: a do Elite quando ele nasceu Elite e o tipo tem uma.
+func sheet_of(i: int) -> SpriteSheet:
+	var own := elite_sheets[m.kind[i]] if m.elite[i] == 1 else null
+	return own if own != null else m.type_sheets[m.kind[i]]
+
+
+## Escala do sprite do inimigo `i`: a arte própria do Elite já vem no tamanho dela (sem a escala do
+## tipo nem ELITE_SCALE); sem ela, a do tipo × ELITE_SCALE no Elite. Os efeitos seguem body_scale.
+func sprite_scale(i: int) -> float:
+	if m.elite[i] == 0:
+		return m.type_scale[m.kind[i]]
+	return 1.0 if elite_sheets[m.kind[i]] != null else body_scale(i)
+
+
 # --- Emissores (vapor, faíscas, pisadas) -----------------------------------------------
 
 func process(delta: float) -> void:
@@ -214,8 +215,6 @@ func process(delta: float) -> void:
 		_anim[i] += game_dt * 8.0 * rate
 		var s := scale_l[t] * (EnemyManager.ELITE_SCALE if elite_l[i] == 1 else 1.0)
 		var foot := (prev_l[i].lerp(pos_l[i], a) + Vector2(0.0, radius_l[i] * 0.6)).round()
-		if composite[t] == "dragon":
-			_record_trail(i, foot)
 		if emit_now and elite_l[i] == 1:
 			fx.spark(foot + Vector2(_look.randf_range(-6.0, 6.0) * s, -_look.randf_range(4.0, 14.0) * s), ELITE_AURA)
 		if oni[t] == 1 and detail >= 1:
@@ -241,19 +240,6 @@ func anim_rate(i: int) -> float:
 
 func walk_frame(i: int) -> int:
 	return int(_anim[i] + m.phase[i])
-
-
-func _record_trail(i: int, head: Vector2) -> void:
-	var trail: PackedVector2Array = _trails.get(i, PackedVector2Array())
-	if trail.is_empty() or trail[0].distance_to(head) >= 2.0:
-		trail.insert(0, head)
-		if trail.size() > 64:
-			trail.resize(64)
-	_trails[i] = trail
-
-
-func forget(i: int) -> void:
-	_trails.erase(i)
 
 
 # --- Desenho ---------------------------------------------------------------------------
@@ -293,12 +279,14 @@ func draw(canvas: CanvasItem) -> void:
 	var surfaces := SurfaceSystem.of(m.game)
 	for i: int in _visible:
 		var t := kind_l[i]
-		if composite[t] == "dragon" and not _dragon.is_empty():
-			_draw_dragon(canvas, i, reduce_flash)
-			continue
 		var boss := ai_l[t] == EnemyManager.AI.BOSS
 		var sheet: SpriteSheet = _sheet_for(i) if boss else m.type_sheets[t]
-		var s := m.type_scale[t] * (EnemyManager.ELITE_SCALE if elite_l[i] == 1 else 1.0)
+		var s := m.type_scale[t]
+		if elite_l[i] == 1:
+			# Elite: a folha própria (data "elite_sprite", no tamanho dela) ou a do tipo × ELITE_SCALE.
+			s = sprite_scale(i)
+			if not boss:
+				sheet = sheet_of(i)
 		var foot := (prev_l[i].lerp(pos_l[i], a) + Vector2(0.0, radius_l[i] * 0.6)).round()
 		var color := m.type_tint[t]
 		if ai_l[t] == EnemyManager.AI.SHADE and foot.distance_to(player_pos) > light_r:
@@ -628,9 +616,6 @@ func _draw_shadows(canvas: CanvasItem) -> void:
 		if flying_l[t] == 1:
 			w *= 0.7
 			alpha *= 0.6
-		if composite[t] == "dragon":
-			for p: Vector2 in dragon_points(i):
-				_shadow_at(canvas, p, w * 0.6, alpha)
 		_shadow_at(canvas, foot, w, alpha)
 
 
@@ -726,68 +711,6 @@ func draw_over(canvas: CanvasItem) -> void:
 			var glint := 0.5 + 0.5 * sin(time * 3.0 + i * 1.7)
 			canvas.draw_texture_rect(_soft, Rect2(foot + Vector2(-8, -24) * s * 0.6, Vector2(16, 16) * s * 0.6), false,
 					Color(ELITE_AURA, 0.18 * glint))
-
-
-# --- Dragão montado ---------------------------------------------------------------------
-
-func _draw_dragon(canvas: CanvasItem, i: int, reduce_flash: bool) -> void:
-	var time := GameClock.game_time
-	var head := foot_of(i) + Vector2(0, -16)
-	var tint := EnemyManager.frozen_tint(m.type_tint[m.kind[i]], m.freeze_time > 0.0)
-	tint.a *= _born_progress(i, time)
-	var trail: PackedVector2Array = _trails.get(i, PackedVector2Array([foot_of(i)]))
-	var flash := 0.0 if reduce_flash else clampf(m.flash[i] / 0.08, 0.0, 1.0) * 0.55
-	# Gomos do rabo para a cabeça: o da frente cobre o de trás.
-	var points: Array[Vector2] = []
-	for k: int in range(DRAGON_SEGMENTS):
-		points.append(_trail_point(trail, (k + 1) * DRAGON_GAP, foot_of(i), i, k) + Vector2(0, -14))
-	for k: int in range(DRAGON_SEGMENTS - 1, -1, -1):
-		var part := "BodyEnd" if k == DRAGON_SEGMENTS - 1 else ("Body1" if k % 2 == 0 else "Body2")
-		var ahead: Vector2 = head if k == 0 else points[k - 1]
-		var angle := (ahead - points[k]).angle() - PI * 0.5 if part == "BodyEnd" else 0.0
-		_draw_part(canvas, part, points[k], angle, Vector2.ONE * (1.0 - 0.06 * k), tint, flash)
-	var flap := 0.75 + 0.25 * sin(time * 5.0)
-	_draw_part(canvas, "Wing", head + Vector2(-20, -8), 0.0, Vector2(1.0, flap), tint, flash)
-	_draw_part(canvas, "Wing", head + Vector2(20, -8), 0.0, Vector2(-1.0, flap), tint, flash)
-	var sq := _squash(i, time)
-	_draw_part(canvas, "Head", head, 0.0, sq, tint, flash)
-
-
-func _trail_point(trail: PackedVector2Array, distance: float, foot: Vector2, i: int, k: int) -> Vector2:
-	var walked := 0.0
-	var last := trail[0]
-	for p: Vector2 in trail:
-		var step := last.distance_to(p)
-		if walked + step >= distance and step > 0.0:
-			return last.lerp(p, (distance - walked) / step)
-		walked += step
-		last = p
-	# Rastro curto (acabou de nascer): o corpo sobe atrás da cabeça, ondulando.
-	var angle := -PI * 0.5 + sin(GameClock.game_time * 2.0 + k + i) * 0.5
-	return foot + Vector2.from_angle(angle) * distance * 0.7
-
-
-func _draw_part(canvas: CanvasItem, part: String, at: Vector2, angle: float, scale: Vector2, tint: Color,
-		flash: float) -> void:
-	var sheet: SpriteSheet = _dragon.get(part)
-	if sheet == null:
-		return
-	var size := Vector2(sheet.texture.get_size())
-	canvas.draw_set_transform(at.round(), angle, scale)
-	var rect := Rect2(-size * 0.5, size)
-	canvas.draw_texture_rect(sheet.texture, rect, false, tint)
-	if flash > 0.0:
-		canvas.draw_texture_rect(sheet.flash_texture, rect, false, Color(1, 1, 1, flash * tint.a))
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-## Sombras do dragão montado (o _draw_shadows só faz a da cabeça).
-func dragon_points(i: int) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	var trail: PackedVector2Array = _trails.get(i, PackedVector2Array([foot_of(i)]))
-	for k: int in range(DRAGON_SEGMENTS):
-		out.append(_trail_point(trail, (k + 1) * DRAGON_GAP, foot_of(i), i, k))
-	return out
 
 
 func _sink(i: int) -> float:

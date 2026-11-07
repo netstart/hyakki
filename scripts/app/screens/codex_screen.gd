@@ -1149,6 +1149,9 @@ class EntryView extends Control:
 		if _sheet != null:
 			var cell := _sheet.frame_size
 			var k := maxf(1.0, floorf((rad * 1.5) / maxf(cell.x, cell.y)))
+			if maxf(cell.x, cell.y) > rad * 1.8:
+				# Chefe grande (arte de até ~140 px): reduz para caber no disco, sem cobrir o nome.
+				k = (rad * 1.8) / maxf(cell.x, cell.y)
 			var frame := int(_time * 6.0)
 			var src := _sheet.region(frame, SpriteSheet.Dir.DOWN)
 			var flip := _sheet.layout == "side" or (_sheet.layout == "strip" and _sheet.faces_left)

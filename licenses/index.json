@@ -33,11 +33,11 @@
     "version": "NinjaAdventure-AssetPack.zip (SHA-256 95a06f4fdcfd1882f061a45ff313b7c905dbe2de1e8512b281d7937df62a7b15)",
     "downloaded_at": "2026-10-21",
     "verified_at": "2026-10-21",
-    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; unused monsters/bosses (Bear, Owl2, GiantSlime2, GiantRacoonGold) reused as mid-bosses; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader; TilesetField centre tile palette-mapped at runtime to the brown dirt of TilesetFloor; the TilesetNature bamboo cut into crown, node, internode and foot and spliced at runtime into taller culms with drawn leaf sprigs in the pack palette (gen_bamboo_*); the side torii and the TilesetWater margin profile (bank, foam, shallow band) drawn in the pack palette",
+    "modifications": "files renamed and reorganized; a subset of heroes, enemies and bosses selected; tinted at runtime; the unused boss GiantRacoonGold reused as the secret mid-boss; FX Elemental/Rock and Attack/CutDouble re-packed by tools/import_altar_fx.py (rock/rock_burst.png, slash_double/cut_double.png); terrain tiles from TilesetWater, TilesetField and TilesetReliefDetail and the Water Ripples animation composed at runtime into the ground atlas (scripts/game/terrain_art.gd), recolored by the ground shader; TilesetField centre tile palette-mapped at runtime to the brown dirt of TilesetFloor; the TilesetNature bamboo cut into crown, node, internode and foot and spliced at runtime into taller culms with drawn leaf sprigs in the pack palette (gen_bamboo_*); the side torii and the TilesetWater margin profile (bank, foam, shallow band) drawn in the pack palette",
     "source_url": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/ninja_adventure_LICENSE.txt",
-    "files_count": 774
+    "files_count": 705
   },
   {
     "id": "fusion_pixel_font",
@@ -318,18 +318,18 @@
   },
   {
     "id": "pixelboy_freemix",
-    "name": "FreeMix - AssetsMix free demo (mid-boss monsters)",
+    "name": "FreeMix - AssetsMix free demo (effects)",
     "author": "pixel-boy & AAA (challengerAAA)",
     "license_id": "LicenseRef-PixelBoy-AssetsMix",
     "category": "art",
     "version": "FreeMix.zip (itch.io upload 18782511, SHA-256 71272a2a5e5a4ae55c9c06c6063298a22238d04242447a86d1fdd84a493c8075; local copy and SHA-256 in C:/src/assets/pixelboy-freemix/)",
     "downloaded_at": "2026-10-28",
     "verified_at": "2026-10-28",
-    "modifications": "two monster sprites (candlesnake_boss, mimic_campfire) renamed to Sprite.png; 4-frame breathing strip Idle.png derived by tools/make_midboss_idle.py; effect sheets fx/explosion and fx/impact_01..03 re-packed by tools/import_altar_fx.py into strips of square frames (pixels moved, not redrawn)",
+    "modifications": "effect sheets fx/explosion and fx/impact_01..03 re-packed by tools/import_altar_fx.py into strips of square frames (pixels moved, not redrawn)",
     "source_url": "https://pixel-boy.itch.io/free-mix",
     "license_file": "res://licenses/texts/LicenseRef-PixelBoy-AssetsMix.txt",
     "notice_file": "res://licenses/notices/pixelboy_freemix_NOTICE.txt",
-    "files_count": 8
+    "files_count": 4
   },
   {
     "id": "hyakki_portal_fx",
@@ -464,5 +464,20 @@
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/hyakki_altar_sfx_NOTICE.txt",
     "files_count": 16
+  },
+  {
+    "id": "willyee_sengoku",
+    "name": "Sengoku Pixel Pack",
+    "author": "willYEE",
+    "license_id": "CC0-1.0",
+    "category": "art",
+    "version": "Sengoku_Pixel_Pack.zip (downloaded 2026-11-07, SHA-256 136d5aa9fd6eea4b754aac0d97314664a40fc9355b236b44a74924c5dc958093)",
+    "downloaded_at": "2026-11-07",
+    "verified_at": "2026-11-07",
+    "modifications": "yokai and boss 'move' strips from characters/ reduced to the game's sizes (box filter, binary alpha, colors snapped to each character's palette), rotated so the resting frame comes first, and a 38x38 portrait cut from the resting frame, by tools/import_sengoku.py",
+    "source_url": "https://willyee.itch.io/sengoku-pixel-pack",
+    "license_file": "res://licenses/texts/CC0-1.0.txt",
+    "notice_file": "res://licenses/notices/willyee_sengoku_NOTICE.txt",
+    "files_count": 45
   }
 ]
