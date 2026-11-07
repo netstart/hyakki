@@ -21,7 +21,7 @@ func spawn_flame(origin: Vector2, dir: Vector2, kind_name: String) -> void:
 
 
 ## Chance de a vítima virar uma chama aliada (Procissão Invertida).
-func on_kill(at: Vector2) -> void:
+func on_kill(at: Vector2, _j: int) -> void:
 	var chance := float(flags.get("ally_on_kill", 0.0))
 	if chance > 0.0 and game.rng.randf() < chance:
 		spawn_flame(at, Vector2.from_angle(game.rng.randf() * TAU), "ally_flame")

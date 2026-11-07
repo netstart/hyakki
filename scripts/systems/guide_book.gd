@@ -321,11 +321,25 @@ func _chests() -> Array[Dictionary]:
 		_p(tr("guide.chests.union")),
 		_rich(unions),
 	]
+	out.append_array(element_blocks())
 	if hidden:
 		out.append(_p(tr("guide.chests.unknown")))
 	out.append(_link(&"weapons", tr("guide.link.weapons")))
 	out.append(_link(&"relics", tr("guide.link.relics")))
 	return out
+
+
+## Fogo, gelo e sombra: Queimadura, Frio/Congelamento, Estilhaçar e Choque Térmico, com os números
+## das constantes do EnemyManager.
+func element_blocks() -> Array[Dictionary]:
+	return [
+		_h(tr("guide.elements.title")),
+		_p(tr("guide.elements.burn"), [_num(EnemyManager.BURN_TICK)]),
+		_p(tr("guide.elements.chill"), [pct(EnemyManager.CHILL_SLOW), _num(EnemyManager.CHILL_SLOW_TIME),
+				str(EnemyManager.CHILL_STACKS_TO_FREEZE), _num(EnemyManager.FREEZE_TIME)]),
+		_p(tr("guide.elements.shatter"), [_num(EnemyManager.SHATTER_DAMAGE), _num(EnemyManager.SHATTER_RADIUS)]),
+		_p(tr("guide.elements.shock"), [pct(EnemyManager.THERMAL_SHOCK_MULT)]),
+	]
 
 
 ## Sortes do omikuji e quantas melhorias cada uma mostra (Omikuji.fortune_for sobre
@@ -412,6 +426,10 @@ func item_effect(item: Dictionary) -> String:
 			return tr("guide.item.freeze") % value
 		"solar":
 			return tr("guide.item.solar") % value
+		"inferno":
+			return tr("guide.item.inferno") % [value, _num(ElementSystem.INFERNO_DPS)]
+		"clones":
+			return tr("guide.item.clones") % [str(ElementSystem.MIRROR_CLONES), value]
 	return ""
 
 

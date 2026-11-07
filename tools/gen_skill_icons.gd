@@ -48,6 +48,8 @@ const ELEMENTS := {
 	"jade": ["b8f4a8", "3a9a5a", "0c3422"],
 	"rose": ["ffb8c8", "d04a6a", "420c24"],
 	"night": ["c8d0ff", "4a4aa8", "120e38"],
+	"ice": ["eafcff", "62c4e8", "0e3a62"],
+	"shadow": ["dcd0ff", "7254d2", "16082e"],
 }
 
 # --- Molduras por categoria: [aro claro, aro médio, aro escuro, linha interna] ------------
@@ -520,6 +522,134 @@ const ART := {
 		"WWWW",
 		".WW.",
 	],
+	# Fogo, gelo e sombra (.ai/06-fogo-gelo-clones.md).
+	"horoku": [
+		".........T...",
+		"........TWT..",
+		".........f...",
+		"........b....",
+		".......b.....",
+		"....bbbbb....",
+		"....BpBBb....",
+		"..BBpBBBBBb..",
+		".BpBBBBBBBBb.",
+		".BpBBBBBBBBb.",
+		"BBBBBBBBBBBBb",
+		"RrRrRrRrRrRrr",
+		"BBBBBBBBBBBBb",
+		".BBBBBBBBBBb.",
+		".bBBBBBBBBbb.",
+		"..bbbbbbbbb..",
+	],
+	"horoku_blaze": [
+		"......e........",
+		".....ef...e....",
+		"..e..ef..ef....",
+		"..ef.efe.eff..e",
+		".eff.eFfefFf.ef",
+		".efFeFFfeFFfeff",
+		"efFFFFTFFFTFFfe",
+		"efFTTTWTTTTTFfe",
+		".eFTWWWWWWTTFe.",
+		"..bbbBBBBBbbb..",
+		".BpBBBBBBBBBBb.",
+		"BBpBBBBBBBBBBBb",
+		"RrRrRrRrRrRrRrr",
+		"BBBBBBBBBBBBBBb",
+		".bBBBBBBBBBBBb.",
+		"..bbbbbbbbbbb..",
+	],
+	"flame_s": [
+		"..e..",
+		".ef..",
+		".eFe.",
+		"efFfe",
+		"eFTFe",
+		"eFWFe",
+		".eFe.",
+	],
+	"eave": [
+		".LWWWWWWWWWWWWL.",
+		"LWWWLWWWWWLWWWWL",
+		"SLLSSLLLLSSLLLLS",
+	],
+	"icicle": [
+		"cCWCn",
+		"cCWCn",
+		".CWCn",
+		".CWn.",
+		".cCn.",
+		".cCn.",
+		"..Cn.",
+		"..Cn.",
+		"..C..",
+		"..c..",
+	],
+	"icicle_s": [
+		"cCWCn",
+		".CWCn",
+		".CWn.",
+		".cCn.",
+		"..Cn.",
+		"..C..",
+		"..c..",
+	],
+	"ninja": [
+		"...vvvv...",
+		"..vVVVVv..",
+		"..vWWWWv..",
+		"..vvvvvv.u",
+		"...vvvv.uu",
+		".vvVVVVvu.",
+		"vvvVVVVvv.",
+		"vv.vVVv.vv",
+		"vv.vvvv.vv",
+		"Vv.vvvv.vV",
+		"...vvvv...",
+		"...vv.vv..",
+		"..vv...vv.",
+		"..vv...vv.",
+		".uuu...uuu",
+	],
+	"ninja_s": [
+		"..vvv..",
+		".vVVVv.",
+		".vWWWv.",
+		".vvvvv.",
+		"vvVVVvv",
+		"v.vVv.v",
+		"v.vvv.v",
+		"..vvv..",
+		".vv.vv.",
+		".v...v.",
+		"uu...uu",
+	],
+	"flint": [
+		"..........T..T.",
+		"...........W...",
+		".........T.T.T.",
+		"..........W....",
+		"....LLLS..T....",
+		"...LLSSSD......",
+		"..LLSSSSSD.....",
+		".LSSSSSSSDD....",
+		".LSSDSSSSSDD...",
+		"LSSSSSSSSDDD...",
+		"SSSSSSSDDDDD...",
+		".DDSSSDDDDD....",
+		"..DDDDDDDD.....",
+	],
+	"kushi": [
+		"....LWWWWWL....",
+		"..LWWCWWWCWWL..",
+		".LWWWWWWWWWWWS.",
+		"LWWCWWWCWWWCWWS",
+		"SLLLLLLLLLLLLSD",
+		"L.L.L.L.L.L.L.S",
+		"L.L.L.L.L.L.L.S",
+		"S.S.S.S.S.S.S.D",
+		"S.S.S.S.S.S.S.D",
+	],
 	"plus": [
 		"..W..",
 		"..W..",
@@ -544,6 +674,9 @@ const RECOLOR := {
 	"green_heart": {"R": "g", "r": "j", "H": "W"},
 	"poison_skull": {"P": "g", "p": "j", "W": "W"},
 	"gold_ofuda": {"P": "Y", "p": "G", "R": "r"},
+	"shadow_front": {"V": "v", "v": "N", "u": "u"},
+	"shadow_ghost": {"V": "M", "v": "V", "u": "v"},
+	"fire_fox": {"P": "F", "p": "f", "R": "e", "k": "W"},
 }
 
 ## Lista de ícones: [grupo, id, categoria da moldura, elemento, camadas]
@@ -584,6 +717,17 @@ var _specs: Array = [
 	# Uniões
 	["weapons", "fujin_raijin", "union", "thunder", ["code:fan>0,1", "art:bolt@white_bolt>1,-1"]],
 	["weapons", "hundred_blades", "union", "blade", ["art:katana", "art:katana|flip"]],
+	# Fogo, gelo e sombra (.ai/06-fogo-gelo-clones.md)
+	["weapons", "horokubiya", "weapon", "fire", ["art:horoku"]],
+	["weapons", "tsurara", "weapon", "ice", ["art:icicle_s>-5,1", "art:icicle_s>5,1", "art:icicle>0,3", "art:eave>0,-7"]],
+	["weapons", "kage_bunshin", "weapon", "shadow", ["art:ninja@shadow_ghost>-3,-1|flip", "art:ninja@shadow_front>3,1"]],
+	["weapons", "kagutsuchi", "evolution", "fire", ["art:horoku_blaze"]],
+	["weapons", "yukionna", "evolution", "ice", ["code:snowflake"]],
+	["weapons", "senkage", "evolution", "shadow", ["code:mist>0,6",
+			"art:ninja_s@shadow_ghost>-5,-3|flip", "art:ninja_s@shadow_ghost>5,-3", "art:ninja@shadow_front>0,1"]],
+	["weapons", "onmyo_taikyoku", "union", "night", ["code:yin_yang"]],
+	["weapons", "kitsune_yomeiri", "union", "fire", ["art:flame_s>-5,-5", "art:flame_s>5,-5|flip", "art:fox@fire_fox>0,1"]],
+	["weapons", "hyokyo", "union", "shadow", ["code:ice_mirror", "art:ninja_s>0,1", "code:glint>4,-4"]],
 	# Passivas
 	["passives", "sake", "passive", "crimson", ["art:sake"]],
 	["passives", "jade", "passive", "jade", ["item:resource/GemGreen.png"]],
@@ -597,6 +741,9 @@ var _specs: Array = [
 	["passives", "kitsune_magnet", "passive", "spirit", ["art:magnet"]],
 	["passives", "maneki", "passive", "holy", ["art:maneki"]],
 	["passives", "noh_mask", "passive", "poison", ["art:hannya"]],
+	["passives", "hiuchi_ishi", "passive", "fire", ["art:flint"]],
+	["passives", "yuki_kushi", "passive", "ice", ["art:kushi"]],
+	["passives", "yata_kagami", "passive", "shadow", ["code:yata_mirror"]],
 	# Melhorias do santuário
 	["powerups", "pu_might", "powerup", "crimson", ["art:sake"]],
 	["powerups", "pu_armor", "powerup", "blade", ["art:gi"]],
@@ -1170,4 +1317,109 @@ func _code_slash_arc() -> Image:
 			var d := Vector2(x + 0.5, y + 0.5).distance_to(c)
 			if d >= 13.0 and d <= 14.6:
 				img.set_pixel(x, y, _c("H") if d < 13.8 else _c("R"))
+	return img
+
+
+## Floco de neve de 6 pontas com galhos (Sopro da Yuki-onna).
+func _code_snowflake() -> Image:
+	var img := _canvas(15, 15)
+	var c := Vector2i(7, 7)
+	for k: int in range(6):
+		var a := deg_to_rad(90.0 + k * 60.0)
+		var dir := Vector2(cos(a), -sin(a))
+		var tip := c + Vector2i(roundi(dir.x * 7.0), roundi(dir.y * 7.0))
+		_line(img, c, tip, _c("C"))
+		img.set_pixelv(tip, _c("c"))
+		# Galhos em V a 2/3 do braço.
+		var mid := Vector2(c) + dir * 4.5
+		for side: float in [-1.0, 1.0]:
+			var end := mid + dir.rotated(side * deg_to_rad(55.0)) * 2.4
+			_line(img, Vector2i(roundi(mid.x), roundi(mid.y)), Vector2i(roundi(end.x), roundi(end.y)), _c("C"))
+	for p: Vector2i in [c, c + Vector2i(1, 0), c + Vector2i(-1, 0), c + Vector2i(0, 1), c + Vector2i(0, -1)]:
+		img.set_pixelv(p, _c("W"))
+	return img
+
+
+## Yin-yang de fogo (vermelho) e gelo (azul), com borda e reflexo de cada lado.
+func _code_yin_yang() -> Image:
+	var img := _canvas(15, 15)
+	var c := Vector2(7.5, 7.5)
+	var r := 7.3
+	var top := c + Vector2(0, -r * 0.5)
+	var bottom := c + Vector2(0, r * 0.5)
+	for y: int in range(15):
+		for x: int in range(15):
+			var p := Vector2(x + 0.5, y + 0.5)
+			var d := p.distance_to(c)
+			if d > r:
+				continue
+			var fire := p.x < c.x
+			if p.distance_to(top) <= r * 0.5:
+				fire = true
+			elif p.distance_to(bottom) <= r * 0.5:
+				fire = false
+			if p.distance_to(top) <= 1.4:
+				fire = false
+			elif p.distance_to(bottom) <= 1.4:
+				fire = true
+			var rim := d >= r - 1.2
+			var col := (_c("e") if rim else _c("f")) if fire else (_c("n") if rim else _c("c"))
+			if not rim and d > r - 2.6:
+				if fire and p.x < 4.5 and p.y < 9.0:
+					col = _c("F")
+				elif not fire and p.x > 10.5 and p.y > 6.0:
+					col = _c("C")
+			img.set_pixel(x, y, col)
+	return img
+
+
+## Espelho de gelo redondo (Espelho de Gelo): aro azul-escuro, face clara em degradê.
+func _code_ice_mirror() -> Image:
+	var img := _canvas(16, 16)
+	var c := Vector2(8.0, 8.0)
+	for y: int in range(16):
+		for x: int in range(16):
+			var rel := Vector2(x + 0.5, y + 0.5) - c
+			var d := rel.length()
+			if d > 7.9:
+				continue
+			var col := _c("n")
+			if d < 6.6:
+				col = _c("W") if rel.x + rel.y < -6.0 else (_c("C") if rel.x + rel.y < 3.0 else _c("c"))
+			elif rel.x + rel.y < -2.0:
+				col = _c("c")
+			img.set_pixel(x, y, col)
+	return img
+
+
+## Brilho em cruz pequeno.
+func _code_glint() -> Image:
+	var img := _canvas(5, 5)
+	for p: Vector2i in [Vector2i(2, 0), Vector2i(2, 1), Vector2i(0, 2), Vector2i(1, 2), Vector2i(3, 2),
+			Vector2i(4, 2), Vector2i(2, 3), Vector2i(2, 4)]:
+		img.set_pixelv(p, _c("C"))
+	img.set_pixel(2, 2, _c("W"))
+	return img
+
+
+## Espelho Yata: bronze octogonal com face clara, reflexo diagonal e borla vermelha.
+func _code_yata_mirror() -> Image:
+	var img := _canvas(15, 17)
+	var c := Vector2(7.5, 7.5)
+	for y: int in range(15):
+		for x: int in range(15):
+			var rel := Vector2(x + 0.5, y + 0.5) - c
+			var oct := maxf(maxf(absf(rel.x), absf(rel.y)), (absf(rel.x) + absf(rel.y)) / 1.38)
+			if oct > 7.0:
+				continue
+			var col := _c("G") if rel.x + rel.y < 0.0 else _c("O")
+			if oct < 5.2:
+				col = _c("P") if rel.x - rel.y > -1.0 else _c("p")
+				if absf(rel.x + rel.y + 1.5) < 1.0 and rel.x < 3.0:
+					col = _c("W")
+			elif oct < 5.9:
+				col = _c("O")
+			img.set_pixel(x, y, col)
+	for p: Vector2i in [Vector2i(7, 15), Vector2i(6, 16), Vector2i(7, 16), Vector2i(8, 16)]:
+		img.set_pixelv(p, _c("R"))
 	return img

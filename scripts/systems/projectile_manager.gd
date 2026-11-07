@@ -42,6 +42,10 @@ const KINDS := {
 			"trail": "#ffd166", "width": 1.0, "glow": "#ffc040", "glow_r": 7.0},
 	"rain_arrow": {"path": "res://assets/art/fx/projectile/Arrow.png", "frame": 13, "spin": 0.0,
 			"tint": "#ffe08a", "trail": "#ffe08a", "width": 1.0, "glow": "#ffc040", "glow_r": 6.0},
+	# Pingente de gelo (Tsurara, Sopro da Yuki-onna, estilhaços do Espelho de Gelo): o IceSpike do
+	# Ninja Adventure (CC0), rastro curto azul-branco.
+	"icicle": {"path": "res://assets/art/fx/projectile/IceSpike.png", "frame": 16, "spin": 0.0,
+			"tint": "#e8fbff", "trail": "#a8e8ff", "width": 2.0, "glow": "#5fc8ff", "glow_r": 7.0},
 }
 
 var game: HyakkiGame

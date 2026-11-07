@@ -31,6 +31,10 @@ const DEFS := {
 	"reroll": [0.0, "flat"],
 	"skip": [0.0, "flat"],
 	"banish": [0.0, "flat"],
+	# Fogo e gelo: multiplicadores (1 = sem bônus) do dano da Queimadura e da força do frio
+	# (lentidão e duração do congelamento), EnemyManager.burn_mult/chill_mult.
+	"burn": [1.0, "pct"],
+	"chill": [1.0, "pct"],
 }
 const MIN_COOLDOWN := 0.1
 

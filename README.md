@@ -6,8 +6,23 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
 
 ## O que tem
 
-- 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 26 armas (12 base, 12 evoluções, 2 uniões), 12 passivos,
+- 7 guardiões (incluindo Yuki, a meio-oni, desbloqueada ao vencer o Oni Vermelho), 6 fases (5 + secreta), 41 armas (18 base, 18 evoluções, 5 uniões), 15 passivos (relíquias),
   37 yōkai, 12 chefes, 15 Kami, 6 Golpes da Lanterna, Baú Laqueado, itens de chão e perigos por fase.
+- **Fogo, gelo e sombra** ([.ai/06-fogo-gelo-clones.md](.ai/06-fogo-gelo-clones.md), 1.23.0): três linhas
+  novas sem desbloqueio, cada uma arma base → relíquia → evolução:
+  Hōroku-biya 焙烙火矢 (pote de pólvora em arco, explosão e chão em brasa) + Pedra de Fogo → Kagutsuchi
+  (3 potes; quem morre queimando espalha as chamas); Tsurara 氷柱 (leque de pingentes que gelam) + Pente da
+  Yuki-onna → Sopro da Yuki-onna (anel de 15 pingentes que estilhaçam os congelados); Kage Bunshin 影分身
+  (clones de sombra que cortam em meia-lua) + Espelho Yata → Mil Sombras (4 clones permanentes e clone extra
+  nos abates). Três uniões cruzam os elementos: **Taikyoku do Onmyō** (Kagutsuchi + Sopro da Yuki-onna,
+  orbes de fogo e gelo em yin-yang com pulso de Choque Térmico), **Casamento da Raposa** (Kagutsuchi + Mil
+  Sombras, clones de fogo-fátuo que explodem) e **Espelho de Gelo** (Sopro da Yuki-onna + Mil Sombras, clones
+  de gelo que estilhaçam em leque). Estados novos nos yōkai: Queimadura (tique a cada 0,5 s, sem somar) e
+  Frio (lentidão e 5 pilhas congelam; chefes só ficam lentos), Estilhaçar e Choque Térmico (fogo em
+  congelado ou gelo em queimando dobra o golpe). Itens de chão Jarro de Fogo (a tela toda queima por 4 s) e
+  Caco do Espelho (3 clones por 10 s). Ícones próprios (elementos gelo e sombra), impacto `hit_ice` e sons de
+  lançamento em camadas (pavio assobiando, cristais tilintando, selo com fumaça); 6 missões novas
+  (3 evoluções e 3 uniões) e uma seção no Guia com os números lidos do código.
 - **Habilidades dos guardiões** ([.ai/04-habilidades-dos-guardioes.md](.ai/04-habilidades-dos-guardioes.md)):
   21 habilidades (3 por guardião, ligadas à história de cada um, liberadas nos níveis 1, 5 e 10 da partida)
   e 7 energias próprias (Chama da Ordem, Sombra, Prece, Penitência, Foco, Calor da Forja e Sangue Oni, que
@@ -32,7 +47,7 @@ progresso e checklist: [.ai/03-progresso-implementacao.md](.ai/03-progresso-impl
   máximo, a mão comida/moedas com "Não perguntar mais": a escolha vira automática, sem pausar a luta, só com
   o som (com a vida cheia, "Comida" pega as moedas); muda em Opções e no menu de pausa.
 - Santuário (18 power-ups, reembolso total; preços base de 240 a 12.000 ryō em `data/powerups.json`), **Missões do Santuário** (as 41 conquistas que desbloqueiam conteúdo
-  e mais 147 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
+  e mais 153 missões em 11 categorias, cada uma com recompensa e barra de progresso no Diário, e as
   Próximas 3 metas no título e nos Resultados), Diário do Guardião
   (com o **Guia**: 9 capítulos de manual montados dos dados do jogo, sem revelar o que não foi descoberto),
   história completa, Noite Sem Fim (o ryō ganho depois do amanhecer vale ×1,5), Desafio Diário, Brisa / Normal / Lua Vermelha I–V (regras cumulativas em
@@ -86,7 +101,8 @@ powershell -ExecutionPolicy Bypass -File tools\run_checks.ps1
 Primeiro a importação (sintaxe de todos os scripts), sozinha; depois, numa **fila com teto**, cada tarefa num
 processo próprio: os testes de integração em N fatias (dados, idiomas, cobertura de glifos, Loja, Santuário,
 save, regras de anúncio, as suítes de cada sistema e o layout de toda tela em todas as resoluções × 11 idiomas ×
-furo dos dois lados), os testes de regras, o determinismo (bot em 1x, 2x, 3x e 3x na Baixa, mesmo hash), a
+furo dos dois lados), os testes de regras, o determinismo (bot em 1x, 2x, 3x e 3x na Baixa, mesmo hash; de
+novo com o arsenal de fogo, gelo e clones, `arsenal_*`), a
 jornada pelos três níveis (1x, 2x e 3x, mesmo hash), o estresse com 500 inimigos, o `gdlint` em partes, os
 checks em Python (textos, chaves × 11 idiomas e marcadores `%s/%d`; licenças; ficha da loja; site irmão) e, com
 janela (sem `--headless`), os traços do `Stroke` iguais aos do motor pixel a pixel
@@ -171,9 +187,14 @@ habilidades dos guardiões (`--suites=ability`: energias, AbilitySystem, primiti
 cenários montados, marcadores de estado, partida suspensa e o bot com o mesmo hash na Baixa e na Alta; a HUD das
 habilidades em todas as resoluções fica em `tests/ability_hud_tests.gd`, chamada pelos testes de layout do HUD),
 missões do Santuário (`--suites=mission`: dados, cada condição, recompensas, save, Próximas metas e uma partida
-pelo bot que conclui missões) e regras da Lua Vermelha (`--suites=red_moon`: cada regra na lua dela e logo
-abaixo, textos com os números das constantes). No fim de uma partida do bot com `--quit-at`, a linha
-`HABILIDADES` mostra o nível e quantas vezes cada habilidade saiu.
+pelo bot que conclui missões), regras da Lua Vermelha (`--suites=red_moon`: cada regra na lua dela e logo
+abaixo, textos com os números das constantes) e fogo, gelo e clones (`--suites=elements`: Queimadura,
+Frio/Congelamento, Estilhaçar, Choque Térmico, as 9 armas, as 3 relíquias, os 2 itens e o bot com o arsenal
+novo). No fim de uma partida do bot com `--quit-at`, a linha `HABILIDADES` mostra o nível e quantas vezes cada habilidade saiu.
+
+Partida do bot com as armas de fogo, gelo e sombra no máximo desde o começo:
+`-- --bot --seed=7 --arsenal=horokubiya,tsurara,kage_bunshin,kagutsuchi,yukionna,senkage,onmyo_taikyoku,kitsune_yomeiri,hyokyo`
+(o `run_checks` roda as tarefas `arsenal_1x/2x/3x/3x_baixa` e confere o mesmo hash nas quatro).
 
 ### Testes por resolução (só no Godot)
 
@@ -188,7 +209,7 @@ teste manual: uma pessoa instala, joga e confere (veja "Testes manuais no aparel
 Opções de teste (depois de `--`): `--bot`, `--seed=N`, `--speed=1|2|3`, `--hero=ID`, `--stage=ID`,
 `--moon=0..5`, `--mode=normal|brisa`, `--endless`, `--god`, `--quit-at=S`, `--hash-at=S`,
 `--log-every=S`, `--stress=N`, `--screenshot-at=S`, `--screenshot=arquivo.png`. Vitrine de armas: `--weapons=id1,id2`,
-`--weapon-level=N` e `--ult-at=S` (scripts/systems/weapon_showcase.gd); nível gráfico: `--gfx=low|medium|high`. Detalhes em
+`--weapon-level=N` e `--ult-at=S` (scripts/systems/weapon_showcase.gd); arsenal do bot no nível máximo desde o começo: `--arsenal=id1,id2` (ElementSystem); nível gráfico: `--gfx=low|medium|high`. Detalhes em
 [scripts/game/game.gd](scripts/game/game.gd). Anúncios simulados: `--ads-no-fill`, `--ads-auto`,
 `--purchase-pending`.
 

@@ -5304,6 +5304,24 @@
   "sha256": "8f3029da4c6a8e393f63ac57103f01f7dd6d4990f8220d75baaf1522139cdc53"
  },
  {
+  "file": "assets/audio/sfx/g_fuse_whistle_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "9a0250e9bd022146b976007edb238d44629c93712497998979a37a2da41ddb74"
+ },
+ {
+  "file": "assets/audio/sfx/g_fuse_whistle_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "7fbe1c4cce9c9b8527f74f45ecee3f18506c64b65f89a6af414b824e072b7826"
+ },
+ {
+  "file": "assets/audio/sfx/g_fuse_whistle_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "3fbbaef36fa0e721842d137961f3e64adcf46e2fa1494393697f3440d1b28a8c"
+ },
+ {
   "file": "assets/audio/sfx/g_heavy_blade_0.wav",
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
@@ -5374,6 +5392,24 @@
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
   "sha256": "4141bd9d559de1f91b1324ee222c91e4d326a0b20c944ccea5606cba80b0b3bc"
+ },
+ {
+  "file": "assets/audio/sfx/g_hit_ice_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "c3be3124606d54e2768678dc86055f5e3e26b6ff6a63bdb7e1e1d18b1fe18416"
+ },
+ {
+  "file": "assets/audio/sfx/g_hit_ice_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "d947ab346d0caa5ba77f3a3600300abc8aa234af4aa0384b5590b261217e151b"
+ },
+ {
+  "file": "assets/audio/sfx/g_hit_ice_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "46cb9c4290f1e5e2fae2f02898e82cfa94a79ddd1a3bb73d165f6cb8bb337ccb"
  },
  {
   "file": "assets/audio/sfx/g_hit_orbit_0.wav",
@@ -5466,6 +5502,24 @@
   "sha256": "f0a280ef9cc39db1ee0cf92063d2f25b29eeae1527e623981151d22de236b61e"
  },
  {
+  "file": "assets/audio/sfx/g_ice_tinkle_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "c0c0d098f39de5fc66340239335705d177f3611d8102c0473a8278b9b1f65cac"
+ },
+ {
+  "file": "assets/audio/sfx/g_ice_tinkle_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "3061ccf20731b775387274852c17d0f4bec844f34f74cdeec2b93a33cd9ea63d"
+ },
+ {
+  "file": "assets/audio/sfx/g_ice_tinkle_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "954eab6006fa046657de4c4b73412e59442761b90d552498cf2d7c7aa4766482"
+ },
+ {
   "file": "assets/audio/sfx/g_incense_pulse_0.wav",
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
@@ -5518,6 +5572,24 @@
   "source": "tools/gen_sfx.py",
   "license_id": "hyakki_generated_sfx",
   "sha256": "45cf49c753c5dab3f2fa6db18aae06a017a1288d55f260e7e12de59a6039feb0"
+ },
+ {
+  "file": "assets/audio/sfx/g_shadow_puff_0.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "4ff9ff5edbc5bebbb1e7c6014b322543898c1ce84b3741573192ac020bc058d3"
+ },
+ {
+  "file": "assets/audio/sfx/g_shadow_puff_1.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "b06ac37949a1bed095bac99aa17845f9324317c6d3b237b3040118db6a5896ff"
+ },
+ {
+  "file": "assets/audio/sfx/g_shadow_puff_2.wav",
+  "source": "tools/gen_sfx.py",
+  "license_id": "hyakki_generated_sfx",
+  "sha256": "669659a0170ee342a08e6dee597c29c74ec0e5dddb8cea42ba3e92ba38ea3ecb"
  },
  {
   "file": "assets/audio/sfx/g_shuriken_whirl_0.wav",

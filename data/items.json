@@ -6,6 +6,8 @@
   {"id": "purifying_bell", "icon": "res://assets/art/ui/icons/job/Sing.png", "effect": "bell", "value": 0, "weight": 5},
   {"id": "hourglass", "icon": "res://assets/art/items/object/Hourglass.png", "effect": "freeze", "value": 10, "weight": 5},
   {"id": "solar_ember", "icon": "res://assets/art/ui/icons/meteo/Sun.png", "effect": "solar", "value": 10, "weight": 4},
+  {"id": "fire_jar", "icon": "res://assets/art/items/object/Gourd.png", "effect": "inferno", "value": 4, "weight": 4},
+  {"id": "mirror_shard", "icon": "res://assets/art/items/resource/BarPurple.png", "effect": "clones", "value": 10, "weight": 4},
   {"id": "coin", "icon": "res://assets/art/items/treasure/GoldCoin.png", "effect": "ryo", "value": 5, "weight": 0},
   {"id": "chest", "icon": "res://assets/art/items/treasure/LittleTreasureChest.png", "effect": "chest", "value": 0, "weight": 0}
 ]

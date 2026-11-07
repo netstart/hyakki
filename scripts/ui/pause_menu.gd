@@ -59,7 +59,7 @@ const RUN_ICONS := {
 }
 ## Atributos mostrados, na ordem da grade (os mesmos da pausa antiga).
 const STATS: Array[String] = ["max_hp", "regen", "armor", "speed", "might", "area", "cooldown",
-		"amount", "duration", "magnet", "luck", "growth", "greed", "curse", "light"]
+		"amount", "duration", "magnet", "luck", "growth", "greed", "curse", "light", "burn", "chill"]
 ## Mostrados como número inteiro (os outros, "pct", em %).
 const FLAT_STATS: Array[String] = ["max_hp", "speed", "magnet", "light"]
 

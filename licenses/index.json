@@ -136,7 +136,7 @@
     "source_url": "tools/gen_sfx.py",
     "license_file": "res://licenses/texts/CC0-1.0.txt",
     "notice_file": "res://licenses/notices/hyakki_generated_sfx_NOTICE.txt",
-    "files_count": 70
+    "files_count": 82
   },
   {
     "id": "hyakki_skill_icons",

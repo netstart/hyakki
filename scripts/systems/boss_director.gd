@@ -188,8 +188,10 @@ func _speed(boss: Dictionary) -> float:
 	var s := float(boss["data"].get("speed", 30))
 	if bool(boss["enraged"]):
 		s *= float(boss["data"]["enrage"].get("speed", 1.5))
-	# Chefes também atolam nas superfícies lentas (grandes resistem um pouco).
-	return s * game.enemies.speed_mult * SurfaceSystem.boss_mult(game, int(boss["index"]))
+	# Chefes também atolam nas superfícies lentas (grandes resistem um pouco) e sentem o frio
+	# (EnemyManager.chill_one, lentidão já reduzida para chefes).
+	var i := int(boss["index"])
+	return s * game.enemies.speed_mult * SurfaceSystem.boss_mult(game, i) * game.enemies.move_factor(i)
 
 
 func _step_boss(boss: Dictionary, dt: float) -> void:

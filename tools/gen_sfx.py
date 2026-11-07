@@ -596,6 +596,71 @@ def ult_burst(rng, v):
     return out, 0.92
 
 
+def hit_ice(rng, v):
+    """Gelo: estalo seco de cristal rachando, parciais vítreos agudos e um baque leve."""
+    dur = 0.2
+    n = ns(dur)
+    snap = mul(hp(noise(rng, dur), 4200.0 + 400 * v), exp_env(dur, 0.006, 0.0003))
+    glass = [0.0] * n
+    base = (2600.0, 2950.0, 3300.0)[v]
+    for ratio, amp, dk in ((1.0, 1.0, 0.045), (1.53, 0.7, 0.035), (2.31, 0.5, 0.025), (3.17, 0.3, 0.018)):
+        f = base * ratio * rng.uniform(0.985, 1.015)
+        ph = rng.uniform(0, TAU)
+        for i in range(n):
+            t = i / SR
+            glass[i] += amp * math.sin(TAU * f * t + ph) * math.exp(-t / dk)
+    crack = hp(crackle(rng, 0.05, 900 + 200 * v, 0.5), 2500.0)
+    thud = mul(lp(noise(rng, dur), 900.0), exp_env(dur, 0.012, 0.0005))
+    out = mix((snap, 0.9), (glass, 0.28), (thud, 0.5))
+    place(out, crack, 0.004, 0.7)
+    return out, 0.6
+
+
+def fuse_whistle(rng, v):
+    """Hōroku-biya: assobio do pote no ar (sobe e desce) com o chiado e os estalos do pavio."""
+    dur = 0.55
+    n = ns(dur)
+    arc = [math.sin(math.pi * min(i / SR / (dur * 0.85), 1.0)) for i in range(n)]
+    center = [900.0 + (1500.0 + 200 * v) * a for a in arc]
+    whistle = mul(bp(noise(rng, dur), center, 9.0), [a ** 1.5 for a in arc])
+    hiss = mul(hp(noise(rng, dur), 5500.0), tone_env(dur, lambda t: min(1.0, t / 0.02) * math.exp(-t / 0.35)))
+    sparks = hp(crackle(rng, dur, 140 + 30 * v, 1.2), 3000.0)
+    toss = mul(lp(noise(rng, dur), 1200.0), exp_env(dur, 0.025, 0.002))
+    return mix((whistle, 1.6), (hiss, 0.35), (sparks, 0.55), (toss, 0.6)), 0.66
+
+
+def ice_tinkle(rng, v):
+    """Tsurara: cristais de gelo tilintando, uma cascata de notas vítreas agudas e um brilho frio."""
+    dur = 0.55
+    out = zeros(dur)
+    notes = (2489.0, 2794.0, 3136.0, 3729.0, 4186.0, 4978.0)
+    for k in range(5 + v):
+        at = 0.005 + k * (0.03 + 0.012 * rng.random())
+        f = rng.choice(notes) * rng.uniform(0.995, 1.005)
+        place(out, bell(f, 0.3, 0.05, 0.9), at, rng.uniform(0.25, 0.45) * math.exp(-k / 5.0))
+    frost = mul(hp(noise(rng, dur), 7500.0), tone_env(dur, lambda t: min(1.0, t / 0.01) * math.exp(-t / 0.12)))
+    return mix((out, 1.0), (frost, 0.18)), 0.55
+
+
+def shadow_puff(rng, v):
+    """Kage Bunshin: dois estalos de mão (o selo), o puf abafado da fumaça e um sopro que some."""
+    dur = 0.6
+    n = ns(dur)
+    out = zeros(dur)
+    for k, at in enumerate((0.0, 0.055 + 0.01 * v)):
+        clap = mul(bp(noise(rng, 0.04), 1300.0 + 250 * k + 100 * v, 2.5), exp_env(0.04, 0.006, 0.0003))
+        place(out, clap, at, 1.1 - 0.3 * k)
+    t0 = 0.09 + 0.01 * v
+    puff_len = dur - t0
+    m = ns(puff_len)
+    puff = mix((mul(lp(noise(rng, puff_len), sweep(2600.0, 300.0, m), 0.9), exp_env(puff_len, 0.08, 0.004)), 1.4),
+               (mul(osc(sweep(95.0, 45.0, m)), exp_env(puff_len, 0.05, 0.003)), 0.6))
+    place(out, puff, t0)
+    breath = mul(bp(noise(rng, dur), sweep(700.0, 2400.0, n), 1.4),
+                 tone_env(dur, lambda t: 0.0 if t < t0 else math.sin(math.pi * min((t - t0) / (dur - t0), 1.0)) ** 2))
+    return mix((out, 1.0), (breath, 0.35)), 0.66
+
+
 RECIPES = {
     "thunder": thunder,
     "zap": zap,
@@ -608,6 +673,7 @@ RECIPES = {
     "hit_area": hit_area,
     "hit_orbit": hit_orbit,
     "hit_poison": hit_poison,
+    "hit_ice": hit_ice,
     "ofuda_cast": ofuda_cast,
     "incense_pulse": incense_pulse,
     "chest_open": chest_open,
@@ -621,6 +687,9 @@ RECIPES = {
     "heavy_blade": heavy_blade,
     "suzu": suzu,
     "ult_burst": ult_burst,
+    "fuse_whistle": fuse_whistle,
+    "ice_tinkle": ice_tinkle,
+    "shadow_puff": shadow_puff,
 }
 VARIATIONS = {"chest_open": 2, "ult_burst": 2}  # os outros grupos têm 3
 

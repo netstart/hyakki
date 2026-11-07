@@ -11,7 +11,7 @@ tempos em tempos: se algo não bater, procure pelo nome em inglês entre parênt
 |---|---|
 | Nome do app | Hyakki: Até o Amanhecer |
 | ID do aplicativo (pacote) | `io.github.netstart.hyakki` (**não muda nunca mais** depois do primeiro envio) |
-| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.22.0`, versionCode 47) |
+| Versão do 1º envio | a do `export_presets.cfg` no momento do envio (hoje `1.23.0`, versionCode 48) |
 | Desenvolvedor | conta pessoal, GitHub `netstart` |
 | E-mail público | netstart@gmail.com |
 | Site | https://netstart.github.io/ |
@@ -96,8 +96,8 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
   `build\release\hyakki-release.apk` (para conferir no emulador ou aparelho).
 - Cada envio à Play Console precisa de um **versionCode maior** que o anterior. O versionCode e o
   versionName seguem o SemVer do `AGENTS.md` (sobem a cada commit); o script também aceita
-  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.22.0`,
-  versionCode 46).
+  `-VersionCode N -VersionName X.Y.Z` se precisar forçar. O 1º envio é a versão atual do `export_presets.cfg` (hoje `1.23.0`,
+  versionCode 48).
 - Os IDs reais do AdMob **já estão no projeto** (`admob/general/android/app_id` no `project.godot` e
   `RELEASE_UNITS` em `scripts/ads/admob_provider.gd`), então o build de release sai com anúncios e
   compra ligados.
@@ -399,7 +399,7 @@ bloqueado.
 A Play **só deixa criar produto no app depois que um AAB com a permissão `BILLING` foi enviado para
 alguma faixa**. O teste interno serve. A ordem é:
 
-1. Envie o AAB da versão atual (hoje `1.18.0`) no **teste interno** ([seção 9.2](#92-teste-interno-primeiro-para-você)).
+1. Envie o AAB da versão atual (hoje `1.23.0`) no **teste interno** ([seção 9.2](#92-teste-interno-primeiro-para-você)).
 2. **Monetizar › Produtos › Produtos no app › Criar produto** (*In-app products*):
    - ID do produto: **`remove_open_ad`** (a constante `PRODUCT`; o ID **não pode ser mudado** nem
      reaproveitado depois);
@@ -474,7 +474,7 @@ conteúdo regional). Se algum país pedir documentação extra, remova só ele.
 ### 9.2 Teste interno (primeiro, para você)
 1. **Testar e lançar › Testes › Teste interno › Criar nova versão.**
 2. Aceite a **Assinatura de apps do Google Play** (seção 3).
-3. Envie `build\release\hyakki-release.aab`. Nome da versão: o `version/name` (hoje `1.18.0`).
+3. Envie `build\release\hyakki-release.aab`. Nome da versão: o `version/name` (hoje `1.23.0`).
 4. Notas da versão: as da [seção 9.5](#95-notas-da-versão-1-versão).
 5. Em **Testadores**, crie uma lista de e-mails com a sua conta, salve e abra o **link de inscrição**
    (*opt-in URL*) no celular. A versão aparece em minutos.
@@ -520,10 +520,10 @@ Cole no campo de notas (cada idioma tem limite de 500 caracteres):
 
 ```
 <pt-BR>
-Primeira versão de Hyakki: Até o Amanhecer. Enfrente a procissão dos cem yōkai com 7 guardiões, 26 armas e pactos com 15 Kami em 6 fases. Partidas de 15 minutos, jogáveis com um dedo, offline e em 11 idiomas. Só há anúncios premiados opcionais: nenhum anúncio ao abrir o jogo nem no meio de uma partida. Encontrou um problema? Escreva para netstart@gmail.com.
+Primeira versão de Hyakki: Até o Amanhecer. Enfrente a procissão dos cem yōkai com 7 guardiões, 41 armas e pactos com 15 Kami em 6 fases. Partidas de 15 minutos, jogáveis com um dedo, offline e em 11 idiomas. Só há anúncios premiados opcionais: nenhum anúncio ao abrir o jogo nem no meio de uma partida. Encontrou um problema? Escreva para netstart@gmail.com.
 </pt-BR>
 <en-US>
-First release of Hyakki: Until Dawn. Face the parade of a hundred yōkai with 7 guardians, 26 weapons and pacts with 15 Kami across 6 stages. 15-minute runs, playable with one finger, offline and in 11 languages. There are only optional rewarded ads: no ad when the game opens and none during a run. Found a problem? Write to netstart@gmail.com.
+First release of Hyakki: Until Dawn. Face the parade of a hundred yōkai with 7 guardians, 41 weapons and pacts with 15 Kami across 6 stages. 15-minute runs, playable with one finger, offline and in 11 languages. There are only optional rewarded ads: no ad when the game opens and none during a run. Found a problem? Write to netstart@gmail.com.
 </en-US>
 ```
 
@@ -616,6 +616,21 @@ Balance: the night got more dangerous. Yōkai gain health and strength faster as
 </en-US>
 ```
 
+### 9.5.8 Notas da versão 1.23.0 (versionCode 48)
+Para o envio com fogo, gelo e sombra (1.23.0): 9 armas (3 base, 3 evoluções, 3 uniões), 3 relíquias,
+2 itens de chão, Queimadura, Frio/Congelamento, Estilhaçar e Choque Térmico:
+
+```
+<pt-BR>
+Novidades: fogo, gelo e sombra. Três armas novas e suas evoluções: o Hōroku-biya queima os yōkai, o Tsurara congela com pingentes de gelo e o Kage Bunshin chama clones de sombra que lutam ao seu lado. Três relíquias, três uniões que cruzam os elementos, o Choque Térmico (fogo em quem está congelado, gelo em quem está queimando) e dois itens de chão: o Jarro de Fogo e o Caco do Espelho. Ícones e sons próprios e uma seção nova no Guia.
+</pt-BR>
+<en-US>
+New: fire, ice and shadow. Three new weapons and their evolutions: the Hōroku-biya burns yōkai, Tsurara freezes them with icicles and Kage Bunshin summons shadow clones that fight beside you. Three relics, three unions that combine the elements, Thermal Shock (fire on frozen foes, ice on burning ones) and two floor items: the Fire Jar and the Mirror Shard. New icons and sounds, and a new section in the Guide.
+</en-US>
+```
+
+(pt-BR: 437 caracteres; en-US: 412.)
+
 ### 9.6 Relatório de pré-lançamento (*Pre-launch report*)
 Roda sozinho em aparelhos reais do Google sempre que um AAB entra num teste (interno, fechado ou
 aberto). Abra em **Testar e lançar › Relatório de pré-lançamento** e confira:
@@ -685,7 +700,7 @@ O jogo não precisa de credenciais de login para o robô.
 - [ ] AdMob: mensagem GDPR publicada (estados dos EUA opcional)
 - [ ] AdMob: aparelho cadastrado como dispositivo de teste
 - [ ] Play Console: perfil de pagamentos (comerciante) com dados fiscais
-- [ ] AAB da versão atual (hoje `1.18.0`) gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
+- [ ] AAB da versão atual (hoje `1.23.0`) gerado com `tools\build_release.ps1` e conferido no aparelho de teste (abre sem
       anúncio, premiados, consentimento, "Privacidade e anúncios", "Restaurar compras")
 - [ ] Assinatura de apps do Google Play aceita
 - [ ] Teste interno enviado (1º AAB com `BILLING`)

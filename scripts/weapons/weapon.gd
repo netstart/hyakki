@@ -28,6 +28,8 @@ func _init(p_game: HyakkiGame, p_id: StringName) -> void:
 	tags = data.get("tags", [])
 	max_level = maxi(1, (data.get("levels", [{}]) as Array).size())
 	_recalculate()
+	if game != null and game.elements != null and is_elemental():
+		game.elements.register(self)
 
 
 func is_evolved() -> bool:
@@ -150,4 +152,51 @@ func fx_hot() -> Color:
 
 
 func on_removed() -> void:
+	if game != null and game.elements != null:
+		game.elements.unregister(self)
+
+
+## Gancho de abate (HyakkiGame._on_enemy_killed), chamado para toda arma da guardiã a cada inimigo
+## comum morto em `at` (`j` = índice que ele ocupava). O estado dele na hora da morte (queimava,
+## congelado, quem matou) está em EnemyManager.dying_*().
+func on_kill(_at: Vector2, _j: int) -> void:
 	pass
+
+
+# --- Fogo e gelo (tags "fire" / "ice", chaves "burn", "burn_time", "chill") --------------
+
+func is_fire() -> bool:
+	return tags.has("fire")
+
+
+func is_ice() -> bool:
+	return tags.has("ice")
+
+
+## Entra no Choque Térmico ou aplica estados: HyakkiGame.deal_damage chama element_hit e
+## apply_status nos acertos (não contínuos) desta arma (registrada no ElementSystem).
+func is_elemental() -> bool:
+	return is_fire() or is_ice() or raw("burn") > 0.0 or raw("chill") > 0.0
+
+
+## Dano por segundo da Queimadura desta arma (antes do atributo "burn", que o EnemyManager aplica).
+func burn_dps() -> float:
+	return raw("burn") * stats().get_stat("might") * game.damage_bonus()
+
+
+## Antes do dano: Choque Térmico (fogo em congelado, gelo em quem queima). Devolve o dano extra.
+func element_hit(j: int, amount: float) -> float:
+	var e := game.enemies
+	if is_fire() and e.frozen[j] > 0.0:
+		return e.thermal_shock(j, amount, true)
+	if is_ice() and e.burn_time[j] > 0.0:
+		return e.thermal_shock(j, amount, false)
+	return 0.0
+
+
+## Depois do dano, com o inimigo vivo: Queimadura ("burn" dps por "burn_time" s) e frio ("chill").
+func apply_status(j: int) -> void:
+	if raw("burn") > 0.0:
+		game.enemies.burn_one(j, burn_dps(), raw("burn_time"), id)
+	if raw("chill") > 0.0:
+		game.enemies.chill_one(j, int(raw("chill")))

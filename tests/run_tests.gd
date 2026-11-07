@@ -235,6 +235,7 @@ func _test_hit_sounds() -> void:
 		"kusarigama": "hit_projectile", "hitodama": "hit_fire", "raijin": "hit_thunder",
 		"typhoon": "hit_thunder", "fujin_fan": "hit_wind", "hurricane": "hit_wind",
 		"taiko": "hit_area", "incense": "hit_area", "ofuda": "hit_orbit", "smoke_bomb": "hit_poison",
+		"tsurara": "hit_ice",
 	}
 	for behavior: String in cases:
 		_check(HitSounds.for_weapon({"behavior": behavior, "tags": []}) == cases[behavior],
@@ -245,6 +246,11 @@ func _test_hit_sounds() -> void:
 			"arma nova com tag thunder -> hit_thunder")
 	_check(HitSounds.for_weapon({"behavior": "x", "tags": ["projectile", "fire"]}) == "hit_fire",
 			"fogo tem prioridade sobre projétil")
+	_check(HitSounds.for_weapon({"behavior": "x", "tags": ["projectile", "ice"]}) == "hit_ice",
+			"gelo tem prioridade sobre projétil")
+	_check(HitSounds.for_weapon({"behavior": "kage_bunshin", "tags": ["blade", "shadow", "ice"]}) == "hit_ice",
+			"clone de gelo (Espelho de Gelo) -> hit_ice")
+	_check(WeaponStyle.DEFAULTS.has("hit_ice") and HitSounds.MIX.has("hit_ice"), "hit_ice tem cores e mixagem")
 	_check(HitSounds.for_weapon({}) == "hit", "sem arma (Kami, especial) -> hit")
 	_check(HitSounds.for_weapon({"behavior": "x", "tags": ["nada"]}) == "hit", "desconhecido -> hit")
 

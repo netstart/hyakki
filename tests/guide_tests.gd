@@ -748,6 +748,8 @@ func run(host: Node, check: Callable) -> void:
 	await host.get_tree().process_frame
 	_ok(String(page.chapter()["id"]) == "chests" and (rows[chests] as GuidePage.ChapterRow).is_selected()
 			and not (rows[0] as GuidePage.ChapterRow).is_selected(), "Guia: tocar no capítulo troca a página e o destaque")
+	# O capítulo de baús é longo (seção Fogo, gelo e sombra): o resto monta nos quadros seguintes.
+	page.complete()
 	var link := page.find_child("Link_weapons", true, false) as Button
 	_ok(link != null and link.is_visible_in_tree(), "Guia: botão Ver armas no Diário")
 	if link != null:

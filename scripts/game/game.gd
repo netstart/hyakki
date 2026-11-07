@@ -33,7 +33,7 @@ const ENDLESS_HP_PER_MIN := 0.15  # Noite Sem Fim: vida extra dos inimigos por m
 ## Comportamentos de arma ("behavior" em data/weapons.json): scripts/weapons/<behavior>.gd.
 const WEAPON_BEHAVIORS: Array[String] = ["katana", "shuriken", "kunai", "ofuda", "incense", "kusarigama",
 		"smoke_bomb", "raijin", "fujin_fan", "hurricane", "yumi", "taiko", "hitodama", "typhoon",
-		"blade_cyclone", "kaminari", "inazuma", "onikiri"]
+		"blade_cyclone", "kaminari", "inazuma", "onikiri", "horokubiya", "tsurara", "kage_bunshin", "taikyoku"]
 
 var config: Dictionary = {}
 var stage: Dictionary = {}
@@ -64,6 +64,8 @@ var chests: ChestSystem
 var ultimate: UltimateSystem
 ## Habilidades dos guardiões: energia, recargas, efeitos e entrada (scripts/systems/ability_system.gd).
 var abilities: AbilitySystem
+## Fogo, gelo e clones: armas elementais, itens do chão e clones do Caco do Espelho.
+var elements: ElementSystem
 var tracker: RunTracker
 var hud: Hud
 var death: DeathSequence
@@ -126,7 +128,7 @@ func _ready() -> void:
 	GameClock.ticked.connect(_on_tick)
 	Events.enemy_killed.connect(_on_enemy_killed)
 	if config.is_empty():
-		config = _cli_config()
+		config = CliConfig.run_config(_seed)
 	start_run(config)
 
 
@@ -157,26 +159,6 @@ func _parse_args() -> void:
 			_shot_path = value
 	if _bot and _seed == 0:
 		_seed = BotPilot.SEED
-
-
-func _cli_config() -> Dictionary:
-	var cfg := {"hero": "aki", "stage": "village", "moon": 0, "mode": "normal", "endless": false,
-			"speed": 1, "seed": _seed}
-	for arg: String in OS.get_cmdline_user_args():
-		var value := arg.get_slice("=", 1)
-		if arg.begins_with("--hero="):
-			cfg["hero"] = value
-		elif arg.begins_with("--stage="):
-			cfg["stage"] = value
-		elif arg.begins_with("--moon="):
-			cfg["moon"] = clampi(value.to_int(), 0, MAX_MOON)
-		elif arg.begins_with("--mode="):
-			cfg["mode"] = value
-		elif arg.begins_with("--speed="):
-			cfg["speed"] = clampi(value.to_int(), 1, 3)
-		elif arg == "--endless":
-			cfg["endless"] = true
-	return cfg
 
 
 ## Cenários de teste no aparelho (só em build de debug): leva direto a uma tela difícil de
@@ -293,6 +275,7 @@ func _build() -> void:
 	world = WorldMap.new()
 	world.game = self
 	add_child(world)
+	elements = ElementSystem.new(self)
 	kami = KamiSystem.new()
 	kami.game = self
 	add_child(kami)
@@ -416,6 +399,7 @@ func start_run(cfg: Dictionary) -> void:
 		weapon.on_removed()
 	weapons.clear()
 	add_weapon(StringName(hero.get("weapon", "katana")))
+	elements.start(cfg)
 	level_up.reset()
 	level = 1
 	xp = 0
@@ -464,6 +448,7 @@ func _on_tick(dt: float) -> void:
 	var t2 := Time.get_ticks_usec()
 	for weapon: Weapon in weapons.duplicate():
 		weapon.step(dt)
+	elements.step(dt)
 	var t3 := Time.get_ticks_usec()
 	projectiles.step(dt)
 	enemy_shots.step(dt)
@@ -714,23 +699,30 @@ func _make_weapon(id: StringName) -> Weapon:
 func _draw_weapons() -> void:
 	for weapon: Weapon in weapons:
 		weapon.draw(_weapon_layer)
+	elements.draw(_weapon_layer)
 
 
 ## Todo dano passa por aqui: crítico, registro por arma e número na tela.
 ## `dot`: tique de dano contínuo (poças, furacões, aura do incenso); só muda o número de dano.
+## `no_crit`: sem crítico (Queimadura). Fogo e gelo (ElementSystem): Choque Térmico e os estados.
 func deal_damage(weapon_id: StringName, enemy: int, amount: float, dir: Vector2, force: float,
-		force_crit: bool = false, dot: bool = false) -> void:
+		force_crit: bool = false, dot: bool = false, no_crit: bool = false) -> void:
 	if enemies.alive[enemy] == 0 or enemies.sealed[enemy] == 1:
 		return
-	var crit_chance := player.stats.get_stat("crit")
+	var crit_chance := 0.0 if no_crit else player.stats.get_stat("crit")
 	var crit := force_crit or (crit_chance > 0.0 and rng.randf() < crit_chance)
 	if crit:
 		amount *= 2.0
 	var at := enemies.pos[enemy]
 	var prop := enemies.is_prop(enemy)
+	var element := elements.before_hit(weapon_id, dot or prop)
+	if element != null:
+		amount += element.element_hit(enemy, amount)
 	enemies.damage(enemy, amount, dir, force)
 	if prop:
 		return
+	if element != null and enemies.alive[enemy] == 1:
+		element.apply_status(enemy)
 	tracker.on_damage(weapon_id, amount)
 	if not dot:
 		abilities.on_hit(weapon_id)
@@ -787,6 +779,10 @@ func collect_item(item: Dictionary) -> void:
 			AudioManager.play("powerup", 1.2)
 		"chest":
 			_pending_chests.append(bool(item.get("boss", false)))
+		"inferno":
+			elements.inferno(float(item["value"]))
+		"clones":
+			elements.mirror(float(item["value"]))
 	AudioManager.play("bonus", 1.0, 0.05, -6.0)
 
 
@@ -811,8 +807,7 @@ func _on_enemy_killed(at: Vector2, xp_value: int, color: Color, enemy_id: String
 	elif rng.randf() < PickupManager.COIN_CHANCE * player.stats.get_stat("luck"):
 		pickups.spawn_item(&"coin", at + Vector2(4, 0))
 	for weapon: Weapon in weapons:
-		if weapon is Hitodama:
-			(weapon as Hitodama).on_kill(at)
+		weapon.on_kill(at, enemies.dying_index())
 
 
 func on_boss_defeated(id: StringName, at: Vector2) -> void:

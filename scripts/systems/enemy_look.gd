@@ -37,6 +37,15 @@ const STATUS_ROOT := 2
 const STATUS_FEAR := 4
 const STATUS_LURE := 8
 const STATUS_STUN := 16
+## Fogo e gelo: queimando (chama sobre a cabeça, corpo puxado para o laranja) e congelado
+## (bloco de gelo em volta do corpo, tom FROZEN_TINT só nele; sem as estrelas do atordoado).
+const STATUS_BURN := 32
+const STATUS_FROZEN := 64
+const BURN_TINT := Color(1.0, 0.62, 0.38)
+const FLAME_OUTER := Color(1.0, 0.42, 0.12, 0.95)
+const FLAME_INNER := Color(1.0, 0.86, 0.45, 0.95)
+const ICE_FILL := Color(0.72, 0.9, 1.0, 0.28)
+const ICE_EDGE := Color(0.88, 0.97, 1.0, 0.85)
 const SLOW_TINT := Color(0.55, 0.75, 1.0)
 const SLOW_FLAKE := Color(0.75, 0.9, 1.0, 0.85)
 const ROOT_IRON := Color(0.3, 0.31, 0.36)
@@ -245,10 +254,12 @@ func draw(canvas: CanvasItem) -> void:
 			color.a = EnemyManager.SHADE_DARK_ALPHA
 		if m.decoy[i] == 1:
 			color.a = 0.85
-		color = EnemyManager.frozen_tint(color, frozen)
 		var status := status_flags(i)
-		if status & STATUS_SLOW:
+		color = EnemyManager.frozen_tint(color, frozen or status & STATUS_FROZEN)
+		if status & STATUS_SLOW and not status & STATUS_FROZEN:
 			color = slow_tint(color)
+		if status & STATUS_BURN:
+			color = burn_tint(color)
 		var src: Rect2
 		var flip := false
 		if sheet.layout == "region":
@@ -341,8 +352,12 @@ func status_flags(i: int) -> int:
 		flags |= STATUS_FEAR
 	elif m.lure[i] > 0.0:
 		flags |= STATUS_LURE
-	if m.stun[i] > 0.0:
+	if m.frozen[i] > 0.0:
+		flags |= STATUS_FROZEN
+	elif m.stun[i] > 0.0:
 		flags |= STATUS_STUN
+	if m.burn_time[i] > 0.0:
+		flags |= STATUS_BURN
 	return flags
 
 
@@ -353,9 +368,39 @@ static func slow_tint(base: Color) -> Color:
 	return tint
 
 
+## Queimando: o sprite puxado de leve para o laranja (sem desenho extra).
+static func burn_tint(base: Color) -> Color:
+	var tint := base.lerp(BURN_TINT, 0.3)
+	tint.a = base.a
+	return tint
+
+
 ## Indicadores de lento, preso, medo e isca, no espaço do corpo (`feet` = chão, `top` = cabeça).
 func _draw_status(canvas: CanvasItem, i: int, status: int, feet: Vector2, top: float, time: float) -> void:
 	var r := maxf(5.0, m.radius[i] * 1.2)
+	if status & STATUS_FROZEN:
+		status_drawn += 1
+		# Bloco de gelo em volta do corpo: miolo translúcido, aresta clara e um brilho que corre.
+		var box := Rect2(Vector2(-r - 1.0, top - 1.0), Vector2(r * 2.0 + 2.0, feet.y - top + 2.0)).abs()
+		box.position = box.position.round()
+		box.size = box.size.round()
+		canvas.draw_rect(box, ICE_FILL)
+		canvas.draw_rect(Rect2(box.position, Vector2(box.size.x, 1)), ICE_EDGE)
+		canvas.draw_rect(Rect2(box.position, Vector2(1, box.size.y)), ICE_EDGE)
+		canvas.draw_rect(Rect2(box.position + Vector2(box.size.x - 1, 0), Vector2(1, box.size.y)), Color(ICE_EDGE, 0.5))
+		canvas.draw_rect(Rect2(box.position + Vector2(0, box.size.y - 1), Vector2(box.size.x, 1)), Color(ICE_EDGE, 0.5))
+		var glint := fmod(time * 0.9 + i * 0.37, 1.0) * box.size.y
+		canvas.draw_rect(Rect2(box.position + Vector2(2, roundf(glint)), Vector2(2, 1)), Color(1, 1, 1, 0.8))
+	if status & STATUS_BURN:
+		status_drawn += 1
+		# Chama pequena tremulando acima da cabeça (três camadas de retângulos).
+		var flick := sin(time * 23.0 + i * 1.9)
+		var h := 4.0 + roundf(flick)
+		var base := Vector2(-1.0 + roundf(sin(time * 9.0 + i)), top - 2.0)
+		canvas.draw_rect(Rect2(base + Vector2(-1, -h + 1), Vector2(4, h)), Color(0.25, 0.05, 0.02, 0.6))
+		canvas.draw_rect(Rect2(base + Vector2(-1, -h + 1), Vector2(3, h - 1)), FLAME_OUTER)
+		canvas.draw_rect(Rect2(base + Vector2(0, -h + 2), Vector2(1, h - 2)), FLAME_INNER)
+		canvas.draw_rect(Rect2(base + Vector2(0, -h - 1), Vector2(1, 1)), Color(FLAME_OUTER, 0.6 + 0.4 * flick))
 	if status & STATUS_ROOT:
 		status_drawn += 1
 		# Argola de ferro aos pés: elos alternados claro/escuro e um brilho que corre.

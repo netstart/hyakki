@@ -43,8 +43,8 @@ const FADE_OUT := 0.32
 const STAMP_TIME := 0.42
 ## Cor do halo por elemento (a primeira etiqueta da arma que estiver aqui, na ordem).
 const ELEMENTS := [
-	["fire", Color("ff9a4d")], ["thunder", Color("ffe066")], ["wind", Color("8ff0e0")],
-	["aura", Color("c9a7ff")], ["orbit", Color("ffe3a3")], ["area", Color("9be37f")],
+	["fire", Color("ff9a4d")], ["ice", Color("8fe0ff")], ["thunder", Color("ffe066")], ["wind", Color("8ff0e0")],
+	["shadow", Color("9a7cff")], ["aura", Color("c9a7ff")], ["orbit", Color("ffe3a3")], ["area", Color("9be37f")],
 	["blade", Color("dfe9ff")], ["projectile", Color("bcd2f0")],
 ]
 const PASSIVE_GLOW := Color("8ff0c8")

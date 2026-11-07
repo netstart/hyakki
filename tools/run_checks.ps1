@@ -6,6 +6,8 @@
 #        fatias é o conjunto completo, conferido por um teste)
 #      - testes de regras (tests/run_tests.gd)
 #      - determinismo: o bot em 1x, 2x, 3x e 3x na qualidade Baixa (o estado tem de ser idêntico)
+#      - fogo, gelo e clones: o mesmo determinismo com o arsenal novo forçado (--arsenal=..., armas
+#        novas, evoluções e as três uniões)
 #      - jornada pelos três níveis: o bot invencível passa pelos dois portais até o Tokoyo e vence
 #        o último chefe, com o mesmo estado em 1x, 2x e 3x
 #      - estresse com 500 inimigos (custo da simulação neste PC; com -StressAlone roda sozinho no fim)
@@ -176,6 +178,13 @@ foreach ($speed in 1, 2, 3) {
 }
 # Qualidade gráfica não pode mudar a simulação (clima e superfícies lentas incluídos no hash).
 Add-GodotTask 'determinismo_3x_baixa' @('--fixed-fps', '60', '--', '--bot', '--seed=7', '--speed=3', '--gfx=low', '--quit-at=90') $checkBot
+# Fogo, gelo e clones (.ai/06-fogo-gelo-clones.md): arsenal forçado com as armas novas no nível máximo
+# (bases, evoluções e as três uniões), mesmo estado em 1x, 2x, 3x e na Baixa.
+$Arsenal = '--arsenal=horokubiya,tsurara,kage_bunshin,kagutsuchi,yukionna,senkage,onmyo_taikyoku,kitsune_yomeiri,hyokyo'
+foreach ($speed in 1, 2, 3) {
+    Add-GodotTask "arsenal_${speed}x" @('--fixed-fps', '60', '--', '--bot', '--seed=7', $Arsenal, "--speed=$speed", '--quit-at=60') $checkBot
+}
+Add-GodotTask 'arsenal_3x_baixa' @('--fixed-fps', '60', '--', '--bot', '--seed=7', $Arsenal, '--speed=3', '--gfx=low', '--quit-at=60') $checkBot
 
 $checkStress = {
     param($Lines, $Code)
@@ -307,7 +316,7 @@ function Complete-Task($task, [bool]$stalled) {
 }
 
 # Ordem de início: as mais longas primeiro (a jornada, as fatias, as partidas do bot...).
-$StartOrder = @('jornada_1x', 'jornada_2x', 'jornada_3x', 'integracao_', 'determinismo_1x', 'estresse', 'determinismo_', 'regras',
+$StartOrder = @('jornada_1x', 'jornada_2x', 'jornada_3x', 'integracao_', 'determinismo_1x', 'estresse', 'determinismo_', 'arsenal_', 'regras',
     'navegacao_', 'pixels_', 'lint_', 'py_')
 function Get-StartRank($task) {
     for ($i = 0; $i -lt $StartOrder.Count; $i++) { if ($task.Name.StartsWith($StartOrder[$i])) { return $i } }
@@ -489,6 +498,16 @@ if ($det) {
         foreach ($r in $det) { Write-Host "    $($r.Name): $($r.Summary)" -ForegroundColor Red }
         $failed = $true
     } else { Write-Host "Determinismo: mesmo estado em 1x, 2x, 3x e 3x Baixa (hash=$($hashes[0]))" }
+}
+# Fogo, gelo e clones: as 4 partidas com o arsenal novo com o mesmo hash.
+$ars = @($results | Where-Object { $_.Name -like 'arsenal_*' })
+if ($ars) {
+    $hashes = @($ars | ForEach-Object { $_.Summary -replace '^.*hash=', '' })
+    if ($ars.Count -ne 4 -or @($hashes | Select-Object -Unique).Count -ne 1 -or @($ars | Where-Object { -not $_.Ok })) {
+        Write-Host 'FALHOU: com fogo, gelo e clones, o estado mudou com a velocidade ou com a qualidade gráfica' -ForegroundColor Red
+        foreach ($r in $ars) { Write-Host "    $($r.Name): $($r.Summary)" -ForegroundColor Red }
+        $failed = $true
+    } else { Write-Host "Fogo, gelo e clones: mesmo estado em 1x, 2x, 3x e 3x Baixa (hash=$($hashes[0]))" }
 }
 $trip = @($results | Where-Object { $_.Name -like 'jornada_*' })
 if ($trip) {

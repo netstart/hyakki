@@ -13,6 +13,7 @@ const DEFAULTS := {
 	"hit_area": ["#e8c890", "#fff1d0"],
 	"hit_orbit": ["#ffd98a", "#fffbe8"],
 	"hit_poison": ["#9be070", "#e6ffd0"],
+	"hit_ice": ["#8fe0ff", "#f0fcff"],
 	"hit": ["#ffffff", "#ffffff"],
 }
 

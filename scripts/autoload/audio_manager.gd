@@ -61,6 +61,7 @@ const VARIANTS := {
 			"k_hit_soft_2"],
 	"hit_orbit": ["g_hit_orbit_0", "g_hit_orbit_1", "g_hit_orbit_2"],
 	"hit_poison": ["g_hit_poison_0", "g_hit_poison_1", "g_hit_poison_2"],
+	"hit_ice": ["g_hit_ice_0", "g_hit_ice_1", "g_hit_ice_2"],
 	"ofuda_cast": ["g_ofuda_cast_0", "g_ofuda_cast_1", "g_ofuda_cast_2"],
 	"incense_pulse": ["g_incense_pulse_0", "g_incense_pulse_1", "g_incense_pulse_2"],
 	"chest_open": ["g_chest_open_0", "g_chest_open_1"],
@@ -81,6 +82,10 @@ const VARIANTS := {
 	"bow_twang": ["g_bow_twang_0", "g_bow_twang_1", "g_bow_twang_2"],
 	"chain_rattle": ["g_chain_rattle_0", "g_chain_rattle_1", "g_chain_rattle_2"],
 	"smoke_pop": ["g_smoke_pop_0", "g_smoke_pop_1", "g_smoke_pop_2"],
+	# Fogo, gelo e sombra: pavio do Hōroku-biya, cristais do Tsurara e o selo do Kage Bunshin.
+	"fuse_whistle": ["g_fuse_whistle_0", "g_fuse_whistle_1", "g_fuse_whistle_2"],
+	"ice_tinkle": ["g_ice_tinkle_0", "g_ice_tinkle_1", "g_ice_tinkle_2"],
+	"shadow_puff": ["g_shadow_puff_0", "g_shadow_puff_1", "g_shadow_puff_2"],
 	"spirit_flame": ["g_spirit_flame_0", "g_spirit_flame_1", "g_spirit_flame_2"],
 	"wind_gust": ["g_wind_gust_0", "g_wind_gust_1", "g_wind_gust_2"],
 	"heavy_blade": ["g_heavy_blade_0", "g_heavy_blade_1", "g_heavy_blade_2"],

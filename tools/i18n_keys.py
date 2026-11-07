@@ -102,7 +102,10 @@ def data_keys() -> set:
     keys |= {"options.joystick_floating", "options.joystick_fixed", "options.side_left",
              "options.side_right", "options.fps30", "options.fps60", "options.fps120"}
     keys |= {f"statname.{s}" for s in ("max_hp", "regen", "armor", "speed", "might", "area",
-             "cooldown", "amount", "duration", "magnet", "luck", "growth", "greed", "curse", "light")}
+             "cooldown", "amount", "duration", "magnet", "luck", "growth", "greed", "curse", "light",
+             "burn", "chill")}
+    # Mudanças por nível das armas de fogo e gelo que não aparecem nos níveis (só na base).
+    keys |= {"delta.burn_time"}
     keys |= {"levelup.reroll", "levelup.skip", "levelup.banish", "results.weapon", "results.level",
              "results.damage", "results.dps"}
     return keys

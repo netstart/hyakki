@@ -32,6 +32,32 @@ const BOSS_STUN := 0.4
 ## com o mesmo amortecimento do atordoado (vel × 0,8 por passo).
 const PULL_TIME := 0.35
 const PULL_DAMPING := 0.8
+## Fogo e gelo (.ai/06-fogo-gelo-clones.md), números lidos pelo Guia:
+## Queimadura (炎上): dano contínuo a cada BURN_TICK s, creditado à arma que queimou; reaplicar
+## fica com o maior dps e o maior tempo (não soma). Chefes queimam.
+const BURN_TICK := 0.5
+## Frio (凍結): cada acerto de gelo soma pilhas e deixa lento (CHILL_SLOW por CHILL_SLOW_TIME s,
+## × atributo "chill", até CHILL_SLOW_MAX); com CHILL_STACKS_TO_FREEZE pilhas o inimigo congela
+## por FREEZE_TIME s (× "chill"). As pilhas só duram enquanto a lentidão do frio dura. Chefes
+## ficam lentos (× BOSS_STUN) e as pilhas param uma antes de congelar.
+const CHILL_STACKS_TO_FREEZE := 5
+const FREEZE_TIME := 1.2
+const CHILL_SLOW := 0.35
+const CHILL_SLOW_TIME := 1.5
+const CHILL_SLOW_MAX := 0.7
+## Estilhaçar: inimigo morto congelado (arma com "shatter") explode em estilhaços.
+const SHATTER_DAMAGE := 25.0
+const SHATTER_RADIUS := 30.0
+const SHATTER_CHILL := 1
+## Reações em cadeia (Estilhaçar, chamas do Kagutsuchi) por passo: na horda congelada ou em brasa,
+## uma morte puxa a outra e um passo só fazia centenas de explosões (pico de 140 ms no estresse).
+const CASCADES_PER_STEP := 12
+## Choque Térmico (温度衝撃): fogo em congelado ou gelo em quem queima consome o estado e soma
+## THERMAL_SHOCK_MULT × o dano do acerto; recarga por inimigo.
+const THERMAL_SHOCK_MULT := 1.0
+const THERMAL_SHOCK_COOLDOWN := 0.5
+## Folga do último tique da Queimadura (erro de ponto flutuante dos passos).
+const BURN_EPSILON := 0.0001
 ## Chave da ordem de desenho (order_key): bits do índice e limite do Y (em 1/16 px).
 const ORDER_INDEX_BITS := 12
 const ORDER_INDEX_MASK := (1 << ORDER_INDEX_BITS) - 1
@@ -84,6 +110,21 @@ var root := PackedFloat32Array()
 var fear := PackedFloat32Array()
 var lure := PackedFloat32Array()
 var goal := PackedVector2Array()
+## Queimadura: tempo restante, dano por segundo, próximo tique e a fonte (índice em burn_sources).
+var burn_time := PackedFloat32Array()
+var burn_dps := PackedFloat32Array()
+var burn_tick := PackedFloat32Array()
+var burn_src := PackedInt32Array()
+## Frio: pilhas, congelado (tempo restante; parado pelo stun) e recarga do Choque Térmico.
+var chill := PackedInt32Array()
+var frozen := PackedFloat32Array()
+var shock_cd := PackedFloat32Array()
+## Ids das armas que queimam (burn_src aponta para cá; poucos, cresce sob demanda).
+var burn_sources: Array[StringName] = []
+## Reações em cadeia que ainda cabem neste passo (CASCADES_PER_STEP; take_cascade).
+var cascades_left: int = CASCADES_PER_STEP
+## Último golpe (HyakkiGame.deal_damage escreve antes do dano): quem matou, para o on_kill.
+var hit_by: StringName = &""
 var stuck := PackedFloat32Array()
 var resist := PackedFloat32Array()
 var kind := PackedInt32Array()
@@ -126,12 +167,19 @@ var _near: Array[int] = []
 var _hits: Array[int] = []
 var _under: Node2D
 var _over: Node2D
+## Estado de quem está morrendo (pilha: mortes dentro de mortes, como o Estilhaçar em cadeia),
+## lido pelos on_kill das armas durante o Events.enemy_killed.
+var _dying_index := PackedInt32Array()
+var _dying_burn := PackedFloat32Array()
+var _dying_frozen := PackedByteArray()
+var _dying_killer: Array[StringName] = []
 
 
 func _ready() -> void:
 	for packed: StringName in [&"pos", &"prev", &"vel", &"push", &"ai_dir", &"hp", &"max_hp",
 			&"dmg", &"speed", &"radius", &"flash", &"phase", &"contact_cd", &"ai_timer", &"stun",
-			&"slow", &"slow_mult", &"root", &"fear", &"lure", &"goal", &"stuck", &"resist", &"kind",
+			&"slow", &"slow_mult", &"root", &"fear", &"lure", &"goal", &"burn_time", &"burn_dps",
+			&"burn_tick", &"burn_src", &"chill", &"frozen", &"shock_cd", &"stuck", &"resist", &"kind",
 			&"xp_value", &"state", &"facing", &"alive",
 			&"elite", &"controlled", &"decoy", &"submerged", &"marching", &"born", &"hit_at", &"pose",
 			&"uid", &"sealed", &"shield"]:
@@ -214,6 +262,11 @@ func reset() -> void:
 	count_common = 0
 	freeze_time = 0.0
 	speed_mult = 1.0
+	hit_by = &""
+	_dying_index.clear()
+	_dying_burn.clear()
+	_dying_frozen.clear()
+	_dying_killer.clear()
 	_order.clear()
 	_order_dirty = true
 	if fx:
@@ -256,6 +309,13 @@ func spawn(id: StringName, at: Vector2, hp_mult: float, damage_mult: float,
 	fear[i] = 0.0
 	lure[i] = 0.0
 	goal[i] = at
+	burn_time[i] = 0.0
+	burn_dps[i] = 0.0
+	burn_tick[i] = 0.0
+	burn_src[i] = 0
+	chill[i] = 0
+	frozen[i] = 0.0
+	shock_cd[i] = 0.0
 	stuck[i] = 0.0
 	resist[i] = float(data.get("knock_resist", 0.0))
 	kind[i] = t
@@ -294,11 +354,12 @@ func is_prop(i: int) -> bool:
 
 func step(dt: float) -> void:
 	prev = pos.duplicate()
+	cascades_left = CASCADES_PER_STEP
 	# Mesmo resultado de clear() + insert(i, pos[i]) para cada vivo em ordem crescente.
 	spatial.rebuild(pos, alive, CAPACITY)
 	if freeze_time > 0.0:
 		freeze_time -= dt
-	var frozen := freeze_time > 0.0
+	var time_stopped := freeze_time > 0.0
 	var player := game.player
 	var target := player.sim_pos
 	var parity := game.step_index % SEPARATION_EVERY
@@ -321,13 +382,20 @@ func step(dt: float) -> void:
 		if flash[i] > 0.0:
 			flash[i] -= dt
 		contact_cd[i] -= dt
+		if burn_time[i] > 0.0 or frozen[i] > 0.0 or shock_cd[i] > 0.0:
+			_step_status(i, dt)
+			if alive[i] == 0:
+				continue
 		var p: Vector2 = pos[i]
 		var to_player := target - p
 		var dist := to_player.length()
 		if controlled[i] == 1:
+			# Chefe: o BossDirector o move e lê a lentidão do frio (move_factor).
+			if slow[i] > 0.0:
+				slow[i] -= dt
 			_contact(i, dist, player)
 			continue
-		if frozen or stun[i] > 0.0:
+		if time_stopped or stun[i] > 0.0:
 			stun[i] = maxf(0.0, stun[i] - dt)
 			vel[i] = vel[i] * 0.8
 			pos[i] = p + vel[i] * dt
@@ -574,6 +642,8 @@ func _kill(i: int) -> void:
 	var at: Vector2 = pos[i]
 	var was_elite := elite[i] == 1
 	var was_decoy := decoy[i] == 1
+	var dying_burn := burn_dps[i] if burn_time[i] > 0.0 else 0.0
+	var dying_frozen := frozen[i] > 0.0
 	_remove(i)
 	if type_ai[t] == AI.PROP:
 		game.on_prop_destroyed(i, at)
@@ -594,7 +664,33 @@ func _kill(i: int) -> void:
 			var offset := Vector2.from_angle(TAU * k / float(params.get("count", 2))) * 6.0
 			spawn(StringName(params.get("split_into", "")), at + offset,
 					game.enemy_hp_mult(), game.enemy_damage_mult())
+	_dying_index.append(i)
+	_dying_burn.append(dying_burn)
+	_dying_frozen.append(1 if dying_frozen else 0)
+	_dying_killer.append(hit_by)
 	Events.enemy_killed.emit(at, xp_value[i], type_tint[t], type_ids[t], was_elite, type_ai[t])
+	_dying_index.resize(_dying_index.size() - 1)
+	_dying_burn.resize(_dying_burn.size() - 1)
+	_dying_frozen.resize(_dying_frozen.size() - 1)
+	_dying_killer.pop_back()
+
+
+## Quem está morrendo agora (dentro do Events.enemy_killed): queimava (dps da Queimadura, 0 sem),
+## estava congelado e a arma do golpe final. Fora de uma morte: 0, false e &"".
+func dying_index() -> int:
+	return _dying_index[_dying_index.size() - 1] if not _dying_index.is_empty() else -1
+
+
+func dying_burn() -> float:
+	return _dying_burn[_dying_burn.size() - 1] if not _dying_burn.is_empty() else 0.0
+
+
+func dying_frozen() -> bool:
+	return not _dying_frozen.is_empty() and _dying_frozen[_dying_frozen.size() - 1] == 1
+
+
+func dying_killer() -> StringName:
+	return _dying_killer.back() if not _dying_killer.is_empty() else &""
 
 
 func _remove(i: int) -> void:
@@ -768,6 +864,171 @@ func stun_circle(center: Vector2, r: float, seconds: float, boss_factor: float =
 func stun_one(i: int, seconds: float) -> void:
 	if alive[i] == 1 and not is_prop(i) and seconds > 0.0:
 		stun[i] = maxf(stun[i], seconds)
+
+
+# --- Fogo e gelo (.ai/06-fogo-gelo-clones.md) --------------------------------------------
+# Tudo no passo fixo e sem sorteio. Os acertos das armas de fogo/gelo chegam por
+# HyakkiGame.deal_damage (Weapon.element_hit / apply_status); os tiques da Queimadura saem daqui.
+
+
+## Índice da fonte `id` em burn_sources (registra na 1ª vez).
+func burn_source(id: StringName) -> int:
+	var k := burn_sources.find(id)
+	if k < 0:
+		burn_sources.append(id)
+		k = burn_sources.size() - 1
+	return k
+
+
+## Atributos da guardiã que mexem nos estados (1 = sem bônus): dano da Queimadura ("burn") e
+## força do frio e duração do congelamento ("chill").
+func burn_mult() -> float:
+	return game.player.stats.get_stat("burn") if game and game.player else 1.0
+
+
+func chill_mult() -> float:
+	return game.player.stats.get_stat("chill") if game and game.player else 1.0
+
+
+## Queima o inimigo `i`: `dps` (× atributo "burn") por `seconds`, creditado a `src`. Reaplicar fica
+## com o maior dps (e a fonte dele) e o maior tempo restante, sem somar. Props e selados (anel da
+## emboscada e Elite surgindo no Altar do Selo, intocáveis até soltar) não queimam.
+func burn_one(i: int, dps: float, seconds: float, src: StringName) -> bool:
+	if alive[i] == 0 or is_prop(i) or sealed[i] == 1 or dps <= 0.0 or seconds <= 0.0:
+		return false
+	var value := dps * burn_mult()
+	if burn_time[i] <= 0.0:
+		burn_tick[i] = BURN_TICK
+		burn_dps[i] = value
+		burn_src[i] = burn_source(src)
+	elif value > burn_dps[i]:
+		burn_dps[i] = value
+		burn_src[i] = burn_source(src)
+	burn_time[i] = maxf(burn_time[i], seconds)
+	return true
+
+
+## Queima quem toca o círculo (chefes também). Devolve quantos.
+func burn_circle(center: Vector2, r: float, dps: float, seconds: float, src: StringName) -> int:
+	query_circle(center, r, _hits)
+	var count := 0
+	for j: int in _hits:
+		if burn_one(j, dps, seconds, src):
+			count += 1
+	return count
+
+
+## Frio: soma `stacks` pilhas e deixa lento; com CHILL_STACKS_TO_FREEZE pilhas congela (devolve
+## true). Pilhas novas só contam enquanto a lentidão do frio dura (senão recomeçam do zero).
+## Congelado não soma pilhas. Chefes (as Sombras 影 do Kakuriyo também): lentidão × BOSS_STUN e no
+## máximo uma pilha antes de congelar. Selados não sentem o frio.
+func chill_one(i: int, stacks: int) -> bool:
+	if alive[i] == 0 or is_prop(i) or sealed[i] == 1 or stacks <= 0:
+		return false
+	var power := chill_mult()
+	var boss := is_boss(i)
+	var amount := minf(CHILL_SLOW_MAX, CHILL_SLOW * power) * (BOSS_STUN if boss else 1.0)
+	if slow[i] <= 0.0:
+		chill[i] = 0
+	var factor := 1.0 - amount
+	slow_mult[i] = minf(slow_mult[i], factor) if slow[i] > 0.0 else factor
+	slow[i] = maxf(slow[i], CHILL_SLOW_TIME)
+	if frozen[i] > 0.0:
+		return false
+	chill[i] += stacks
+	if boss:
+		chill[i] = mini(chill[i], CHILL_STACKS_TO_FREEZE - 1)
+		return false
+	if chill[i] < CHILL_STACKS_TO_FREEZE:
+		return false
+	chill[i] = 0
+	freeze_one(i, FREEZE_TIME * power)
+	return true
+
+
+## Congela (parado pelo stun, bloco de gelo no desenho) por `seconds`. Chefes, props e selados não.
+func freeze_one(i: int, seconds: float) -> void:
+	if alive[i] == 0 or is_prop(i) or is_boss(i) or sealed[i] == 1 or seconds <= 0.0:
+		return
+	frozen[i] = maxf(frozen[i], seconds)
+	stun[i] = maxf(stun[i], seconds)
+	vel[i] = Vector2.ZERO
+	if game and game.fx and view_rect.has_point(pos[i]):
+		game.fx.play_anim("ice", pos[i] - Vector2(0, radius[i]), clampf(radius[i] / 8.0, 0.6, 1.4), 0.0,
+				Color(0.85, 0.95, 1.0, 0.9), 22.0)
+
+
+## Choque Térmico: acerto de fogo (`fire`) num congelado ou de gelo num inimigo queimando consome
+## o estado oposto e devolve o dano extra (THERMAL_SHOCK_MULT × `amount`); 0 na recarga ou sem o
+## estado oposto.
+func thermal_shock(i: int, amount: float, fire: bool) -> float:
+	if alive[i] == 0 or shock_cd[i] > 0.0:
+		return 0.0
+	if fire:
+		if frozen[i] <= 0.0:
+			return 0.0
+		stun[i] = maxf(0.0, stun[i] - frozen[i])
+		frozen[i] = 0.0
+		chill[i] = 0
+	else:
+		if burn_time[i] <= 0.0:
+			return 0.0
+		burn_time[i] = 0.0
+		burn_dps[i] = 0.0
+	shock_cd[i] = THERMAL_SHOCK_COOLDOWN
+	if game:
+		game.elements.steam(pos[i])
+	return amount * THERMAL_SHOCK_MULT
+
+
+## Tira Queimadura, frio e congelamento (pulso do Taikyoku). Devolve se tinha algum.
+func consume_elements(i: int) -> bool:
+	var had := burn_time[i] > 0.0 or frozen[i] > 0.0 or chill[i] > 0
+	if frozen[i] > 0.0:
+		stun[i] = maxf(0.0, stun[i] - frozen[i])
+	burn_time[i] = 0.0
+	burn_dps[i] = 0.0
+	frozen[i] = 0.0
+	chill[i] = 0
+	return had
+
+
+## Tem algum estado de fogo ou gelo (Queimadura, pilhas de frio ou congelado).
+func has_element(i: int) -> bool:
+	return burn_time[i] > 0.0 or frozen[i] > 0.0 or chill[i] > 0
+
+
+## Gasta uma reação em cadeia do passo (false quando o teto do passo acabou).
+func take_cascade() -> bool:
+	if cascades_left <= 0:
+		return false
+	cascades_left -= 1
+	return true
+
+
+## Fator de velocidade da lentidão agora (1 sem): o BossDirector lê para o frio dos chefes.
+func move_factor(i: int) -> float:
+	return slow_mult[i] if slow[i] > 0.0 else 1.0
+
+
+## Tiques da Queimadura, fim do congelamento e recarga do Choque Térmico de `i` (no passo).
+func _step_status(i: int, dt: float) -> void:
+	if shock_cd[i] > 0.0:
+		shock_cd[i] -= dt
+	if frozen[i] > 0.0:
+		frozen[i] = maxf(0.0, frozen[i] - dt)
+	if burn_time[i] <= 0.0:
+		return
+	burn_time[i] -= dt
+	burn_tick[i] -= dt
+	# Folga contra o erro de ponto flutuante: o último tique cai no mesmo passo em que acaba.
+	if burn_tick[i] <= BURN_EPSILON:
+		burn_tick[i] += BURN_TICK
+		game.deal_damage(burn_sources[burn_src[i]], i, burn_dps[i] * BURN_TICK, Vector2.ZERO, 0.0, false,
+				true, true)
+	if alive[i] == 1 and burn_time[i] <= BURN_EPSILON:
+		burn_time[i] = 0.0
+		burn_dps[i] = 0.0
 
 
 ## Vivos (inclui chefes, sem props) que tocam o segmento a→b de meia-largura `width`.

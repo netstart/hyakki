@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Verificações do Hyakki para Linux/CI (mesmo conteúdo de tools/run_checks.ps1), em paralelo:
 # importação primeiro; depois, ao mesmo tempo, a integração em N fatias (--shard=k/N), testes de
-# regras, determinismo 1x/2x/3x e 3x Baixa, a jornada do bot pelos três níveis (Kakuriyo, Tokoyo e
+# regras, determinismo 1x/2x/3x e 3x Baixa (com o bot padrão e com o arsenal de fogo, gelo e
+# clones, --arsenal=...), a jornada do bot pelos três níveis (Kakuriyo, Tokoyo e
 # o último chefe, mesmo estado em 1x/2x/3x), estresse, gdlint em partes e os checks em Python
 # (textos, licenças, ficha da loja, site irmão netstart.github.io: app-ads.txt gerado do ID do
 # AdMob, política e página do jogo lá, sem cópias em docs/). Com tela (DISPLAY/WAYLAND_DISPLAY ou
@@ -158,7 +159,7 @@ report() {
       summary=$(grep -E "^[0-9]+ verificações, [0-9]+ falhas" "$log" | tail -1)
       [ -n "$summary" ] || { ok=0; summary="não chegou ao fim (veja o log)"; }
       grep -q "FALHOU" "$log" && ok=0 ;;
-    determinismo_*)
+    determinismo_*|arsenal_*)
       summary=$(grep "^FIM " "$log" | tail -1); [ -n "$summary" ] || { ok=0; summary="a partida não chegou ao FIM"; } ;;
     jornada_*)
       summary=$(grep "^FIM " "$log" | tail -1); [ -n "$summary" ] || { ok=0; summary="a partida não chegou ao FIM"; }
@@ -199,6 +200,12 @@ for speed in 1 2 3; do
   add_task "determinismo_${speed}x" 1 "$GODOT" $(godot_args "determinismo_${speed}x") --fixed-fps 60 -- --bot --seed=7 "--speed=$speed" --quit-at=90
 done
 add_task determinismo_3x_baixa 1 "$GODOT" $(godot_args determinismo_3x_baixa) --fixed-fps 60 -- --bot --seed=7 --speed=3 --gfx=low --quit-at=90
+# Fogo, gelo e clones: o arsenal novo forçado (armas, evoluções e as três uniões), mesmo estado em 1x, 2x, 3x e na Baixa.
+ARSENAL="--arsenal=horokubiya,tsurara,kage_bunshin,kagutsuchi,yukionna,senkage,onmyo_taikyoku,kitsune_yomeiri,hyokyo"
+for speed in 1 2 3; do
+  add_task "arsenal_${speed}x" 1 "$GODOT" $(godot_args "arsenal_${speed}x") --fixed-fps 60 -- --bot --seed=7 "$ARSENAL" "--speed=$speed" --quit-at=60
+done
+add_task arsenal_3x_baixa 1 "$GODOT" $(godot_args arsenal_3x_baixa) --fixed-fps 60 -- --bot --seed=7 "$ARSENAL" --speed=3 --gfx=low --quit-at=60
 add_task estresse 1 "$GODOT" $(godot_args estresse) --fixed-fps 60 -- --bot --seed=7 --stress=500 --log-every=10 --quit-at=30
 add_task regras 1 "$GODOT" $(godot_args regras) --script res://tests/run_tests.gd
 if [ "$WINDOW" = 1 ]; then
@@ -246,6 +253,16 @@ if [ -n "$hashes" ]; then
   if [ "$(tr ' ' '\n' <<<"$hashes" | grep -v '^$' | sort -u | wc -l)" -ne 1 ] || [ "$(wc -w <<<"$hashes")" -ne 4 ]; then
     echo "FALHOU: o estado mudou com a velocidade ou com a qualidade gráfica"; failed=1
   else echo "Determinismo: mesmo estado em 1x, 2x, 3x e 3x Baixa"; fi
+fi
+hashes=""
+for t in arsenal_1x arsenal_2x arsenal_3x arsenal_3x_baixa; do
+  [ -f "$LOGS/$t.log" ] || continue
+  line=$(grep "^FIM " "$LOGS/$t.log" | tail -1); echo "$t: $line"; hashes="$hashes ${line##*hash=}"
+done
+if [ -n "$hashes" ]; then
+  if [ "$(tr ' ' '\n' <<<"$hashes" | grep -v '^$' | sort -u | wc -l)" -ne 1 ] || [ "$(wc -w <<<"$hashes")" -ne 4 ]; then
+    echo "FALHOU: com fogo, gelo e clones, o estado mudou com a velocidade ou com a qualidade gráfica"; failed=1
+  else echo "Fogo, gelo e clones: mesmo estado em 1x, 2x, 3x e 3x Baixa"; fi
 fi
 hashes=""
 for t in jornada_1x jornada_2x jornada_3x; do

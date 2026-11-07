@@ -8,7 +8,7 @@ extends RefCounted
 
 const GAME_SCENE := "res://scenes/game/Game.tscn"
 const HIT_IDS := ["hit", "crit", "hit_blade", "hit_projectile", "hit_fire", "hit_thunder", "hit_wind",
-		"hit_area", "hit_orbit", "hit_poison"]
+		"hit_area", "hit_orbit", "hit_poison", "hit_ice"]
 const OTHER_IDS := ["slash", "whoosh", "katana", "paper_flutter", "bell", "ui_move", "ui_accept",
 		"ofuda_cast", "zap", "thunder"]
 const DT := 0.05
@@ -43,7 +43,8 @@ func run(host: Node, check: Callable) -> void:
 func _test_groups(check: Callable) -> void:
 	for group: String in ["katana", "ofuda_fan", "paper_flutter", "paper_fold", "arrow", "bow", "slash", "whoosh",
 			"shuriken_whirl", "kunai_throw", "bow_twang", "chain_rattle", "smoke_pop", "spirit_flame", "wind_gust",
-			"heavy_blade", "suzu", "draw_knife", "metal_light", "ult_burst"]:
+			"heavy_blade", "suzu", "draw_knife", "metal_light", "ult_burst", "fuse_whistle", "ice_tinkle",
+			"shadow_puff"]:
 		check.call(AudioManager.VARIANTS.has(group), "grupo de som %s registrado", group)
 		for file: String in AudioManager.VARIANTS.get(group, []):
 			check.call(AudioManager._sfx(file) is AudioStream, "som %s do grupo %s carrega", [file, group])

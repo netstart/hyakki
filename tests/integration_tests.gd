@@ -16,6 +16,8 @@ const OPTIONS_SCREEN := "res://scripts/app/screens/options_screen.gd"
 const RaijinBoltTests := preload("res://tests/raijin_bolt_tests.gd")
 ## Onikiri e Dōjigiri, a espada da Yuki: combo, meia-lua, golpe final e onda.
 const OnikiriTests := preload("res://tests/onikiri_tests.gd")
+## Fogo, gelo e clones: estados, armas, uniões, itens, marcas e o bot (tests/elements_tests.gd).
+const ElementsTests := preload("res://tests/elements_tests.gd")
 ## Habilidades dos guardiões: dados, AbilitySystem, primitivas, Aki, save e o bot (tests/ability_tests.gd).
 const AbilityTests := preload("res://tests/ability_tests.gd")
 const EconomyTests := preload("res://tests/economy_tests.gd")
@@ -118,6 +120,7 @@ const SUITE_MS := {
 	&"WeaponFxTests": 9957,
 	&"ReviveAdTests": 8768,
 	&"EliteAffixTests": 8336,
+	&"ElementsTests": 7851,
 	&"DialogueTests": 7730,
 	&"WeaponAudioTests": 7536,
 	&"EnemyFxTests": 6664,
@@ -241,6 +244,7 @@ func _suites() -> Array[Array]:
 		[&"_test_thunder_weapons", false, func() -> void: await _test_thunder_weapons()],
 		[&"_test_raijin_bolts", false, func() -> void: await _test_raijin_bolts()],
 		[&"OnikiriTests", false, func() -> void: await OnikiriTests.new().run(self, _check)],
+		[&"ElementsTests", false, func() -> void: await ElementsTests.new().run(self, _check)],
 		[&"_test_hero_hand", false, func() -> void: await _test_hero_hand()],
 		[&"AbilityTests", false, func() -> void: await AbilityTests.new().run(self, _check)],
 		[&"WeaponAudioTests", false, func() -> void: await WeaponAudioTests.new().run(self, _check)],
@@ -570,7 +574,8 @@ func _test_sfx_variants_exist() -> void:
 				missing.append("%s/%s" % [group, file])
 	_check(missing.is_empty(), "todos os sons dos grupos existem (%d): faltam %s", [total, missing])
 	for group: String in ["thunder", "zap", "chain_zap", "hit_blade", "hit_projectile", "hit_fire",
-			"hit_thunder", "hit_wind", "hit_area", "hit_orbit", "hit_poison", "ofuda_cast", "incense_pulse", "chest_open"]:
+			"hit_thunder", "hit_wind", "hit_area", "hit_orbit", "hit_poison", "hit_ice", "ofuda_cast",
+			"incense_pulse", "chest_open"]:
 		_check(AudioManager.VARIANTS.has(group), "grupo de som %s registrado", group)
 
 
@@ -816,6 +821,16 @@ func _test_sound_options() -> void:
 		var budget := (FxLayer.IMPACTS_PER_STEP - 1) * int(FxLayer.IMPACT_COUNT[FxLayer.wfx]) \
 				+ 200 - (FxLayer.IMPACTS_PER_STEP - 1)
 		_check(many <= budget, "200 impactos no mesmo passo ficam na cota (%d <= %d)", [many, budget])
+		# Dano contínuo (tiques da Queimadura): além da cota própria, cada tique solta uma brasa só.
+		game.fx.step(0.0)
+		alive = game.fx.particles_alive()
+		for _k: int in range(50):
+			game.fx.on_hit(&"katana", Vector2(10, 10), 0.1, false, Vector2.ZERO, true)
+		var dots := game.fx.particles_alive() - alive
+		var dot_budget := FxLayer.DOT_IMPACTS_PER_STEP * int(FxLayer.IMPACT_COUNT[FxLayer.wfx]) \
+				+ 50 - FxLayer.DOT_IMPACTS_PER_STEP
+		_check(dots > 0 and dots <= dot_budget,
+				"50 tiques no mesmo passo ficam na cota do dano contínuo (%d <= %d)", [dots, dot_budget])
 		game.deal_damage(&"katana", enemy, 0.1, Vector2.RIGHT, 0.0)
 		_check(game.last_hit_sound == "", "damage_sounds desligado silencia o golpe")
 		var n_before := int(game.fx.get("_n_next"))

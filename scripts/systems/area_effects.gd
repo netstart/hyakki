@@ -70,6 +70,15 @@ func pool(weapon: StringName, at: Vector2, r: float, damage: float, tick: float,
 			"grow": grow, "follow": follow, "tint": tint})
 
 
+## Chão em brasa (Hōroku-biya, Kagutsuchi): sem dano direto; a cada EnemyManager.BURN_TICK
+## reaplica a Queimadura (`burn_dps` por `burn_time` s, creditada a `weapon`) em quem está dentro.
+func fire_pool(weapon: StringName, at: Vector2, r: float, life: float, burn_dps: float, burn_time: float) -> void:
+	effects.append({"kind": Kind.POOL, "weapon": weapon, "pos": at, "radius": r, "base_radius": r,
+			"damage": 0.0, "tick": EnemyManager.BURN_TICK, "tick_left": 0.0, "life": life, "max_life": life,
+			"grow": 1.0, "follow": 0.0, "tint": Color(1.0, 0.48, 0.18, 0.7), "burn_dps": burn_dps,
+			"burn_time": burn_time})
+
+
 func ring(weapon: StringName, at: Vector2, max_radius: float, damage: float, duration: float,
 		knockback: float, stun: float = 0.0, delay: float = 0.0) -> void:
 	effects.append({"kind": Kind.RING, "weapon": weapon, "pos": at, "radius": 0.0,
@@ -229,7 +238,10 @@ func _step_pool(e: Dictionary, dt: float) -> void:
 	if float(e["tick_left"]) > 0.0:
 		return
 	e["tick_left"] = float(e["tick"])
-	blast(e["weapon"], e["pos"], float(e["radius"]), float(e["damage"]), 5.0, 0.0, true)
+	if float(e["damage"]) > 0.0:
+		blast(e["weapon"], e["pos"], float(e["radius"]), float(e["damage"]), 5.0, 0.0, true)
+	if e.has("burn_dps"):
+		game.enemies.burn_circle(e["pos"], float(e["radius"]), float(e["burn_dps"]), float(e["burn_time"]), e["weapon"])
 
 
 func _step_ring(e: Dictionary, dt: float) -> void:
@@ -413,6 +425,15 @@ func _draw_pool(e: Dictionary, at: Vector2, time: float) -> void:
 	if poison and FxLayer.wfx > 0 and _look.randf() < 0.15 * FxLayer.wfx:
 		var p := at + Vector2.from_angle(_look.randf() * TAU) * r * _look.randf()
 		game.fx.embers(p, Color(0.7, 1.0, 0.45), 1, 1.0)
+	if e.has("burn_dps"):
+		# Chão em brasa: pontos de brasa piscando por cima da fumaça e brasas subindo (Média/Alta).
+		for k: int in range(clampi(int(r * 0.4), 4, 14)):
+			var u := fmod(k * 0.618 + 0.13, 1.0)
+			var p := at + Vector2(cos(k * 2.39996), sin(k * 2.39996) * 0.7) * r * sqrt(u) * 0.85
+			var glow := 0.5 + 0.5 * sin(time * 9.0 + k * 1.3)
+			draw_rect(Rect2(p.round(), Vector2.ONE), Color(1.0, 0.55 + 0.35 * glow, 0.2, (0.5 + 0.5 * glow) * fade))
+		if FxLayer.wfx > 0 and _look.randf() < 0.2 * FxLayer.wfx:
+			game.fx.embers(at + Vector2.from_angle(_look.randf() * TAU) * r * _look.randf(), Color(1.0, 0.6, 0.25), 1, 1.0)
 
 
 ## Chão eletrificado: arcos quebrados curtos que piscam em pontos sorteados (só desenho).

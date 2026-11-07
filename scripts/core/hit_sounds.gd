@@ -15,6 +15,7 @@ const BY_BEHAVIOR := {
 	"yumi": "hit_projectile",
 	"kusarigama": "hit_projectile",
 	"hitodama": "hit_fire",
+	"tsurara": "hit_ice",
 	"raijin": "hit_thunder",
 	"typhoon": "hit_thunder",
 	"fujin_fan": "hit_wind",
@@ -36,11 +37,13 @@ const MIX := {
 	"hit_area": [-13.0, 0.95, 0.08],
 	"hit_orbit": [-15.0, 1.0, 0.1],
 	"hit_poison": [-16.0, 1.0, 0.12],
+	"hit_ice": [-15.0, 1.0, 0.1],
 }
 ## Ordem de prioridade das tags quando o comportamento não é conhecido.
 const BY_TAG := [
 	["thunder", "hit_thunder"],
 	["fire", "hit_fire"],
+	["ice", "hit_ice"],
 	["poison", "hit_poison"],
 	["wind", "hit_wind"],
 	["blade", "hit_blade"],

@@ -650,6 +650,37 @@ func _draw_sprite(tex: Texture2D, offset: Vector2, moving: bool, tint: Color, an
 				_sheet.region(frame, dir), tint)
 
 
+## Silhueta da guardiã em `at` (mundo) noutra camada, para os clones das armas de sombra (Kage
+## Bunshin e as uniões; o mesmo corpo do clone da Sombra Dupla do Kenta): borda de 1 px na cor
+## `rim` (a textura branca deslocada, como o contorno do corpo caído) e o corpo tingido `tint`,
+## olhando para a esquerda com `face_left`, no quadro `frame` do andar (-1 = parado). Só texturas.
+func draw_silhouette(canvas: CanvasItem, at: Vector2, tint: Color, rim: Color, face_left: bool, frame: int) -> void:
+	if _sheet == null:
+		return
+	var moving := frame >= 0
+	if _side_size != Vector2.ZERO:
+		var count := _side_counts.y if moving else _side_counts.x
+		var src := Rect2(Vector2(posmod(maxi(frame, 0), maxi(1, count)) * _side_size.x,
+				(1 if moving else 0) * _side_size.y), _side_size)
+		var flip := -1.0 if face_left != _faces_left else 1.0
+		var dest := Rect2(Vector2(-_side_size.x * 0.5, -_side_size.y), _side_size)
+		var feet := at + Vector2(0.0, 3.0)
+		if rim.a > 0.0:
+			for d: Vector2 in RIM_DIRS:
+				canvas.draw_set_transform(feet + d, 0.0, Vector2(flip, 1.0))
+				canvas.draw_texture_rect_region(_sheet.flash_texture, dest, src, rim)
+		canvas.draw_set_transform(feet, 0.0, Vector2(flip, 1.0))
+		canvas.draw_texture_rect_region(_sheet.texture, dest, src, tint)
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
+	var region := _sheet.region(maxi(frame, 0), SpriteSheet.Dir.LEFT if face_left else SpriteSheet.Dir.RIGHT)
+	var rect := Rect2(at + Vector2(-8.0, -13.0), Vector2(16, 16))
+	if rim.a > 0.0:
+		for d: Vector2 in RIM_DIRS:
+			canvas.draw_texture_rect_region(_sheet.flash_texture, Rect2(rect.position + d, rect.size), region, rim)
+	canvas.draw_texture_rect_region(_sheet.texture, rect, region, tint)
+
+
 ## Deslocamento do corpo no golpe agora, em px inteiros (o desenho fica nítido).
 func _swing_shift(lag: float = 0.0) -> Vector2:
 	var p := slash_pose(lag)

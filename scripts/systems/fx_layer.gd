@@ -30,6 +30,9 @@ const FLASHES_PER_STEP := 6
 ## Impactos completos por passo: além disto (um corte de área em centenas de inimigos), cada
 ## acerto solta só uma faísca e o crítico não ganha o "X" (o número de dano aparece igual).
 const IMPACTS_PER_STEP := 16
+## Impactos de dano contínuo (tiques da Queimadura, do incenso...) por passo: além disto o tique
+## solta só uma brasa (centenas de yōkai queimando juntos não enchem o pool de partículas).
+const DOT_IMPACTS_PER_STEP := 4
 ## "X" do crítico por passo (o resto dos críticos do mesmo passo fica só com o número e as faíscas).
 const CRIT_ANIMS_PER_STEP := 4
 ## Faíscas por acerto em cada nível gráfico.
@@ -181,6 +184,7 @@ var _waves: Array[Dictionary] = []
 var _flashes_this_step: int = 0
 var _impacts_this_step: int = 0
 var _crit_anims_this_step: int = 0
+var _dot_impacts_this_step: int = 0
 ## Números visíveis por tipo (DamagePalette.Kind): "damage_numbers" e a opção do tipo juntas, em
 ## cache (relidas a cada quadro e quando uma opção muda), sem consultar o Settings a cada acerto.
 var _show_kind := PackedByteArray()
@@ -538,6 +542,12 @@ func on_hit(weapon_id: StringName, at: Vector2, amount: float, crit: bool, dir: 
 	var kind := DamagePalette.classify_hit(amount, crit, dot, _hit_mean)
 	add_number(at, amount, kind, _hit_mean, enemy)
 	_hit_mean = DamagePalette.next_mean(_hit_mean, amount, kind)
+	if dot:
+		_dot_impacts_this_step += 1
+		if _dot_impacts_this_step > DOT_IMPACTS_PER_STEP:
+			_emit(P.EMBER, at, Vector2(randf_range(-10.0, 10.0), randf_range(-24.0, -8.0)), randf_range(0.3, 0.5),
+					style(weapon_id)["hot"])
+			return
 	impact(weapon_id, at, dir, crit)
 
 
@@ -595,6 +605,9 @@ func impact(weapon_id: StringName, at: Vector2, dir: Vector2, crit: bool = false
 			flash(at, 8.0, Color(color, 0.7), 0.1)
 		"hit_poison":
 			embers(at, color, n)
+		"hit_ice":
+			sparks(at, dir, hot, n, 110.0, 1.1, 0.14)
+			flash(at, 9.0, Color(color, 0.7), 0.08)
 		_:
 			burst(at, hot, n)
 	if crit and wfx > 0 and _crit_anims_this_step < CRIT_ANIMS_PER_STEP:
@@ -641,6 +654,7 @@ func step(dt: float) -> void:
 	_flashes_this_step = 0
 	_impacts_this_step = 0
 	_crit_anims_this_step = 0
+	_dot_impacts_this_step = 0
 	if _slow_left > 0.0:
 		_slow_left -= dt
 		time_scale = 0.35
