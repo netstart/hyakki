@@ -173,6 +173,7 @@ func step(dt: float) -> void:
 	prev = pos.duplicate()
 	var enemies := game.enemies
 	var me := game.player.sim_pos
+	var world := game.world
 	for i: int in range(CAPACITY):
 		if alive[i] == 0:
 			continue
@@ -204,6 +205,13 @@ func step(dt: float) -> void:
 		vel[i] = v
 		var from: Vector2 = pos[i]
 		var to: Vector2 = from + v * dt
+		# Obstáculo no caminho (casa, árvore, pedra, estátua, altar): o passo para no contato e o
+		# projétil acaba lá. O gancho da Kusarigama voltando (turn < 0) atravessa até a mão.
+		var wall := -1.0
+		if world != null and not (move[i] == Move.BOOMERANG and turn[i] < 0.0):
+			wall = world.solid_hit(from, to, minf(radius[i], 3.0))
+			if wall >= 0.0:
+				to = from.lerp(to, wall)
 		var mid := (from + to) * 0.5
 		enemies.query_circle(mid, from.distance_to(to) * 0.5 + radius[i], _near)
 		var dead := false
@@ -224,6 +232,11 @@ func step(dt: float) -> void:
 			continue
 		pos[i] = to
 		_note_trail(i, to)
+		if wall >= 0.0:
+			if game.fx != null:
+				game.fx.sparks(to, -v, _kind_trail[kind[i]], [2, 3, 5][FxLayer.wfx])
+			_finish(i)
+			continue
 		rot[i] = rot[i] + _kind_spin[kind[i]] * dt if _kind_spin[kind[i]] > 0.0 else v.angle()
 		if life[i] <= 0.0:
 			_finish(i)

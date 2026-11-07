@@ -264,6 +264,7 @@ func _suites() -> Array[Array]:
 		[&"GfxQualityTests", false, func() -> void: await GfxQualityTests.new().run(self, _check)],
 		[&"terrain_tests", false, func() -> void: await _run_file("res://tests/terrain_tests.gd")],
 		[&"pickup_spawn_tests", false, func() -> void: await _run_file("res://tests/pickup_spawn_tests.gd")],
+		[&"solid_shot_tests", false, func() -> void: await _run_file("res://tests/solid_shot_tests.gd")],
 		[&"RealmTests", false, func() -> void: await RealmTests.new().run(self, _check)],
 		[&"AltarTests", false, func() -> void: await AltarTests.new().run(self, _check)],
 		[&"EliteAffixTests", false, func() -> void: await EliteAffixTests.new().run(self, _check)],

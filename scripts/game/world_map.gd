@@ -335,6 +335,30 @@ func overlaps_solid(p: Vector2, r: float) -> bool:
 	return false
 
 
+## Fração t em [0, 1] do passo from→to em que um círculo de raio `r` (pequeno, ≤ 4 px) entra num
+## obstáculo, ou -1 se não entra; o obstáculo em que `from` já está não conta (tiro que nasce na
+## estátua sai dela). Para os projéteis: olha as células de pontos a cada SOLID_PAD px do caminho
+## (a folga da grade cobre o resto, então nada passa entre duas amostras).
+func solid_hit(from: Vector2, to: Vector2, r: float) -> float:
+	var n := maxi(1, ceili(from.distance_to(to) / SOLID_PAD))
+	var best := -1.0
+	var last := Vector2i(0x7fffffff, 0)
+	for k: int in range(n + 1):
+		var p := from.lerp(to, float(k) / float(n))
+		var cell := Vector2i(floori(p.x / SOLID_CELL), floori(p.y / SOLID_CELL))
+		if cell == last:
+			continue
+		last = cell
+		var c := chunk_of(p)
+		if not _solid_ready.has(c):
+			_index_solids_around(c)
+		for solid: Array in _solid_cells.get(cell, []):
+			var t := Geometry.segment_enters_circle(from, to, solid[0], float(solid[1]) + r)
+			if t >= 0.0 and (best < 0.0 or t < best):
+				best = t
+	return best
+
+
 static func _hits(p: Vector2, r: float, solid: Array) -> bool:
 	var min_dist: float = float(solid[1]) + r - 0.01
 	return p.distance_squared_to(solid[0]) < min_dist * min_dist

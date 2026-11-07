@@ -22,6 +22,7 @@ func _initialize() -> void:
 	load("res://tests/enemy_fx_tests.gd").run_unit(_check)
 	(load("res://tests/terrain_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/pickup_spawn_tests.gd") as GDScript).new().run_unit(_check)
+	(load("res://tests/solid_shot_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/realm_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/dialogue_tests.gd") as GDScript).new().run_unit(_check)
 	(load("res://tests/tip_tests.gd") as GDScript).new().run_unit(_check)

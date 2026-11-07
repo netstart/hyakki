@@ -121,6 +121,7 @@ func step(dt: float) -> void:
 	var target := player.sim_pos
 	var reach := HIT_RADIUS + Player.RADIUS
 	var frozen := game.enemies.freeze_time > 0.0
+	var world := game.world
 	for i: int in range(CAPACITY):
 		if alive[i] == 0:
 			continue
@@ -137,9 +138,17 @@ func step(dt: float) -> void:
 			vel[i] = v
 		var from: Vector2 = pos[i]
 		var to := from + v * dt
+		# Obstáculo no caminho: o tiro se desfaz no contato (a guardiã atrás dele fica protegida).
+		var wall := world.solid_hit(from, to, HIT_RADIUS) if world != null else -1.0
+		if wall >= 0.0:
+			to = from.lerp(to, wall)
 		pos[i] = to
 		if player.is_alive and Geometry.segment_hits_circle(from, to, target, reach):
 			player.take_damage(dmg[i], source[i])
+			_kill(i)
+		elif wall >= 0.0:
+			if game.fx != null:
+				game.fx.sparks(to, -v, _kind_tint[kind[i]], [2, 3, 5][FxLayer.wfx])
 			_kill(i)
 
 
